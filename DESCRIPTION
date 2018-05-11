@@ -13,5 +13,7 @@ Imports: maxLik,
 Collate: 
     'hspec.R'
     'hmoment.R'
+    'hfit.R'
     'hsim.R'
+    'script.R'
     'utilities.R'

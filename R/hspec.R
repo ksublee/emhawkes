@@ -32,7 +32,6 @@ setClass("hspec",
     alpha = "matrixORnumeric",
     beta = "matrixORnumeric",
     mark_hawkes = "functionOrNULL",
-    mark_lambda = "functionOrNULL",
     impact = "functionOrNULL"
   )
 )
@@ -60,18 +59,19 @@ setMethod(
            mark_hawkes=NULL, mark_lambda=NULL, impact=NULL, stability_check=FALSE){
 
     # If mark_hawkes is not provided, then mark_hawkes is constant 1.
-    if (is.null(mark_hawkes)) mark <- function(n,...) rep(1,n)
-
-    .Object@mu <- as.matrix(mu)
-    .Object@alpha <- as.matrix(alpha, nrow = length(mu), ncol = length(mu))
-    .Object@beta <- as.matrix(beta, nrow = length(mu), ncol = length(mu))
+    if (is.null(mark_hawkes)) mark_hawkes <- function(...) 1
 
     # check the number of arguments
-    if(length(formals(mark)) == 1){
-      .Object@mark_hawkes <- function(n, ...) mark_hawkes(n)
+    if(length(formals(mark_hawkes)) == 0){
+      .Object@mark_hawkes <- function(...) mark_hawkes()
     } else {
       .Object@mark_hawkes <- mark_hawkes
     }
+
+    .Object@mu <- as.matrix(mu)
+    .Object@alpha <- matrix(alpha, nrow = length(mu), ncol = length(mu))
+    .Object@beta <- matrix(beta, nrow = length(mu), ncol = length(mu))
+    .Object@impact <- impact
 
     # Check spectral radius, only works for non marked model
     if ( stability_check==TRUE && max(abs(eigen(alpha/beta)$values)) > 1)
