@@ -11,14 +11,14 @@ setGeneric("hsim", function(object, ...) standardGeneric("hsim"))
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param lambda0 the starting values of lambda (intensity process). numeric or matrix.
-#' @param n the number of observations.
+#' @param size the number of observations.
 #'
 #'
 #' @export
 setMethod(
   f="hsim",
   signature(object = "hspec"),
-  definition = function(object, lambda0 = NULL, n = 100){
+  definition = function(object, lambda0 = NULL, size = 100){
 
     # dimension of Hawkes process
     dimens <- length(object@mu)
@@ -54,32 +54,32 @@ setMethod(
     impact <- object@impact
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = n - 1)), ncol = dimens^2)
+    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
-    lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = n - 1)), ncol = dimens)
+    lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
 
-    Ng <- matrix(numeric(length = dimens * n), ncol = dimens)
-    N  <- matrix(numeric(length = dimens * n), ncol = dimens)
+    N <- matrix(numeric(length = dimens * size), ncol = dimens)
+    Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
 
-    event_idx <- numeric(length = n)
-    inter_arrival <- numeric(length = n)
-    mark <- numeric(length = n)
+    event_idx <- numeric(length = size)
+    inter_arrival <- numeric(length = size)
+    mark <- numeric(length = size)
 
     # Set column names
     colnames(lambda) <- paste0("lambda", 1:dimens)
     indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
     colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
-    colnames(N)  <- paste0("N", 1:dimens)
-    colnames(Ng) <- paste0("Ng", 1:dimens)
+    colnames(Nc)  <- paste0("Nc", 1:dimens)
+    colnames(N) <- paste0("N", 1:dimens)
 
     # Exact method
-    for (i in 2:n) {
+    for (n in 2:size) {
 
       # Generate candidate arrivals
       # arrival due to mu
       candidate_arrival <- stats::rexp(dimens, rate = mu)
-      current_LAMBDA <- matrix(as.numeric(lambda_component[i-1, ]), nrow = dimens, byrow = TRUE)
+      current_LAMBDA <- matrix(as.numeric(lambda_component[n-1, ]), nrow = dimens, byrow = TRUE)
 
       # arrival due to components
 
@@ -87,32 +87,32 @@ setMethod(
       candidate_arrival <- cbind(candidate_arrival, -1 / beta * log(pmax(matrixD, 0)))
 
       # The minimum is inter arrival time
-      inter_arrival[i] <- min(candidate_arrival)
-      minIndex <- which(candidate_arrival == inter_arrival[i], arr.ind = TRUE) #row and col
+      inter_arrival[n] <- min(candidate_arrival)
+      minIndex <- which(candidate_arrival == inter_arrival[n], arr.ind = TRUE) #row and col
 
-      event_idx[i] <- minIndex[1]  # row
+      event_idx[n] <- minIndex[1]  # row
 
       # lambda decayed due to time, impact due to mark is not added yet
-      decayed_lambda <- current_LAMBDA * exp(-beta * inter_arrival[i])
-      lambda_component[i, ] <- t(decayed_lambda)
-      lambda[i, ] <- mu + rowSums(decayed_lambda)
+      decayed_lambda <- current_LAMBDA * exp(-beta * inter_arrival[n])
+      lambda_component[n, ] <- t(decayed_lambda)
+      lambda[n, ] <- mu + rowSums(decayed_lambda)
 
       # generate a mark for Hawkes
       # This quantity is added to the counting process.
 
       if( !is.null(mark_hawkes) ){
         # mark may depends on other variables
-        # mark[i] is a scalar
-        mark[i] <- mark_hawkes(i = i, N = N, Ng = Ng,
+        # mark[n] is a scalar
+        mark[n] <- mark_hawkes(n = n, Nc = Nc, N = N,
                                lambda = lambda, lambda_component = lambda_component,
                                event_idx = event_idx)
       } else {
-        mark[i] <- 1
+        mark[n] <- 1
       }
 #
 #       if( !is.null(mark_lambda) ){
 #
-#         realized_mark_lambda <- mark_lambda(i = i, N = N, Ng = Ng, mark,
+#         realized_mark_lambda <- mark_lambda(n = n, Nc = Nc, N = N, mark,
 #                                             lambda = lambda, lambda_component = lambda_component,
 #                                             event_idx = event_idx)
 #
@@ -129,29 +129,27 @@ setMethod(
 #       }
       # shoud be a matrix
 
-      Ng[i, ] <- Ng[i-1, ]
-      Ng[i, event_idx[i]] <- Ng[i-1, event_idx[i]] + 1
-      N[i, ] <- N[i-1, ]
-      N[i, event_idx[i]] <- N[i-1, event_idx[i]] + mark[i]
+      N[n, ] <- N[n-1, ]
+      N[n, event_idx[n]] <- N[n-1, event_idx[n]] + 1
+      Nc[n, ] <- Nc[n-1, ]
+      Nc[n, event_idx[n]] <- Nc[n-1, event_idx[n]] + mark[n]
 
       # update lambda
 
       # impact by alpha
       impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
-      impact_alpha[ , event_idx[i]] <- alpha[ , event_idx[i]]
+      impact_alpha[ , event_idx[n]] <- alpha[ , event_idx[n]]
 
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
         # impact by mark
         impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
 
-        impact_res <- impact(i = i, N = N, Ng = Ng, mark = mark,
+        impact_res <- impact(n = n, Nc = Nc, N = N, mark = mark,
                              lambda = lambda, lambda_component = lambda_component,
-                             realized_mark_lambda = realized_mark_lambda,
                              event_idx = event_idx)
-        #impact_res <- impact()
 
-        impact_mark[ , event_idx[i]] <- impact_res[ , event_idx[i]]
+        impact_mark[ , event_idx[n]] <- impact_res[ , event_idx[n]]
 
         new_lambda <- decayed_lambda + impact_alpha + impact_mark
 
@@ -163,14 +161,14 @@ setMethod(
 
       # lambda_component = {"lambda11", "lambda12", ..., "lambda21", "lambda22", ...}
 
-      lambda_component[i, ] <- t(new_lambda)
-      lambda[i, ] <- mu + rowSums(new_lambda)
+      lambda_component[n, ] <- t(new_lambda)
+      lambda[n, ] <- mu + rowSums(new_lambda)
 
       # if (dimens == 1) {
-      #   Impact <- alpha * (1 + (mark[i] - 1) * ETA )
+      #   Impact <- alpha * (1 + (mark[n] - 1) * ETA )
       # } else {
       #   Impact <- matrix(rep(0, dimens^2), nrow = dimens)
-      #   Impact[ , event_idx[i]] <- alpha[ , event_idx[i]] * (1 + (mark[i] - 1) * ETA[ , event_idx[i]])
+      #   Impact[ , event_idx[n]] <- alpha[ , event_idx[n]] * (1 + (mark[n] - 1) * ETA[ , event_idx[n]])
       # }
 
 
@@ -180,8 +178,8 @@ setMethod(
 
     }
 
-    realization <- list(object, inter_arrival, cumsum(inter_arrival), event_idx, mark, N, Ng, lambda, lambda_component)
-    names(realization) <- c("hspec", "inter_arrival", "arrival", "event_idx", "mark", "N", "Ng", "lambda", "lambda_component")
+    realization <- list(object, inter_arrival, cumsum(inter_arrival), event_idx, mark, Nc, N, lambda, lambda_component)
+    names(realization) <- c("hspec", "inter_arrival", "arrival", "event_idx", "mark", "Nc", "N", "lambda", "lambda_component")
     class(realization) <- c("hreal")
 
     return(realization)
