@@ -8,7 +8,7 @@
 #'
 #' @param object \code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
-#' @param event_idx a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param lambda0 The starting values of lambda. Must have the same dimensional matrix with \code{hspec}.
 #'
@@ -17,7 +17,7 @@
 setMethod(
   f="logLik",
   signature(object="hspec"),
-  function(object, inter_arrival, event_idx=NULL, mark=NULL, lambda0=NULL){
+  function(object, inter_arrival, type=NULL, mark=NULL, lambda0=NULL){
 
     # When the mark sizes are not provided, the jumps are all unit jumps
     if(is.null(mark)) {
@@ -27,11 +27,11 @@ setMethod(
     # dimension of Hawkes process
     dimens <- length(object@mu)
 
-    # if dimens == 1 and event_idx is not provided, then all event_idx is 1.
-    if(dimens==1 & is.null(event_idx)) {
-      event_idx <- rep(1, length(inter_arrival))
-    } else if (dimens != 1 & is.null(event_idx)) {
-      stop("The argument event_idx should be provided.")
+    # if dimens == 1 and type is not provided, then all type is 1.
+    if(dimens==1 & is.null(type)) {
+      type <- rep(1, length(inter_arrival))
+    } else if (dimens != 1 & is.null(type)) {
+      stop("The argument type should be provided.")
     }
 
     # parameter setting
@@ -50,9 +50,16 @@ setMethod(
     # size is length(inter_arrival) - 1
     size <- length(inter_arrival)
 
+    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
+
+    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
+    lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+
+    N <- matrix(numeric(length = dimens * size), ncol = dimens)
+    Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
+
     #if (dimens==1) rowSums_lambda0 <- lambda0
     #else rowSums_lambda0 <- rowSums(lambda0)
-    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
     sum_log_lambda <- 0
     sum_integrated_lambda_component <- 0
@@ -64,21 +71,29 @@ setMethod(
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
+      lambda_component[n, ] <- t(decayed_lambda)
+      lambda[n, ] <- mu + rowSums(decayed_lambda)
+
+      N[n, ] <- N[n-1, ]
+      N[n, type[n]] <- N[n-1, type[n]] + 1
+      Nc[n, ] <- Nc[n-1, ]
+      Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
+
       # impact by alpha
       impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
-      impact_alpha[ , event_idx[n]] <- alpha[ , event_idx[n]]
+      impact_alpha[ , type[n]] <- alpha[ , type[n]]
 
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
         # impact by mark
         impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
+        impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                             N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                             mu = mu, alpha = alpha, beta = beta)
 
-        impact_res <- impact(n = n, Nc = Nc, N = N, mark = mark,
-                             lambda = lambda, lambda_component = lambda_component,
-                             event_idx = event_idx)
         #impact_res <- impact()
 
-        impact_mark[ , event_idx[n]] <- impact_res[ , event_idx[n]]
+        impact_mark[ , type[n]] <- impact_res[ , type[n]]
 
         new_lambda <- decayed_lambda + impact_alpha + impact_mark
 
@@ -94,7 +109,7 @@ setMethod(
       # sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu + decayed_lambda
       else lambda_lc <- mu + rowSums(decayed_lambda)
-      sum_log_lambda <- sum_log_lambda + log(lambda_lc[event_idx[n]])
+      sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
 
       # current_lambda <- matrix(lambda_component[n, ], nrow = dimens, byrow = TRUE)
       current_lambda <- new_lambda  # lambda determined in the previous loop
@@ -103,6 +118,153 @@ setMethod(
 
     # log likelihood for ground process
     sum_log_lambda - sum(mu*sum(inter_arrival)) - sum_integrated_lambda_component
+
+  }
+)
+
+setGeneric("hfit", function(object, ...) standardGeneric("hfit"))
+
+#' Perform a maximum likelihood estimation
+#'
+#' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
+#'
+#'
+#' @param object mhspec, or can be omitted.
+#' @param arrival arrival times of events and hence monotonically increases. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param mark a vector of mark (jump) sizes. Start with zero.
+#' @param Nc a realization of cumulated Hawkes process.
+#' @param lambda0 the starting values of lambda. Must have the same dimensional matrix (n by n) with mhspec.
+#' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param grad gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param hess Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param ... other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
+#'
+#' @examples
+#' @seealso \code{\link{mhspec-class}}, \code{\link{mhsim,mhspec-method}}
+#'
+#' @export
+setMethod(
+  f="hfit",
+  signature(object="hspec"),
+  function(object, inter_arrival = NULL,
+           type = NULL, mark = NULL, lambda0 = NULL,
+           grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",  ...){
+
+    # dimension of the Hawkes process
+    dimens <- length(object@mu)
+
+    if(is.null(lambda0)){
+      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+    }
+
+    # When the mark sizes are not provided, the jumps are all unit jumps.
+    # unit <- FALSE
+    # if(is.null(mark)) {
+    #   mark <- c(0, rep(1, length(inter_arrival)-1))
+    #   unit <- TRUE
+    # }
+
+
+    # parameter setting
+    mu <- matrix(object@mu, nrow=dimens)
+    alpha <- matrix(object@alpha, nrow=dimens)
+    beta <- matrix(object@beta, nrow=dimens)
+    pr_impact <- eval(formals(object@impact)[[1]])
+
+    ref_mu <- name_unique_coef_mtrx(mu, "mu")
+    unique_mus <- unique(as.vector(mu))
+    names(unique_mus) <- unique(ref_mu)
+
+    # ref_alpha looks like ["alpha11", "alpha12", "alpha12", "alpha11"] when alpha11==alpha22, alpha12==alpha21
+    ref_alpha <- name_unique_coef_mtrx(alpha, "alpha")
+    unique_alphas <- unique(as.vector(t(alpha)))
+    names(unique_alphas) <-  unique(ref_alpha)
+
+
+    ref_beta <- name_unique_coef_mtrx(beta, "beta")
+    unique_betas <- unique(as.vector(t(beta)))
+    names(unique_betas) <-  unique(ref_beta)
+
+    starting_point <- c(unique_mus, unique_alphas, unique_betas, pr_impact)
+
+    len_mu <- length(unique_mus)
+    len_alpha <- length(unique_alphas)
+    len_beta <- length(unique_betas)
+    len_impact <- length(pr_impact)
+
+    # constraint matrix
+    # mu, alpha, beta should be larger than zero
+    #if (unit) A <- diag(1, nrow = length(starting_point) - pr_impact)
+    #else A <- cbind(diag(1, nrow = length(starting_point) - length(unique_etas)), rep(0, length(starting_point) - length(unique_etas)))
+
+
+    # constraint : sum of alpha < beta
+    #A <- rbind(A, c(0, rep(-1, len_alpha), 1, rep(0, len_eta)))
+    #B <- rep(0, nrow(A))
+
+
+    # loglikelihood function for maxLik
+
+    llh_function <- function(param){
+
+      # redefine unique vectors from param
+      unique_mus <- param[1:len_mu]
+      unique_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
+      unique_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
+      pr_impact <- param[(len_mu + len_alpha + len_beta + 1):length(param)]
+
+
+      # retreive mu, alpha, beta, eta matrix
+      mu0 <- matrix( rep(0, dimens))
+      i <- 1
+      for  (m in 1:dimens){
+        mu0[m] <- unique_mus[ref_mu[i]]
+        i <- i + 1
+      }
+
+      alpha0 <- matrix( rep(0, dimens^2), nrow=dimens)
+      i <- 1
+      for  (m in 1:dimens){
+        for (n in 1:dimens) {
+          alpha0[m,n] <- unique_alphas[ref_alpha[i]]
+          i <- i + 1
+        }
+      }
+
+      beta0 <- matrix( rep(0, dimens^2), nrow=dimens)
+      i <- 1
+      for  (m in 1:dimens){
+        for (n in 1:dimens) {
+          beta0[m,n] <- unique_betas[ref_beta[i]]
+          i <- i + 1
+        }
+      }
+
+      impact0 <- function(param = pr_impact,
+                          n, mark, type, N, Nc, inter_arrival,
+                          lambda, lambda_component,
+                          mu, alpha, beta){
+        object@impact(param = pr_impact,
+                      n = n, mark = mark,
+                      type = type, N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                      inter_arrival = inter_arrival,
+                      mu = mu, alpha = alpha, beta=beta)
+      }
+
+
+      mhspec0 <- methods::new("hspec", mu=mu0, alpha=alpha0, beta=beta0,
+                              impact = impact0,
+                              rmark=object@rmark)
+
+      logLik(mhspec0, inter_arrival = inter_arrival, type = type, mark = mark, lambda0)
+
+    }
+
+    maxLik::maxLik(logLik=llh_function,
+                   start=starting_point, grad, hess, method = method)
 
   }
 )

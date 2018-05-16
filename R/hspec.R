@@ -15,7 +15,7 @@ setClassUnion("functionOrNULL",members=c("function", "NULL"))
 #' @slot mu numeric value or matrix, automatically converted to matrix
 #' @slot alpha numeric value or matrix, automatically converted to matrix, exciting term
 #' @slot beta numeric value or matrix, automatically converted to matrix, exponential decay
-#' @slot mark_hawkes a function that represets mark for counting process
+#' @slot rmark a function that represets mark for counting process
 #' @slot mark_lambda a function that represets mark for lambda process
 #' @slot impact a function that describe the after impact of mark to lambda
 #'
@@ -31,7 +31,7 @@ setClass("hspec",
     mu = "matrixORnumeric",
     alpha = "matrixORnumeric",
     beta = "matrixORnumeric",
-    mark_hawkes = "functionOrNULL",
+    rmark = "functionOrNULL",
     impact = "functionOrNULL"
   )
 )
@@ -46,8 +46,7 @@ setClass("hspec",
 #' @param mu numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
 #' @param alpha numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
 #' @param beta numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
-#' @param mark_hawkes a function that generate mark
-#' @param mark_lambda a function that represets mark for lambda process
+#' @param rmark a function that generate mark
 #' @param impact a function that describe the mark impact
 #' @param stability_check check the spectral radius
 #'
@@ -56,16 +55,16 @@ setMethod(
   "initialize",
   "hspec",
   function(.Object, mu, alpha, beta,
-           mark_hawkes=NULL, mark_lambda=NULL, impact=NULL, stability_check=FALSE){
+           rmark=NULL, mark_lambda=NULL, impact=NULL, stability_check=FALSE){
 
-    # If mark_hawkes is not provided, then mark_hawkes is constant 1.
-    if (is.null(mark_hawkes)) mark_hawkes <- function(...) 1
+    # If rmark is not provided, then rmark is constant 1.
+    if (is.null(rmark)) rmark <- function(...) 1
 
     # check the number of arguments
-    if(length(formals(mark_hawkes)) == 0){
-      .Object@mark_hawkes <- function(...) mark_hawkes()
+    if(length(formals(rmark)) == 0){
+      .Object@rmark <- function(...) rmark()
     } else {
-      .Object@mark_hawkes <- mark_hawkes
+      .Object@rmark <- rmark
     }
 
     .Object@mu <- as.matrix(mu)
