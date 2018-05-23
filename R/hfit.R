@@ -41,6 +41,8 @@ setMethod(
     beta <- object@beta
     impact <- object@impact
 
+    impct_args <- methods::formalArgs(impact)
+
     # default lambda0
     if(is.null(lambda0)) {
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
@@ -52,11 +54,28 @@ setMethod(
 
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
-    lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
 
-    N <- matrix(numeric(length = dimens * size), ncol = dimens)
-    Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
+    if("lambda_component" %in% impct_args){
+      lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
+      indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
+      colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
+    }
+
+    if("lambda" %in% impct_args){
+      lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+      colnames(lambda) <- paste0("lambda", 1:dimens)
+    }
+
+    if("N" %in% impct_args){
+      N <- matrix(numeric(length = dimens * size), ncol = dimens)
+      colnames(N) <- paste0("N", 1:dimens)
+    }
+
+    if("Nc" %in% impct_args){
+      Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
+      colnames(Nc)  <- paste0("Nc", 1:dimens)
+    }
+
 
     #if (dimens==1) rowSums_lambda0 <- lambda0
     #else rowSums_lambda0 <- rowSums(lambda0)
@@ -71,13 +90,19 @@ setMethod(
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
-      lambda_component[n, ] <- t(decayed_lambda)
-      lambda[n, ] <- mu + rowSums(decayed_lambda)
+      if("lambda_component" %in% impct_args)
+        lambda_component[n, ] <- t(decayed_lambda)
+      if("lambda" %in% impct_args)
+        lambda[n, ] <- mu + rowSums(decayed_lambda)
 
-      N[n, ] <- N[n-1, ]
-      N[n, type[n]] <- N[n-1, type[n]] + 1
-      Nc[n, ] <- Nc[n-1, ]
-      Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
+      if("N" %in% impct_args){
+        N[n, ] <- N[n-1, ]
+        N[n, type[n]] <- N[n-1, type[n]] + 1
+      }
+      if("Nc" %in% impct_args){
+        Nc[n, ] <- Nc[n-1, ]
+        Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
+      }
 
       # impact by alpha
       impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
@@ -130,11 +155,9 @@ setGeneric("hfit", function(object, ...) standardGeneric("hfit"))
 #'
 #'
 #' @param object mhspec, or can be omitted.
-#' @param arrival arrival times of events and hence monotonically increases. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param Nc a realization of cumulated Hawkes process.
 #' @param lambda0 the starting values of lambda. Must have the same dimensional matrix (n by n) with mhspec.
 #' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
@@ -174,20 +197,17 @@ setMethod(
     beta <- matrix(object@beta, nrow=dimens)
     pr_impact <- eval(formals(object@impact)[[1]])
 
-    ref_mu <- name_unique_coef_mtrx(mu, "mu")
-    unique_mus <- unique(as.vector(mu))
-    names(unique_mus) <- unique(ref_mu)
-
-    # ref_alpha looks like ["alpha11", "alpha12", "alpha12", "alpha11"] when alpha11==alpha22, alpha12==alpha21
-    ref_alpha <- name_unique_coef_mtrx(alpha, "alpha")
-    unique_alphas <- unique(as.vector(t(alpha)))
-    names(unique_alphas) <-  unique(ref_alpha)
 
 
-    ref_beta <- name_unique_coef_mtrx(beta, "beta")
-    unique_betas <- unique(as.vector(t(beta)))
-    names(unique_betas) <-  unique(ref_beta)
+    if( is.null(attr(mu, "param.names"))){
 
+    }
+
+    unique_mus <- as.param(mu, "mu")
+    unique_alphas <- as.param(alpha, "alpha")
+    unique_betas <- as.param(beta, "beta")
+
+    # set starting point
     starting_point <- c(unique_mus, unique_alphas, unique_betas, pr_impact)
 
     len_mu <- length(unique_mus)
@@ -217,24 +237,24 @@ setMethod(
       pr_impact <- param[(len_mu + len_alpha + len_beta + 1):length(param)]
 
 
-      # retreive mu, alpha, beta, eta matrix
-      mu0 <- matrix( rep(0, dimens))
+      # retreive mu, alpha, beta matrix
+      mu0 <- mu
       i <- 1
       for  (m in 1:dimens){
         mu0[m] <- unique_mus[ref_mu[i]]
         i <- i + 1
       }
 
-      alpha0 <- matrix( rep(0, dimens^2), nrow=dimens)
-      i <- 1
-      for  (m in 1:dimens){
-        for (n in 1:dimens) {
-          alpha0[m,n] <- unique_alphas[ref_alpha[i]]
-          i <- i + 1
-        }
-      }
 
-      beta0 <- matrix( rep(0, dimens^2), nrow=dimens)
+      alpha0 <- as.vector(alpha)
+      names(alpha0) <- as.vector(full_names(alpha, "alpha"))
+      look_up <- as.vector(attr(alpha, "param.names"))
+      names(look_up) <- as.vector(full_names(alpha, "alpha"))
+      alpha0[ !is.na(unique_alphas[look_up[names(alpha0)]]) ] <- na.omit(unique_alphas[look_up[names(alpha0)]])
+      alpha0 <- matrix(alpha0, nrow=nrow(alpha))
+
+
+      beta0 <- beta
       i <- 1
       for  (m in 1:dimens){
         for (n in 1:dimens) {
@@ -243,17 +263,8 @@ setMethod(
         }
       }
 
-      impact0 <- function(param = pr_impact,
-                          n, mark, type, N, Nc, inter_arrival,
-                          lambda, lambda_component,
-                          mu, alpha, beta){
-        object@impact(param = pr_impact,
-                      n = n, mark = mark,
-                      type = type, N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                      inter_arrival = inter_arrival,
-                      mu = mu, alpha = alpha, beta=beta)
-      }
-
+      #object@impact is user defined impact function
+      impact0 <- hijack(object@impact, param = pr_impact)
 
       mhspec0 <- methods::new("hspec", mu=mu0, alpha=alpha0, beta=beta0,
                               impact = impact0,
