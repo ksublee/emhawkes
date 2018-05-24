@@ -20,8 +20,29 @@ setMethod(
   signature(object = "hspec"),
   definition = function(object, lambda0 = NULL, size = 100){
 
+    # parameter setting
+    if (is.function(object@mu)){
+      mu <- evalf(object@mu)
+    } else{
+      mu <- object@mu
+    }
+    if (is.function(object@alpha)){
+      alpha <- evalf(object@alpha)
+    } else{
+      alpha <- object@alpha
+    }
+    if (is.function(object@beta)){
+      beta <- evalf(object@beta)
+    } else{
+      beta <- object@beta
+    }
+
+    rmark <- object@rmark
+    impact <- object@impact
+
+
     # dimension of Hawkes process
-    dimens <- length(object@mu)
+    dimens <- length(mu)
 
     if(!is.null(lambda0)){
 
@@ -44,13 +65,6 @@ setMethod(
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
       lambda0 <- get_lambda0(object)
     }
-
-    # parameter setting
-    mu <- object@mu
-    alpha <- object@alpha
-    beta <- object@beta
-    rmark <- object@rmark
-    impact <- object@impact
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
     lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
@@ -164,6 +178,6 @@ setMethod(
     names(realization) <- c("hspec", "inter_arrival", "arrival", "type", "mark", "N", "Nc", "lambda", "lambda_component", "rambda", "rambda_component")
     class(realization) <- c("hreal")
 
-    return(realization)
+    realization
   }
 )

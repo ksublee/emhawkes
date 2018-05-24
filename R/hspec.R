@@ -1,5 +1,7 @@
 setClassUnion("matrixORnumeric", c("matrix", "numeric"))
-setClassUnion("functionOrNULL",members=c("function", "NULL"))
+setClassUnion("functionORNULL",members=c("function", "NULL"))
+setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
+
 
 #' An S4 class to represent an exponential marked Hawkes model
 #'
@@ -12,9 +14,9 @@ setClassUnion("functionOrNULL",members=c("function", "NULL"))
 #' \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
 #' \code{mark} and \code{impact} are additional slots.
 #'
-#' @slot mu numeric value or matrix, automatically converted to matrix
-#' @slot alpha numeric value or matrix, automatically converted to matrix, exciting term
-#' @slot beta numeric value or matrix, automatically converted to matrix, exponential decay
+#' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
+#' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
+#' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
 #' @slot rmark a function that represets mark for counting process
 #' @slot mark_lambda a function that represets mark for lambda process
 #' @slot impact a function that describe the after impact of mark to lambda
@@ -28,11 +30,11 @@ setClassUnion("functionOrNULL",members=c("function", "NULL"))
 #' @export
 setClass("hspec",
   slots = list(
-    mu = "matrixORnumeric",
-    alpha = "matrixORnumeric",
-    beta = "matrixORnumeric",
-    rmark = "functionOrNULL",
-    impact = "functionOrNULL"
+    mu = "matrixORnumericORfunction",
+    alpha = "matrixORnumericORfunction",
+    beta = "matrixORnumericORfunction",
+    rmark = "functionORNULL",
+    impact = "functionORNULL"
   )
 )
 
@@ -43,9 +45,9 @@ setClass("hspec",
 #' \code{mark} and \code{impact} are additional slots.
 #'
 #' @param .Object hspec
-#' @param mu numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
-#' @param alpha numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
-#' @param beta numeric value or matrix. Shoud be a matrix for two or larger dimensional model.
+#' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
+#' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
+#' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
 #' @param rmark a function that generate mark
 #' @param impact a function that describe the mark impact
 #' @param stability_check check the spectral radius
@@ -67,9 +69,23 @@ setMethod(
       .Object@rmark <- rmark
     }
 
-    .Object@mu <- as.matrix(mu)
-    .Object@alpha <- matrix(alpha, nrow = length(mu), ncol = length(mu))
-    .Object@beta <- matrix(beta, nrow = length(mu), ncol = length(mu))
+
+    if( !is.function(mu) & !is.matrix(mu) ){
+      .Object@mu <- as.matrix(mu)
+    } else{
+      .Object@mu <- mu
+    }
+    if( !is.function(alpha) & !is.matrix(alpha) ){
+      .Object@alpha <- as.matrix(alpha)
+    } else{
+      .Object@alpha <- alpha
+    }
+    if( !is.function(beta) & !is.matrix(beta) ){
+      .Object@beta <-  as.matrix(beta)
+    } else {
+      .Object@beta <- beta
+    }
+
     .Object@impact <- impact
 
     # Check spectral radius, only works for non marked model

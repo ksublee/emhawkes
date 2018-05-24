@@ -36,9 +36,22 @@ setMethod(
 
     # parameter setting
 
-    mu <- object@mu
-    alpha <- object@alpha
-    beta <- object@beta
+    if (is.function(object@mu)){
+      mu <- evalf(object@mu)
+    } else{
+      mu <- object@mu
+    }
+    if (is.function(object@alpha)){
+      alpha <- evalf(object@alpha)
+    } else{
+      alpha <- object@alpha
+    }
+    if (is.function(object@beta)){
+      beta <- evalf(object@beta)
+    } else{
+      beta <- object@beta
+    }
+
     impact <- object@impact
 
     impct_args <- methods::formalArgs(impact)
@@ -159,6 +172,7 @@ setGeneric("hfit", function(object, ...) standardGeneric("hfit"))
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param lambda0 the starting values of lambda. Must have the same dimensional matrix (n by n) with mhspec.
+#' @param reduced When TRUE, reduced estimation performed.
 #' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param grad gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
@@ -174,10 +188,10 @@ setMethod(
   signature(object="hspec"),
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL, lambda0 = NULL,
+           reduced = TRUE,
            grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",  ...){
 
-    # dimension of the Hawkes process
-    dimens <- length(object@mu)
+
 
     if(is.null(lambda0)){
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
@@ -190,30 +204,37 @@ setMethod(
     #   unit <- TRUE
     # }
 
+    # parameter setting
+    if (is.function(object@mu)){
+      mu <- evalf(object@mu)
+    } else{
+      mu <- object@mu
+    }
+    if (is.function(object@alpha)){
+      alpha <- evalf(object@alpha)
+    } else{
+      alpha <- object@alpha
+    }
+    if (is.function(object@beta)){
+      beta <- evalf(object@beta)
+    } else{
+      beta <- object@beta
+    }
+    dimens <- length(mu)
+
 
     # parameter setting
-    mu <- matrix(object@mu, nrow=dimens)
-    alpha <- matrix(object@alpha, nrow=dimens)
-    beta <- matrix(object@beta, nrow=dimens)
+    pr_mus <- as.param(object@mu, "mu", reduced)
+    pr_alphas <- as.param(object@alpha, "alpha", reduced)
+    pr_betas <- as.param(object@beta, "beta", reduced)
+
+    len_mu <- length(pr_mus)
+    len_alpha <- length(pr_alphas)
+    len_beta <- length(pr_betas)
+
     pr_impact <- eval(formals(object@impact)[[1]])
+    starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_impact)
 
-
-
-    if( is.null(attr(mu, "param.names"))){
-
-    }
-
-    unique_mus <- as.param(mu, "mu")
-    unique_alphas <- as.param(alpha, "alpha")
-    unique_betas <- as.param(beta, "beta")
-
-    # set starting point
-    starting_point <- c(unique_mus, unique_alphas, unique_betas, pr_impact)
-
-    len_mu <- length(unique_mus)
-    len_alpha <- length(unique_alphas)
-    len_beta <- length(unique_betas)
-    len_impact <- length(pr_impact)
 
     # constraint matrix
     # mu, alpha, beta should be larger than zero
@@ -230,37 +251,27 @@ setMethod(
 
     llh_function <- function(param){
 
-      # redefine unique vectors from param
-      unique_mus <- param[1:len_mu]
-      unique_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
-      unique_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
+
+      pr_mus <- param[1:len_mu]
+      pr_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
+      pr_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
       pr_impact <- param[(len_mu + len_alpha + len_beta + 1):length(param)]
 
 
-      # retreive mu, alpha, beta matrix
-      mu0 <- mu
-      i <- 1
-      for  (m in 1:dimens){
-        mu0[m] <- unique_mus[ref_mu[i]]
-        i <- i + 1
+      if (is.function(object@mu)){
+        mu0 <- hijack(object@mu, param = pr_mus)
+      } else{
+        mu0 <- matrix(pr_mus[look_up_mtrx(mu, "mu")], nrow=dimens)
       }
-
-
-      alpha0 <- as.vector(alpha)
-      names(alpha0) <- as.vector(full_names(alpha, "alpha"))
-      look_up <- as.vector(attr(alpha, "param.names"))
-      names(look_up) <- as.vector(full_names(alpha, "alpha"))
-      alpha0[ !is.na(unique_alphas[look_up[names(alpha0)]]) ] <- na.omit(unique_alphas[look_up[names(alpha0)]])
-      alpha0 <- matrix(alpha0, nrow=nrow(alpha))
-
-
-      beta0 <- beta
-      i <- 1
-      for  (m in 1:dimens){
-        for (n in 1:dimens) {
-          beta0[m,n] <- unique_betas[ref_beta[i]]
-          i <- i + 1
-        }
+      if (is.function(object@alpha)){
+        alpha0 <- hijack(object@alpha, param = pr_alphas)
+      } else{
+        alpha0 <- matrix(pr_alphas[look_up_mtrx(alpha, "alpha")], nrow=dimens)
+      }
+      if (is.function(object@beta)){
+        beta0 <- hijack(object@beta, param = pr_betas)
+      } else{
+        beta0 <- matrix(pr_betas[look_up_mtrx(beta, "beta")], nrow=dimens)
       }
 
       #object@impact is user defined impact function
@@ -274,8 +285,10 @@ setMethod(
 
     }
 
+    #llh_function(starting_point)
     maxLik::maxLik(logLik=llh_function,
                    start=starting_point, grad, hess, method = method)
 
   }
 )
+
