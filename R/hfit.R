@@ -25,7 +25,7 @@ setMethod(
     }
 
     # dimension of Hawkes process
-    dimens <- length(object@mu)
+    dimens <- object@dimens
 
     # if dimens == 1 and type is not provided, then all type is 1.
     if(dimens==1 & is.null(type)) {
@@ -142,7 +142,8 @@ setMethod(
       }
 
       # sum of integrated_lambda_component
-      sum_integrated_lambda_component <- sum_integrated_lambda_component + sum(current_lambda / beta * ( 1 - decayed ))
+      sum_integrated_lambda_component <- sum_integrated_lambda_component +
+        sum(current_lambda / beta * ( 1 - decayed ))
 
       # sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu + decayed_lambda
@@ -220,7 +221,7 @@ setMethod(
     } else{
       beta <- object@beta
     }
-    dimens <- length(mu)
+    dimens <- object@dimens
 
 
     # parameter setting

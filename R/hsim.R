@@ -18,14 +18,9 @@ setGeneric("hsim", function(object, ...) standardGeneric("hsim"))
 setMethod(
   f="hsim",
   signature(object = "hspec"),
-  definition = function(object, lambda0 = NULL, size = 100){
+  definition = function(object, size = 100, lambda0 = NULL){
 
     # parameter setting
-    if (is.function(object@mu)){
-      mu <- evalf(object@mu)
-    } else{
-      mu <- object@mu
-    }
     if (is.function(object@alpha)){
       alpha <- evalf(object@alpha)
     } else{
@@ -37,12 +32,13 @@ setMethod(
       beta <- object@beta
     }
 
+    mu <- object@mu
     rmark <- object@rmark
     impact <- object@impact
 
 
     # dimension of Hawkes process
-    dimens <- length(mu)
+    dimens <- object@dimens
 
     if(!is.null(lambda0)){
 
@@ -66,21 +62,32 @@ setMethod(
       lambda0 <- get_lambda0(object)
     }
 
-    # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
-    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
-
-    lambda <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
-
-    rambda <- lambda
-    rambda_component <- lambda_component
 
     N <- matrix(numeric(length = dimens * size), ncol = dimens)
     Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
+    colnames(Nc)  <- paste0("Nc", 1:dimens)
+    colnames(N) <- paste0("N", 1:dimens)
 
     type <- numeric(length = size)
     inter_arrival <- numeric(length = size)
     mark <- numeric(length = size)
+
+    if (is.function(mu)){
+      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                 N = N, Nc = Nc,
+                 alpha = alpha, beta = beta)
+    } else{
+      mu0 <- mu
+    }
+
+    # Preallocation for lambdas and Ns and set initial values for lambdas
+    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
+    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
+
+    lambda <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+
+    rambda <- lambda
+    rambda_component <- lambda_component
 
     # Set column names
     colnames(lambda) <- paste0("lambda", 1:dimens)
@@ -91,10 +98,6 @@ setMethod(
     indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
     colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
 
-    colnames(Nc)  <- paste0("Nc", 1:dimens)
-    colnames(N) <- paste0("N", 1:dimens)
-
-
 
     # Exact method
     current_lambda <- lambda0
@@ -102,7 +105,15 @@ setMethod(
 
       # Generate candidate arrivals
       # arrival due to mu
-      candidate_arrival <- stats::rexp(dimens, rate = mu)
+      if (is.function(mu)){
+        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                   alpha = alpha, beta = beta)
+      } else{
+        mu_n <- mu
+      }
+
+      candidate_arrival <- stats::rexp(dimens, rate = mu_n)
       #current_LAMBDA <- matrix(as.numeric(lambda_component[n-1, ]), nrow = dimens, byrow = TRUE)
 
       # arrival due to components
@@ -111,17 +122,18 @@ setMethod(
       candidate_arrival <- cbind(candidate_arrival, -1 / beta * log(pmax(matrixD, 0)))
 
       # The minimum is inter arrival time
-      inter_arrival[n] <- min(candidate_arrival)
+      inter_arrival[n] <- min(candidate_arrival, na.rm = TRUE)
       minIndex <- which(candidate_arrival == inter_arrival[n], arr.ind = TRUE) #row and col
 
       type[n] <- minIndex[1]  # row
+
 
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
       lambda_component[n, ] <- t(decayed_lambda)
-      lambda[n, ] <- mu + rowSums(decayed_lambda)
+      lambda[n, ] <- mu_n + rowSums(decayed_lambda)
 
       # generate a mark for Hawkes
       # This quantity is added to the counting process.
@@ -169,7 +181,7 @@ setMethod(
 
       # lambda_component = {"lambda11", "lambda12", ..., "lambda21", "lambda22", ...}
       rambda_component[n, ] <- t(new_lambda)
-      rambda[n, ] <- mu + rowSums(new_lambda)
+      rambda[n, ] <- mu_n + rowSums(new_lambda)
 
       current_lambda <- new_lambda
     }

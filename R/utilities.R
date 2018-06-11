@@ -171,5 +171,5 @@ evalf <- function(FUN){
   for (i in seq_along(formals(FUN))){
     args[[i]] <- eval(formals(FUN)[[i]])
   }
-  invisible(do.call(FUN, args =args))
+  invisible(do.call(FUN, args = args))
 }

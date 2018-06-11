@@ -33,6 +33,7 @@ setClass("hspec",
     mu = "matrixORnumericORfunction",
     alpha = "matrixORnumericORfunction",
     beta = "matrixORnumericORfunction",
+    dimens = "numeric",
     rmark = "functionORNULL",
     impact = "functionORNULL"
   )
@@ -56,7 +57,7 @@ setClass("hspec",
 setMethod(
   "initialize",
   "hspec",
-  function(.Object, mu, alpha, beta,
+  function(.Object, mu, alpha, beta, dimens=NULL,
            rmark=NULL, mark_lambda=NULL, impact=NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
@@ -85,6 +86,24 @@ setMethod(
     } else {
       .Object@beta <- beta
     }
+
+    # set dimens
+    if( is.null(dimens)){
+      if( is.matrix(.Object@mu) ){
+        .Object@dimens <- length(.Object@mu)
+      } else if ( is.matrix(.Object@alpha) ) {
+        .Object@dimens <- nrow(.Object@alpha)
+      } else if ( is.matrix(.Object@beta) ) {
+        .Object@dimens <- nrow(.Object@beta)
+      } else if ( is.function(.Object@alpha) ){
+        .Object@dimens <- nrow(evalf(.Object@alpha))
+      } else if (is.function(.Object@beta) ){
+        .Object@dimens <- nrow(evalf(.Object@beta))
+      } else {
+        stop("argument \"dimens\" is missing, with no default")
+      }
+    }
+
 
     .Object@impact <- impact
 

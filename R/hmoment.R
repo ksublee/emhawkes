@@ -13,9 +13,16 @@ setMethod(
   definition = function(object){
 
 
+    dimens <- object@dimens
+
     # parameter setting
     if (is.function(object@mu)){
-      mu <- evalf(object@mu)
+      if(length(formals(object@mu)) == 1){
+        mu <- evalf(object@mu)
+      } else {
+        # No reason for this default value
+        mu <- matrix(rep(0.02, dimens), nrow=dimens)
+      }
     } else{
       mu <- object@mu
     }
@@ -30,7 +37,6 @@ setMethod(
       beta <- object@beta
     }
 
-    dimens <- length(mu)
 
     if (dimens == 1){
       lamb0 <- (mu[1]*beta[1]/(beta[1]- alpha[1]) - mu[1])/2
