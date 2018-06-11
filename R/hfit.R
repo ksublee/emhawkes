@@ -17,16 +17,22 @@
 setMethod(
   f="logLik",
   signature(object="hspec"),
-  function(object, inter_arrival, type=NULL, mark=NULL, lambda0=NULL){
+  function(object, inter_arrival, type = NULL, mark = NULL, N0 = NULL, lambda0 = NULL){
+
+
+    # parameter setting
+    plist <- setting(object)
+    mu <- plist$mu
+    alpha <- plist$alpha
+    beta <- plist$beta
+    impact <- plist$impact
+    rmark <- plist$rmark
+    dimens <- plist$dimens
 
     # When the mark sizes are not provided, the jumps are all unit jumps
     if(is.null(mark)) {
       mark <- rep(1, length(inter_arrival))
     }
-
-    # dimension of Hawkes process
-    dimens <- object@dimens
-
     # if dimens == 1 and type is not provided, then all type is 1.
     if(dimens==1 & is.null(type)) {
       type <- rep(1, length(inter_arrival))
@@ -34,27 +40,16 @@ setMethod(
       stop("The argument type should be provided.")
     }
 
-    # parameter setting
+    mu_args <- c()
+    impct_args <- c()
 
-    if (is.function(object@mu)){
-      mu <- evalf(object@mu)
-    } else{
-      mu <- object@mu
+    if (is.function(mu) & length(formals(mu)) > 1){
+      mu_args <- methods::formalArgs(mu)
     }
-    if (is.function(object@alpha)){
-      alpha <- evalf(object@alpha)
-    } else{
-      alpha <- object@alpha
-    }
-    if (is.function(object@beta)){
-      beta <- evalf(object@beta)
-    } else{
-      beta <- object@beta
+    if(!is.null(impact)){
+      impct_args <- methods::formalArgs(impact)
     }
 
-    impact <- object@impact
-
-    impct_args <- methods::formalArgs(impact)
 
     # default lambda0
     if(is.null(lambda0)) {
@@ -68,51 +63,77 @@ setMethod(
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
 
-    if("lambda_component" %in% impct_args){
+    if("N" %in% impct_args | "N" %in% mu_args){
+      N <- matrix(numeric(length = dimens * size), ncol = dimens)
+      colnames(N) <- paste0("N", 1:dimens)
+      if (!is.null(N0)){
+        N[1,] <- N0
+      }
+    }
+
+    if("Nc" %in% impct_args | "Nc" %in% mu_args){
+      Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
+      colnames(Nc)  <- paste0("Nc", 1:dimens)
+      if (!is.null(N0)){
+        Nc[1,] <- N0
+      }
+    }
+
+    if (is.function(mu)){
+      # mu is represeted by function
+      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                N = N, Nc = Nc,
+                alpha = alpha, beta = beta)
+    } else{
+      # mu is a matrix
+      mu0 <- mu
+    }
+
+    if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args){
       lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
       indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
       colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
     }
 
-    if("lambda" %in% impct_args){
-      lambda   <- matrix(sapply(mu + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+    if("lambda" %in% impct_args | "lambda" %in% mu_args){
+      lambda   <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
       colnames(lambda) <- paste0("lambda", 1:dimens)
     }
-
-    if("N" %in% impct_args){
-      N <- matrix(numeric(length = dimens * size), ncol = dimens)
-      colnames(N) <- paste0("N", 1:dimens)
-    }
-
-    if("Nc" %in% impct_args){
-      Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
-      colnames(Nc)  <- paste0("Nc", 1:dimens)
-    }
-
 
     #if (dimens==1) rowSums_lambda0 <- lambda0
     #else rowSums_lambda0 <- rowSums(lambda0)
 
     sum_log_lambda <- 0
     sum_integrated_lambda_component <- 0
+    sum_mu_inter_arrival <- sum(mu0) * inter_arrival[1]
 
     current_lambda <- lambda0
 
     for (n in 2:size) {
 
+      if (is.function(mu)){
+        # mu is represeted by function
+        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                  N = N, Nc = Nc,
+                  alpha = alpha, beta = beta)
+      } else{
+        # mu is a matrix
+        mu_n <- mu
+      }
+
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
-      if("lambda_component" %in% impct_args)
+      if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args)
         lambda_component[n, ] <- t(decayed_lambda)
-      if("lambda" %in% impct_args)
+      if("lambda" %in% impct_args | "lambda" %in% mu_args)
         lambda[n, ] <- mu + rowSums(decayed_lambda)
 
-      if("N" %in% impct_args){
+      if("N" %in% impct_args | "N" %in% mu_args){
         N[n, ] <- N[n-1, ]
         N[n, type[n]] <- N[n-1, type[n]] + 1
       }
-      if("Nc" %in% impct_args){
+      if("Nc" %in% impct_args | "Nc" %in% mu_args){
         Nc[n, ] <- Nc[n-1, ]
         Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
       }
@@ -146,9 +167,12 @@ setMethod(
         sum(current_lambda / beta * ( 1 - decayed ))
 
       # sum of log lambda when jump occurs
-      if (dimens == 1) lambda_lc <- mu + decayed_lambda
-      else lambda_lc <- mu + rowSums(decayed_lambda)
+      if (dimens == 1) lambda_lc <- mu_n + decayed_lambda
+      else lambda_lc <- mu_n + rowSums(decayed_lambda)
       sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
+
+      # sum of mu * inter_arrival
+      sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
 
       # current_lambda <- matrix(lambda_component[n, ], nrow = dimens, byrow = TRUE)
       current_lambda <- new_lambda  # lambda determined in the previous loop
@@ -156,7 +180,8 @@ setMethod(
     }
 
     # log likelihood for ground process
-    sum_log_lambda - sum(mu*sum(inter_arrival)) - sum_integrated_lambda_component
+    # sum_log_lambda - sum(mu_n*sum(inter_arrival)) - sum_integrated_lambda_component
+    sum_log_lambda - sum_mu_inter_arrival - sum_integrated_lambda_component
 
   }
 )
@@ -188,10 +213,10 @@ setMethod(
   f="hfit",
   signature(object="hspec"),
   function(object, inter_arrival = NULL,
-           type = NULL, mark = NULL, lambda0 = NULL,
+           type = NULL, mark = NULL, lambda0 = NULL, N0 = NULL,
            reduced = TRUE,
-           grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",  ...){
-
+           grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
+           verbose = FALSE, ...){
 
 
     if(is.null(lambda0)){
@@ -206,26 +231,22 @@ setMethod(
     # }
 
     # parameter setting
-    if (is.function(object@mu)){
-      mu <- evalf(object@mu)
-    } else{
-      mu <- object@mu
-    }
-    if (is.function(object@alpha)){
-      alpha <- evalf(object@alpha)
-    } else{
-      alpha <- object@alpha
-    }
-    if (is.function(object@beta)){
-      beta <- evalf(object@beta)
-    } else{
-      beta <- object@beta
-    }
-    dimens <- object@dimens
+    plist <- setting(object)
+    mu <- plist$mu
+    alpha <- plist$alpha
+    beta <- plist$beta
+    impact <- plist$impact
+    rmark <- plist$rmark
+    dimens <- plist$dimens
 
 
     # parameter setting
-    pr_mus <- as.param(object@mu, "mu", reduced)
+    if(is.function(mu)){
+      pr_mus <- eval(formals(object@mu)[[1]])
+    }else{
+      pr_mus <- as.param(object@mu, "mu", reduced)
+    }
+
     pr_alphas <- as.param(object@alpha, "alpha", reduced)
     pr_betas <- as.param(object@beta, "beta", reduced)
 
@@ -276,13 +297,26 @@ setMethod(
       }
 
       #object@impact is user defined impact function
-      impact0 <- hijack(object@impact, param = pr_impact)
+      if (!is.null(object@impact)){
+        impact0 <- hijack(object@impact, param = pr_impact)
 
-      mhspec0 <- methods::new("hspec", mu=mu0, alpha=alpha0, beta=beta0,
-                              impact = impact0,
-                              rmark=object@rmark)
+        mhspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+                                impact = impact0,
+                                rmark = object@rmark)
 
-      logLik(mhspec0, inter_arrival = inter_arrival, type = type, mark = mark, lambda0)
+      } else {
+        mhspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+                                rmark = object@rmark)
+      }
+
+      logl <- logLik(mhspec0, inter_arrival = inter_arrival, type = type,
+                     mark = mark, N0 = N0, lambda0 = lambda0)
+      if(verbose){
+        cat("Parameters : ", param, "\n")
+        cat("Log likelihood : ", logl, "\n")
+      }
+
+      logl
 
     }
 

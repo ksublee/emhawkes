@@ -18,27 +18,16 @@ setGeneric("hsim", function(object, ...) standardGeneric("hsim"))
 setMethod(
   f="hsim",
   signature(object = "hspec"),
-  definition = function(object, size = 100, lambda0 = NULL){
+  definition = function(object, size = 100, lambda0 = NULL, N0 = NULL){
 
     # parameter setting
-    if (is.function(object@alpha)){
-      alpha <- evalf(object@alpha)
-    } else{
-      alpha <- object@alpha
-    }
-    if (is.function(object@beta)){
-      beta <- evalf(object@beta)
-    } else{
-      beta <- object@beta
-    }
-
-    mu <- object@mu
-    rmark <- object@rmark
-    impact <- object@impact
-
-
-    # dimension of Hawkes process
-    dimens <- object@dimens
+    plist <- setting(object)
+    mu <- plist$mu
+    alpha <- plist$alpha
+    beta <- plist$beta
+    impact <- plist$impact
+    rmark <- plist$rmark
+    dimens <- plist$dimens
 
     if(!is.null(lambda0)){
 
@@ -72,11 +61,16 @@ setMethod(
     inter_arrival <- numeric(length = size)
     mark <- numeric(length = size)
 
+    if (!is.null(N0)){
+      N[1,] <- N0
+      Nc[1,] <- N0
+    }
+
     if (is.function(mu)){
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
                  N = N, Nc = Nc,
                  alpha = alpha, beta = beta)
-    } else{
+    } else {
       mu0 <- mu
     }
 
@@ -113,7 +107,12 @@ setMethod(
         mu_n <- mu
       }
 
+      # mu_n can be zero, so warning is turned off for a moment
+      oldw <- getOption("warn")
+      options(warn = -1)
       candidate_arrival <- stats::rexp(dimens, rate = mu_n)
+      options(warn = oldw)
+
       #current_LAMBDA <- matrix(as.numeric(lambda_component[n-1, ]), nrow = dimens, byrow = TRUE)
 
       # arrival due to components

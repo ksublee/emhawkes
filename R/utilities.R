@@ -139,7 +139,39 @@ as.param <- function(M, prefix, reduced){
   prs
 }
 
+#automatic parameter setting
+setting <- function(object){
 
+  if (is.function(object@mu)){
+    if (length(formals(object@mu)) == 1){
+      mu <- evalf(object@mu)
+    } else{
+      mu <- object@mu
+    }
+  } else{
+    mu <- object@mu
+  }
+  if (is.function(object@alpha)){
+    alpha <- evalf(object@alpha)
+  } else{
+    alpha <- object@alpha
+  }
+  if (is.function(object@beta)){
+    beta <- evalf(object@beta)
+  } else{
+    beta <- object@beta
+  }
+
+  rmark <- object@rmark
+  impact <- object@impact
+
+
+  # dimension of Hawkes process
+  dimens <- object@dimens
+
+  list(mu = mu, alpha = alpha, beta = beta, impact = impact, rmark = rmark, dimens = dimens)
+
+}
 
 
 # param.names <- function(M, name_M, prefix="", sep=","){

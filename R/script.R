@@ -159,3 +159,31 @@
 
 
 
+# mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
+#
+#   if(n == 1){
+#     level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
+#     matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+#
+#   } else {
+#     level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
+#     matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+#   }
+#
+# }
+#
+# alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
+#   matrix(c(param["alpha11"], 0, 0, param["alpha14"],
+#            0, 0, 0, 0,
+#            0, 0, 0, 0,
+#            param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = T)
+# }
+#
+# beta <- matrix(rep(2.6, 16), nrow=4, byrow=T)
+# h <- new("hspec", mu, alpha, beta)
+# hr <- hsim(h, size=5000)
+#
+# fit <- hfit(h, hr$inter_arrival, hr$type)
+# summary(fit)
+
+#logLik(h, hr$inter_arrival, hr$type)
