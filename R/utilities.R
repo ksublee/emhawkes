@@ -22,18 +22,16 @@
 #   reference
 # }
 
-#' Unique naming coefficients from matrix
-#'
-#' With given matrix, look up the elements of the matrix
-#' and assign the same name to the elements with the same value.
-#' The name is based on \code{notation} and location of the element.
-#'
-#' @param M a square matrix
-#' @param notation a string for name
-#'
-#' @return to covert to matrix, use byrow=TRUE
-#'
-#' @examples
+# Unique naming coefficients from matrix
+#
+# With given matrix, look up the elements of the matrix
+# and assign the same name to the elements with the same value.
+# The name is based on \code{notation} and location of the element.
+#
+# @param M a square matrix
+# @param notation a string for name
+#
+# @return to covert to matrix, use byrow=TRUE
 look_up_mtrx <- function(M, notation){
   reference <- character(length(M))
 
@@ -115,8 +113,8 @@ as.unique.vector <- function(M, notation, sep=","){
   if (ncol(M) == 1){
     names(m) <- as.vector(outer(notation, 1:length(M), FUN = paste0))
   } else {
-    names(m) <- as.vector(t(outer(as.vector(outer(notation, 1:4, FUN = paste0)),
-                                1:4, FUN=my_paste)))
+    names(m) <- as.vector(t(outer(as.vector(outer(notation, 1:nrow(M), FUN = paste0)),
+                                  1:nrow(M), FUN=my_paste)))
   }
 
   m[!duplicated(m)]
@@ -139,7 +137,7 @@ as.param <- function(M, prefix, reduced){
   prs
 }
 
-#automatic parameter setting
+#automatic parameter setting with object
 setting <- function(object){
 
   if (is.function(object@mu)){

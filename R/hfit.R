@@ -1,8 +1,8 @@
 #' @include hspec.R hmoment.R
-#'
+NULL
+
 #' Compute the loglikelihood function
 #'
-#' This is a generic function.
 #' The loglikelihood of the ground process of the Hawkes model.
 #' (The estimation for jump distribution is not provided.)
 #'
@@ -10,16 +10,16 @@
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param lambda0 The starting values of lambda. Must have the same dimensional matrix with \code{hspec}.
+#' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
+#' @param N0 the initial value of N
 #'
 #' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
+#'
 #' @export
 setMethod(
   f="logLik",
   signature(object="hspec"),
   function(object, inter_arrival, type = NULL, mark = NULL, N0 = NULL, lambda0 = NULL){
-
-
     # parameter setting
     plist <- setting(object)
     mu <- plist$mu
@@ -51,17 +51,8 @@ setMethod(
     }
 
 
-    # default lambda0
-    if(is.null(lambda0)) {
-      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
-      lambda0 <- get_lambda0(object)
-    }
-
     # size is length(inter_arrival) - 1
     size <- length(inter_arrival)
-
-    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
-
 
     if("N" %in% impct_args | "N" %in% mu_args){
       N <- matrix(numeric(length = dimens * size), ncol = dimens)
@@ -88,6 +79,16 @@ setMethod(
       # mu is a matrix
       mu0 <- mu
     }
+
+    # default lambda0
+    if(is.null(lambda0)) {
+      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+      lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
+                             N = N, Nc = Nc,
+                             alpha = alpha, beta = beta)
+    }
+    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
+
 
     if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args){
       lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
@@ -169,7 +170,13 @@ setMethod(
       # sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu_n + decayed_lambda
       else lambda_lc <- mu_n + rowSums(decayed_lambda)
+
+      #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
+      oldw <- getOption("warn")
+      options(warn = -1)
       sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
+      options(warn = oldw)
+
 
       # sum of mu * inter_arrival
       sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
@@ -186,27 +193,124 @@ setMethod(
   }
 )
 
-setGeneric("hfit", function(object, ...) standardGeneric("hfit"))
-
 #' Perform a maximum likelihood estimation
+setGeneric("hfit", function(object, ...) standardGeneric("hfit"))
 #'
 #' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 #'
 #'
-#' @param object mhspec, or can be omitted.
+#' @param object hspec, or can be omitted.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param lambda0 the starting values of lambda. Must have the same dimensional matrix (n by n) with mhspec.
+#' @param lambda0 the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
+#' @param N0 the initial values of N.
 #' @param reduced When TRUE, reduced estimation performed.
 #' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param grad gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param hess Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param verbose If true, mle progress is printed
 #' @param ... other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #'
+#'
+#' @seealso \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
+#'
+#' @rdname hfit
 #' @examples
-#' @seealso \code{\link{mhspec-class}}, \code{\link{mhsim,mhspec-method}}
+#' #example 1
+#' mu <- c(0.1, 0.1)
+#' alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
+#' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
+#' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
+#' res <- hsim(h, size=100)
+#' summary(hfit(h, res$inter_arrival, res$type))
+#'
+#'
+#' #example 2
+#' mu <- matrix(c(0.08, 0.08, 0.05, 0.05), nrow = 4)
+#' alpha <- function(param = c(alpha11 = 0, alpha12 = 0.4, alpha33 = 0.5, alpha34 = 0.3)){
+#'   matrix(c(param["alpha11"], param["alpha12"], 0, 0,
+#'            param["alpha12"], param["alpha11"], 0, 0,
+#'            0, 0, param["alpha33"], param["alpha34"],
+#'            0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
+#' }
+#' beta <- matrix(c(rep(0.6, 8), rep(1.2, 8)), nrow = 4, byrow = TRUE)
+#'
+#' impact <- function(param = c(alpha1n=0, alpha1w=0.2, alpha2n=0.001, alpha2w=0.1),
+#'                    n=n, N=N, ...){
+#'
+#'   Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
+#'                   0, 0, param['alpha1n'], param['alpha1w'],
+#'                   param['alpha2w'], param['alpha2n'], 0, 0,
+#'                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
+#'
+#'   ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n] + 0.5
+#'
+#'   km <- matrix(c(!ind, !ind, !ind, !ind,
+#'                  ind, ind, ind, ind,
+#'                  ind, ind, ind, ind,
+#'                  !ind, !ind, !ind, !ind), nrow = 4, byrow = TRUE)
+#'
+#'   km * Psi
+#' }
+#' h <- new("hspec",
+#'          mu = mu, alpha = alpha, beta = beta, impact = impact)
+#' hr <- hsim(h, size=1000)
+#' plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
+#' lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
+#' fit <- hfit(h, hr$inter_arrival, hr$type)
+#' summary(fit)
+#'
+#'
+#' #example 3
+#' mu <- c(0.15, 0.15)
+#' alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=TRUE)
+#' beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2, byrow=TRUE)
+#' rmark <- function(param = c(p=0.65), ...){
+#'   rgeom(1, p=param[1]) + 1
+#' }
+#' impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
+#'   ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
+#'   alpha * ma * matrix( rep(param["eta1"], 4), nrow=2)
+#'   #alpha * ma * matrix( c(rep(param["eta1"], 2), rep(param["eta2"], 2)), nrow=2)
+#' }
+#' h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
+#'           rmark = rmark,
+#'           impact=impact)
+#' res <- hsim(h1, size=100, lambda0 = matrix(rep(0.1,4), nrow=2))
+#'
+#' fit <- hfit(h1,
+#'             inter_arrival = res$inter_arrival,
+#'             type = res$type,
+#'             mark = res$mark,
+#'             lambda0 = matrix(rep(0.1,4), nrow=2))
+#' summary(fit)
+#'
+#'
+#' #example 4
+#' mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
+#'   if(n == 1){
+#'     level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
+#'     matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+#'   } else {
+#'     level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
+#'     matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+#'   }
+#' }
+#' alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
+#'   matrix(c(param["alpha11"], 0, 0, param["alpha14"],
+#'            0, 0, 0, 0,
+#'            0, 0, 0, 0,
+#'            param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = TRUE)
+#' }
+#
+#' beta <- matrix(rep(2.6, 16), nrow=4, byrow=TRUE)
+#' h <- new("hspec", mu, alpha, beta)
+#' hr <- hsim(h, size=100)
+#'
+#' fit <- hfit(h, hr$inter_arrival, hr$type)
+#' summary(fit)
 #'
 #' @export
 setMethod(
@@ -300,16 +404,16 @@ setMethod(
       if (!is.null(object@impact)){
         impact0 <- hijack(object@impact, param = pr_impact)
 
-        mhspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+        hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
                                 impact = impact0,
                                 rmark = object@rmark)
 
       } else {
-        mhspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+        hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
                                 rmark = object@rmark)
       }
 
-      logl <- logLik(mhspec0, inter_arrival = inter_arrival, type = type,
+      logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
                      mark = mark, N0 = N0, lambda0 = lambda0)
       if(verbose){
         cat("Parameters : ", param, "\n")

@@ -17,6 +17,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
 #' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
 #' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
+#' @slot dimens dimension of the model
 #' @slot rmark a function that represets mark for counting process
 #' @slot mark_lambda a function that represets mark for lambda process
 #' @slot impact a function that describe the after impact of mark to lambda
@@ -39,26 +40,25 @@ setClass("hspec",
   )
 )
 
-#' Initialize the hspec object
-#'
-#'
-#' \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
-#' \code{mark} and \code{impact} are additional slots.
-#'
-#' @param .Object hspec
-#' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
-#' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
-#' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
-#' @param rmark a function that generate mark
-#' @param impact a function that describe the mark impact
-#' @param stability_check check the spectral radius
-#'
-#' @export
+# Initialize the hspec object
+#
+#
+# \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
+# \code{mark} and \code{impact} are additional slots.
+#
+# @param .Object hspec
+# @param mu numeric value or matrix or function, if numeric, automatically converted to matrix
+# @param alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
+# @param beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
+# @param dimens dimesion of the model
+# @param rmark a function that generate mark
+# @param impact a function that describe the mark impact
+# @param stability_check check the spectral radius
 setMethod(
   "initialize",
   "hspec",
   function(.Object, mu, alpha, beta, dimens=NULL,
-           rmark=NULL, mark_lambda=NULL, impact=NULL, stability_check=FALSE){
+           rmark=NULL,  impact=NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
     if (is.null(rmark)) rmark <- function(...) 1

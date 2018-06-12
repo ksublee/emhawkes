@@ -44,8 +44,8 @@
 #
 # hr <- hsim(h, size=1000)
 #
-# #plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
-# #lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
+# plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
+# lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 #
 # fit <- hfit(h, hr$inter_arrival, hr$type)
 # summary(fit)
@@ -53,7 +53,7 @@
 
 # mu <- c(0.15, 0.15)
 # alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=T)
-# beta <- c(2.6, 2.6, 2.6, 2.6)
+# beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2, byrow=T)
 # rmark <- function(param = c(p=0.65), ...){
 #   rgeom(1, p=param[1]) + 1
 # }
@@ -181,7 +181,7 @@
 #
 # beta <- matrix(rep(2.6, 16), nrow=4, byrow=T)
 # h <- new("hspec", mu, alpha, beta)
-# hr <- hsim(h, size=5000)
+# hr <- hsim(h, size=1000)
 #
 # fit <- hfit(h, hr$inter_arrival, hr$type)
 # summary(fit)

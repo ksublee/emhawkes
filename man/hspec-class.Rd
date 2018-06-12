@@ -18,13 +18,15 @@ where \eqn{\alpha} represents exciting term that does not related to mark
 \section{Slots}{
 
 \describe{
-\item{\code{mu}}{numeric value or matrix, automatically converted to matrix}
+\item{\code{mu}}{numeric value or matrix or function, if numeric, automatically converted to matrix}
 
-\item{\code{alpha}}{numeric value or matrix, automatically converted to matrix, exciting term}
+\item{\code{alpha}}{numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term}
 
-\item{\code{beta}}{numeric value or matrix, automatically converted to matrix, exponential decay}
+\item{\code{beta}}{numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay}
 
-\item{\code{mark_hawkes}}{a function that represets mark for counting process}
+\item{\code{dimens}}{dimension of the model}
+
+\item{\code{rmark}}{a function that represets mark for counting process}
 
 \item{\code{mark_lambda}}{a function that represets mark for lambda process}
 
