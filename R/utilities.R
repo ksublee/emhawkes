@@ -131,7 +131,7 @@ as.param <- function(M, prefix, reduced){
       prs <- as.unique.vector(M, prefix)
     } else {
       prs <- as.vector(M)
-      names(M) <- as.vector(full_names(M, prefix))
+      names(prs) <- as.vector(full_names(M, prefix))
     }
   }
   prs

@@ -178,20 +178,13 @@ setMethod(
     len_alpha <- length(pr_alphas)
     len_beta <- length(pr_betas)
 
-    pr_impact <- eval(formals(object@impact)[[1]])
+    if(!is.null(impact)){
+      pr_impact <- eval(formals(object@impact)[[1]])
+    } else {
+      pr_impact <- NULL
+    }
     starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_impact)
-
-
-    # constraint matrix
-    # mu, alpha, beta should be larger than zero
-    #if (unit) A <- diag(1, nrow = length(starting_point) - pr_impact)
-    #else A <- cbind(diag(1, nrow = length(starting_point) - length(unique_etas)), rep(0, length(starting_point) - length(unique_etas)))
-
-
-    # constraint : sum of alpha < beta
-    #A <- rbind(A, c(0, rep(-1, len_alpha), 1, rep(0, len_eta)))
-    #B <- rep(0, nrow(A))
-
+    print(starting_point)
 
     # loglikelihood function for maxLik
 
@@ -207,17 +200,29 @@ setMethod(
       if (is.function(object@mu)){
         mu0 <- hijack(object@mu, param = pr_mus)
       } else{
-        mu0 <- matrix(pr_mus[look_up_mtrx(mu, "mu")], nrow=dimens)
+        if(reduced){
+          mu0 <- matrix(pr_mus[look_up_mtrx(mu, "mu")], nrow=dimens)
+        } else {
+          mu0 <- matrix(pr_mus, nrow=dimens)
+        }
       }
       if (is.function(object@alpha)){
         alpha0 <- hijack(object@alpha, param = pr_alphas)
       } else{
-        alpha0 <- matrix(pr_alphas[look_up_mtrx(alpha, "alpha")], nrow=dimens)
+        if(reduced){
+          alpha0 <- matrix(pr_alphas[look_up_mtrx(alpha, "alpha")], nrow=dimens)
+        } else {
+          alpha0 <- matrix(pr_alphas, nrow=dimens)
+        }
       }
       if (is.function(object@beta)){
         beta0 <- hijack(object@beta, param = pr_betas)
       } else{
-        beta0 <- matrix(pr_betas[look_up_mtrx(beta, "beta")], nrow=dimens)
+        if(reduced){
+          beta0 <- matrix(pr_betas[look_up_mtrx(beta, "beta")], nrow=dimens)
+        } else {
+          beta0 <- matrix(pr_betas, nrow=dimens)
+        }
       }
 
       #object@impact is user defined impact function

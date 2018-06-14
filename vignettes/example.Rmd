@@ -18,6 +18,10 @@ knitr::opts_chunk$set(
 
 ### Univariate Hawkes process
 
+```{r}
+library(emhawkes)
+```
+
 This subsection explaines how to construct, simulate, and estimate a univariate Hawkes model.
 First, create a ```hspec``` which defines the Hawkes model.
 S4 class ```hspec``` contains slots of model parameters, ```mu```, ```alpha```, ```beta```, ```dimens```,
@@ -25,6 +29,7 @@ S4 class ```hspec``` contains slots of model parameters, ```mu```, ```alpha```, 
 
 The parameters of the model, ```mu```, ```alpha```, ```beta```, are defined by matrices.
 The following is an example of a univariate model (without mark).
+
 
 ```{r}
 set.seed(1107)
@@ -113,8 +118,71 @@ For simplicity, we use ```hspec0 <- hspec2```.
 Since the true parameter values are not known in the actual problem, the initial value should be guessed.
 The realized ```inter_arrival``` and ```type``` are used.
 
-```{r, warning=FALSE, error=FALSE}
+```{r, warning=FALSE}
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
 summary(mle)
 ```
+
+### Parameter setting 
+
+This subsection explains about the relation between parameter setting and estimation procedure in two-dimensional Hawkes model.
+The number of parameters to be estimated in the model depends on how we set the parameter slots such as ```alpha``` and ```beta``` in ```mhspec0```, the sepcification for initial values..
+Since the paremeter slot such as ```alpha``` is a matrix, and the element in the matrix can be the same or different.
+The number of parameters in the estimation varies depending on whether or not some of the elements in the initial setting are the same or different.
+
+For example, if ```alpha[1,1]``` and ```alpha[1,2]``` in ```mhspec0``` are different, 
+the numerical procedure tries to estimate both parameters of ```alpha[1,1]``` and ```alpha[1,2]```.
+If ```alpha[1,1]``` and ```alpha[1,2]``` are the same in the initial setting, 
+then the estimation procedure considered two parameters are the same in the model and hence only one of them is estimated.
+
+Recall that th example in the previous section is of a symmetric Hawkes model
+where ```alpha``` is symmetric.
+
+
+```{r}
+print(hspec2)
+```
+
+```{r, warning=FALSE}
+res2 <- hsim(hspec2,  size=1000)
+```
+
+
+In the first example of estimation, ```alpha0``` is a matrix where the all elements have the same value, 0.75.
+In this setting, ```mhfit``` considers that ```alpha11 == alpha12 == alpha21 == alpha22``` in the model
+(even though the actual parameters have different values).
+Similarly for other parmater matrix ```mu0``` and ```beta0```.
+
+```{r, warning=FALSE}
+mu0 <- matrix(c(0.15, 0.15), nrow = 2)
+alpha0 <- matrix(c(0.75, 0.75, 0.75, 0.75), nrow = 2, byrow=TRUE)
+beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
+
+hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
+summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+```
+
+
+In the second example, ```alpha0```'s elements are not same, but symmetric as in the original simulation.
+We have ```alpha11 == alpha22``` and ```alpha11 == alpha22``` in ```alpha0``` and hence 
+```alpha11``` and ```alpha12``` will be estimated.
+
+```{r, warning=FALSE}
+mu0 <- matrix(c(0.15, 0.15), nrow = 2)
+alpha0 <- matrix(c(0.75, 0.751, 0.751, 0.75), nrow = 2, byrow=TRUE)
+beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
+
+hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
+summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+```
+
+
+By simply set ```reduced = FALSE```, all parameters are estimated.
+```{r, warning=FALSE}
+summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
+```
+```{r}
+logLik(hspec2, inter_arrival = res2$inter_arrival, type = res2$type)
+```
+
