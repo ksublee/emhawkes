@@ -2,18 +2,15 @@
 NULL
 
 #' Simulate a multivariate Hawkes process
-setGeneric("hsim", function(object, ...) standardGeneric("hsim"))
 #'
-#' The method simulate multivariate Hawkes processes.
-#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
-#' The mark (jump) structure may or may not be included.
-#' It returns an object of class hreal which contains inter_arrival, arrival,
-#' type, mark, N, Nc, lambda, lambda_component, rambda, rambda_component
+#' Generic function hsim
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param lambda0 the starting values of lambda component. numeric or matrix.
 #' @param N0 the starting values of N
 #' @param size the number of observations.
+#'
+#' @return hreal S3-object, summary of the realization of the Haweks model
 #'
 #' @rdname hsim
 #'
@@ -25,6 +22,15 @@ setGeneric("hsim", function(object, ...) standardGeneric("hsim"))
 #' res <- hsim(h, size=100)
 #'
 #' @export
+setGeneric("hsim", function(object, size = 100, lambda0 = NULL, N0 = NULL) standardGeneric("hsim"))
+#'
+#' The method simulate multivariate Hawkes processes.
+#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
+#' The mark (jump) structure may or may not be included.
+#' It returns an object of class hreal which contains inter_arrival, arrival,
+#' type, mark, N, Nc, lambda, lambda_component, rambda, rambda_component
+#'
+#' @rdname hsim
 setMethod(
   f="hsim",
   signature(object = "hspec"),

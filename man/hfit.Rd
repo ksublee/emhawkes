@@ -4,18 +4,18 @@
 \name{hfit}
 \alias{hfit}
 \alias{hfit,hspec-method}
-\title{Perform a maximum likelihood estimation}
+\title{Perform Maximum Likelihood Estimation}
 \usage{
-hfit(object, ...)
+hfit(object, inter_arrival = NULL, type = NULL, mark = NULL,
+  lambda0 = NULL, N0 = NULL, reduced = TRUE, grad = NULL, hess = NULL,
+  constraint = NULL, method = "BFGS", verbose = FALSE, ...)
 
 \S4method{hfit}{hspec}(object, inter_arrival = NULL, type = NULL,
   mark = NULL, lambda0 = NULL, N0 = NULL, reduced = TRUE, grad = NULL,
   hess = NULL, constraint = NULL, method = "BFGS", verbose = FALSE, ...)
 }
 \arguments{
-\item{object}{hspec, or can be omitted.}
-
-\item{...}{other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{object}{hspec}
 
 \item{inter_arrival}{inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
@@ -38,9 +38,11 @@ hfit(object, ...)
 \item{method}{method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
 
 \item{verbose}{If true, mle progress is printed}
+
+\item{...}{other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
 }
 \description{
-Perform a maximum likelihood estimation
+Generic function hfit.
 
 This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 }

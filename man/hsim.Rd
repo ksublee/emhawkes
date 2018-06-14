@@ -6,7 +6,7 @@
 \alias{hsim,hspec-method}
 \title{Simulate a multivariate Hawkes process}
 \usage{
-hsim(object, ...)
+hsim(object, size = 100, lambda0 = NULL, N0 = NULL)
 
 \S4method{hsim}{hspec}(object, size = 100, lambda0 = NULL, N0 = NULL)
 }
@@ -19,8 +19,11 @@ hsim(object, ...)
 
 \item{N0}{the starting values of N}
 }
+\value{
+hreal S3-object, summary of the realization of the Haweks model
+}
 \description{
-Simulate a multivariate Hawkes process
+Generic function hsim
 
 The method simulate multivariate Hawkes processes.
 The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.

@@ -1,0 +1,120 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+### Univariate Hawkes process
+
+This subsection explaines how to construct, simulate, and estimate a univariate Hawkes model.
+First, create a ```hspec``` which defines the Hawkes model.
+S4 class ```hspec``` contains slots of model parameters, ```mu```, ```alpha```, ```beta```, ```dimens```,
+```rmark```, and  ```impact```.
+
+The parameters of the model, ```mu```, ```alpha```, ```beta```, are defined by matrices.
+The following is an example of a univariate model (without mark).
+
+```{r}
+set.seed(1107)
+mu1 <- 0.3; alpha1 <- 1.2; beta1 <- 1.5
+hspec1 <- new("hspec", mu=mu1, alpha=alpha1, beta=beta1)
+show(hspec1)
+```
+
+To simulate a path, use function ```hsim```, where ```size``` is the number of observations.
+
+```{r, warning=FALSE}
+res1 <- hsim(hspec1, size=100)
+summary(res1)
+```
+The log-likelihood function is computed by ```logLik``` method.
+In this case, the inter-arrival times and ```hspec``` are inputs of the function.
+
+```{r, warning=FALSE}
+logLik(hspec1, inter_arrival = res1$inter_arrival)
+```
+
+
+The likelihood estimation is performed using ```mhfit``` function.
+The specification of the initial values of the parameters, ```mhspec0``` is needed.
+In the following example, ```mhspec0``` is set to be ```mhspec1```, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
+
+
+Note that only ```inter_arrival``` is needed.
+(Indeed, for more precise simulation, ```lambda0```, the inital value of lambda compoment, should be specified. If not, internally determined initial values are set.)
+
+```{r, warning=FALSE}
+mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
+hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
+mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
+summary(mle)
+```
+
+### Bivariate Hawkes model
+
+In two dimensional model, the parameters, the slots of ```hspec```, are  matrices.
+```mu``` is 2-by-1, and ```alpha``` and ```beta``` are 2-by-2 matrices.
+```rmark``` is a random number generating function.
+```lambda0```, 2-by-2 matrix, represents the initial values of ```lambda_component```, a set of ```lambda11, lambda12, lambda21, lambda22```.
+The intensity processes are represented by 
+
+$$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t) $$
+
+$$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t) $$
+
+$\lambda_{ij}$ called lambda components and ```lambda0``` is the time zero values of $lambda_{ij}$, i.e., $\lambda_{ij}(0)$. 
+```lambda0``` can be omitted and then internally determined initial values are used.
+
+```{r}
+mu2 <- matrix(c(0.2), nrow = 2)
+alpha2 <- matrix(c(0.5, 0.9, 0.9, 0.5), nrow = 2, byrow = TRUE)
+beta2 <- matrix(c(2.25, 2.25, 2.25, 2.25), nrow = 2, byrow = TRUE)
+lambda0 <- matrix(c(0.1, 0.1, 0.1, 0.1), nrow = 2, byrow = TRUE)
+hspec2 <- new("hspec", mu=mu2, alpha=alpha2, beta=beta2)
+print(hspec2)
+```
+To simulate, use function ```mhsim```.
+
+```{r}
+res2 <- hsim(hspec2,  size=1000)
+summary(res2)
+```
+
+Frome the result, we get a vector of realized ```inter_arrival``` and ```type```.
+Bivariate model requires ```inter_arrival``` and ```type``` for estimation.
+
+
+```{r}
+inter_arrival2 <- res2$inter_arrival
+type2 <- res2$type
+```
+
+
+Log-likelihood is computed by a function ```logLik```.
+```{r}
+logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
+```
+
+A log-likelihood estimation is performed using ```hfit```.
+In the following, the values of parameter slots in ```mhspec0```, such as ```mu, alpha, beta```, are regarded as a starting point of the numerical optimization.
+For simplicity, we use ```hspec0 <- hspec2```.
+Since the true parameter values are not known in the actual problem, the initial value should be guessed.
+The realized ```inter_arrival``` and ```type``` are used.
+
+```{r, warning=FALSE, error=FALSE}
+hspec0 <- hspec2
+mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
+summary(mle)
+```
