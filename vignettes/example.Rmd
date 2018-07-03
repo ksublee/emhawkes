@@ -69,7 +69,7 @@ summary(mle)
 
 ### Bivariate Hawkes model
 
-In two dimensional model, the parameters, the slots of ```hspec```, are  matrices.
+In a bivariate model, the parameters, the slots of ```hspec```, are  matrices.
 ```mu``` is 2-by-1, and ```alpha``` and ```beta``` are 2-by-2 matrices.
 ```rmark``` is a random number generating function.
 ```lambda0```, 2-by-2 matrix, represents the initial values of ```lambda_component```, a set of ```lambda11, lambda12, lambda21, lambda22```.
@@ -178,11 +178,117 @@ summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
 
-By simply set ```reduced = FALSE```, all parameters are estimated.
+By simply setting ```reduced = FALSE```, all parameters are estimated (not recommended).
 ```{r, warning=FALSE}
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
 ```
+
+
+### More complicated model
+
+
+#### Linear impact model
+
 ```{r}
-logLik(hspec2, inter_arrival = res2$inter_arrival, type = res2$type)
+mu <- matrix(c(0.15, 0.15), nrow=2)
+alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=T)
+beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2)
+rmark <- function(param = c(p=0.65), ...){
+  rgeom(1, p=param[1]) + 1
+}
+
+impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
+  ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
+  alpha * ma * matrix( rep(param["eta1"], 4), nrow=2)
+  #alpha * ma * matrix( c(rep(param["eta1"], 2), rep(param["eta2"], 2)), nrow=2)
+}
+h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
+          rmark = rmark,
+          impact=impact)
+res <- hsim(h1, size=1000, lambda0 = matrix(rep(0.1,4), nrow=2))
+
+fit <- hfit(h1, 
+            inter_arrival = res$inter_arrival,
+            type = res$type,
+            mark = res$mark,
+            lambda0 = matrix(rep(0.1,4), nrow=2))
+
+summary(fit)
+```
+
+#### Hawkes flocking model
+
+```{r}
+mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
+
+
+alpha <- function(param = c(alpha11 = 0, alpha12 = 0.3, alpha33 = 0.3, alpha34 = 0.4)){
+  matrix(c(param["alpha11"], param["alpha12"], 0, 0,
+           param["alpha12"], param["alpha11"], 0, 0,
+           0, 0, param["alpha33"], param["alpha34"],
+           0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = T)
+}
+
+
+beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = T)
+
+impact <- function(param = c(alpha1n=0, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
+                   n=n, N=N, ...){
+  
+  Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
+                  0, 0, param['alpha1n'], param['alpha1w'],
+                  param['alpha2w'], param['alpha2n'], 0, 0,
+                  param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=T)
+  
+  ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n] + 0.5
+  
+  km <- matrix(c(!ind, !ind, !ind, !ind,
+                 ind, ind, ind, ind,
+                 ind, ind, ind, ind,
+                 !ind, !ind, !ind, !ind), nrow = 4, byrow = T)
+  
+  km * Psi
+}
+
+h <- new("hspec",
+         mu = mu, alpha = alpha, beta = beta, impact = impact)
+
+hr <- hsim(h, size=1000)
+
+
+fit <- hfit(h, hr$inter_arrival, hr$type)
+summary(fit)
+```
+
+
+#### linear reverting model
+
+```{r}
+mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
+
+  if(n == 1){
+    level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
+    matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+
+  } else {
+    level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
+    matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
+  }
+
+}
+
+alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
+  matrix(c(param["alpha11"], 0, 0, param["alpha14"],
+           0, 0, 0, 0,
+           0, 0, 0, 0,
+           param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = TRUE)
+}
+
+beta <- matrix(rep(2.6, 16), nrow=4, byrow=TRUE)
+h <- new("hspec", mu, alpha, beta)
+hr <- hsim(h, size=1000)
+
+fit <- hfit(h, hr$inter_arrival, hr$type)
+summary(fit)
 ```
 

@@ -12,7 +12,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' \eqn{\Psi} represents the term related to mark and is represented by mark and impact.
 #'
 #' \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
-#' \code{mark} and \code{impact} are additional slots.
+#' \code{rmark} and \code{impact} are additional slots.
 #'
 #' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
 #' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term

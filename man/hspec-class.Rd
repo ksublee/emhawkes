@@ -13,7 +13,7 @@ where \eqn{\alpha} represents exciting term that does not related to mark
 }
 \details{
 \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
-\code{mark} and \code{impact} are additional slots.
+\code{rmark} and \code{impact} are additional slots.
 }
 \section{Slots}{
 
