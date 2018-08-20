@@ -1,9 +1,9 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
-#' Simulate a multivariate Hawkes process
+#' Simulate a multivariate Hawkes process.
+#' Generic function hsim.
 #'
-#' Generic function hsim
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param lambda0 the starting values of lambda component. numeric or matrix.
@@ -27,8 +27,8 @@ setGeneric("hsim", function(object, size = 100, lambda0 = NULL, N0 = NULL) stand
 #' The method simulate multivariate Hawkes processes.
 #' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
 #' The mark (jump) structure may or may not be included.
-#' It returns an object of class hreal which contains inter_arrival, arrival,
-#' type, mark, N, Nc, lambda, lambda_component, rambda, rambda_component
+#' It returns an object of class \code{hreal} which contains \code{inter_arrival}, \code{arrival},
+#' \code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
 #'
 #' @rdname hsim
 setMethod(

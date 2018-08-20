@@ -34,13 +34,13 @@ show(hspec1)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <environment: 0x000000001c4dbb60>
+#> <environment: 0x000000001a4eaec8>
 #> 
 #> Slot "impact":
 #> NULL
 ```
 
-To simulate a path, use function `hsim`, where `size` is the number of observations.
+The function `hsim` implements simulation where the input arguments are `hspec`, `size` and the initial values of intensity `lambda` and Hawkes processes `N`. If the initial values of `lambda` are omitted, the internally determined initial values are used. The default initial value of `N` is zero.
 
 ``` r
 res1 <- hsim(hspec1, size=100)
@@ -73,6 +73,10 @@ summary(res1)
 #> ------------------------------------------
 ```
 
+The results of `hsim` is an S3 class `hreal` which consists of `hspec`, `inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda\_component`. The components `inter_arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda_component` can be excessed during simulation and estimation. The column names of `N` are `N1`, `N2`, `N3` and so on. Similarly, the column names of `lambda` are `lambda1`, `lambda2`, `lambda3` and so on. The column names of `lambda_component` are `lambda_component11`, `lambda_component12`, `lambda_component13` and so on. `inter_arrival`, `type`, `mark`, `N`, `Nc` start at zero. Using `summary` function, one can print the first 20 elements of `arrival`, `N` and `lambda`.
+
+`hspec` is the model specification, `inter_arrival` is the inter-arrival time of every event, and `arrival` is the cumulative sum of `inter_arrival`. `type` is the type of events, i.e., *i* for *N*<sub>*i*</sub>, and `mark` is a numeric vector which represents additional information for the event. `lambda` represents *λ* which is the left continuous and right limit version. The right continuous version of intensity is `rambda`. `lambda_component` represents *λ*<sub>*i**j*</sub> and `rambda_component` is the right continuous version.
+
 The log-likelihood function is computed by `logLik` method. In this case, the inter-arrival times and `hspec` are inputs of the function.
 
 ``` r
@@ -80,7 +84,7 @@ logLik(hspec1, inter_arrival = res1$inter_arrival)
 #> [1] -28.09111
 ```
 
-The likelihood estimation is performed using `mhfit` function. The specification of the initial values of the parameters, `mhspec0` is needed. In the following example, `mhspec0` is set to be `mhspec1`, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
+The likelihood estimation is performed using `mhfit` function. The specification of the initial values of the parameters, `mhspec0` is needed. In the following example, `hspec0` is set to be `hspec1`, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
 
 Note that only `inter_arrival` is needed. (Indeed, for more precise simulation, `lambda0`, the inital value of lambda compoment, should be specified. If not, internally determined initial values are set.)
 
@@ -88,6 +92,8 @@ Note that only `inter_arrival` is needed. (Indeed, for more precise simulation, 
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
+#>    mu1 alpha1  beta1 
+#>    0.5    1.0    1.8
 summary(mle)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -113,7 +119,7 @@ In a bivariate model, the parameters, the slots of `hspec`, are matrices. `mu` i
 
 *λ*<sub>2</sub>(*t*)=*μ*<sub>2</sub> + *λ*<sub>21</sub>(*t*)+*λ*<sub>22</sub>(*t*)
 
-*λ*<sub>*i**j*</sub> called lambda components and `lambda0` is the time zero values of *l**a**m**b**d**a*<sub>*i**j*</sub>, i.e., *λ*<sub>*i**j*</sub>(0). `lambda0` can be omitted and then internally determined initial values are used.
+*λ*<sub>*i**j*</sub> called lambda components and `lambda0` is the time zero values of *λ*<sub>*i**j*</sub>, i.e., *λ*<sub>*i**j*</sub>(0). `lambda0` can be omitted and then internally determined initial values are used.
 
 ``` r
 mu2 <- matrix(c(0.2), nrow = 2)
@@ -143,8 +149,8 @@ print(hspec2)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <bytecode: 0x000000001c389100>
-#> <environment: 0x000000001959c1a8>
+#> <bytecode: 0x000000001a113840>
+#> <environment: 0x000000001d54cca8>
 #> 
 #> Slot "impact":
 #> NULL
@@ -204,6 +210,8 @@ A log-likelihood estimation is performed using `hfit`. In the following, the val
 ``` r
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
+#>      mu1 alpha1,1 alpha1,2  beta1,1 
+#>     0.20     0.50     0.90     2.25
 summary(mle)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -253,8 +261,8 @@ print(hspec2)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <bytecode: 0x000000001c389100>
-#> <environment: 0x000000001959c1a8>
+#> <bytecode: 0x000000001a113840>
+#> <environment: 0x000000001d54cca8>
 #> 
 #> Slot "impact":
 #> NULL
@@ -273,6 +281,8 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#>      mu1 alpha1,1  beta1,1 
+#>     0.15     0.75     2.60
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 28 iterations
@@ -298,6 +308,8 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#>      mu1 alpha1,1 alpha1,2  beta1,1 
+#>    0.150    0.750    0.751    2.600
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 32 iterations
@@ -319,16 +331,38 @@ By simply setting `reduced = FALSE`, all parameters are estimated (not recommend
 
 ``` r
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
+#>      mu1      mu2 alpha1,1 alpha2,1 alpha1,2 alpha2,2  beta1,1  beta2,1 
+#>     0.20     0.20     0.50     0.90     0.90     0.50     2.25     2.25 
+#>  beta1,2  beta2,2 
+#>     2.25     2.25
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 0 iterations
-#> Return code 100: Initial value out of range.
+#> BFGS maximization, 56 iterations
+#> Return code 0: successful convergence 
+#> Log-Likelihood: -1311.888 
+#> 10  free parameters
+#> Estimates:
+#>          Estimate Std. error t value  Pr(> t)    
+#> mu1       0.18813    0.01915   9.826  < 2e-16 ***
+#> mu2       0.18929    0.01828  10.354  < 2e-16 ***
+#> alpha1,1  0.33976    0.08497   3.999 6.37e-05 ***
+#> alpha2,1  0.96210    0.14672   6.557 5.48e-11 ***
+#> alpha1,2  1.04192    0.14743   7.067 1.58e-12 ***
+#> alpha2,2  0.61487    0.12641   4.864 1.15e-06 ***
+#> beta1,1   1.67851    0.40245   4.171 3.04e-05 ***
+#> beta2,1   2.56714    0.42657   6.018 1.76e-09 ***
+#> beta1,2   2.42639    0.37305   6.504 7.81e-11 ***
+#> beta2,2   2.74344    0.60919   4.503 6.69e-06 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
 ### More complicated model
 
 #### Linear impact model
+
+In the following, `impact` represents the impact of mark. It is a function, and the first argument is `param` represents the parameter of the model. `impact` function can have additional arguments such as `alpha`, `n`, `mark`, etc., which represents the dependence. Do not miss `...` as the ellipsis is omitted, an error occurs.
 
 ``` r
 mu <- matrix(c(0.15, 0.15), nrow=2)
@@ -353,6 +387,8 @@ fit <- hfit(h1,
             type = res$type,
             mark = res$mark,
             lambda0 = matrix(rep(0.1,4), nrow=2))
+#>      mu1 alpha1,1 alpha1,2  beta1,1     eta1 
+#>     0.15     0.75     0.60     2.60     0.20
 
 summary(fit)
 #> --------------------------------------------
@@ -374,6 +410,8 @@ summary(fit)
 ```
 
 #### Hawkes flocking model
+
+In the basic model, `alpha` is a matrix, but it can be a function as in the following code. The function `alpha` simply return a 4 × 4 matrix but by doing so, we can fix some of elements as specific vales when estimating. When estimating, the optimization only works for the specified parameters in `param`. In the case of simulation, there is no difference whether the parameter set is represented by a matrix or a function.
 
 ``` r
 mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
@@ -414,6 +452,10 @@ hr <- hsim(h, size=1000)
 
 
 fit <- hfit(h, hr$inter_arrival, hr$type)
+#>     mu1     mu3 alpha11 alpha12 alpha33 alpha34 beta1,1 beta3,1 alpha1n 
+#>    0.02    0.04    0.00    0.30    0.30    0.40    0.70    1.10    0.00 
+#> alpha1w alpha2n alpha2w 
+#>    0.10    0.10    0.20
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -435,53 +477,6 @@ summary(fit)
 #> alpha1w  0.110979   0.021764   5.099 3.41e-07 ***
 #> alpha2n  0.230138   0.075533   3.047  0.00231 ** 
 #> alpha2w  0.207419   0.060753   3.414  0.00064 ***
-#> ---
-#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-#> --------------------------------------------
-```
-
-#### linear reverting model
-
-``` r
-mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
-
-  if(n == 1){
-    level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
-    matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-
-  } else {
-    level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
-    matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-  }
-
-}
-
-alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
-  matrix(c(param["alpha11"], 0, 0, param["alpha14"],
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = TRUE)
-}
-
-beta <- matrix(rep(2.6, 16), nrow=4, byrow=TRUE)
-h <- new("hspec", mu, alpha, beta)
-hr <- hsim(h, size=1000)
-
-fit <- hfit(h, hr$inter_arrival, hr$type)
-summary(fit)
-#> --------------------------------------------
-#> Maximum Likelihood estimation
-#> BFGS maximization, 39 iterations
-#> Return code 0: successful convergence 
-#> Log-Likelihood: -1508.418 
-#> 5  free parameters
-#> Estimates:
-#>         Estimate Std. error t value  Pr(> t)    
-#> mu1     0.080063   0.006058  13.216  < 2e-16 ***
-#> eta1    0.704663   0.031793  22.164  < 2e-16 ***
-#> alpha11 0.603523   0.096537   6.252 4.06e-10 ***
-#> alpha14 0.734932   0.104600   7.026 2.12e-12 ***
-#> beta1,1 2.512615   0.286526   8.769  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------

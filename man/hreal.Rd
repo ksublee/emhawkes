@@ -5,25 +5,29 @@
 \alias{print.hreal}
 \alias{summary.hreal}
 \alias{as.matrix.hreal}
-\title{Generic for hreal}
+\title{Generics for hreal}
 \usage{
-\method{print}{hreal}(res, n = 20, ...)
+\method{print}{hreal}(x, n = 20, ...)
 
-\method{summary}{hreal}(res, n = 20)
+\method{summary}{hreal}(object, n = 20, ...)
 
-\method{as.matrix}{hreal}(res)
+\method{as.matrix}{hreal}(x, ...)
 }
 \arguments{
-\item{res}{S3-object of hreal}
+\item{x}{S3-object of hreal.}
 
-\item{n}{number of rows to diplay}
+\item{n}{number of rows to diplay.}
+
+\item{...}{further arguments passed to or from other methods.}
+
+\item{object}{S3-object of hreal.}
 }
 \description{
-Generic functions list for hreal
+Generic functions list for hreal:
 
-Print the summary of the realization of the Haweks model.
+Print the realization of the Haweks model.
 
-This function presents the summary of the Hawkes realization.
+Print the summary of the Hawkes process realization.
 
-The realization of Hawkes model is represented by matrix like ouput.
+Matrix like ouput of the realization of Hawkes model.
 }

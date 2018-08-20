@@ -13,7 +13,6 @@ knitr::opts_chunk$set(
 ```
 
 ### Univariate Hawkes process
-
 ```{r}
 library(emhawkes)
 ```
@@ -34,12 +33,29 @@ hspec1 <- new("hspec", mu=mu1, alpha=alpha1, beta=beta1)
 show(hspec1)
 ```
 
-To simulate a path, use function ```hsim```, where ```size``` is the number of observations.
+The function ```hsim``` implements simulation where the input arguments are ```hspec```, ```size``` and the initial values of intensity ```lambda``` and Hawkes processes ```N```.
+If the initial values of ```lambda``` are omitted, the internally determined initial values are used.
+The default initial value of ```N``` is zero.
 
 ```{r, warning=FALSE}
 res1 <- hsim(hspec1, size=100)
 summary(res1)
 ```
+The results of ```hsim``` is an S3 class ```hreal``` which consists of ```hspec```, ```inter_arrival```, ```arrival```, ```type```, ```mark```, ```N```, ```Nc```, ```lambda```, ```lambda_component```, ```rambda```, ```rambda\_component```.
+The components ```inter_arrival```, ```type```, ```mark```, ```N```, ```Nc```, ```lambda```, ```lambda_component```, ```rambda```, ```rambda_component``` can be excessed during simulation and estimation.
+The column names of ```N``` are ```N1```, ```N2```, ```N3``` and so on.
+Similarly, the column names of ```lambda``` are ```lambda1```, ```lambda2```, ```lambda3``` and so on.
+The column names of ```lambda_component``` are ```lambda_component11```, ```lambda_component12```, ```lambda_component13``` and so on.
+```inter_arrival```, ```type```, ```mark```, ```N```, ```Nc``` start at zero.
+Using ```summary``` function, one can print the first 20 elements of ```arrival```, ```N``` and ```lambda```.
+
+```hspec``` is the model specification, ```inter_arrival``` is the inter-arrival time of every event, and ```arrival``` is the cumulative sum of ```inter_arrival```.
+```type``` is the type of events, i.e., $i$ for $N_i$, and ```mark``` is a numeric vector which represents additional information for the event.
+```lambda``` represents $\lambda$ which is the left continuous and right limit version.
+The right continuous version of intensity is ```rambda```.
+```lambda_component``` represents $\lambda_{ij}$ and ```rambda_component``` is the right continuous version.
+
+
 The log-likelihood function is computed by ```logLik``` method.
 In this case, the inter-arrival times and ```hspec``` are inputs of the function.
 
@@ -50,11 +66,11 @@ logLik(hspec1, inter_arrival = res1$inter_arrival)
 
 The likelihood estimation is performed using ```mhfit``` function.
 The specification of the initial values of the parameters, ```mhspec0``` is needed.
-In the following example, ```mhspec0``` is set to be ```mhspec1```, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
-
+In the following example, ```hspec0``` is set to be ```hspec1```, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
 
 Note that only ```inter_arrival``` is needed.
 (Indeed, for more precise simulation, ```lambda0```, the inital value of lambda compoment, should be specified. If not, internally determined initial values are set.)
+
 
 ```{r, warning=FALSE}
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
@@ -75,7 +91,7 @@ $$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t) $$
 
 $$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t) $$
 
-$\lambda_{ij}$ called lambda components and ```lambda0``` is the time zero values of $lambda_{ij}$, i.e., $\lambda_{ij}(0)$. 
+$\lambda_{ij}$ called lambda components and ```lambda0``` is the time zero values of $\lambda_{ij}$, i.e., $\lambda_{ij} (0)$. 
 ```lambda0``` can be omitted and then internally determined initial values are used.
 
 ```{r}
@@ -184,6 +200,10 @@ summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduc
 
 
 #### Linear impact model
+In the following, ```impact``` represents the impact of mark.
+It is a function, and the first argument is ```param``` represents the parameter of the model.
+```impact``` function can have additional arguments such as ```alpha```, ```n```, ```mark```, etc., which represents the dependence.
+Do not miss ```...``` as the ellipsis is omitted, an error occurs.
 
 ```{r, warning=FALSE}
 mu <- matrix(c(0.15, 0.15), nrow=2)
@@ -213,6 +233,11 @@ summary(fit)
 ```
 
 #### Hawkes flocking model
+
+In the basic model, ```alpha``` is a matrix, but it can be a function as in the following code.
+The function ```alpha``` simply return a $4\times4$ matrix but by doing so, we can fix some of elements as specific vales when estimating.
+When estimating, the optimization only works for the specified parameters in ```param```.
+In the case of simulation, there is no difference whether the parameter set is represented by a matrix or a function.
 
 ```{r, warning=FALSE}
 mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
@@ -256,35 +281,4 @@ fit <- hfit(h, hr$inter_arrival, hr$type)
 summary(fit)
 ```
 
-
-#### linear reverting model
-
-```{r, warning=FALSE}
-mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
-
-  if(n == 1){
-    level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
-    matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-
-  } else {
-    level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
-    matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-  }
-
-}
-
-alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
-  matrix(c(param["alpha11"], 0, 0, param["alpha14"],
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = TRUE)
-}
-
-beta <- matrix(rep(2.6, 16), nrow=4, byrow=TRUE)
-h <- new("hspec", mu, alpha, beta)
-hr <- hsim(h, size=1000)
-
-fit <- hfit(h, hr$inter_arrival, hr$type)
-summary(fit)
-```
 

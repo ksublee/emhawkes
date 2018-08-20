@@ -4,7 +4,13 @@ NULL
 #' Perform Maximum Likelihood Estimation
 #'
 #' Generic function hfit.
-#'
+#' Exponential decaying marked A method for estimating the parameters of the Hawkes model.
+#' The reason for being constructed as the S4 methodis as follows.
+#' First, to represent the structure of the model as an hspec object.
+#' There are numerous variations on the mutlivariate marked Hawkes model.
+#' Second, to convey the starting point of numerical optimization.
+#' The parameter values assigned to the hspec slots become initial values.
+#' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 #'
 #' @param object hspec
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
@@ -17,7 +23,7 @@ NULL
 #' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param grad gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param hess Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param verbose If true, mle progress is printed
+#' @param verbose If TRUE, print the progress of the estimation.
 #' @param ... other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #'
 #'
@@ -28,7 +34,8 @@ NULL
 #' @seealso \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 #'
 #' @examples
-#' #example 1
+#'
+#' # example 1
 #' mu <- c(0.1, 0.1)
 #' alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
@@ -37,7 +44,7 @@ NULL
 #' summary(hfit(h, res$inter_arrival, res$type))
 #'
 #'
-#' #example 2
+#' # example 2
 #' mu <- matrix(c(0.08, 0.08, 0.05, 0.05), nrow = 4)
 #' alpha <- function(param = c(alpha11 = 0, alpha12 = 0.4, alpha33 = 0.5, alpha34 = 0.3)){
 #'   matrix(c(param["alpha11"], param["alpha12"], 0, 0,
@@ -73,7 +80,7 @@ NULL
 #' summary(fit)
 #'
 #'
-#' #example 3
+#' # example 3
 #' mu <- c(0.15, 0.15)
 #' alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=TRUE)
 #' beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2, byrow=TRUE)
@@ -98,7 +105,7 @@ NULL
 #' summary(fit)
 #'
 #'
-#' #example 4
+#' # example 4
 #' mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
 #'   if(n == 1){
 #'     level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])

@@ -4,7 +4,8 @@
 \name{hsim}
 \alias{hsim}
 \alias{hsim,hspec-method}
-\title{Simulate a multivariate Hawkes process}
+\title{Simulate a multivariate Hawkes process.
+Generic function hsim.}
 \usage{
 hsim(object, size = 100, lambda0 = NULL, N0 = NULL)
 
@@ -23,13 +24,14 @@ hsim(object, size = 100, lambda0 = NULL, N0 = NULL)
 hreal S3-object, summary of the realization of the Haweks model
 }
 \description{
-Generic function hsim
+Simulate a multivariate Hawkes process.
+Generic function hsim.
 
 The method simulate multivariate Hawkes processes.
 The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
 The mark (jump) structure may or may not be included.
-It returns an object of class hreal which contains inter_arrival, arrival,
-type, mark, N, Nc, lambda, lambda_component, rambda, rambda_component
+It returns an object of class \code{hreal} which contains \code{inter_arrival}, \code{arrival},
+\code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
 }
 \examples{
 mu <- c(0.1, 0.1)

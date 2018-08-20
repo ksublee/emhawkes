@@ -1,6 +1,6 @@
-#' Generic for hreal
+#' Generics for hreal
 #'
-#' Generic functions list for hreal
+#' Generic functions list for hreal:
 #'
 #' @name hreal
 NULL
@@ -8,24 +8,26 @@ NULL
 #'
 #' Print function for hreal
 #'
-#' Print the summary of the realization of the Haweks model.
+#' Print the realization of the Haweks model.
 #'
-#' @param res S3-object of hreal
-#' @param n number of rows to diplay
+#' @param x S3-object of hreal.
+#' @param object S3-object of hreal.
+#' @param n number of rows to diplay.
+#' @param ... further arguments passed to or from other methods.
 #' @rdname hreal
 #' @export
-print.hreal <- function(res, n=20, ...){
+print.hreal <- function(x, n=20, ...){
   options(digits=4)
   cat("------------------------------------------\n")
   cat("Simulation result of marked Hawkes model.\n")
-  print(res$hspec)
+  print(x$hspec)
 
   cat("Realized path (with right continuous representation):\n")
-  mtrx <- as.matrix(res)
-  dimens <- res$hspec@dimens
+  mtrx <- as.matrix(x)
+  dimens <- x$hspec@dimens
   name_N  <- paste0("N", 1:dimens)
   name_lambda  <- paste0("lambda", 1:dimens)
-  name_lambda_component <- colnames(res$lambda_component)
+  name_lambda_component <- colnames(x$lambda_component)
 
   len <- min(n, length(mtrx[,"arrival"]))
 
@@ -43,20 +45,20 @@ print.hreal <- function(res, n=20, ...){
   options(digits=7)
 }
 
-#' Summary function fo mhreal
+#' Summary function for hreal
 #'
-#' This function presents the summary of the Hawkes realization.
+#' Print the summary of the Hawkes process realization.
 #'
 #' @rdname hreal
 #' @export
-summary.hreal <- function(res, n=20){
+summary.hreal <- function(object, n=20, ...){
 
   options(digits=5)
-  cat("------------------------------------------\n")
+  cat("------------------------------------`------\n")
   cat("Simulation result of marked Hawkes model.\n")
   cat("Realized path (with right continuous representation):\n")
-  mtrx <- as.matrix(res)
-  dimens <- res$hspec@dimens
+  mtrx <- as.matrix(object)
+  dimens <- object$hspec@dimens
   name_N  <- paste0("N", 1:dimens)
   name_lambda  <- paste0("lambda", 1:dimens)
 
@@ -79,17 +81,17 @@ summary.hreal <- function(res, n=20){
 
 #' Matrix represetation of hreal
 #'
-#' The realization of Hawkes model is represented by matrix like ouput.
+#' Matrix like ouput of the realization of Hawkes model.
 #'
 #' @rdname hreal
 #' @export
-as.matrix.hreal <- function(res){
+as.matrix.hreal <- function(x, ...){
 
   mtrx <- numeric()
-  for (i in 2:length(res)){
-    mtrx <- cbind(mtrx, res[[i]])
-    if(is.vector(res[[i]])){
-      colnames(mtrx)[i-1] <- names(res)[i]
+  for (i in 2:length(x)){
+    mtrx <- cbind(mtrx, x[[i]])
+    if(is.vector(x[[i]])){
+      colnames(mtrx)[i-1] <- names(x)[i]
     }
   }
   mtrx
