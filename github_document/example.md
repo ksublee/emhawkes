@@ -1,4 +1,4 @@
-Introduction to R
+Introduction to emhawkes
 ================
 
 ### Univariate Hawkes process
@@ -34,7 +34,7 @@ show(hspec1)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <environment: 0x000000001a4eaec8>
+#> <environment: 0x000000001a4fccf0>
 #> 
 #> Slot "impact":
 #> NULL
@@ -45,7 +45,7 @@ The function `hsim` implements simulation where the input arguments are `hspec`,
 ``` r
 res1 <- hsim(hspec1, size=100)
 summary(res1)
-#> ------------------------------------------
+#> ------------------------------------`------
 #> Simulation result of marked Hawkes model.
 #> Realized path (with right continuous representation):
 #>        arrival N1 lambda1
@@ -149,8 +149,8 @@ print(hspec2)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <bytecode: 0x000000001a113840>
-#> <environment: 0x000000001d54cca8>
+#> <bytecode: 0x000000001a126840>
+#> <environment: 0x000000001d55f608>
 #> 
 #> Slot "impact":
 #> NULL
@@ -162,7 +162,7 @@ To simulate, use function `mhsim`.
 res2 <- hsim(hspec2,  size=1000)
 #> Warning in hsim(hspec2, size = 1000): The initial values for intensity processes are not provided. Internally determined initial values are used.
 summary(res2)
-#> ------------------------------------------
+#> ------------------------------------`------
 #> Simulation result of marked Hawkes model.
 #> Realized path (with right continuous representation):
 #>       arrival N1 N2 lambda1 lambda2
@@ -261,8 +261,8 @@ print(hspec2)
 #> 
 #> Slot "rmark":
 #> function(...) 1
-#> <bytecode: 0x000000001a113840>
-#> <environment: 0x000000001d54cca8>
+#> <bytecode: 0x000000001a126840>
+#> <environment: 0x000000001d55f608>
 #> 
 #> Slot "impact":
 #> NULL
