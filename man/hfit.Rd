@@ -93,7 +93,7 @@ impact <- function(param = c(alpha1n=0, alpha1w=0.2, alpha2n=0.001, alpha2w=0.1)
 }
 h <- new("hspec",
          mu = mu, alpha = alpha, beta = beta, impact = impact)
-hr <- hsim(h, size=1000)
+hr <- hsim(h, size=100)
 plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
 lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 fit <- hfit(h, hr$inter_arrival, hr$type)
@@ -147,6 +147,8 @@ hr <- hsim(h, size=100)
 
 fit <- hfit(h, hr$inter_arrival, hr$type)
 summary(fit)
+
+For more information, please see vignettes.
 
 }
 \seealso{

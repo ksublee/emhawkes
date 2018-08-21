@@ -6,7 +6,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #'
 #' This class represents a specification of a marked Hawkes model with exponential kernel.
 #' The intensity of the ground process is defined by:
-#' \deqn{\lambda(t) = \mu + ∫( \alpha + \Psi ) * exp( -\beta (t-u)) d N(t).}
+#' \deqn{\lambda(t) = \mu + \int ( \alpha + \Psi ) * exp( -\beta (t-u)) d N(t).}
 #' For more details, please see the vignettes.
 #'
 #' \eqn{\mu} is base intensity.

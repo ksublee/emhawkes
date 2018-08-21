@@ -73,7 +73,7 @@ NULL
 #' }
 #' h <- new("hspec",
 #'          mu = mu, alpha = alpha, beta = beta, impact = impact)
-#' hr <- hsim(h, size=1000)
+#' hr <- hsim(h, size=100)
 #' plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
 #' lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 #' fit <- hfit(h, hr$inter_arrival, hr$type)
@@ -128,6 +128,8 @@ NULL
 #'
 #' fit <- hfit(h, hr$inter_arrival, hr$type)
 #' summary(fit)
+#'
+#' For more information, please see vignettes.
 #'
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL, lambda0 = NULL, N0 = NULL,
