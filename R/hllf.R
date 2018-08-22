@@ -84,7 +84,9 @@ setMethod(
 
     # default lambda0
     if(is.null(lambda0)) {
-      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+      if(!exists("this_flag_represents_binding_env_is_hfit")){
+        warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+      }
       lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
                              alpha = alpha, beta = beta)

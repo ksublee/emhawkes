@@ -90,7 +90,6 @@ NULL
 #' impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
 #'   ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
 #'   alpha * ma * matrix( rep(param["eta1"], 4), nrow=2)
-#'   #alpha * ma * matrix( c(rep(param["eta1"], 2), rep(param["eta2"], 2)), nrow=2)
 #' }
 #' h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
 #'           rmark = rmark,
@@ -104,33 +103,7 @@ NULL
 #'             lambda0 = matrix(rep(0.1,4), nrow=2))
 #' summary(fit)
 #'
-#'
-#' # example 4
-#' mu <- function(param = c(mu1 = 0.08, eta1 = 0.7), n=n, N=N, ...){
-#'   if(n == 1){
-#'     level <- N[,"N1"][1] - N[,"N2"][1] - (N[,"N3"][1] - N[,"N4"][1])
-#'     matrix(c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-#'   } else {
-#'     level <- N[,"N1"][n-1] - N[,"N2"][n-1] - (N[,"N3"][n-1] - N[,"N4"][n-1])
-#'     matrix( c(param["mu1"], param["eta1"]*level, param["eta1"]*level, param["mu1"]), nrow = 4)
-#'   }
-#' }
-#' alpha <- function(param = c(alpha11 = 0.6, alpha14=0.7)){
-#'   matrix(c(param["alpha11"], 0, 0, param["alpha14"],
-#'            0, 0, 0, 0,
-#'            0, 0, 0, 0,
-#'            param["alpha14"], 0, 0, param["alpha11"]), nrow = 4, byrow = TRUE)
-#' }
-#
-#' beta <- matrix(rep(2.6, 16), nrow=4, byrow=TRUE)
-#' h <- new("hspec", mu, alpha, beta)
-#' hr <- hsim(h, size=100)
-#'
-#' fit <- hfit(h, hr$inter_arrival, hr$type)
-#' summary(fit)
-#'
-#' For more information, please see vignettes.
-#'
+#'# For more information, please see vignettes.
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL, lambda0 = NULL, N0 = NULL,
                             reduced = TRUE,
@@ -199,7 +172,6 @@ setMethod(
 
     llh_function <- function(param){
 
-
       pr_mus <- param[1:len_mu]
       pr_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
       pr_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
@@ -247,6 +219,7 @@ setMethod(
                                 rmark = object@rmark)
       }
 
+      this_flag_represents_binding_env_is_hfit <- TRUE
       logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
                      mark = mark, N0 = N0, lambda0 = lambda0)
       if(verbose){
