@@ -1,26 +1,24 @@
 
-# name_unique_coef_mtrx <- function(M, notation){
-#   reference <- character(length(M))
-#
-#   if (ncol(M) == 1){
-#     k <- 1
-#     for (i in 1:nrow(M)){
-#       if (reference[k] == "")
-#         reference[which(M == M[i])] <- paste0(notation, toString(i))
-#       k <- k + 1
-#     }
-#   } else {
-#     k <- 1
-#     for  (i in 1:nrow(M)){
-#       for (j in 1:ncol(M)) {
-#         if (reference[k] == "")
-#           reference[which(t(M) == M[i,j])] <- paste0(notation, toString(i), toString(j))
-#         k <- k + 1
-#       }
-#     }
-#   }
-#   reference
-# }
+#convert type to N and Nc
+type_to_N <- function(type, mark=NULL, dimens){
+
+  Nc <- N <- matrix(rep(0, dimens*length(type)), ncol=dimens)
+  colnames(Nc)  <- paste0("Nc", 1:dimens)
+  colnames(N) <- paste0("N", 1:dimens)
+
+  N[cbind(2:length(type), type[2:length(type)])] <- 1
+  N <- apply(N, 2, cumsum)
+
+  if(is.null(mark)){
+    Nc <- N
+  } else {
+    Nc[cbind(2:length(type), type[2:length(type)])] <- mark[2:length(mark)]
+    Nc <- apply(Nc, 2, cumsum)
+  }
+
+  list(N ,Nc)
+
+}
 
 # Unique naming coefficients from matrix
 #

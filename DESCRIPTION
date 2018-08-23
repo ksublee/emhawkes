@@ -6,7 +6,7 @@ Maintainer: Kyungsub Lee <kyungsub@gmail.com>
 Description: Simulate and fitting exponential multivariate Hawkes model.
     This package simulates a multivariate Hawkes model with an exponential kernel and fits the parameters from the data.
     Models with the constant parameters, as well as complex dependent structures, can also be simulated and estimated.
-    The estimation is based on the maximum likelihood method, especially maxLik package.
+    The estimation is based on the maximum likelihood method, especially 'maxLik' package.
 Depends: R (>= 3.4.0)
 License: GPL (>= 2)
 Encoding: UTF-8
@@ -20,8 +20,9 @@ Collate:
     'hmoment.R'
     'hllf.R'
     'hfit.R'
-    'hreal.R'
     'utilities.R'
+    'hgfit.R'
+    'hreal.R'
     'hsim.R'
     'script.R'
 Suggests: knitr,

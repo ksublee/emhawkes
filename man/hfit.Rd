@@ -65,6 +65,7 @@ summary(hfit(h, res$inter_arrival, res$type))
 
 
 # example 2
+\donttest{
 mu <- matrix(c(0.08, 0.08, 0.05, 0.05), nrow = 4)
 alpha <- function(param = c(alpha11 = 0, alpha12 = 0.4, alpha33 = 0.5, alpha34 = 0.3)){
   matrix(c(param["alpha11"], param["alpha12"], 0, 0,
@@ -98,9 +99,10 @@ plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
 lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 fit <- hfit(h, hr$inter_arrival, hr$type)
 summary(fit)
-
+}
 
 # example 3
+\donttest{
 mu <- c(0.15, 0.15)
 alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=TRUE)
 beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2, byrow=TRUE)
@@ -122,7 +124,7 @@ fit <- hfit(h1,
             mark = res$mark,
             lambda0 = matrix(rep(0.1,4), nrow=2))
 summary(fit)
-
+}
 # For more information, please see vignettes.
 }
 \seealso{

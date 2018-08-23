@@ -110,7 +110,7 @@ setMethod(
 
     sum_log_lambda <- 0
     sum_integrated_lambda_component <- 0
-    sum_mu_inter_arrival <- sum(mu0) * inter_arrival[1]
+    sum_mu_inter_arrival <- 0
 
     current_lambda <- lambda0
 
@@ -193,6 +193,7 @@ setMethod(
     # log likelihood for ground process
     # sum_log_lambda - sum(mu_n*sum(inter_arrival)) - sum_integrated_lambda_component
     sum_log_lambda - sum_mu_inter_arrival - sum_integrated_lambda_component
+
 
   }
 )
