@@ -1,11 +1,11 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
+#' @export
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
                             lambda0 = NULL, N0 = NULL) standardGeneric("infer_lambda"))
-
 setMethod(
   f="infer_lambda",
   signature(object="hspec"),
