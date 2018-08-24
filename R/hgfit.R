@@ -212,6 +212,7 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 
 }
 
+#' @export
 residual_process <- function(target, type, inter_arrival, rambda_component, mu, beta, dimens){
 
   integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens)
