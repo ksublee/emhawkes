@@ -184,7 +184,8 @@ setting <- function(object){
 # }
 
 
-#Thanks to https://www.r-bloggers.com/hijacking-r-functions-changing-default-arguments/
+# Thanks to https://www.r-bloggers.com/hijacking-r-functions-changing-default-arguments/
+# Copy function with default parameters
 hijack <- function (FUN, ...) {
   .FUN <- FUN
   args <- list(...)
@@ -194,8 +195,10 @@ hijack <- function (FUN, ...) {
   .FUN
 }
 
+#function evaluation with default parameters
 evalf <- function(FUN){
   args <- list()
+  #formals(FUN)[[1]] may look like c(alpha11 = 0.1, alpha12 = 0.2, ...)
   for (i in seq_along(formals(FUN))){
     args[[i]] <- eval(formals(FUN)[[i]])
   }

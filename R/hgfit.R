@@ -213,12 +213,12 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 }
 
 #' @export
-residual_process <- function(target, type, inter_arrival, rambda_component, mu, beta, dimens){
+residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens){
 
   integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens)
 
   #target <- 1
-  row_idx <- which(type == target)
+  row_idx <- which(type == component)
   res_process <- rep(0, (length(row_idx)-1))
   for( i in 1:length(res_process)){
 
