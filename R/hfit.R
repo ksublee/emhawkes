@@ -12,12 +12,13 @@ NULL
 #' The parameter values assigned to the hspec slots become initial values.
 #' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 #'
-#' @param object hspec
+#' @param object \code{\link{hspec-class}}. This object includes the parameter values
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param lambda0 the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
 #' @param N0 the initial values of N.
+#' @param mylogLik user defined log likelihood function. mylogLik function should have 'object' argument, cosistent with \code{hspec}.
 #' @param reduced When TRUE, reduced estimation performed.
 #' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
 #' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.

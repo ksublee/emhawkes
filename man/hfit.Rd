@@ -7,15 +7,17 @@
 \title{Perform Maximum Likelihood Estimation}
 \usage{
 hfit(object, inter_arrival = NULL, type = NULL, mark = NULL,
-  lambda0 = NULL, N0 = NULL, reduced = TRUE, grad = NULL, hess = NULL,
-  constraint = NULL, method = "BFGS", verbose = FALSE, ...)
+  lambda0 = NULL, N0 = NULL, mylogLik = NULL, reduced = TRUE,
+  grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
+  verbose = FALSE, ...)
 
 \S4method{hfit}{hspec}(object, inter_arrival = NULL, type = NULL,
-  mark = NULL, lambda0 = NULL, N0 = NULL, reduced = TRUE, grad = NULL,
-  hess = NULL, constraint = NULL, method = "BFGS", verbose = FALSE, ...)
+  mark = NULL, lambda0 = NULL, N0 = NULL, mylogLik = NULL,
+  reduced = TRUE, grad = NULL, hess = NULL, constraint = NULL,
+  method = "BFGS", verbose = FALSE, ...)
 }
 \arguments{
-\item{object}{hspec}
+\item{object}{\code{\link{hspec-class}}. This object includes the parameter values}
 
 \item{inter_arrival}{inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
@@ -26,6 +28,8 @@ hfit(object, inter_arrival = NULL, type = NULL, mark = NULL,
 \item{lambda0}{the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
 
 \item{N0}{the initial values of N.}
+
+\item{mylogLik}{user defined log likelihood function. mylogLik function should have 'object' argument, cosistent with \code{hspec}.}
 
 \item{reduced}{When TRUE, reduced estimation performed.}
 

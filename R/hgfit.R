@@ -1,11 +1,38 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
+#' Infer lambda process with given Hawke model and realized path
+#'
+#' @param object \code{\link{hspec-class}}. This object includes the parameter values.
+#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param mark a vector of mark (jump) sizes. Start with zero.
+#' @param N Hawkes process. if not provided, then generate using inter_arrival and type.
+#' @param Nc cumulated Hawkes process. if not provided, then generate using inter_arrival, type and mark.
+#' @param lambda0 the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
+#' @param N0 the initial values of N.
+#'
+#' @return hreal S3-object, the Haweks model with infered intensity, lambda
+#'
+#' @examples
+#' mu <- c(0.1, 0.1)
+#' alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
+#' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
+#' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
+#' res <- hsim(h, size=100)
+#' res2 <- infer_lambda(h, res$inter_arrival, res$type)
+#'
 #' @export
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
                             lambda0 = NULL, N0 = NULL) standardGeneric("infer_lambda"))
+#'
+#' This method compute the infered lambda process and returns it as \code{hreal} form.
+#' If we have realized path of Hawkes process and its parameter value, then we can compute the infered lambda processs.
+#' Similarly with other method such as \code{hfit}, the input aruments are \code{inter_arrival}, \code{type}, \code{mark},
+#' or equivalently, \code{N} and \code{Nc}.
+#'
 setMethod(
   f="infer_lambda",
   signature(object="hspec"),
@@ -25,9 +52,11 @@ setMethod(
     dimens <- plist$dimens
     size <-  length(inter_arrival)
 
-    temp <- type_to_N(type, mark, dimens)
-    N <- temp[[1]]
-    Nc <- temp[[2]]
+    if(is.null(N) | is.null(Nc)){
+      temp <- type_to_N(type, mark, dimens)
+      if(is.null(N)) N <- temp[[1]]
+      if(is.null(Nc)) Nc <- temp[[2]]
+    }
 
     if (is.function(mu)){
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
@@ -81,7 +110,6 @@ setMethod(
     colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
 
 
-    #current_rambda_component <- lambda0
     for (n in 2:size) {
 
       if (is.function(mu)){
@@ -212,17 +240,50 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 
 }
 
+#' Compute residual process
+#'
+#' Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
+#' Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
+#'
+#' @param component the component of type to get the residual process
+#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param rambda_component right continuous version of lambda process
+#' @param mu numeric value or matrix or function, if numeric, automatically converted to matrix
+#' @param beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
+#' @param dimens dimension of the model. if omitted, set to be the length of \code{mu}.
+#'
+#' @examples
+#'
+#' mu <- c(0.1, 0.1)
+#' alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
+#' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
+#' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
+#' res <- hsim(h, size=1000)
+#' rp <- residual_process(1, res$type, res$inter_arrival, res$rambda_component, mu, beta)
+#' p <- ppoints(100)
+#' q <- quantile(rp,p=p)
+#' plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
+#' qqline(q, distribution=qexp,col="blue", lty=2)
+#'
 #' @export
-residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens){
+residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens=NULL){
 
+  if (is.null(dimens)){
+    if (is.function(mu)){
+      stop("argument dimens is missing.")
+
+    } else{
+      dimens <- length(mu)
+    }
+  }
   integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens)
 
-  #target <- 1
   row_idx <- which(type == component)
   res_process <- rep(0, (length(row_idx)-1))
   for( i in 1:length(res_process)){
 
-    res_process[i] <- sum(integrated_rambda[(row_idx[i] + 1):row_idx[i+1],target])
+    res_process[i] <- sum(integrated_rambda[(row_idx[i] + 1):row_idx[i+1], component])
   }
 
 
