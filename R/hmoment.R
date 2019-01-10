@@ -44,8 +44,12 @@ setMethod(
       LAMBDA0 <- matrix(lamb0, nrow=1)
 
     } else {
-      LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu
-      LAMBDA0 <- matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
+      # need to handle when the matrix is singular
+      LABDA0 <- mu
+      try({
+        LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu
+        LAMBDA0 <- matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
+      })
     }
     LAMBDA0
   }
