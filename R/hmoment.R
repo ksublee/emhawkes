@@ -50,8 +50,8 @@ setMethod(
           matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
         },
         error = function(e){
-          warning("Due to the singualr martrix, set LAMBDA0 to mu.")
-          mu
+          warning("Due to the singualr martrix in caculcation, set initial value of lambda to mu.")
+          matrix(rep(0, 4), nrow=2)
         }
       )
     }
