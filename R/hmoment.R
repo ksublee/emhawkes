@@ -45,13 +45,14 @@ setMethod(
 
     } else {
       # need to handle when the matrix is singular
+      LAMBDA0 <- matrix(rep(0, dimens^2), nrow=dimens)
       LAMBDA0 <- tryCatch({
           LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu
           matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
         },
         error = function(e){
           warning("Due to the singualr martrix in caculcation, set initial value of lambda to mu.")
-          matrix(rep(0, 4), nrow=2)
+          matrix(rep(0, dimens^2), nrow=dimens)
         }
       )
     }
