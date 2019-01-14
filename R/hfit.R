@@ -265,7 +265,7 @@ setMethod(
 
     #llh_function(starting_point)
     maxLik::maxLik(logLik=llh_function,
-                   start=starting_point, grad, hess, method = method)
+                   start=starting_point, grad, hess, method = method, constraint = constraint)
 
   }
 )
