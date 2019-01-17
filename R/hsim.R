@@ -115,7 +115,7 @@ setMethod(
 
       # only piecewise constant mu is available
       if (is.function(mu)){
-        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+        mu_n <- mu(n = n - 1, mark = mark, type = type, inter_arrival = inter_arrival,
                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                    alpha = alpha, beta = beta)
       } else{
@@ -187,6 +187,14 @@ setMethod(
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
       rambda_component[n, ] <- t(new_lambda)
+
+      if (is.function(mu)){
+        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                   alpha = alpha, beta = beta)
+      } else{
+        mu_n <- mu
+      }
       rambda[n, ] <- mu_n + rowSums(new_lambda)
 
       #current_rambda_component <- new_lambda

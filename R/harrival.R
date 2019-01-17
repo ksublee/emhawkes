@@ -18,6 +18,8 @@ rarrival <- function(n, mark, type, inter_arrival,
     current_lambda_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
     current_lambda <- rowSums(current_lambda_component)
 
+    current_lambda[abs(current_lambda) < 1e-10] <- 0
+
     matrixD <- 1 + beta[,1] * log(stats::runif(dimens)) / current_lambda
     candidate_arrival <- cbind(candidate_arrival, -1 / beta[,1] * log(pmax(matrixD, 0)))
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
