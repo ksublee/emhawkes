@@ -113,6 +113,7 @@ setMethod(
     #current_rambda_component <- lambda0
     for (n in 2:size) {
 
+      # only piecewise constant mu is available
       if (is.function(mu)){
         mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
