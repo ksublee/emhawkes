@@ -101,7 +101,7 @@ setMethod(
     }
 
     if("lambda" %in% impct_args | "lambda" %in% mu_args){
-      lambda   <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+      lambda   <- matrix(sapply(as.vector(mu0) + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
       colnames(lambda) <- paste0("lambda", 1:dimens)
     }
 
@@ -126,14 +126,13 @@ setMethod(
     for (n in 2:size) {
 
 
-
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
       if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args)
         lambda_component[n, ] <- t(decayed_lambda)
       if("lambda" %in% impct_args | "lambda" %in% mu_args)
-        lambda[n, ] <- mu + rowSums(decayed_lambda)
+        lambda[n, ] <- as.vector(mu_n) + rowSums(decayed_lambda)
 
       if("N" %in% impct_args | "N" %in% mu_args){
         N[n, ] <- N[n-1, ]
