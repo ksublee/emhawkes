@@ -114,17 +114,18 @@ setMethod(
 
     current_lambda <- lambda0
 
+    # only piecewise constant mu is available, to be updated
+    if (is.function(mu)){
+      mu_n <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                 N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                 alpha = alpha, beta = beta)
+    } else{
+      mu_n <- mu
+    }
+
     for (n in 2:size) {
 
-      if (is.function(mu)){
-        # mu is represeted by function
-        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                   N = N, Nc = Nc,
-                   alpha = alpha, beta = beta)
-      } else{
-        # mu is a matrix
-        mu_n <- mu
-      }
+
 
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
@@ -187,6 +188,18 @@ setMethod(
 
       # current_lambda <- matrix(lambda_component[n, ], nrow = dimens, byrow = TRUE)
       current_lambda <- new_lambda  # lambda determined in the previous loop
+
+      # new mu
+      if (is.function(mu)){
+        # mu is represeted by function
+        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                   N = N, Nc = Nc,
+                   alpha = alpha, beta = beta)
+      } else{
+        # mu is a matrix
+        mu_n <- mu
+      }
+
 
     }
 
