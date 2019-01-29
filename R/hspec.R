@@ -11,6 +11,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #'
 #' \eqn{\mu} is base intensity.
 #' This is generally a constant vector but can be extended to stochastic processes.
+#' Currently, piecewise constant mu is also possible. mu is left continous.
 #'
 #' \eqn{\alpha} is a constant matrix which represents impacts on intensities after events.
 #' It is represented by slot \code{mu}.

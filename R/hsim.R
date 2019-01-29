@@ -110,17 +110,21 @@ setMethod(
     colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
 
 
-    # only piecewise constant mu is available, to be updated
     if (is.function(mu)){
-      mu_n <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
+      rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                  alpha = alpha, beta = beta)
     } else{
-      mu_n <- mu
+      rmu_n <- mu
     }
 
     #current_rambda_component <- lambda0
     for (n in 2:size) {
+
+      # only piecewise constant mu is available, mu is left continuous.
+      # rmu_n is previously defined right continuous version.
+      mu_n <- rmu_n
+
 
       ### Determine the next arrival #############################################################
       res <- rarrival(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
@@ -189,13 +193,13 @@ setMethod(
       rambda_component[n, ] <- t(new_lambda)
 
       if (is.function(mu)){
-        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                    alpha = alpha, beta = beta)
       } else{
-        mu_n <- mu
+        rmu_n <- mu
       }
-      rambda[n, ] <- mu_n + rowSums(new_lambda)
+      rambda[n, ] <- rmu_n + rowSums(new_lambda)
 
       #current_rambda_component <- new_lambda
     }
