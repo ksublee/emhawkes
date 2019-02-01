@@ -109,6 +109,7 @@ NULL
 #'# For more information, please see vignettes.
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
+                            N = NULL, Nc = NULL,
                             lambda0 = NULL, N0 = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
@@ -125,12 +126,12 @@ setMethod(
   signature(object="hspec"),
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
+           N = NULL, Nc = NULL,
            lambda0 = NULL, N0 = NULL,
            mylogLik = NULL,
            reduced = TRUE,
            grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
            verbose = FALSE, ...){
-
 
     if(is.null(lambda0)){
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
@@ -151,6 +152,7 @@ setMethod(
     impact <- plist$impact
     rmark <- plist$rmark
     dimens <- plist$dimens
+
 
 
     # parameter setting
@@ -187,7 +189,6 @@ setMethod(
       pr_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
       pr_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
       pr_impact <- param[(len_mu + len_alpha + len_beta + 1):length(param)]
-
 
       # Convert to matrix
       if (is.function(object@mu)){
@@ -236,7 +237,7 @@ setMethod(
 
       if (is.null(mylogLik)){
         logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
-                       mark = mark, N0 = N0, lambda0 = lambda0)
+                       mark = mark, N = N, Nc = Nc, N0 = N0, lambda0 = lambda0)
       } else {
         # arguments names for mylogLik
         args_needed <- names(formals(mylogLik))

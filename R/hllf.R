@@ -19,7 +19,8 @@ NULL
 setMethod(
   f="logLik",
   signature(object="hspec"),
-  function(object, inter_arrival, type = NULL, mark = NULL, N0 = NULL, lambda0 = NULL){
+  function(object, inter_arrival, type = NULL, mark = NULL, N = NULL, Nc = NULL,
+           N0 = NULL, lambda0 = NULL){
     # parameter setting
     plist <- setting(object)
     mu <- plist$mu
@@ -56,20 +57,24 @@ setMethod(
     # size is length(inter_arrival) - 1
     size <- length(inter_arrival)
 
-    if("N" %in% impct_args | "N" %in% mu_args){
+    if("N" %in% c(impct_args, mu_args) & is.null(N)){
       N <- matrix(numeric(length = dimens * size), ncol = dimens)
       colnames(N) <- paste0("N", 1:dimens)
       if (!is.null(N0)){
         N[1,] <- N0
       }
+      N[cbind(2:size, type[-1])] <- 1
+      N <- apply(N, 2, cumsum)
     }
 
-    if("Nc" %in% impct_args | "Nc" %in% mu_args){
+    if("Nc" %in% c(impct_args, mu_args) & is.null(Nc)){
       Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
       colnames(Nc)  <- paste0("Nc", 1:dimens)
       if (!is.null(N0)){
         Nc[1,] <- N0
       }
+      Nc[cbind(2:size, type[-1])] <- mark[-1]
+      Nc <- apply(Nc, 2, cumsum)
     }
 
     if (is.function(mu)){
@@ -94,13 +99,13 @@ setMethod(
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
 
-    if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args){
+    if("lambda_component" %in% c(impct_args, mu_args)){
       lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
       indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
       colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
     }
 
-    if("lambda" %in% impct_args | "lambda" %in% mu_args){
+    if("lambda" %in% c(impct_args, mu_args)){
       lambda   <- matrix(sapply(as.vector(mu0) + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
       colnames(lambda) <- paste0("lambda", 1:dimens)
     }
@@ -130,19 +135,19 @@ setMethod(
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- current_lambda * decayed
 
-      if("lambda_component" %in% impct_args | "lambda_component" %in% mu_args)
+      if("lambda_component" %in% c(impct_args, mu_args))
         lambda_component[n, ] <- t(decayed_lambda)
-      if("lambda" %in% impct_args | "lambda" %in% mu_args)
+      if("lambda" %in% c(impct_args, mu_args))
         lambda[n, ] <- as.vector(mu_n) + rowSums(decayed_lambda)
 
-      if("N" %in% impct_args | "N" %in% mu_args){
-        N[n, ] <- N[n-1, ]
-        N[n, type[n]] <- N[n-1, type[n]] + 1
-      }
-      if("Nc" %in% impct_args | "Nc" %in% mu_args){
-        Nc[n, ] <- Nc[n-1, ]
-        Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
-      }
+      # if("N" %in% c(impct_args, mu_args)){
+      #   N[n, ] <- N[n-1, ]
+      #   N[n, type[n]] <- N[n-1, type[n]] + 1
+      # }
+      # if("Nc" %in% c(impct_args, mu_args)){
+      #   Nc[n, ] <- Nc[n-1, ]
+      #   Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
+      # }
 
       # impact by alpha
       impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
