@@ -110,15 +110,18 @@ setMethod(
     colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
 
 
+    # only piecewise constant mu is available, to be updated
+    if (is.function(mu)){
+      rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
+                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                  alpha = alpha, beta = beta)
+    } else{
+      rmu_n <- mu
+    }
+
     for (n in 2:size) {
 
-      if (is.function(mu)){
-        mu_n <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                   alpha = alpha, beta = beta)
-      } else{
-        mu_n <- mu
-      }
+      mu_n <- rmu_n
 
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
@@ -153,10 +156,20 @@ setMethod(
 
       }
 
+      # new mu, i.e., right continuous version of mu
+      if (is.function(mu)){
+        # mu is represeted by function
+        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                    N = N, Nc = Nc,
+                    alpha = alpha, beta = beta)
+      } else{
+        # mu is a matrix
+        rmu_n <- mu
+      }
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
       rambda_component[n, ] <- t(new_lambda)
-      rambda[n, ] <- mu_n + rowSums(new_lambda)
+      rambda[n, ] <- rmu_n + rowSums(new_lambda)
 
       #current_rambda_component <- new_lambda
     }

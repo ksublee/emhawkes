@@ -110,8 +110,6 @@ setMethod(
       colnames(lambda) <- paste0("lambda", 1:dimens)
     }
 
-    #if (dimens==1) rowSums_lambda0 <- lambda0
-    #else rowSums_lambda0 <- rowSums(lambda0)
 
     sum_log_lambda <- 0
     sum_integrated_lambda_component <- 0
@@ -133,32 +131,43 @@ setMethod(
       mu_n <- rmu_n
 
       decayed <- exp(-beta * inter_arrival[n])
-      decayed_lambda <- current_lambda * decayed
+      decayed_lambda <- lambda_component_n <- current_lambda * decayed
+
+      ## 1. sum of integrated_lambda_component
+      sum_integrated_lambda_component <- sum_integrated_lambda_component +
+        sum(current_lambda / beta * ( 1 - decayed ))
+
+      ## 2. sum of log lambda when jump occurs
+      if (dimens == 1) lambda_lc <- mu_n + decayed_lambda
+      else lambda_lc <- mu_n + rowSums(decayed_lambda)
+
+      #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
+      oldw <- getOption("warn")
+      options(warn = -1)
+      sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
+      options(warn = oldw)
+
+      ## 3. sum of mu * inter_arrival
+      sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
 
       if("lambda_component" %in% c(impct_args, mu_args))
         lambda_component[n, ] <- t(decayed_lambda)
       if("lambda" %in% c(impct_args, mu_args))
         lambda[n, ] <- as.vector(mu_n) + rowSums(decayed_lambda)
 
-      # if("N" %in% c(impct_args, mu_args)){
-      #   N[n, ] <- N[n-1, ]
-      #   N[n, type[n]] <- N[n-1, type[n]] + 1
-      # }
-      # if("Nc" %in% c(impct_args, mu_args)){
-      #   Nc[n, ] <- Nc[n-1, ]
-      #   Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
-      # }
-
-      # impact by alpha
+      # impact
+      # 1. impact by alpha
       impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
       impact_alpha[ , type[n]] <- alpha[ , type[n]]
 
+      # 2. impact by mark
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
-        # impact by mark
+
         impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                             lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
         #impact_res <- impact()
@@ -173,26 +182,10 @@ setMethod(
 
       }
 
-      # sum of integrated_lambda_component
-      sum_integrated_lambda_component <- sum_integrated_lambda_component +
-        sum(current_lambda / beta * ( 1 - decayed ))
 
-      # sum of log lambda when jump occurs
-      if (dimens == 1) lambda_lc <- mu_n + decayed_lambda
-      else lambda_lc <- mu_n + rowSums(decayed_lambda)
-
-      #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
-      oldw <- getOption("warn")
-      options(warn = -1)
-      sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
-      options(warn = oldw)
-
-
-      # sum of mu * inter_arrival
-      sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
-
+      # for next step
       # current_lambda <- matrix(lambda_component[n, ], nrow = dimens, byrow = TRUE)
-      current_lambda <- new_lambda  # lambda determined in the previous loop
+      current_lambda <- new_lambda
 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
