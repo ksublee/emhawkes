@@ -79,7 +79,6 @@ setMethod(
 
     if (is.function(mu)){
       # mu is represeted by function
-      print(mu)
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
                 N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                 lambda_component_n = lambda_component_n,
