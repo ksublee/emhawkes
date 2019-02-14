@@ -80,7 +80,8 @@ setMethod(
     if (is.function(mu)){
       # mu is represeted by function
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                N = N, Nc = Nc,
+                N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                lambda_component_n = lambda_component_n,
                 alpha = alpha, beta = beta)
     } else{
       # mu is a matrix
@@ -121,6 +122,7 @@ setMethod(
     if (is.function(mu)){
       rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                 lambda_component_n = lambda_component_n,
                  alpha = alpha, beta = beta)
     } else{
       rmu_n <- mu
