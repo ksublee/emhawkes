@@ -11,21 +11,22 @@ setMethod(
   signature(object = "hspec"),
   definition = function(object, mark = mark, type = type, inter_arrival = inter_arrival,
                         N = N, Nc = Nc,
-                        alpha = alpha, beta = beta, ...){
+                        mu = mu, alpha = alpha, beta = beta, ...){
 
     dimens <- object@dimens
 
     # parameter setting
     if (is.function(object@mu)){
       if(length(formals(object@mu)) == 1){
-        mu <- evalf(object@mu)
+        mu0 <- evalf(object@mu)
       } else {
-        mu <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc,
-                 alpha = alpha, beta = beta)
+        mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                  lambda_component_n = lambda_component_n,
+                  alpha = alpha, beta = beta)
       }
     } else{
-      mu <- object@mu
+      mu0 <- object@mu
     }
     if (is.function(object@alpha)){
       alpha <- evalf(object@alpha)
@@ -47,7 +48,7 @@ setMethod(
       # need to handle when the matrix is singular
       LAMBDA0 <- matrix(rep(0, dimens^2), nrow=dimens)
       LAMBDA0 <- tryCatch({
-          LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu
+          LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu0
           matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
         },
         error = function(e){

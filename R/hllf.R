@@ -77,8 +77,9 @@ setMethod(
       Nc <- apply(Nc, 2, cumsum)
     }
 
+
+
     if (is.function(mu)){
-      # mu is represeted by function
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
                 N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                 lambda_component_n = lambda_component_n,
@@ -95,7 +96,7 @@ setMethod(
       }
       lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
-                             alpha = alpha, beta = beta)
+                             mu = mu, alpha = alpha, beta = beta)
     }
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
