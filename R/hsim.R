@@ -141,7 +141,7 @@ setMethod(
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
       #decayed_lambda <- current_rambda_component * decayed
-      decayed_lambda <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
+      decayed_lambda <- lambda_component_n <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -176,6 +176,7 @@ setMethod(
 
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                             lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
         impact_mark[ , type[n]] <- impact_res[ , type[n]]
