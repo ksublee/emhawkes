@@ -61,6 +61,7 @@ setMethod(
     if (is.function(mu)){
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
                 N = N, Nc = Nc,
+                lambda_component_n = lambda_component_n,
                 alpha = alpha, beta = beta)
     } else {
       mu0 <- mu
@@ -114,6 +115,7 @@ setMethod(
     if (is.function(mu)){
       rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                  lambda_component_n = lambda_component_n,
                   alpha = alpha, beta = beta)
     } else{
       rmu_n <- mu
@@ -144,6 +146,7 @@ setMethod(
 
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                             lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
         impact_mark[ , type[n]] <- impact_res[ , type[n]]
@@ -161,6 +164,7 @@ setMethod(
         # mu is represeted by function
         rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
                     N = N, Nc = Nc,
+                    lambda_component_n = lambda_component_n,
                     alpha = alpha, beta = beta)
       } else{
         # mu is a matrix
@@ -210,13 +214,13 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 
   size <- length(inter_arrival)
 
+
   if (is.function(mu)){
-    # mu is represeted by function
     mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
               N = N, Nc = Nc,
+              lambda_component_n = lambda_component_n,
               alpha = alpha, beta = beta)
-  } else{
-    # mu is a matrix
+  } else {
     mu0 <- mu
   }
 
@@ -226,27 +230,40 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
   current_lambda <- matrix(rambda_component[1,], nrow = dimens, byrow=TRUE)
   size <- length(inter_arrival)
 
+  # only piecewise constant mu is available, to be updated
+  if (is.function(mu)){
+    rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
+                N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                lambda_component_n = lambda_component_n,
+                alpha = alpha, beta = beta)
+  } else{
+    rmu_n <- mu
+  }
+
+
   for (n in 2:size) {
+
+    mu_n <- rmu_n
 
     decayed <- exp(-beta * inter_arrival[n])
 
     integrated_rambda[n, ] <- rowSums(current_lambda / beta * ( 1 - decayed )) +
-      mu0 * inter_arrival[n]
+      mu_n * inter_arrival[n]
 
     new_lambda <- rambda_component[n,]
     current_lambda <- matrix(new_lambda, nrow=dimens, byrow=TRUE)
 
-    # next mu
+    # new mu, i.e., right continuous version of mu
     if (is.function(mu)){
       # mu is represeted by function
-      mu0 <- mu(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc,
-                 alpha = alpha, beta = beta)
+      rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
+                  N = N, Nc = Nc,
+                  lambda_component_n = lambda_component_n,
+                  alpha = alpha, beta = beta)
     } else{
       # mu is a matrix
-      mu0 <- mu
+      rmu_n <- mu
     }
-
   }
 
   integrated_rambda
