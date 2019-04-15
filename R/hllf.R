@@ -22,6 +22,7 @@ setMethod(
   function(object, inter_arrival, type = NULL, mark = NULL, N = NULL, Nc = NULL,
            N0 = NULL, lambda0 = NULL){
     # parameter setting
+    # after parameter setting, functions mu, alpha, beta become matrices
     plist <- setting(object)
     mu <- plist$mu
     alpha <- plist$alpha
@@ -41,6 +42,7 @@ setMethod(
       stop("The argument type should be provided.")
     }
 
+    # check the argument lists in mu and impact
     mu_args <- c()
     impct_args <- c()
 
@@ -90,6 +92,9 @@ setMethod(
     }
 
     # default lambda0
+    if(length(type_col_map) > 0 & is.null(lambda0)){
+      stop("In this model, please provide lambda0.")
+    }
     if(is.null(lambda0)) {
       if(!exists("this_flag_represents_binding_env_is_hfit")){
         warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
@@ -101,10 +106,13 @@ setMethod(
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
 
+    # too complicated code
     if("lambda_component" %in% c(impct_args, mu_args)){
-      lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
-      indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
-      colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
+      lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = ncol(beta) * dimens)
+      indxM <- matrix(rep(1:ncol(beta), dimens), byrow = TRUE, nrow = dimens)
+      #colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
+      colnames(lambda_component) <- as.vector(t(outer(as.vector(outer("lambda", 1:dimens, FUN = paste0)),
+                                                      1:ncol(beta), FUN=paste0)))
     }
 
     if("lambda" %in% c(impct_args, mu_args)){
@@ -119,7 +127,7 @@ setMethod(
 
     current_lambda <- lambda0
 
-    # only piecewise constant mu is available, to be updated
+    # currently only piecewise constant mu is available, hope to be updated
     if (is.function(mu)){
       rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
@@ -141,7 +149,7 @@ setMethod(
         sum(current_lambda / beta * ( 1 - decayed ))
 
       ## 2. sum of log lambda when jump occurs
-      if (dimens == 1) lambda_lc <- mu_n + decayed_lambda
+      if (dimens == 1) lambda_lc <- mu_n + sum(decayed_lambda)
       else lambda_lc <- mu_n + rowSums(decayed_lambda)
 
       #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
@@ -160,14 +168,21 @@ setMethod(
 
       # impact
       # 1. impact by alpha
-      impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
-      impact_alpha[ , type[n]] <- alpha[ , type[n]]
+      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+
+      if( length(object@type_col_map) == 0){
+        types <- type[n]
+      } else{
+        types <- object@type_col_map[[type[n]]]
+      }
+
+      impact_alpha[ , types] <- alpha[ , types]
 
       # 2. impact by mark
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
 
-        impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
+        impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                              lambda_component_n = lambda_component_n,
@@ -175,7 +190,7 @@ setMethod(
 
         #impact_res <- impact()
 
-        impact_mark[ , type[n]] <- impact_res[ , type[n]]
+        impact_mark[ , types] <- impact_res[ , types]
 
         new_lambda <- decayed_lambda + impact_alpha + impact_mark
 
@@ -211,3 +226,6 @@ setMethod(
 
   }
 )
+
+
+

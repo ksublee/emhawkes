@@ -6,7 +6,7 @@
 \title{Compute the loglikelihood function}
 \usage{
 \S4method{logLik}{hspec}(object, inter_arrival, type = NULL, mark = NULL,
-  N0 = NULL, lambda0 = NULL)
+  N = NULL, Nc = NULL, N0 = NULL, lambda0 = NULL)
 }
 \arguments{
 \item{object}{\code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.}

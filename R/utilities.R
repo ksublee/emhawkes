@@ -26,7 +26,7 @@ type_to_N <- function(type, mark=NULL, dimens){
 # and assign the same name to the elements with the same value.
 # The name is based on \code{notation} and location of the element.
 #
-# @param M a square matrix
+# @param M a matrix
 # @param notation a string for name
 #
 # @return to covert to matrix, use byrow=TRUE
@@ -93,7 +93,7 @@ full_names <- function(M, notation, sep=","){
     names_M <- outer(notation, 1:length(M), FUN = paste0)
   } else {
     names_M <- outer(as.vector(outer(notation, 1:nrow(M), FUN = paste0)),
-                     1:nrow(M), FUN=my_paste)
+                     1:ncol(M), FUN=my_paste)
   }
 
   names_M
@@ -112,7 +112,7 @@ as.unique.vector <- function(M, notation, sep=","){
     names(m) <- as.vector(outer(notation, 1:length(M), FUN = paste0))
   } else {
     names(m) <- as.vector(t(outer(as.vector(outer(notation, 1:nrow(M), FUN = paste0)),
-                                  1:nrow(M), FUN=my_paste)))
+                                  1:ncol(M), FUN=my_paste)))
   }
 
   m[!duplicated(m)]
@@ -138,6 +138,7 @@ as.param <- function(M, prefix, reduced){
 #automatic parameter setting with object
 setting <- function(object){
 
+  #function evaluations with default parameters
   if (is.function(object@mu)){
     if (length(formals(object@mu)) == 1){
       mu <- evalf(object@mu)

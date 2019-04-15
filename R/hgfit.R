@@ -88,7 +88,7 @@ setMethod(
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
       lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
-                             alpha = alpha, beta = beta)
+                             mu = mu, alpha = alpha, beta = beta)
     }
 
 
@@ -111,6 +111,8 @@ setMethod(
     colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
 
 
+    current_lambda <- lambda0
+
     # only piecewise constant mu is available, to be updated
     if (is.function(mu)){
       rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
@@ -128,7 +130,9 @@ setMethod(
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
       #decayed_lambda <- current_rambda_component * decayed
-      decayed_lambda <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
+      decayed_lambda <- lambda_component_n <- current_lambda * decayed
+
+      #decayed_lambda <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -158,6 +162,8 @@ setMethod(
         new_lambda <- decayed_lambda + impact_alpha
 
       }
+
+      current_lambda <- new_lambda
 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){

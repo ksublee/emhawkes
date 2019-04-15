@@ -6,15 +6,15 @@
 \alias{hfit,hspec-method}
 \title{Perform Maximum Likelihood Estimation}
 \usage{
-hfit(object, inter_arrival = NULL, type = NULL, mark = NULL,
-  lambda0 = NULL, N0 = NULL, mylogLik = NULL, reduced = TRUE,
-  grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
-  verbose = FALSE, ...)
-
-\S4method{hfit}{hspec}(object, inter_arrival = NULL, type = NULL,
-  mark = NULL, lambda0 = NULL, N0 = NULL, mylogLik = NULL,
+hfit(object, inter_arrival = NULL, type = NULL, mark = NULL, N = NULL,
+  Nc = NULL, lambda0 = NULL, N0 = NULL, mylogLik = NULL,
   reduced = TRUE, grad = NULL, hess = NULL, constraint = NULL,
   method = "BFGS", verbose = FALSE, ...)
+
+\S4method{hfit}{hspec}(object, inter_arrival = NULL, type = NULL,
+  mark = NULL, N = NULL, Nc = NULL, lambda0 = NULL, N0 = NULL,
+  mylogLik = NULL, reduced = TRUE, grad = NULL, hess = NULL,
+  constraint = NULL, method = "BFGS", verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{\code{\link{hspec-class}}. This object includes the parameter values}

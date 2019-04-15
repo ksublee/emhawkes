@@ -13,6 +13,7 @@ For more details, please see the vignettes.
 \details{
 \eqn{\mu} is base intensity.
 This is generally a constant vector but can be extended to stochastic processes.
+Currently, piecewise constant mu is also possible. mu is left continous.
 
 \eqn{\alpha} is a constant matrix which represents impacts on intensities after events.
 It is represented by slot \code{mu}.
@@ -43,6 +44,8 @@ It is represetned by slot \code{beta}.
 \item{\code{rmark}}{a function that represets mark for counting process}
 
 \item{\code{impact}}{a function that describe the after impact of mark to lambda}
+
+\item{\code{type_col_map}}{}
 }}
 
 \examples{

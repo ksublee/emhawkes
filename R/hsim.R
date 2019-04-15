@@ -67,18 +67,23 @@ setMethod(
       mu0 <- mu
     }
 
+    # default lambda0
+    if(length(type_col_map) > 0 & is.null(lambda0)){
+      stop("In this model, please provide lambda0.")
+    }
+
     if(!is.null(lambda0)){
 
       # If the dimensions of model and lambda0 do not match, lambda0 will be adjusted
-      if (dimens^2 > length(lambda0)){
+      if (dimens * ncol(beta) > length(lambda0)){
         warning("The size of lambda0 does not match to the dimension of the model and is adjusted. \n
                 lambda0 is now :")
-        lambda0 <- rep(lambda0, dimens^2)
+        lambda0 <- rep(lambda0, dimens * ncol(beta))
       }
-      if (dimens^2 < length(lambda0)){
+      if (dimens * ncol(beta) < length(lambda0)){
         warning("The size of lambda0 does not match to the dimension of the model and is adjusted.\n
                 lambda0 is now :")
-        lambda0 <- lambda0[1:dimens^2]
+        lambda0 <- lambda0[1:dimens * ncol(beta)]
       }
 
       lambda0 <- as.matrix(lambda0, nrow = dimens)
@@ -88,11 +93,11 @@ setMethod(
       warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
       lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
-                             alpha = alpha, beta = beta)
+                             mu, alpha = alpha, beta = beta)
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
+    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
     lambda <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
@@ -102,12 +107,13 @@ setMethod(
 
     # Set column names
     colnames(lambda) <- paste0("lambda", 1:dimens)
-    indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
-    colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
+    indxM <- matrix(rep(1:ncol(beta), dimens), byrow = TRUE, nrow = dimens)
+    colnames(lambda_component) <- as.vector(t(outer(as.vector(outer("lambda", 1:dimens, FUN = paste0)),
+                                                    1:ncol(beta), FUN=paste0)))
 
     colnames(rambda) <- paste0("rambda", 1:dimens)
-    indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
-    colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
+    colnames(rambda_component) <- as.vector(t(outer(as.vector(outer("rambda", 1:dimens, FUN = paste0)),
+                                                    1:ncol(beta), FUN=paste0)))
 
 
     if (is.function(mu)){
@@ -130,7 +136,7 @@ setMethod(
       res <- rarrival(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                rambda = rambda, rambda_component = rambda_component,
-               mu = mu_n, alpha = alpha, beta = beta, dimens = dimens)
+               mu = mu_n, alpha = alpha, beta = beta, dimens = dimens, type_col_map = object@type_col_map)
       inter_arrival[n] <- res["inter_arrival"]
       type[n] <- res["type"]
       ############################################################################################
@@ -141,7 +147,7 @@ setMethod(
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
       #decayed_lambda <- current_rambda_component * decayed
-      decayed_lambda <- lambda_component_n <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
+      decayed_lambda <- lambda_component_n <- matrix(rambda_component[n-1,], nrow = dimens, byrow = T) * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -166,20 +172,27 @@ setMethod(
 
 
       # impact by alpha
-      impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
-      impact_alpha[ , type[n]] <- alpha[ , type[n]]
+      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+
+      if( length(object@type_col_map) == 0){
+        types <- type[n]
+      } else{
+        types <- object@type_col_map[[type[n]]]
+      }
+
+      impact_alpha[ , types] <- alpha[ , types]
 
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
         # impact by mark
-        impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
+        impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                              lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
-        impact_mark[ , type[n]] <- impact_res[ , type[n]]
+        impact_mark[ , types] <- impact_res[ , types]
 
         new_lambda <- decayed_lambda + impact_alpha + impact_mark
 

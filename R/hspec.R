@@ -34,6 +34,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' @slot dimens dimension of the model
 #' @slot rmark a function that represets mark for counting process
 #' @slot impact a function that describe the after impact of mark to lambda
+#' @slot type_col_map
 #'
 #' @examples
 #' MU <- matrix(c(0.2), nrow = 2)
@@ -49,7 +50,8 @@ setClass("hspec",
     beta = "matrixORnumericORfunction",
     dimens = "numeric",
     rmark = "functionORNULL",
-    impact = "functionORNULL"
+    impact = "functionORNULL",
+    type_col_map = "list"
   )
 )
 
@@ -70,8 +72,8 @@ setClass("hspec",
 setMethod(
   "initialize",
   "hspec",
-  function(.Object, mu, alpha, beta, dimens=NULL,
-           rmark=NULL,  impact=NULL, stability_check=FALSE){
+  function(.Object, mu, alpha, beta, impact=NULL, type_col_map = NULL, dimens=NULL,
+           rmark=NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
     if (is.null(rmark)) rmark <- function(...) 1
@@ -98,6 +100,12 @@ setMethod(
       .Object@beta <-  as.matrix(beta)
     } else {
       .Object@beta <- beta
+    }
+
+    if( !is.list(type_col_map)){
+      .Object@type_col_map <-  list(type_col_map)
+    } else {
+      .Object@type_col_map <- type_col_map
     }
 
     # set dimens
