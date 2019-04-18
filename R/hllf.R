@@ -92,7 +92,7 @@ setMethod(
     }
 
     # default lambda0
-    if(length(type_col_map) > 0 & is.null(lambda0)){
+    if(length(object@type_col_map) > 0 & is.null(lambda0)){
       stop("In this model, please provide lambda0.")
     }
     if(is.null(lambda0)) {
@@ -170,10 +170,12 @@ setMethod(
       # 1. impact by alpha
       impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
-      if( length(object@type_col_map) == 0){
+      if( is.null(object@type_col_map) ){
         types <- type[n]
-      } else{
+      } else if ( length(object@type_col_map) > 0 ) {
         types <- object@type_col_map[[type[n]]]
+      } else {
+        stop("Check type_col_map.")
       }
 
       impact_alpha[ , types] <- alpha[ , types]

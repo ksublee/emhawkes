@@ -214,6 +214,7 @@ setMethod(
         }
       }
 
+
       #object@impact is user defined impact function
       if (!is.null(object@impact)){
         impact0 <- hijack(object@impact, param = pr_impact)
@@ -226,6 +227,7 @@ setMethod(
         hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
                                 rmark = object@rmark, type_col_map = object@type_col_map)
       }
+
 
       this_flag_represents_binding_env_is_hfit <- TRUE
 

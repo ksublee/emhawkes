@@ -1,5 +1,6 @@
 setClassUnion("matrixORnumeric", c("matrix", "numeric"))
 setClassUnion("functionORNULL",members=c("function", "NULL"))
+setClassUnion("listORNULL",members=c("list", "NULL"))
 setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 
 #' An S4 class to represent an exponential marked Hawkes model
@@ -51,7 +52,7 @@ setClass("hspec",
     dimens = "numeric",
     rmark = "functionORNULL",
     impact = "functionORNULL",
-    type_col_map = "list"
+    type_col_map = "listORNULL"
   )
 )
 
@@ -101,13 +102,14 @@ setMethod(
     } else {
       .Object@beta <- beta
     }
+#
+#     if( !is.list(type_col_map)){
+#       .Object@type_col_map <-  list(type_col_map)
+#     } else {
+#       .Object@type_col_map <- type_col_map
+#     }
 
-    if( !is.list(type_col_map)){
-      .Object@type_col_map <-  list(type_col_map)
-    } else {
-      .Object@type_col_map <- type_col_map
-    }
-
+    .Object@type_col_map <- type_col_map
     # set dimens
     if( is.null(dimens)){
       if( is.matrix(.Object@mu) ){
