@@ -45,6 +45,8 @@ setMethod(
     rmark <- plist$rmark
     dimens <- plist$dimens
 
+    type_col_map <- object@type_col_map
+
     N <- matrix(numeric(length = dimens * size), ncol = dimens)
     Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
     colnames(Nc)  <- paste0("Nc", 1:dimens)
@@ -68,9 +70,12 @@ setMethod(
     }
 
     # default lambda0
-    if(length(type_col_map) > 0 & is.null(lambda0)){
-      stop("In this model, please provide lambda0.")
+    if(!is.null(type_col_map)){
+      if(length(type_col_map) > 0 & is.null(lambda0)){
+        stop("In this model, please provide lambda0.")
+      }
     }
+
 
     if(!is.null(lambda0)){
 
