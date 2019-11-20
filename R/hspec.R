@@ -33,9 +33,10 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
 #' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
 #' @slot dimens dimension of the model
-#' @slot rmark a function that represets mark for counting process
+#' @slot rmark a function that generates mark for counting process, for simulation
+#' @slot dmark a density function for mark, for estimation
 #' @slot impact a function that describe the after impact of mark to lambda
-#' @slot type_col_map
+#' @slot type_col_map used for multiple kernel
 #'
 #' @examples
 #' MU <- matrix(c(0.2), nrow = 2)
@@ -51,6 +52,7 @@ setClass("hspec",
     beta = "matrixORnumericORfunction",
     dimens = "numeric",
     rmark = "functionORNULL",
+    dmark = "functionORNULL",
     impact = "functionORNULL",
     type_col_map = "listORNULL"
   )
@@ -74,7 +76,7 @@ setMethod(
   "initialize",
   "hspec",
   function(.Object, mu, alpha, beta, impact=NULL, type_col_map = NULL, dimens=NULL,
-           rmark=NULL, stability_check=FALSE){
+           rmark=NULL, dmark = NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
     if (is.null(rmark)) rmark <- function(...) 1
@@ -128,7 +130,9 @@ setMethod(
     }
 
 
+    .Object@dmark <- dmark
     .Object@impact <- impact
+
 
     # Check spectral radius, only works for non marked model
     if ( stability_check==TRUE && max(abs(eigen(alpha/beta)$values)) > 1)

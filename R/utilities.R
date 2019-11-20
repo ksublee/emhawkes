@@ -160,13 +160,14 @@ setting <- function(object){
   }
 
   rmark <- object@rmark
+  dmark <- object@dmark
   impact <- object@impact
 
 
   # dimension of Hawkes process
   dimens <- object@dimens
 
-  list(mu = mu, alpha = alpha, beta = beta, impact = impact, rmark = rmark, dimens = dimens)
+  list(mu = mu, alpha = alpha, beta = beta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
 
 }
 

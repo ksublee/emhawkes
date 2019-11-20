@@ -7,11 +7,12 @@ NULL
 #' (The estimation for jump distribution is not provided.)
 #'
 #' @param object \code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.
-#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
-#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
-#' @param mark a vector of mark (jump) sizes. Start with zero.
+#' @param inter_arrival a vector of realized inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param type a vector of realized dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param mark a vector of realized mark (jump) sizes. Start with zero.
 #' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
 #' @param N0 the initial value of N
+#' @param dmark Density function of mark. To calculate the log-likelihood of mark part. If NULL, the log-likelihood of mark part is not caculated.
 #'
 #' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
@@ -29,6 +30,7 @@ setMethod(
     beta <- plist$beta
     impact <- plist$impact
     rmark <- plist$rmark
+    dmark <- plist$dmark
     dimens <- plist$dimens
 
     # When the mark sizes are not provided, the jumps are all unit jumps
@@ -124,6 +126,7 @@ setMethod(
     sum_log_lambda <- 0
     sum_integrated_lambda_component <- 0
     sum_mu_inter_arrival <- 0
+    sum_log_dmark <- 0
 
     current_lambda <- lambda0
 
@@ -151,6 +154,16 @@ setMethod(
       ## 2. sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu_n + sum(decayed_lambda)
       else lambda_lc <- mu_n + rowSums(decayed_lambda)
+
+      ## 2.1. sum of log mark pdf when jump occurs
+      if(!is.null(dmark)){
+        sum_log_dmark <- sum_log_dmark +
+                         log(dmark(mark = mark, n = n, type = type, inter_arrival = inter_arrival,
+                                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                                  lambda_component_n = lambda_component_n,
+                                  mu = mu, alpha = alpha, beta = beta))
+
+      }
 
       #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
       oldw <- getOption("warn")
@@ -223,8 +236,7 @@ setMethod(
 
     # log likelihood for ground process
     # sum_log_lambda - sum(mu_n*sum(inter_arrival)) - sum_integrated_lambda_component
-    sum_log_lambda - sum_mu_inter_arrival - sum_integrated_lambda_component
-
+    sum_log_lambda - sum_mu_inter_arrival - sum_integrated_lambda_component + sum_log_dmark
 
   }
 )

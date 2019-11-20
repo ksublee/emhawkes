@@ -144,6 +144,7 @@ setMethod(
     beta <- plist$beta
     impact <- plist$impact
     rmark <- plist$rmark
+    dmark <- plist$dmark
     dimens <- plist$dimens
 
     # parameter setting
@@ -170,7 +171,16 @@ setMethod(
     } else {
       pr_impact <- NULL
     }
-    starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_impact)
+    len_impact <- length(pr_impact)
+
+    if(!is.null(dmark)){
+      #get default parameter values
+      pr_mark <- eval(formals(object@dmark)[[1]])
+    } else {
+      pr_mark <- NULL
+    }
+
+    starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_impact, pr_mark)
     #print(starting_point)
 
     # loglikelihood function for maxLik
@@ -183,8 +193,10 @@ setMethod(
       pr_mus <- param[1:len_mu]
       pr_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
       pr_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
-      pr_impact <- param[(len_mu + len_alpha + len_beta + 1):length(param)]
+      pr_impact <- param[(len_mu + len_alpha + len_beta + 1):(len_mu + len_alpha + len_beta + len_impact)]
+      pr_mark <- param[(len_mu + len_alpha + len_beta + len_impact + 1):length(param)]
 
+      # little bit inefficient part....
       # Convert to matrix
       if (is.function(object@mu)){
         mu0 <- hijack(object@mu, param = pr_mus)
@@ -214,19 +226,34 @@ setMethod(
         }
       }
 
+      if (!is.null(object@dmark)){
+        dmark0 <- hijack(object@dmark, param = pr_mark)
+      } else {
+        dmark0 <- NULL
+      }
 
       #object@impact is user defined impact function
       if (!is.null(object@impact)){
         impact0 <- hijack(object@impact, param = pr_impact)
-
-        hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
-                                impact = impact0,
-                                rmark = object@rmark, type_col_map = object@type_col_map)
-
       } else {
-        hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
-                                rmark = object@rmark, type_col_map = object@type_col_map)
+        impact0 <- NULL
       }
+
+      hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+                             impact = impact0, dmark = dmark0,
+                             rmark = object@rmark, type_col_map = object@type_col_map)
+
+      # if (!is.null(object@impact)){
+      #   impact0 <- hijack(object@impact, param = pr_impact)
+      #
+      #   hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+      #                           impact = impact0,
+      #                           rmark = object@rmark, type_col_map = object@type_col_map)
+      #
+      # } else {
+      #   hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+      #                           rmark = object@rmark, type_col_map = object@type_col_map)
+      # }
 
 
       this_flag_represents_binding_env_is_hfit <- TRUE
