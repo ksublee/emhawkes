@@ -45,7 +45,7 @@ look_up_mtrx <- function(M, notation){
     for  (i in 1:nrow(M)){
       for (j in 1:ncol(M)) {
         if (reference[k] == "")
-          reference[which(t(M) == M[i,j])] <- paste(paste0(notation, toString(i)), toString(j), sep=",")
+          reference[which(t(M) == M[i,j])] <- paste(paste0(notation, toString(i)), toString(j), sep=".")
         k <- k + 1
       }
     }
@@ -82,7 +82,7 @@ look_up_mtrx <- function(M, notation){
 #
 # }
 
-full_names <- function(M, notation, sep=","){
+full_names <- function(M, notation, sep="."){
 
   my_paste <- function(...){
     paste(..., sep=sep)
@@ -100,7 +100,7 @@ full_names <- function(M, notation, sep=","){
 }
 
 # find unique vector
-as.unique.vector <- function(M, notation, sep=","){
+as.unique.vector <- function(M, notation, sep="."){
 
   my_paste <- function(...){
     paste(..., sep=sep)
