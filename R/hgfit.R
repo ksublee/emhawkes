@@ -1,7 +1,7 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
-#' Infer lambda process with given Hawke model and realized path
+#' Infer lambda process with given Hawkes model and realized path
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
@@ -216,7 +216,10 @@ integrate_rambda_component <- function(inter_arrival, rambda_componet, beta, dim
 }
 
 
-integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
+integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
+                             type = NULL, mark = NULL,
+                             N = NULL, Nc = NULL,
+                             lambda0 = NULL, N0 = NULL){
 
   size <- length(inter_arrival)
 
@@ -286,7 +289,7 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param rambda_component right continuous version of lambda process
 #' @param mu numeric value or matrix or function, if numeric, automatically converted to matrix
-#' @param beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
+#' @param beta numeric value or matrix or function, if numeric, automatically converted to matrix, exponential decay
 #' @param dimens dimension of the model. if omitted, set to be the length of \code{mu}.
 #'
 #' @examples
@@ -303,7 +306,10 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens){
 #' qqline(q, distribution=qexp,col="blue", lty=2)
 #'
 #' @export
-residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens=NULL){
+residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens=NULL,
+                             mark = NULL,
+                             N = NULL, Nc = NULL,
+                             lambda0 = NULL, N0 = NULL){
 
   if (is.null(dimens)){
     if (is.function(mu)){
@@ -313,7 +319,10 @@ residual_process <- function(component, type, inter_arrival, rambda_component, m
       dimens <- length(mu)
     }
   }
-  integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens)
+  integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens,
+                                        type = type, mark = mark,
+                                        N = N, Nc = Nc,
+                                        lambda0 = lambda0, N0 = N0)
 
   row_idx <- which(type == component)
   res_process <- rep(0, (length(row_idx)-1))
