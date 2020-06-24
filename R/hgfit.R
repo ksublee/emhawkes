@@ -70,12 +70,12 @@ setMethod(
     if(!is.null(lambda0)){
 
       # If the dimensions of model and lambda0 do not match, lambda0 will be adjusted
-      if (dimens^2 > length(lambda0)){
+      if (dimens * ncol(beta) > length(lambda0)){
         warning("The size of lambda0 does not match to the dimension of the model and is adjusted. \n
                 lambda0 is now :")
         lambda0 <- rep(lambda0, dimens^2)
       }
-      if (dimens^2 < length(lambda0)){
+      if (dimens * ncol(beta) < length(lambda0)){
         warning("The size of lambda0 does not match to the dimension of the model and is adjusted.\n
                 lambda0 is now :")
         lambda0 <- lambda0[1:dimens^2]
@@ -93,7 +93,8 @@ setMethod(
 
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens^2)
+
+    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
     lambda <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
@@ -103,12 +104,13 @@ setMethod(
 
     # Set column names
     colnames(lambda) <- paste0("lambda", 1:dimens)
-    indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
-    colnames(lambda_component) <- paste0("lambda", indxM, t(indxM))
+    indxM <- matrix(rep(1:ncol(beta), dimens), byrow = TRUE, nrow = dimens)
+    colnames(lambda_component) <- as.vector(t(outer(as.vector(outer("lambda", 1:dimens, FUN = paste0)),
+                                                    1:ncol(beta), FUN=paste0)))
 
     colnames(rambda) <- paste0("rambda", 1:dimens)
-    indxM <- matrix(rep(1:dimens, dimens), byrow = TRUE, nrow = dimens)
-    colnames(rambda_component) <- paste0("rambda", indxM, t(indxM))
+    colnames(rambda_component) <- as.vector(t(outer(as.vector(outer("rambda", 1:dimens, FUN = paste0)),
+                                                    1:ncol(beta), FUN=paste0)))
 
 
     current_lambda <- lambda0
@@ -140,13 +142,13 @@ setMethod(
 
 
       # impact by alpha
-      impact_alpha <- matrix(rep(0, dimens^2), nrow = dimens)
+      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
       impact_alpha[ , type[n]] <- alpha[ , type[n]]
 
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
         # impact by mark
-        impact_mark <- matrix(rep(0, dimens^2), nrow = dimens)
+        impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
