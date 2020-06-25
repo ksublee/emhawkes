@@ -142,8 +142,21 @@ setMethod(
 
 
       # impact by alpha
+
+      # impact by alpha
       impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
-      impact_alpha[ , type[n]] <- alpha[ , type[n]]
+
+      if( length(object@type_col_map) == 0){
+        types <- type[n]
+      } else{
+        types <- object@type_col_map[[type[n]]]
+      }
+
+      impact_alpha[ , types] <- alpha[ , types]
+
+
+      #impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+      #impact_alpha[ , type[n]] <- alpha[ , type[n]]
 
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
