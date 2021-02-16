@@ -6,15 +6,43 @@
 \alias{hfit,hspec-method}
 \title{Perform Maximum Likelihood Estimation}
 \usage{
-hfit(object, inter_arrival = NULL, type = NULL, mark = NULL, N = NULL,
-  Nc = NULL, lambda0 = NULL, N0 = NULL, mylogLik = NULL,
-  reduced = TRUE, grad = NULL, hess = NULL, constraint = NULL,
-  method = "BFGS", verbose = FALSE, ...)
+hfit(
+  object,
+  inter_arrival = NULL,
+  type = NULL,
+  mark = NULL,
+  N = NULL,
+  Nc = NULL,
+  lambda0 = NULL,
+  N0 = NULL,
+  mylogLik = NULL,
+  reduced = TRUE,
+  grad = NULL,
+  hess = NULL,
+  constraint = NULL,
+  method = "BFGS",
+  verbose = FALSE,
+  ...
+)
 
-\S4method{hfit}{hspec}(object, inter_arrival = NULL, type = NULL,
-  mark = NULL, N = NULL, Nc = NULL, lambda0 = NULL, N0 = NULL,
-  mylogLik = NULL, reduced = TRUE, grad = NULL, hess = NULL,
-  constraint = NULL, method = "BFGS", verbose = FALSE, ...)
+\S4method{hfit}{hspec}(
+  object,
+  inter_arrival = NULL,
+  type = NULL,
+  mark = NULL,
+  N = NULL,
+  Nc = NULL,
+  lambda0 = NULL,
+  N0 = NULL,
+  mylogLik = NULL,
+  reduced = TRUE,
+  grad = NULL,
+  hess = NULL,
+  constraint = NULL,
+  method = "BFGS",
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{\code{\link{hspec-class}}. This object includes the parameter values}
@@ -24,6 +52,10 @@ hfit(object, inter_arrival = NULL, type = NULL, mark = NULL, N = NULL,
 \item{type}{a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 
 \item{mark}{a vector of mark (jump) sizes. Start with zero.}
+
+\item{N}{a matrix of counting processes}
+
+\item{Nc}{a matrix of cumulated counting processes}
 
 \item{lambda0}{the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
 
@@ -47,14 +79,12 @@ hfit(object, inter_arrival = NULL, type = NULL, mark = NULL, N = NULL,
 }
 \description{
 Generic function hfit.
-Exponential decaying marked A method for estimating the parameters of the Hawkes model.
-The reason for being constructed as the S4 methodis as follows.
+A method for estimating the parameters of the exponential Hawkes model.
+The reason for being constructed as the S4 method is as follows.
 First, to represent the structure of the model as an hspec object.
 There are numerous variations on the mutlivariate marked Hawkes model.
 Second, to convey the starting point of numerical optimization.
 The parameter values assigned to the hspec slots become initial values.
-This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
-
 This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 }
 \examples{

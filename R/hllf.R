@@ -10,9 +10,10 @@ NULL
 #' @param inter_arrival a vector of realized inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of realized dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of realized mark (jump) sizes. Start with zero.
+#' @param N a matrix of counting processes
+#' @param Nc a matrix of cumulated counting processes
 #' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
 #' @param N0 the initial value of N
-#' @param dmark Density function of mark. To calculate the log-likelihood of mark part. If NULL, the log-likelihood of mark part is not caculated.
 #'
 #' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
@@ -24,6 +25,7 @@ setMethod(
            N0 = NULL, lambda0 = NULL){
     # parameter setting
     # after parameter setting, functions mu, alpha, beta become matrices
+
     plist <- setting(object)
     mu <- plist$mu
     alpha <- plist$alpha
@@ -140,10 +142,15 @@ setMethod(
       rmu_n <- mu
     }
 
+
+    is_lambda_necessary <- "lambda" %in% c(impct_args, mu_args)
+    is_lambda_component_necessary <- "lambda_component" %in% c(impct_args, mu_args)
+
     for (n in 2:size) {
 
       mu_n <- rmu_n
 
+      # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
       decayed_lambda <- lambda_component_n <- current_lambda * decayed
 
@@ -151,47 +158,56 @@ setMethod(
       sum_integrated_lambda_component <- sum_integrated_lambda_component +
         sum(current_lambda / beta * ( 1 - decayed ))
 
+
       ## 2. sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu_n + sum(decayed_lambda)
-      else lambda_lc <- mu_n + rowSums(decayed_lambda)
+      else lambda_lc_type_n <- mu_n[type[n]] + sum(decayed_lambda[type[n], ])
 
-      ## 2.1. sum of log mark pdf when jump occurs
-      if(!is.null(dmark)){
-        sum_log_dmark <- sum_log_dmark +
-                         log(dmark(mark = mark, n = n, type = type, inter_arrival = inter_arrival,
-                                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                  lambda_component_n = lambda_component_n,
-                                  mu = mu, alpha = alpha, beta = beta))
-
-      }
 
       #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
       oldw <- getOption("warn")
+
       options(warn = -1)
-      sum_log_lambda <- sum_log_lambda + log(lambda_lc[type[n]])
+      if (dimens == 1) sum_log_lambda <- sum_log_lambda + log(lambda_lc)
+      else sum_log_lambda <- sum_log_lambda + log(lambda_lc_type_n)
+
+
       options(warn = oldw)
+
+      ## 2.1. sum of log mark p.d.f. when jump occurs
+      if(!is.null(dmark)){
+        sum_log_dmark <- sum_log_dmark +
+          log(dmark(mark = mark, n = n, type = type, inter_arrival = inter_arrival,
+                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                    lambda_component_n = lambda_component_n,
+                    mu = mu, alpha = alpha, beta = beta))
+
+      }
+
+
 
       ## 3. sum of mu * inter_arrival
       sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
 
-      if("lambda_component" %in% c(impct_args, mu_args))
+      if(is_lambda_component_necessary)
         lambda_component[n, ] <- t(decayed_lambda)
-      if("lambda" %in% c(impct_args, mu_args))
+      if(is_lambda_necessary)
         lambda[n, ] <- as.vector(mu_n) + rowSums(decayed_lambda)
 
       # impact
       # 1. impact by alpha
-      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
       if( is.null(object@type_col_map) ){
         types <- type[n]
       } else if ( length(object@type_col_map) > 0 ) {
         types <- object@type_col_map[[type[n]]]
       } else {
-        stop("Check type_col_map.")
+        stop("Check the type_col_map argument.")
       }
 
+      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
       impact_alpha[ , types] <- alpha[ , types]
+
 
       # 2. impact by mark
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
@@ -203,26 +219,23 @@ setMethod(
                              lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
-        #impact_res <- impact()
-
         impact_mark[ , types] <- impact_res[ , types]
 
-        new_lambda <- decayed_lambda + impact_alpha + impact_mark
+        # for next step
+        current_lambda <- decayed_lambda + impact_alpha + impact_mark
 
       } else {
 
-        new_lambda <- decayed_lambda + impact_alpha
+        # for next step
+        current_lambda <- decayed_lambda + impact_alpha
 
       }
 
 
-      # for next step
-      # current_lambda <- matrix(lambda_component[n, ], nrow = dimens, byrow = TRUE)
-      current_lambda <- new_lambda
 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
-        # mu is represeted by function
+        # mu is represented by a function
         rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
                    N = N, Nc = Nc,
                    alpha = alpha, beta = beta)
@@ -233,6 +246,7 @@ setMethod(
 
 
     }
+
 
     # log likelihood for ground process
     # sum_log_lambda - sum(mu_n*sum(inter_arrival)) - sum_integrated_lambda_component

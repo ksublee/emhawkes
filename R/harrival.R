@@ -61,9 +61,9 @@ rarrival <- function(n, mark, type, inter_arrival,
       } else{
         while(TRUE){
 
-          s <- s + rexp(1, current_lambda_mu[i])
+          s <- s + stats::rexp(1, current_lambda_mu[i])
 
-          U <- runif(1, 0, current_lambda_mu[i])
+          U <- stats::runif(1, 0, current_lambda_mu[i])
 
           f <- sum(current_lambda_component[i,] * exp((- beta[i, ] * s)))
 

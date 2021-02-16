@@ -3,16 +3,25 @@ NULL
 
 #' Infer lambda process with given Hawkes model and realized path
 #'
+#' This method compute the inferred lambda process and returns it as \code{hreal} form.
+#' If we have realized path of Hawkes process and its parameter value, then we can compute the inferred lambda processes.
+#' Similarly with other method such as \code{hfit}, the input arguments are \code{inter_arrival}, \code{type}, \code{mark},
+#' or equivalently, \code{N} and \code{Nc}.
+#'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param N Hawkes process. if not provided, then generate using inter_arrival and type.
-#' @param Nc cumulated Hawkes process. if not provided, then generate using inter_arrival, type and mark.
-#' @param lambda0 the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
+#' @param Nc mark accumulated Hawkes process. if not provided, then generate using inter_arrival, type and mark.
+#' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
 #' @param N0 the initial values of N.
 #'
-#' @return hreal S3-object, the Haweks model with infered intensity, lambda
+#' @return hreal S3-object, the Haweks model with inferred intensity, lambda
+#'
+#' @docType methods
+#' @rdname infer_lambda
+#' @export
 #'
 #' @examples
 #' mu <- c(0.1, 0.1)
@@ -22,16 +31,12 @@ NULL
 #' res <- hsim(h, size=100)
 #' res2 <- infer_lambda(h, res$inter_arrival, res$type)
 #'
-#' @export
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
                             lambda0 = NULL, N0 = NULL) standardGeneric("infer_lambda"))
 #'
-#' This method compute the infered lambda process and returns it as \code{hreal} form.
-#' If we have realized path of Hawkes process and its parameter value, then we can compute the infered lambda processs.
-#' Similarly with other method such as \code{hfit}, the input aruments are \code{inter_arrival}, \code{type}, \code{mark},
-#' or equivalently, \code{N} and \code{Nc}.
+#' @rdname infer_lambda
 #'
 setMethod(
   f="infer_lambda",
@@ -67,6 +72,14 @@ setMethod(
       mu0 <- mu
     }
 
+    # default lambda0
+    if(!is.null(object@type_col_map)){
+      if(length(object@type_col_map) > 0 & is.null(lambda0)){
+        stop("In this model, please provide lambda0.")
+      }
+    }
+
+
     if(!is.null(lambda0)){
 
       # If the dimensions of model and lambda0 do not match, lambda0 will be adjusted
@@ -93,7 +106,6 @@ setMethod(
 
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-
     lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
@@ -131,10 +143,7 @@ setMethod(
 
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
-      #decayed_lambda <- current_rambda_component * decayed
       decayed_lambda <- lambda_component_n <- current_lambda * decayed
-
-      #decayed_lambda <- matrix(rambda_component[n-1,], dimens, byrow = T) * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -170,15 +179,15 @@ setMethod(
 
         impact_mark[ , type[n]] <- impact_res[ , type[n]]
 
-        new_lambda <- decayed_lambda + impact_alpha + impact_mark
+        # for next step
+        current_lambda <- decayed_lambda + impact_alpha + impact_mark
 
       } else {
 
-        new_lambda <- decayed_lambda + impact_alpha
+        # for next step
+        current_lambda <- decayed_lambda + impact_alpha
 
       }
-
-      current_lambda <- new_lambda
 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
@@ -193,8 +202,8 @@ setMethod(
       }
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
-      rambda_component[n, ] <- t(new_lambda)
-      rambda[n, ] <- rmu_n + rowSums(new_lambda)
+      rambda_component[n, ] <- t(current_lambda)
+      rambda[n, ] <- rmu_n + rowSums(current_lambda)
 
       #current_rambda_component <- new_lambda
     }
@@ -211,6 +220,8 @@ setMethod(
 )
 
 integrate_rambda_component <- function(inter_arrival, rambda_componet, beta, dimens){
+
+  size <- length(inter_arrival)
 
   integrated_rambda_component <- matrix(rep(0, nrow(rambda_componet)*ncol(rambda_componet)),
                                             nrow=nrow(rambda_componet))
@@ -232,8 +243,10 @@ integrate_rambda_component <- function(inter_arrival, rambda_componet, beta, dim
 
 
 integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
+                             alpha = NULL,
                              type = NULL, mark = NULL,
-                             N = NULL, Nc = NULL,
+                             N = NULL, Nc = NULL, lambda = NULL,
+                             lambda_component = NULL, lambda_component_n = NULL,
                              lambda0 = NULL, N0 = NULL){
 
   size <- length(inter_arrival)
@@ -279,7 +292,7 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 
     # new mu, i.e., right continuous version of mu
     if (is.function(mu)){
-      # mu is represeted by function
+      # mu is represented by function
       rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
                   N = N, Nc = Nc,
                   lambda_component_n = lambda_component_n,
@@ -300,12 +313,17 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
 #'
 #' @param component the component of type to get the residual process
-#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param type a vector of types. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param rambda_component right continuous version of lambda process
 #' @param mu numeric value or matrix or function, if numeric, automatically converted to matrix
 #' @param beta numeric value or matrix or function, if numeric, automatically converted to matrix, exponential decay
 #' @param dimens dimension of the model. if omitted, set to be the length of \code{mu}.
+#' @param mark a vector of realized mark (jump) sizes. Start with zero.
+#' @param N a matrix of counting processes
+#' @param Nc a matrix of cumulated counting processes
+#' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
+#' @param N0 the initial value of N
 #'
 #' @examples
 #'

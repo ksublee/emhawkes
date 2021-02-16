@@ -1,6 +1,6 @@
 Package: emhawkes
 Title: Exponential Multivariate Hawkes Model
-Version: 0.9.4
+Version: 0.9.5
 Authors@R: person("Kyungsub", "Lee", email = "kyungsub@gmail.com", role = c("aut", "cre"))
 Maintainer: Kyungsub Lee <kyungsub@gmail.com>
 Description: Simulate and fitting exponential multivariate Hawkes model. 
@@ -11,7 +11,7 @@ Depends: R (>= 3.4.0)
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1
 Imports: maxLik,
     methods
 Collate: 
@@ -28,4 +28,3 @@ Collate:
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
-

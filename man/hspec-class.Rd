@@ -41,11 +41,13 @@ It is represetned by slot \code{beta}.
 
 \item{\code{dimens}}{dimension of the model}
 
-\item{\code{rmark}}{a function that represets mark for counting process}
+\item{\code{rmark}}{a function that generates mark for counting process, for simulation}
+
+\item{\code{dmark}}{a density function for mark, for estimation}
 
 \item{\code{impact}}{a function that describe the after impact of mark to lambda}
 
-\item{\code{type_col_map}}{}
+\item{\code{type_col_map}}{used for multiple kernel}
 }}
 
 \examples{

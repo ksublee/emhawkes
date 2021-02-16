@@ -137,17 +137,34 @@ setMethod(
       mu_n <- rmu_n
 
 
-      ### Determine the next arrival #############################################################
+      ### Determine the next arrival, type and mark #######################################################
       res <- rarrival(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                rambda = rambda, rambda_component = rambda_component,
                mu = mu_n, alpha = alpha, beta = beta, dimens = dimens, type_col_map = object@type_col_map)
       inter_arrival[n] <- res["inter_arrival"]
       type[n] <- res["type"]
-      ############################################################################################
+
 
       N[n, ] <- N[n-1, ]
       N[n, type[n]] <- N[n-1, type[n]] + 1
+
+      # generate a mark for Hawkes
+      # This quantity is added to the counting process.
+      if( !is.null(rmark) ){
+        # mark may depends on other variables
+        # mark[n] is a scalar
+        mark[n] <- rmark(n = n, Nc = Nc, N = N,
+                         lambda = lambda, lambda_component = lambda_component,
+                         type = type)
+      } else {
+        mark[n] <- 1
+      }
+
+      Nc[n, ] <- Nc[n-1, ]
+      Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
+      ######################################################################################################
+
 
       # lambda decayed due to time, impact due to mark is not added yet
       decayed <- exp(-beta * inter_arrival[n])
@@ -157,23 +174,6 @@ setMethod(
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
       lambda[n, ] <- mu_n + rowSums(decayed_lambda)
-
-
-
-      # generate a mark for Hawkes
-      # This quantity is added to the counting process.
-      if( !is.null(rmark) ){
-        # mark may depends on other variables
-        # mark[n] is a scalar
-        mark[n] <- rmark(n = n, Nc = Nc, N = N,
-                               lambda = lambda, lambda_component = lambda_component,
-                               type = type)
-      } else {
-        mark[n] <- 1
-      }
-
-      Nc[n, ] <- Nc[n-1, ]
-      Nc[n, type[n]] <- Nc[n-1, type[n]] + mark[n]
 
 
       # impact by alpha
@@ -213,8 +213,8 @@ setMethod(
 
       if (is.function(mu)){
         rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                   alpha = alpha, beta = beta)
+                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                    alpha = alpha, beta = beta)
       } else{
         rmu_n <- mu
       }
@@ -232,3 +232,5 @@ setMethod(
     realization
   }
 )
+
+

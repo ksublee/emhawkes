@@ -11,7 +11,9 @@ setMethod(
   signature(object = "hspec"),
   definition = function(object, mark = mark, type = type, inter_arrival = inter_arrival,
                         N = N, Nc = Nc,
-                        mu = mu, alpha = alpha, beta = beta, ...){
+                        mu = mu, alpha = alpha, beta = beta,
+                        lambda = NULL, lambda_component = NULL, lambda_component_n = NULL,
+                        ...){
 
     dimens <- object@dimens
 
