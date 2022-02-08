@@ -158,6 +158,12 @@ setting <- function(object){
   } else{
     beta <- object@beta
   }
+  if (is.function(object@eta)){
+    eta <- evalf(object@eta)
+  } else{
+    eta <- object@eta
+  }
+
 
   rmark <- object@rmark
   dmark <- object@dmark
@@ -167,7 +173,7 @@ setting <- function(object){
   # dimension of Hawkes process
   dimens <- object@dimens
 
-  list(mu = mu, alpha = alpha, beta = beta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
+  list(mu = mu, alpha = alpha, beta = beta, eta = eta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
 
 }
 

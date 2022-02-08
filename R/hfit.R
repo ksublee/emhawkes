@@ -143,6 +143,7 @@ setMethod(
     mu <- plist$mu
     alpha <- plist$alpha
     beta <- plist$beta
+    eta <- plist$eta
     impact <- plist$impact
     rmark <- plist$rmark
     dmark <- plist$dmark
@@ -162,9 +163,18 @@ setMethod(
     pr_alphas <- as.param(object@alpha, "alpha", reduced)
     pr_betas <- as.param(object@beta, "beta", reduced)
 
+
     len_mu <- length(pr_mus)
     len_alpha <- length(pr_alphas)
     len_beta <- length(pr_betas)
+
+    if(!is.null(eta)){
+      pr_etas <- as.param(object@eta, "eta", reduced)
+    } else {
+      pr_etas <- NULL
+    }
+
+    len_eta <- length(pr_etas)
 
     if(!is.null(impact)){
       #get default parameter values
@@ -181,7 +191,7 @@ setMethod(
       pr_mark <- NULL
     }
 
-    starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_impact, pr_mark)
+    starting_point <- c(pr_mus, pr_alphas, pr_betas, pr_etas, pr_impact, pr_mark)
     #print(starting_point)
 
     # loglikelihood function for maxLik
@@ -195,10 +205,12 @@ setMethod(
       pr_mus <- param[1:len_mu]
       pr_alphas <- param[(len_mu + 1):(len_mu + len_alpha)]
       pr_betas <- param[(len_mu + len_alpha + 1):(len_mu + len_alpha + len_beta)]
-      pr_impact <- param[(len_mu + len_alpha + len_beta + 1):(len_mu + len_alpha + len_beta + len_impact)]
-      pr_mark <- param[(len_mu + len_alpha + len_beta + len_impact + 1):length(param)]
+      pr_etas <- param[(len_mu + len_alpha + len_beta + 1):(len_mu + len_alpha + len_beta + len_eta)]
 
-      # little bit inefficient part....
+      pr_impact <- param[(len_mu + len_alpha + len_beta + len_eta + 1):(len_mu + len_alpha + len_beta + len_eta + len_impact)]
+      pr_mark <- param[(len_mu + len_alpha + len_beta + len_eta + len_impact + 1):length(param)]
+
+      # Maybe little bit inefficient part....
       # Convert to matrix
       if (is.function(object@mu)){
         mu0 <- hijack(object@mu, param = pr_mus)
@@ -228,6 +240,20 @@ setMethod(
         }
       }
 
+      if (!is.null(object@eta)){
+        if(is.function(object@eta)) {
+          eta0 <- hijack(object@eta, param = pr_etas)
+        } else{
+          if(reduced){
+            eta0 <- matrix(pr_etas[look_up_mtrx(eta, "eta")], nrow=dimens)
+          } else {
+            eta0 <- matrix(pr_etas, nrow=dimens)
+          }
+        }
+      } else {
+        eta0 <- NULL
+      }
+
       if (!is.null(object@dmark)){
         dmark0 <- hijack(object@dmark, param = pr_mark)
       } else {
@@ -241,7 +267,7 @@ setMethod(
         impact0 <- NULL
       }
 
-      hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0,
+      hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0, eta = eta0,
                              impact = impact0, dmark = dmark0,
                              rmark = object@rmark, type_col_map = object@type_col_map)
 

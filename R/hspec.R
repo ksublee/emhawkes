@@ -2,6 +2,8 @@ setClassUnion("matrixORnumeric", c("matrix", "numeric"))
 setClassUnion("functionORNULL",members=c("function", "NULL"))
 setClassUnion("listORNULL",members=c("list", "NULL"))
 setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
+setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "function", "NULL"))
+
 
 #' An S4 class to represent an exponential marked Hawkes model
 #'
@@ -32,6 +34,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' @slot mu numeric value or matrix or function, if numeric, automatically converted to matrix
 #' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
 #' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
+#' @slot eta numeric value or matrix or function, if numeric,, automatically converted to matrix, impact by additional mark
 #' @slot dimens dimension of the model
 #' @slot rmark a function that generates mark for counting process, for simulation
 #' @slot dmark a density function for mark, for estimation
@@ -50,6 +53,7 @@ setClass("hspec",
     mu = "matrixORnumericORfunction",
     alpha = "matrixORnumericORfunction",
     beta = "matrixORnumericORfunction",
+    eta = "matrixORnumericORfunctionORNULL",
     dimens = "numeric",
     rmark = "functionORNULL",
     dmark = "functionORNULL",
@@ -75,7 +79,7 @@ setClass("hspec",
 setMethod(
   "initialize",
   "hspec",
-  function(.Object, mu, alpha, beta, impact=NULL, type_col_map = NULL, dimens=NULL,
+  function(.Object, mu, alpha, beta, eta=NULL, impact=NULL, type_col_map = NULL, dimens=NULL,
            rmark=NULL, dmark = NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
@@ -103,6 +107,11 @@ setMethod(
       .Object@beta <-  as.matrix(beta)
     } else {
       .Object@beta <- beta
+    }
+    if( !is.null(eta) & !is.function(eta) & !is.matrix(eta) ){
+      .Object@eta <-  as.matrix(eta)
+    } else {
+      .Object@eta <- eta
     }
 #
 #     if( !is.list(type_col_map)){

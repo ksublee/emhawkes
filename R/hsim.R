@@ -41,6 +41,7 @@ setMethod(
     mu <- plist$mu
     alpha <- plist$alpha
     beta <- plist$beta
+    eta <- plist$eta
     impact <- plist$impact
     rmark <- plist$rmark
     dimens <- plist$dimens
@@ -187,6 +188,18 @@ setMethod(
 
       impact_alpha[ , types] <- alpha[ , types]
 
+      new_lambda <- decayed_lambda + impact_alpha
+
+      # additional impact by eta
+      if(!is.null(eta)){
+
+        impact_eta <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+        impact_eta[ , types] <- eta[ , types] * (mark[n] - 1)
+
+        new_lambda <- new_lambda + impact_eta
+      }
+
+
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
         # impact by mark
@@ -199,11 +212,7 @@ setMethod(
 
         impact_mark[ , types] <- impact_res[ , types]
 
-        new_lambda <- decayed_lambda + impact_alpha + impact_mark
-
-      } else {
-
-        new_lambda <- decayed_lambda + impact_alpha
+        new_lambda <- new_lambda + impact_mark
 
       }
 

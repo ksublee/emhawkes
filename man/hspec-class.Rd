@@ -39,6 +39,8 @@ It is represetned by slot \code{beta}.
 
 \item{\code{beta}}{numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay}
 
+\item{\code{eta}}{numeric value or matrix or function, if numeric,, automatically converted to matrix, impact by additional mark}
+
 \item{\code{dimens}}{dimension of the model}
 
 \item{\code{rmark}}{a function that generates mark for counting process, for simulation}

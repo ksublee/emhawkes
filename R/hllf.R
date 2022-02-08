@@ -26,10 +26,12 @@ setMethod(
     # parameter setting
     # after parameter setting, functions mu, alpha, beta become matrices
 
+
     plist <- setting(object)
     mu <- plist$mu
     alpha <- plist$alpha
     beta <- plist$beta
+    eta <- plist$eta
     impact <- plist$impact
     rmark <- plist$rmark
     dmark <- plist$dmark
@@ -110,7 +112,7 @@ setMethod(
     rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
 
 
-    # too complicated code
+    # little bit complicated code
     if("lambda_component" %in% c(impct_args, mu_args)){
       lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = ncol(beta) * dimens)
       indxM <- matrix(rep(1:ncol(beta), dimens), byrow = TRUE, nrow = dimens)
@@ -146,12 +148,19 @@ setMethod(
     is_lambda_necessary <- "lambda" %in% c(impct_args, mu_args)
     is_lambda_component_necessary <- "lambda_component" %in% c(impct_args, mu_args)
 
+    zero_mat_for_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+    zero_mat_for_eta <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+    zero_mat_for_impact <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+
+
     for (n in 2:size) {
 
       mu_n <- rmu_n
+      type_n <- type[n]
+      inter_arrival_n <- inter_arrival[n]
 
       # lambda decayed due to time, impact due to mark is not added yet
-      decayed <- exp(-beta * inter_arrival[n])
+      decayed <- exp(-beta * inter_arrival_n)
       decayed_lambda <- lambda_component_n <- current_lambda * decayed
 
       ## 1. sum of integrated_lambda_component
@@ -161,18 +170,18 @@ setMethod(
 
       ## 2. sum of log lambda when jump occurs
       if (dimens == 1) lambda_lc <- mu_n + sum(decayed_lambda)
-      else lambda_lc_type_n <- mu_n[type[n]] + sum(decayed_lambda[type[n], ])
+      else lambda_lc_type_n <- mu_n[type_n] + sum(decayed_lambda[type_n, ])
 
 
       #log(lambda_lc[type[n]]) can be NaN, so warning is turned off for a moment
-      oldw <- getOption("warn")
+      #oldw <- getOption("warn")
 
-      options(warn = -1)
+      #options(warn = -1)
       if (dimens == 1) sum_log_lambda <- sum_log_lambda + log(lambda_lc)
       else sum_log_lambda <- sum_log_lambda + log(lambda_lc_type_n)
 
 
-      options(warn = oldw)
+      #options(warn = oldw)
 
       ## 2.1. sum of log mark p.d.f. when jump occurs
       if(!is.null(dmark)){
@@ -187,7 +196,7 @@ setMethod(
 
 
       ## 3. sum of mu * inter_arrival
-      sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival[n]
+      sum_mu_inter_arrival <- sum_mu_inter_arrival + sum(mu_n) * inter_arrival_n
 
       if(is_lambda_component_necessary)
         lambda_component[n, ] <- t(decayed_lambda)
@@ -195,25 +204,38 @@ setMethod(
         lambda[n, ] <- as.vector(mu_n) + rowSums(decayed_lambda)
 
       # impact
-      # 1. impact by alpha
 
       if( is.null(object@type_col_map) ){
-        types <- type[n]
+        types <- type_n
       } else if ( length(object@type_col_map) > 0 ) {
-        types <- object@type_col_map[[type[n]]]
+        types <- object@type_col_map[[type_n]]
       } else {
         stop("Check the type_col_map argument.")
       }
 
-      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+      # 1. impact by alpha
+
+      impact_alpha <- zero_mat_for_alpha   # matrix
       impact_alpha[ , types] <- alpha[ , types]
 
+      current_lambda <- decayed_lambda + impact_alpha
 
-      # 2. impact by mark
+      # 2. additional impact by eta
+
+      if(!is.null(eta)) {
+
+        impact_eta <- zero_mat_for_eta   # matrix
+        impact_eta[ , types] <- eta[ , types] * (mark[n] - 1)
+
+        current_lambda <- current_lambda + impact_eta
+      }
+
+
+      # 3. impact by impact function
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
 
-        impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
+        impact_mark <- zero_mat_for_impact
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                              lambda_component_n = lambda_component_n,
@@ -222,15 +244,9 @@ setMethod(
         impact_mark[ , types] <- impact_res[ , types]
 
         # for next step
-        current_lambda <- decayed_lambda + impact_alpha + impact_mark
-
-      } else {
-
-        # for next step
-        current_lambda <- decayed_lambda + impact_alpha
+        current_lambda <- current_lambda + impact_mark
 
       }
-
 
 
       # new mu, i.e., right continuous version of mu
