@@ -46,12 +46,15 @@ setMethod(
            N = NULL, Nc = NULL,
            lambda0 = NULL, N0 = NULL){
 
+    # Similar to logLik function, need to integrate
+
 
     #parameter setting
     plist <- setting(object)
     mu <- plist$mu
     alpha <- plist$alpha
     beta <- plist$beta
+    eta <- plist$eta
     impact <- plist$impact
     rmark <- plist$rmark
     dimens <- plist$dimens
@@ -137,12 +140,18 @@ setMethod(
       rmu_n <- mu
     }
 
+    zero_mat_for_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+    zero_mat_for_eta <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+    zero_mat_for_impact <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+
     for (n in 2:size) {
 
       mu_n <- rmu_n
+      type_n <- type[n]
+      inter_arrival_n <- inter_arrival[n]
 
       # lambda decayed due to time, impact due to mark is not added yet
-      decayed <- exp(-beta * inter_arrival[n])
+      decayed <- exp(-beta * inter_arrival_n)
       decayed_lambda <- lambda_component_n <- current_lambda * decayed
 
       # update lambda
@@ -150,44 +159,52 @@ setMethod(
       lambda[n, ] <- mu_n + rowSums(decayed_lambda)
 
 
-      # impact by alpha
+      ## impact
 
-      # impact by alpha
-      impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
-
-      if( length(object@type_col_map) == 0){
-        types <- type[n]
-      } else{
-        types <- object@type_col_map[[type[n]]]
+      if( is.null(object@type_col_map) ){
+        types <- type_n
+      } else if ( length(object@type_col_map) > 0 ) {
+        types <- object@type_col_map[[type_n]]
+      } else {
+        stop("Check the type_col_map argument.")
       }
 
+
+      # 1. impact by alpha
+
+      impact_alpha <- zero_mat_for_alpha   # matrix
       impact_alpha[ , types] <- alpha[ , types]
 
+      current_lambda <- decayed_lambda + impact_alpha
 
-      #impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
-      #impact_alpha[ , type[n]] <- alpha[ , type[n]]
+      # 2. additional impact by eta
 
+      if(!is.null(eta)) {
+
+        impact_eta <- zero_mat_for_eta   # matrix
+        impact_eta[ , types] <- eta[ , types] * (mark[n] - 1)
+
+        current_lambda <- current_lambda + impact_eta
+      }
+
+
+      # 3. impact by impact function
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
       if(!is.null(impact)){
-        # impact by mark
-        impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
+        impact_mark <- zero_mat_for_impact
         impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
                              lambda_component_n = lambda_component_n,
                              mu = mu, alpha = alpha, beta = beta)
 
-        impact_mark[ , type[n]] <- impact_res[ , type[n]]
+        impact_mark[ , types] <- impact_res[ , types]
 
         # for next step
-        current_lambda <- decayed_lambda + impact_alpha + impact_mark
-
-      } else {
-
-        # for next step
-        current_lambda <- decayed_lambda + impact_alpha
+        current_lambda <- current_lambda + impact_mark
 
       }
+
 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
@@ -200,6 +217,8 @@ setMethod(
         # mu is a matrix
         rmu_n <- mu
       }
+
+
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
       rambda_component[n, ] <- t(current_lambda)
