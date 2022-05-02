@@ -14,7 +14,9 @@ rarrival <- function(n, mark, type, inter_arrival,
     #mu can be zero, so warning is turned off for a moment
     oldw <- getOption("warn")
     options(warn = -1)
+
     candidate_arrival <- stats::rexp(dimens, rate = mu)
+
     options(warn = oldw)
 
     current_lambda_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
