@@ -67,7 +67,7 @@ setMethod(
 
 #' Compute Hawkes volatility
 #'
-#' This function computes Hawkesvolatilty.
+#' This function computes Hawkes volatilty.
 #'
 #' @param object hspec
 #' @param horizon
