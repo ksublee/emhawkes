@@ -13,8 +13,9 @@ infer_lambda(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda0 = NULL,
-  N0 = NULL
+  lambda_component0 = NULL,
+  N0 = NULL,
+  ...
 )
 
 \S4method{infer_lambda}{hspec}(
@@ -24,29 +25,32 @@ infer_lambda(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda0 = NULL,
-  N0 = NULL
+  lambda_component0 = NULL,
+  N0 = NULL,
+  ...
 )
 }
 \arguments{
 \item{object}{\code{\link{hspec-class}}. This object includes the parameter values.}
 
-\item{inter_arrival}{inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{inter_arrival}{inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
 \item{type}{a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 
 \item{mark}{a vector of mark (jump) sizes. Start with zero.}
 
-\item{N}{Hawkes process. if not provided, then generate using inter_arrival and type.}
+\item{N}{Hawkes process. If not provided, then generate using inter_arrival and type.}
 
-\item{Nc}{mark accumulated Hawkes process. if not provided, then generate using inter_arrival, type and mark.}
+\item{Nc}{mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.}
 
-\item{lambda0}{the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
+\item{lambda_component0}{the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
 
 \item{N0}{the initial values of N.}
+
+\item{...}{further arguments passed to or from other methods.}
 }
 \value{
-hreal S3-object, the Haweks model with inferred intensity, lambda
+\code{\link{hreal}} S3-object, with inferred intensity.
 }
 \description{
 This method compute the inferred lambda process and returns it as \code{hreal} form.
@@ -60,6 +64,8 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
+summary(res)
 res2 <- infer_lambda(h, res$inter_arrival, res$type)
+summary(res2)
 
 }

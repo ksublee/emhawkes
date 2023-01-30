@@ -4,9 +4,8 @@ NULL
 setGeneric("get_lambda0", function(object, ...) standardGeneric("get_lambda0"))
 # Get the long-run expectation of intensities - lambda matrix
 #
-# This function is not crucial but useful when you want to set lamba0 by default.
+# This function is not crucial but useful when you want to set lambda0 by default.
 #
-#' @param object hspec
 setMethod(
   f = "get_lambda0",
   signature(object = "hspec"),
@@ -67,15 +66,16 @@ setMethod(
 
 #' Compute Hawkes volatility
 #'
-#' This function computes Hawkes volatilty.
+#' This function computes Hawkes volatility. Only works for bi-variate Hawkes process.
 #'
-#' @param object hspec
-#' @param horizon
-#' @param inter_arrival
-#' @param type
-#' @param mark
-#' @param dependece
-#' @param lambda0
+#' @param object \code{\link{hspec-class}}
+#' @param horizon Time horizon for volatility.
+#' @param inter_arrival Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param type  A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param mark A vector of mark (jump) sizes. Start with zero.
+#' @param dependence Dependence between mark and previous sigma-algebra.
+#' @param lambda_component0 A matrix of the starting values of lambda component.
+#' @param ... Further arguments passed to or from other methods.
 #'
 #' @rdname hvol
 #' @export
@@ -84,9 +84,8 @@ setGeneric("hvol", function(object, horizon = 1,
                            type = NULL,
                            mark = NULL,
                            dependence = FALSE,
-                           lambda0 = NULL, ...) standardGeneric("hvol"))
-#'
-#'
+                           lambda_component0 = NULL, ...) standardGeneric("hvol"))
+
 #' @rdname hvol
 setMethod(
   f = "hvol",
@@ -96,16 +95,27 @@ setMethod(
                         type = NULL,
                         mark = NULL,
                         dependence = FALSE,
-                        lambda0 = NULL,
+                        lambda_component0 = NULL,
                         ...){
+
+    additional_argument <- list(...)
+    if ("lambda0" %in% names(additional_argument)) {
+
+      warning("lambda0 is deprecated; instead use lambda_component0.")
+
+      lambda_component0 <- additional_argument[["lambda0"]]
+
+    }
 
     h <- object
 
-    infer_result <- infer_lambda(h, inter_arrival = inter_arrival, type = type, mark = mark, lambda0 = lambda0)
+    infer_result <- infer_lambda(h, inter_arrival = inter_arrival, type = type, mark = mark,
+                                 lambda_component0 = lambda_component0)
 
     Mu <- matrix(h@mu, nrow=2)
     Alpha <- h@alpha
     Beta <- diag(diag(h@beta))
+    # Todo : if eta does not exist
     Eta <- h@eta
 
     up_move_idx <- type == 1

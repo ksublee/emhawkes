@@ -1,7 +1,7 @@
 #' @include hspec.R hmoment.R hllf.R
 NULL
 
-#' Perform Maximum Likelihood Estimation
+#' Perform maximum likelihood estimation
 #'
 #' Generic function hfit.
 #' A method for estimating the parameters of the exponential Hawkes model.
@@ -13,22 +13,23 @@ NULL
 #' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values
-#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
-#' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
-#' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param N a matrix of counting processes
-#' @param Nc a matrix of cumulated counting processes
-#' @param lambda0 the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
-#' @param N0 the initial values of N.
-#' @param mylogLik user defined log likelihood function. mylogLik function should have 'object' argument, cosistent with \code{hspec}.
-#' @param reduced When TRUE, reduced estimation performed.
-#' @param constraint constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param method method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param grad gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param hess Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param verbose If TRUE, print the progress of the estimation.
-#' @param ... other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param inter_arrival Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param type A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param mark A vector of mark (jump) sizes. Start with zero.
+#' @param N A matrix of counting processes.
+#' @param Nc A matrix of counting processes weighted by mark.
+#' @param lambda_component0 Initial values of lambda component. It must have the same dimensional matrix (n by n) with \code{object}.
+#' @param N0 Initial values of N.
+#' @param mylogLik User defined log-likelihood function. `mylogLik` function should have `object` argument consistent with \code{object}.
+#' @param reduced When `TRUE`, reduced estimation performed.
+#' @param constraint Constraint matrices. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param method A Method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param grad A Gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param hess A Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
+#' @param verbose If `TRUE`, print the progress of the estimation.
+#' @param ... Other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
 #'
+#' @return \code{\link{maxLik}} object
 #'
 #' @docType methods
 #' @rdname hfit
@@ -44,7 +45,7 @@ NULL
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
-#' summary(hfit(h, res$inter_arrival, res$type))
+#' summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
 #'
 #'
 #' # example 2
@@ -99,28 +100,25 @@ NULL
 #' h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
 #'           rmark = rmark,
 #'           impact=impact)
-#' res <- hsim(h1, size=100, lambda0 = matrix(rep(0.1,4), nrow=2))
+#' res <- hsim(h1, size=100, lambda_component0 = matrix(rep(0.1,4), nrow=2))
 #'
 #' fit <- hfit(h1,
 #'             inter_arrival = res$inter_arrival,
 #'             type = res$type,
 #'             mark = res$mark,
-#'             lambda0 = matrix(rep(0.1,4), nrow=2))
+#'             lambda_component0 = matrix(rep(0.1,4), nrow=2))
 #' summary(fit)
 #' }
 #'# For more information, please see vignettes.
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
-                            lambda0 = NULL, N0 = NULL,
+                            lambda_component0 = NULL, N0 = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
                             verbose = FALSE, ...) standardGeneric("hfit"))
 
-
-#'
-#'
 #' @rdname hfit
 setMethod(
   f="hfit",
@@ -128,14 +126,23 @@ setMethod(
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
            N = NULL, Nc = NULL,
-           lambda0 = NULL, N0 = NULL,
+           lambda_component0 = NULL, N0 = NULL,
            mylogLik = NULL,
            reduced = TRUE,
            grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
            verbose = FALSE, ...){
 
-    if(is.null(lambda0)){
-      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+    additional_argument <- list(...)
+    if ("lambda0" %in% names(additional_argument)) {
+
+      warning("lambda0 is deprecated; instead use lambda_component0")
+
+      lambda_component0 <- additional_argument[["lambda0"]]
+
+    }
+
+    if(is.null(lambda_component0)){
+      message("The initial values for intensity processes are not provided. Internally determined initial values are used for estimation.\n")
     }
 
     # parameter setting
@@ -272,12 +279,15 @@ setMethod(
                              rmark = object@rmark, type_col_map = object@type_col_map)
 
 
-      this_flag_represents_binding_env_is_hfit <- TRUE
+      #this_flag_represents_binding_env_is_hfit <- TRUE
 
 
       if (is.null(mylogLik)){
+
         logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
-                       mark = mark, N = N, Nc = Nc, N0 = N0, lambda0 = lambda0)
+                       mark = mark, N = N, Nc = Nc, N0 = N0, lambda_component0 = lambda_component0,
+                       showWarning = FALSE)
+
       } else {
         # arguments names for mylogLik
         args_needed <- names(formals(mylogLik))
@@ -286,7 +296,7 @@ setMethod(
         }
         args_logLik <- vector("list", length(args_needed))
         for (i in seq_along(args_needed)){
-          # find neccesary object for mylogLik arguments
+          # find necessary object for mylogLik arguments
           if(args_needed[i] == "object") args_logLik[[i]] <- hspec0
           else args_logLik[[i]] <- get(args_needed[i])
         }

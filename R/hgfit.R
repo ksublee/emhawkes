@@ -9,15 +9,16 @@ NULL
 #' or equivalently, \code{N} and \code{Nc}.
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
-#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param inter_arrival inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param N Hawkes process. if not provided, then generate using inter_arrival and type.
-#' @param Nc mark accumulated Hawkes process. if not provided, then generate using inter_arrival, type and mark.
-#' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
+#' @param N Hawkes process. If not provided, then generate using inter_arrival and type.
+#' @param Nc mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.
+#' @param lambda_component0 the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
 #' @param N0 the initial values of N.
+#' @param ... further arguments passed to or from other methods.
 #'
-#' @return hreal S3-object, the Haweks model with inferred intensity, lambda
+#' @return \code{\link{hreal}} S3-object, with inferred intensity.
 #'
 #' @docType methods
 #' @rdname infer_lambda
@@ -29,24 +30,35 @@ NULL
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
+#' summary(res)
 #' res2 <- infer_lambda(h, res$inter_arrival, res$type)
+#' summary(res2)
 #'
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
-                            lambda0 = NULL, N0 = NULL) standardGeneric("infer_lambda"))
-#'
+                            lambda_component0 = NULL, N0 = NULL, ...) standardGeneric("infer_lambda"))
+
 #' @rdname infer_lambda
-#'
 setMethod(
   f="infer_lambda",
   signature(object="hspec"),
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
            N = NULL, Nc = NULL,
-           lambda0 = NULL, N0 = NULL){
+           lambda_component0 = NULL, N0 = NULL, ...){
 
     # Similar to logLik function, need to integrate
+
+
+    additional_argument <- list(...)
+    if ("lambda0" %in% names(additional_argument)) {
+
+      warning("lambda0 is deprecated; instead use lambda_component0.")
+
+      lambda_component0 <- additional_argument[["lambda0"]]
+
+    }
 
 
     #parameter setting
@@ -75,44 +87,44 @@ setMethod(
       mu0 <- mu
     }
 
-    # default lambda0
+    # default lambda_component0
     if(!is.null(object@type_col_map)){
-      if(length(object@type_col_map) > 0 & is.null(lambda0)){
-        stop("In this model, please provide lambda0.")
+      if(length(object@type_col_map) > 0 & is.null(lambda_component0)){
+        stop("In this model, please provide lambda_component0.")
       }
     }
 
 
-    if(!is.null(lambda0)){
+    if(!is.null(lambda_component0)){
 
-      # If the dimensions of model and lambda0 do not match, lambda0 will be adjusted
-      if (dimens * ncol(beta) > length(lambda0)){
-        warning("The size of lambda0 does not match to the dimension of the model and is adjusted. \n
-                lambda0 is now :")
-        lambda0 <- rep(lambda0, dimens^2)
+      # If the dimensions of model and lambda_component0 do not match, lambda_component0 will be adjusted
+      if (dimens * ncol(beta) > length(lambda_component0)){
+        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted. \n
+                lambda_component0 is now :")
+        lambda_component0 <- rep(lambda_component0, dimens^2)
       }
-      if (dimens * ncol(beta) < length(lambda0)){
-        warning("The size of lambda0 does not match to the dimension of the model and is adjusted.\n
-                lambda0 is now :")
-        lambda0 <- lambda0[1:dimens^2]
+      if (dimens * ncol(beta) < length(lambda_component0)){
+        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted.\n
+                lambda_component0 is now :")
+        lambda_component0 <- lambda_component0[1:dimens^2]
       }
 
-      lambda0 <- as.matrix(lambda0, nrow = dimens)
+      lambda_component0 <- as.matrix(lambda_component0, nrow = dimens)
 
     } else {
-      # default lambda0
-      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
-      lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
+      # default lambda_component0
+      message("The initial values for intensity processes are not provided. Internally determined initial values are used for inference.\n")
+      lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
                              mu = mu, alpha = alpha, beta = beta)
     }
 
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
-    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
+    lambda_component <- matrix(sapply(lambda_component0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
+    rowSums_lambda_component0 <- rowSums(matrix(lambda_component0, nrow=dimens))
 
-    lambda <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+    lambda <- matrix(sapply(mu0 + rowSums_lambda_component0, c, numeric(length = size - 1)), ncol = dimens)
 
     rambda <- lambda
     rambda_component <- lambda_component
@@ -128,7 +140,7 @@ setMethod(
                                                     1:ncol(beta), FUN=paste0)))
 
 
-    current_lambda <- lambda0
+    current_lambda <- lambda_component0
 
     # only piecewise constant mu is available, to be updated
     if (is.function(mu)){
@@ -266,7 +278,7 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
                              type = NULL, mark = NULL,
                              N = NULL, Nc = NULL, lambda = NULL,
                              lambda_component = NULL, lambda_component_n = NULL,
-                             lambda0 = NULL, N0 = NULL){
+                             lambda_component0 = NULL, N0 = NULL){
 
   size <- length(inter_arrival)
 
@@ -331,18 +343,19 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
 #' Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
 #'
-#' @param component the component of type to get the residual process
-#' @param type a vector of types. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
-#' @param inter_arrival inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.
-#' @param rambda_component right continuous version of lambda process
-#' @param mu numeric value or matrix or function, if numeric, automatically converted to matrix
-#' @param beta numeric value or matrix or function, if numeric, automatically converted to matrix, exponential decay
-#' @param dimens dimension of the model. if omitted, set to be the length of \code{mu}.
-#' @param mark a vector of realized mark (jump) sizes. Start with zero.
-#' @param N a matrix of counting processes
-#' @param Nc a matrix of cumulated counting processes
-#' @param lambda0 the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
-#' @param N0 the initial value of N
+#' @param component The component of type to get the residual process.
+#' @param type A vector of types distinguished by numbers, 1, 2, 3, and so on. Start with zero.
+#' @param inter_arrival Inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param rambda_component Right continuous version of lambda process.
+#' @param mu Numeric value or matrix or function. If numeric, automatically converted to matrix.
+#' @param beta Numeric value or matrix or function. If numeric, automatically converted to matrix, exponential decay.
+#' @param dimens Dimension of the model. If omitted, set to be the length of \code{mu}.
+#' @param mark A vector of realized mark (jump) sizes. Start with zero.
+#' @param N A matrix of counting processes.
+#' @param Nc A matrix of counting processes weighted by mark.
+#' @param lambda_component0 The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
+#' @param N0 The initial value of N
+#' @param ... Further arguments passed to or from other methods.
 #'
 #' @examples
 #'
@@ -351,17 +364,22 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=1000)
-#' rp <- residual_process(1, res$type, res$inter_arrival, res$rambda_component, mu, beta)
-#' p <- ppoints(100)
-#' q <- quantile(rp,p=p)
-#' plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
-#' qqline(q, distribution=qexp,col="blue", lty=2)
+#' residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
 #'
 #' @export
-residual_process <- function(component, type, inter_arrival, rambda_component, mu, beta, dimens=NULL,
+residual_process <- function(component, inter_arrival, type, rambda_component, mu, beta, dimens=NULL,
                              mark = NULL,
                              N = NULL, Nc = NULL,
-                             lambda0 = NULL, N0 = NULL){
+                             lambda_component0 = NULL, N0 = NULL, ...){
+
+  additional_argument <- list(...)
+  if ("lambda0" %in% names(additional_argument)) {
+
+    warning("lambda0 is deprecated; instead use lambda_component0.")
+
+    lambda_component0 <- additional_argument[["lambda0"]]
+
+  }
 
   if (is.null(dimens)){
     if (is.function(mu)){
@@ -374,7 +392,7 @@ residual_process <- function(component, type, inter_arrival, rambda_component, m
   integrated_rambda <- integrate_rambda(inter_arrival, rambda_component, mu, beta, dimens,
                                         type = type, mark = mark,
                                         N = N, Nc = Nc,
-                                        lambda0 = lambda0, N0 = N0)
+                                        lambda_component0 = lambda_component0, N0 = N0)
 
   row_idx <- which(type == component)
   res_process <- rep(0, (length(row_idx)-1))

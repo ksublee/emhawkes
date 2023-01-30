@@ -12,7 +12,7 @@ hvol(
   type = NULL,
   mark = NULL,
   dependence = FALSE,
-  lambda0 = NULL,
+  lambda_component0 = NULL,
   ...
 )
 
@@ -23,15 +23,27 @@ hvol(
   type = NULL,
   mark = NULL,
   dependence = FALSE,
-  lambda0 = NULL,
+  lambda_component0 = NULL,
   ...
 )
 }
 \arguments{
-\item{object}{hspec}
+\item{object}{\code{\link{hspec-class}}}
 
-\item{lambda0}{}
+\item{horizon}{Time horizon for volatility.}
+
+\item{inter_arrival}{Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
+
+\item{type}{A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
+
+\item{mark}{A vector of mark (jump) sizes. Start with zero.}
+
+\item{dependence}{Dependence between mark and previous sigma-algebra.}
+
+\item{lambda_component0}{A matrix of the starting values of lambda component.}
+
+\item{...}{Further arguments passed to or from other methods.}
 }
 \description{
-This function computes Hawkes volatilty.
+This function computes Hawkes volatility. Only works for bi-variate Hawkes process.
 }

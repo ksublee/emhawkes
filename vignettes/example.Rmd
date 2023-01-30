@@ -1,12 +1,15 @@
 ---
-title: "Example : emhakwes package "
+title: "Example : emhawkes package "
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Examle : emhakwes package}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Examle : emhawkes package}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r setup, include = FALSE}
@@ -16,124 +19,204 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Basic Hawkes model
+
 ### Univariate Hawkes process
 
 ```{r}
 library(emhawkes)
 ```
 
-This subsection explaines how to construct, simulate, and estimate a univariate Hawkes model.
-First, create a ```hspec``` which defines the Hawkes model.
-S4 class ```hspec``` contains slots of model parameters, ```mu```, ```alpha```, ```beta```, ```dimens```,
-```rmark```, and  ```impact```.
+This subsection outlines the steps for constructing, running simulations, and estimating a univariate Hawkes model.
+To begin, create an `hspec` object which defines the Hawkes model.
+S4 class `hspec` contains slots for the model parameters: `mu`, `alpha`, `beta`, `dimens`, `rmark`, and `impact`.
 
-The parameters of the model, ```mu```, ```alpha```, ```beta```, are defined by matrices.
-The following is an example of a univariate model (without mark).
-
+In a univariate model, the basic parameters of the model, `mu`, `alpha`, `beta`, can be given as numeric.
+If numeric values are given, they will be converted to matrices.
+Below is an example of a univariate Hawkes model without a mark.
 
 ```{r}
 set.seed(1107)
 mu1 <- 0.3; alpha1 <- 1.2; beta1 <- 1.5
-hspec1 <- new("hspec", mu=mu1, alpha=alpha1, beta=beta1)
+hspec1 <- new("hspec", mu = mu1, alpha = alpha1, beta = beta1)
 show(hspec1)
 ```
 
-The function ```hsim``` implements simulation where the input arguments are ```hspec```, ```size``` and the initial values of intensity ```lambda``` and Hawkes processes ```N```.
-If the initial values of ```lambda``` are omitted, the internally determined initial values are used.
-The default initial value of ```N``` is zero.
+The function `hsim` implements simulation where the input arguments are `hspec`, `size` and the initial values of intensity component process, `lambda_component0`, and the initial values of Hawkes processes, `N0`.
+More precisely, the intensity process the basic univariate Hawkes model is represented by $$ \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s) $$ where the `lambda_component0` denotes $$ \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).$$ If `lambda_component0` is not provided, the internally determined initial values for intensity process are used.
+If `size` is sufficiently large, exact value of `lambda_component0` may not be important.
+The default initial value of counting process, `N0`, is zero.
 
 ```{r, warning=FALSE}
-res1 <- hsim(hspec1, size=100)
+res1 <- hsim(hspec1, size = 100)
 summary(res1)
 ```
-The results of ```hsim``` is an S3 class ```hreal``` which consists of ```hspec```, ```inter_arrival```, ```arrival```, ```type```, ```mark```, ```N```, ```Nc```, ```lambda```, ```lambda_component```, ```rambda```, ```rambda\_component```.
-The components ```inter_arrival```, ```type```, ```mark```, ```N```, ```Nc```, ```lambda```, ```lambda_component```, ```rambda```, ```rambda_component``` can be excessed during simulation and estimation.
-The column names of ```N``` are ```N1```, ```N2```, ```N3``` and so on.
-Similarly, the column names of ```lambda``` are ```lambda1```, ```lambda2```, ```lambda3``` and so on.
-The column names of ```lambda_component``` are ```lambda_component11```, ```lambda_component12```, ```lambda_component13``` and so on.
-```inter_arrival```, ```type```, ```mark```, ```N```, ```Nc``` start at zero.
-Using ```summary``` function, one can print the first 20 elements of ```arrival```, ```N``` and ```lambda```.
 
-```hspec``` is the model specification, ```inter_arrival``` is the inter-arrival time of every event, and ```arrival``` is the cumulative sum of ```inter_arrival```.
-```type``` is the type of events, i.e., $i$ for $N_i$, and ```mark``` is a numeric vector which represents additional information for the event.
-```lambda``` represents $\bm{\lambda}$ which is the left continuous and right limit version.
-The right continuous version of intensity is ```rambda```.
-```lambda_component``` represents $\lambda_{ij}$ and ```rambda_component``` is the right continuous version.
+The results of `hsim` is an S3 class `hreal` which consists of `hspec`, `inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda_component`.
 
+-   `hspec` is the model specification
 
-The log-likelihood function is computed by ```logLik``` method.
-In this case, the inter-arrival times and ```hspec``` are inputs of the function.
+-   `inter_arrival` is the inter-arrival time of every event
+
+-   `arrival` is the cumulative sum of `inter_arrival`
+
+-   `type` is the type of events, i.e., $i$ for $N_i$, and used for multivariate model
+
+-   `mark` is a numeric vector which represents additional information for the event
+
+-   `lambda` represents $\lambda$ which is the left continuous and right limit version
+
+-   The right continuous version of intensity is `rambda`
+
+-   `lambda_component` represents $\lambda_{ij}$ and `rambda_component` is the right continuous version.
+
+`inter_arrival`, `type`, `mark`, `N`, and `Nc` start at zero.
+Using `summary()` function, one can print the first 20 elements of `arrival`, `N` and `lambda`.
+`print()` function also can be used.
+
+By the definition, we have `lambda == mu + lambda_compoent`:
+
+```{r}
+# first and third columns are the same
+cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
+```
+
+Except the first row, `rambda == lambda + alpha` .
+
+```{r}
+# second and third columns are the same
+cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
+```
+
+Also check the exponential decaying:
+
+```{r}
+# By definition, the following two are equal:
+res1$lambda[2:6]
+mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
+```
+
+The log-likelihood function is computed by `logLik` method.
+In this case, the inter-arrival times and `hspec` are inputs of the function.
 
 ```{r, warning=FALSE}
 logLik(hspec1, inter_arrival = res1$inter_arrival)
 ```
 
-
-The likelihood estimation is performed using ```mhfit``` function.
-The specification of the initial values of the parameters, ```mhspec0``` is needed.
-In the following example, ```hspec0``` is set to be ```hspec1```, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.
-
-Note that only ```inter_arrival``` is needed.
-(Indeed, for more precise simulation, ```lambda0```, the inital value of lambda compoment, should be specified. If not, internally determined initial values are set.)
-
+The likelihood estimation is performed using `mhfit` function.
+The specification of the initial values of the parameters, `hspec0` is needed.
+Note that only `inter_arrival` is needed in this univariate model.
+(Indeed, for more precise simulation, `lambda0`, the initial value of lambda component, should be specified. If not, internally determined initial values are used.) By default, it uses the BFGS method for numerical optimization.
 
 ```{r, warning=FALSE}
+# initial value for numerical optimization
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
-hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
+hspec0 <- new("hspec", mu = mu0, alpha = alpha0, beta = beta0)
+# the intial values are provided through hspec
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
 summary(mle)
 ```
 
 ### Bivariate Hawkes model
 
-In a bivariate model, the parameters, the slots of ```hspec```, are  matrices.
-```mu``` is 2-by-1, and ```alpha``` and ```beta``` are 2-by-2 matrices.
-```rmark``` is a random number generating function.
-```lambda0```, 2-by-2 matrix, represents the initial values of ```lambda_component```, a set of ```lambda11, lambda12, lambda21, lambda22```.
-The intensity processes are represented by 
+The intensity process of basic bivariate Hawkes model is defined by
 
-$$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t) $$
+$$
+ \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
+$$
 
-$$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t) $$
+$$
+ \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
+$$
 
-$\lambda_{ij}$ called lambda components and ```lambda0``` is the time zero values of $lambda_{ij}$, i.e., $\lambda_{ij}(0)$. 
-```lambda0``` can be omitted and then internally determined initial values are used.
+In a bivariate model, the parameters, the slots of `hspec`, are matrices.
+`mu` is 2-by-1, and `alpha` and `beta` are 2-by-2 matrices:
+
+$$
+\mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
+\alpha = \begin{bmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{bmatrix}, \quad
+\beta = 
+\begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
+$$
+
+`rmark` is a random number generating function for mark and is not used for non-mark model.
+`lambda_component0`, 2-by-2 matrix, represents the initial values of `lambda_component`, a set of `lambda11, lambda12, lambda21, lambda22`.
+The intensity processes are represented by
+
+$$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), $$
+
+$$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). $$
+
+$\lambda_{ij}$ called lambda components and `lambda0` is $\lambda_{ij}(0)$.
+
+`lambda_component0` can be omitted and then internally determined initial values are used.
 
 ```{r}
 mu2 <- matrix(c(0.2), nrow = 2)
 alpha2 <- matrix(c(0.5, 0.9, 0.9, 0.5), nrow = 2, byrow = TRUE)
 beta2 <- matrix(c(2.25, 2.25, 2.25, 2.25), nrow = 2, byrow = TRUE)
-lambda0 <- matrix(c(0.1, 0.1, 0.1, 0.1), nrow = 2, byrow = TRUE)
 hspec2 <- new("hspec", mu=mu2, alpha=alpha2, beta=beta2)
 print(hspec2)
 ```
-To simulate, use function ```mhsim```.
+
+To simulate, use function `hsim`.
 
 ```{r}
 res2 <- hsim(hspec2,  size=1000)
 summary(res2)
 ```
 
-Frome the result, we get a vector of realized ```inter_arrival``` and ```type```.
-Bivariate model requires ```inter_arrival``` and ```type``` for estimation.
+`type` is crucial in multi-variate models, which represents the type of event.
 
+```{r}
+# Under bi-variate model, there are two types, 1 or 2.
+res2$type[1:10]
+```
+
+The column names of `N` are `N1`, `N2`, `N3` and so on, for multivariate models.
+
+```{r}
+res2$N[1:3, ]
+```
+
+Similarly, the column names of `lambda` are `lambda1`, `lambda2`, `lambda3` and so on.
+
+```{r}
+res2$lambda[1:3, ]
+```
+
+The column names of `lambda_component` are `lambda_component11`, `lambda_component12`, `lambda_component13` and so on.
+
+```{r}
+res2$lambda_component[1:3, ]
+```
+
+By definition, the following two are the same:
+
+```{r}
+mu2[1] + rowSums(res2$lambda_component[1:5, c("lambda11", "lambda12")])
+res2$lambda[1:5, "lambda1"]
+```
+
+From the result, we get vectors of realized `inter_arrival` and `type`.
+Bivariate model requires `inter_arrival` and `type` for estimation.
 
 ```{r}
 inter_arrival2 <- res2$inter_arrival
 type2 <- res2$type
 ```
 
+Log-likelihood is computed by a function `logLik`.
 
-Log-likelihood is computed by a function ```logLik```.
 ```{r}
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
 ```
 
-A log-likelihood estimation is performed using ```hfit```.
-In the following, the values of parameter slots in ```mhspec0```, such as ```mu, alpha, beta```, are regarded as a starting point of the numerical optimization.
-For simplicity, we use ```hspec0 <- hspec2```.
-Since the true parameter values are not known in the actual problem, the initial value should be guessed.
-The realized ```inter_arrival``` and ```type``` are used.
+A maximum log-likelihood estimation is performed using `hfit`.
+In the following, the values of parameter slots in `hspec0`, such as `mu, alpha, beta`, serve as starting points of the numerical optimization.
+For the purpose of illustration, we use `hspec0 <- hspec2`.
+Since the true parameter values are not known in practical applications, the initial guess is used.
+The realized `inter_arrival` and `type` are used for estimation.
 
 ```{r, warning=FALSE}
 hspec0 <- hspec2
@@ -141,35 +224,38 @@ mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
 summary(mle)
 ```
 
-### Parameter setting 
+```{r}
+coef(mle)
+```
 
-This subsection explains about the relation between parameter setting and estimation procedure in two-dimensional Hawkes model.
-The number of parameters to be estimated in the model depends on how we set the parameter slots such as ```alpha``` and ```beta``` in ```mhspec0```, the sepcification for initial values..
-Since the paremeter slot such as ```alpha``` is a matrix, and the element in the matrix can be the same or different.
+```{r}
+miscTools::stdEr(mle)
+```
+
+### Parameter setting
+
+This subsection covers about the relation between parameter setting and estimation procedure in multi-variate Hawkes model.
+The number of parameters to be estimated in the model depends on how we set the parameter slots such as `mu`, `alpha` and `beta` in `hspec0`, the specification for initial values.
+Since the parameter slot such as `alpha` is a matrix, and the element in the matrix can be the same or different.
 The number of parameters in the estimation varies depending on whether or not some of the elements in the initial setting are the same or different.
 
-For example, if ```alpha[1,1]``` and ```alpha[1,2]``` in ```mhspec0``` are different, 
-the numerical procedure tries to estimate both parameters of ```alpha[1,1]``` and ```alpha[1,2]```.
-If ```alpha[1,1]``` and ```alpha[1,2]``` are the same in the initial setting, 
-then the estimation procedure considered two parameters are the same in the model and hence only one of them is estimated.
+For example, if `alpha[1,1]` and `alpha[1,2]` in `hspec0` are different in initial starting, the numerical procedure tries to estimate both parameters of `alpha[1,1]` and `alpha[1,2]` differently.
+If `alpha[1,1]` and `alpha[1,2]` are the same in the initial setting, then the estimation procedure considered two parameters are identical in the model and hence only one value is estimated.
 
-Recall that th example in the previous section is of a symmetric Hawkes model
-where ```alpha``` is symmetric.
-
+Recall that the example in the previous section is of a symmetric Hawkes model where the matrix `alpha` is symmetric.
+In addition, the elements of `beta` are all the same.
 
 ```{r}
 print(hspec2)
 ```
 
 ```{r, warning=FALSE}
-res2 <- hsim(hspec2,  size=1000)
+res2 <- hsim(hspec2, size = 1000)
 ```
 
-
-In the first example of estimation, ```alpha0``` is a matrix where the all elements have the same value, 0.75.
-In this setting, ```mhfit``` considers that ```alpha11 == alpha12 == alpha21 == alpha22``` in the model
-(even though the actual parameters have different values).
-Similarly for other parmater matrix ```mu0``` and ```beta0```.
+In the first example of estimation, the initial value of `alpha0` is a matrix where the all elements have the same value of 0.75.
+In this configuration, `hfit` assumes that `alpha11 == alpha12 == alpha21 == alpha22` in the model (even if the actual parameters have different values).
+Similarly, the other parameter matrices `mu0` and `beta0` are also treated in the same way.
 
 ```{r, warning=FALSE}
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -180,10 +266,10 @@ hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
+Note that in the above result, `alpha1.1` is somewhere between original `alpha1.1 = 0.5` and `alpha1.2 = 0.9`.
 
-In the second example, ```alpha0```'s elements are not same, but symmetric as in the original simulation.
-We have ```alpha11 == alpha22``` and ```alpha11 == alpha22``` in ```alpha0``` and hence 
-```alpha11``` and ```alpha12``` will be estimated.
+In the following second example, `alpha0`'s elements are not same, but symmetric as in the original values in the simulation.
+We have `alpha11 == alpha22` and `alpha11 == alpha22` in `alpha0` and hence `alpha11` and `alpha12` will be estimated differently.
 
 ```{r, warning=FALSE}
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -194,21 +280,189 @@ hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
+In the third example, the estimation is performed under the assumption that `mu1` and `mu2` may also be different (even though they are the same in the original model).
 
-By simply setting ```reduced = FALSE```, all parameters are estimated (not recommended).
+```{r, warning=FALSE}
+mu0 <- matrix(c(0.15, 0.14), nrow = 2)
+alpha0 <- matrix(c(0.75, 0.751, 0.751, 0.75), nrow = 2, byrow=TRUE)
+beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
+
+hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
+summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+```
+
+By simply setting `reduced = FALSE`, all parameters are estimated (not recommended).
+
 ```{r, warning=FALSE}
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
 ```
 
+The same logic is applied to all the higher dimensional model.
 
-### More complicated model
+### Residual process
 
+Residual process can be extracted by `residual_process()`.
+`inter_arrival`, `type`, `rambda_component`, `mu`,`beta` should be provided.
+The `component` denotes the type of the process to be extracted for multivariate model.
+For example, for a bi-variate model, we have $N_1$ and \$N_2\$.
+`component=1` is for the residual of $N_1$ and `component=2` is for the residual of $N_2$.
 
-#### Linear impact model
-In the following, ```impact``` represents the impact of mark.
-It is a function, and the first argument is ```param``` represents the parameter of the model.
-```impact``` function can have additional arguments such as ```alpha```, ```n```, ```mark```, etc., which represents the dependence.
-Do not miss ```...``` as the ellipsis is omitted, an error occurs.
+```{r, warning=FALSE, message = FALSE, fig.height=5, fig.width=5}
+hrp <- new("hspec", mu = 0.3, alpha = 1.2, beta = 1.5)
+res_rp <- hsim(hrp, size = 1000)
+
+rp <- residual_process(component = 1,
+                       inter_arrival = res_rp$inter_arrival, type = res_rp$type, 
+                       rambda_component = res_rp$rambda_component, 
+                       mu = 0.3, beta = 1.5)
+p <- ppoints(100)
+q <- quantile(rp,p=p)
+plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
+qqline(q, distribution=qexp,col="blue", lty=2)
+```
+
+In case that `rambda_component` is unknown, it can be inferred by `infer_lambda()`.
+For `infer_lambda()`, the model `hspec`, `inter_arrival` and `type` are required.
+The above example is then:
+
+```{r, message=FALSE, fig.height=5, fig.width=5}
+
+# estimation
+mle_rp <- hfit(new("hspec", mu = 0.2, alpha = 1, beta = 2),
+               res_rp$inter_arrival)
+
+# construct hspec from estimation result
+he <- new("hspec", mu = coef(mle_rp)["mu1"], 
+          alpha = coef(mle_rp)["alpha1"], beta = coef(mle_rp)["beta1"])
+
+# infer intensity
+infered_res <- infer_lambda(he, res_rp$inter_arrival, res_rp$type)
+
+# compute residuals where we use 
+rp2 <- residual_process(component = 1,
+                       inter_arrival = res_rp$inter_arrival, type = res_rp$type, 
+                       rambda_component = infered_res$rambda_component, 
+                       mu = coef(mle_rp)["mu1"], beta = coef(mle_rp)["beta1"])
+p <- ppoints(100)
+q <- quantile(rp2, p=p)
+plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
+qqline(q, distribution=qexp,col="blue", lty=2)
+```
+
+## More complicated model
+
+### Multi-kernel model
+
+In a multi-kernel Hawkes model, `type_col_map` is required for `hspec`.
+`type_col_map` is a list that represents the mapping between type and column number.
+For example, consider a bi-variate multi-kernel model: $$
+\lambda_t = \mu + \int_{-\infty}^{t} h(t-u) d N(u)
+$$ where $$ h = \sum_{k=1}^{K} h_k, \quad 
+h_k (t) = \alpha_k \circ \begin{bmatrix}
+e^{-\beta_{k11} t} & e^{-\beta_{k12} t} \\
+e^{-\beta_{k21} t} & e^{-\beta_{k22} t}
+\end{bmatrix}
+ $$
+
+with matrix $\alpha_k$ and $k$ denoting kernel number.
+
+For example, in a bi-variate Hawkes model with two kernels, the intensity processes are
+
+$$
+ \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \end{bmatrix} = 
+\begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix} + \int_{-\infty}^{t} \begin{bmatrix}
+\alpha_{111} e^{-\beta_{111} t} & \alpha_{112} e^{-\beta_{112} t} \\
+\alpha_{121}e^{-\beta_{121} t} & \alpha_{122}e^{-\beta_{122} t}
+\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix} 
++ \int_{-\infty}^{t} \begin{bmatrix}
+\alpha_{211} e^{-\beta_{211} t} & \alpha_{212} e^{-\beta_{212} t} \\
+\alpha_{221}e^{-\beta_{221} t} & \alpha_{222}e^{-\beta_{222} t}
+\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}.
+$$
+
+The parameter matrix is defined by
+
+$$
+ \alpha = \begin{bmatrix} \alpha_{111} & \alpha_{112} & \alpha_{211} & \alpha_{212} \\ \alpha_{121} & \alpha_{122} & \alpha_{221} & \alpha_{222}
+\end{bmatrix}, \quad
+ \beta = \begin{bmatrix} \beta_{111} & \beta_{112} & \beta_{211} & \beta_{212} \\ \beta_{121} & \beta_{122} & \beta_{221} & \beta_{222}
+\end{bmatrix} \quad
+$$
+
+and we should specify which columns of matrix are associated with which $N_i$.
+
+```{r}
+mu <- matrix(c(0.02, 0.02), nrow=2)
+      
+beta_1 <- matrix(rep(10, 4), nrow=2) 
+beta_2 <- matrix(rep(1, 4), nrow=2)
+beta  <- cbind(beta_1, beta_2)
+      
+alpha_1 <- matrix(c(3, 2,
+                    2, 3), nrow=2, byrow=TRUE)
+alpha_2 <- matrix(c(0.3, 0.2,
+                    0.2, 0.3), nrow=2, byrow=TRUE)
+alpha <- cbind(alpha_1, alpha_2)
+
+print(alpha)
+```
+
+Note that $d N_1(s)$ is multiplied by first and third columns of $\alpha$ and $dN_2(s)$ is multiplied by second and fourth columns of $\alpha$ and hence `type_col_map` is
+
+```{r}
+type_col_map <- list(c(1,3),  # columns for dN1
+                     c(2,4))  # columns for dN2
+type_col_map
+```
+
+where type `i` is associated with columns of `type_col_map[[i]]`.
+Thus,
+
+```{r}
+cat("Part of alpha associated with N1: \n")
+alpha[, type_col_map[[1]]]  # associated with N1
+cat("Part of alpha associated with N2: \n")
+alpha[, type_col_map[[2]]]  # associated with N2
+
+cat("Part of beta associated with N1: \n")
+beta[, type_col_map[[1]]]  # associated with N1
+cat("Part of beta associated with N2: \n")
+beta[, type_col_map[[2]]]  # associated with N2
+```
+
+```{r}
+h <- new("hspec", mu = mu, alpha = alpha, beta=beta, type_col_map = type_col_map)
+h
+```
+
+In addition, `lambda_component0` should be provided for simulation and estimation.
+
+```{r}
+
+res_mk <- hsim(h, size = 2000, 
+               # for an illustration purpose
+               lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)) 
+res_mk
+```
+
+```{r, warning=FALSE}
+summary(hfit(h, res_mk$inter_arrival, res_mk$type,
+             lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)))
+```
+
+### Linear impact model
+
+Marked Hawkes models are represented by
+
+$$
+ \lambda(t) = \mu + \int_{(-\infty, t) \times E} (\alpha + \Psi(z))e^{-\beta(t-u)} M(du \times dz).
+$$
+
+In the following, `impact` represents $\Psi(z)$, the impact of mark on future intensity.
+It is a function, and the first argument is `param` represents the parameter of the model.
+`impact` function can have additional arguments such as `alpha`, `n`, `mark`, etc., which represents the dependence.
+Do not miss `...` as the ellipsis is omitted, an error occurs.
+`rmark()` is a function that generate marks for simulation.
 
 ```{r, warning=FALSE}
 mu <- matrix(c(0.15, 0.15), nrow=2)
@@ -221,27 +475,66 @@ rmark <- function(param = c(p=0.65), ...){
 impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
   ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
   alpha * ma * matrix( rep(param["eta1"], 4), nrow=2)
-  #alpha * ma * matrix( c(rep(param["eta1"], 2), rep(param["eta2"], 2)), nrow=2)
 }
-h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
+
+hi <- new("hspec", mu=mu, alpha=alpha, beta=beta,
           rmark = rmark,
           impact=impact)
-res <- hsim(h1, size=1000, lambda0 = matrix(rep(0.1,4), nrow=2))
+hi
+```
 
-fit <- hfit(h1, 
+```{r}
+
+res <- hsim(hi, size=1000, lambda_component0 = matrix(rep(0.1,4), nrow=2))
+
+fit <- hfit(hi, 
             inter_arrival = res$inter_arrival,
             type = res$type,
             mark = res$mark,
-            lambda0 = matrix(rep(0.1,4), nrow=2))
+            lambda_component0 = matrix(rep(0.1,4), nrow=2))
 
 summary(fit)
 ```
 
-#### Hawkes flocking model
+For a special case of linear impact function, the following implementation is recommended.
+In a marked Hawkes model, the additional linear impact can be represented by slot `eta`.
+In this model, the intensity process is
 
-In the basic model, ```alpha``` is a matrix, but it can be a function as in the following code.
-The function ```alpha``` simply return a $4\times4$ matrix but by doing so, we can fix some of elements as specific vales when estimating.
-When estimating, the optimization only works for the specified parameters in ```param```.
+$$
+ \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(dt \times dz).
+$$
+
+where $E$ is a mark space.
+
+```{r}
+
+rmark <- function(param = c(p=0.65), ...){
+  rgeom(1, p=param[1]) + 1
+}
+
+h <-  new("hspec", mu=0.15, alpha=0.7, beta=1.6, eta=0.3,
+          rmark = rmark)
+h
+```
+
+```{r}
+res <- hsim(h, size = 1000)
+summary(res)
+```
+
+```{r}
+fit <- hfit(h, 
+            inter_arrival = res$inter_arrival,
+            type = res$type,
+            mark = res$mark)
+summary(fit)
+```
+
+### Hawkes flocking model
+
+In the basic model, `alpha` is a matrix, but it can be a function as in the following code.
+The function `alpha` simply return a $4\times4$ matrix but by doing so, we can fix some of elements as specific vales when estimating.
+When estimating, the optimization only works for the specified parameters in `param`.
 In the case of simulation, there is no difference whether the parameter set is represented by a matrix or a function.
 
 ```{r, warning=FALSE}
@@ -286,4 +579,121 @@ fit <- hfit(h, hr$inter_arrival, hr$type)
 summary(fit)
 ```
 
+### Flocking in intensity model
 
+```{r}
+mu <- function(param = c(theta_p = 0.2, theta_n = 0.2, kappa = 0.1)){
+  theta    <- (param["theta_p"] + param["theta_n"])/2
+  theta_tl <- (param["theta_n"] - param["theta_n"])/2
+  matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
+           theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
+}
+
+alpha <- function(param = c(eta = 10, nu = 9)){
+  zeta    <- (param["eta"] + param["nu"])/2
+  zeta_tl <- (param["eta"] - param["nu"])/2
+  matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
+           zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
+}
+
+beta <- function(param = c(kappa = 0.1, beta = 30)){
+  beta1 <- param["beta"] * (1 - param["kappa"])
+  beta2 <- param["beta"] * (1 + param["kappa"])
+  matrix(c(beta1, beta2, beta1, beta2,
+           beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
+}
+
+type_col_map <- list(c(1,2), c(3,4))
+
+h <- new("hspec", mu = mu, alpha = alpha, beta = beta, type_col_map = type_col_map)
+
+# run simulation
+res <- hsim(h, size = 1000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
+summary(res)
+
+
+```
+
+### Bid-ask price model
+
+```{r, warning=FALSE}
+
+initial_ask_price <- 1200.5
+initial_bid_price <- 1199.5
+scaling <- 100
+initial_level <- round((initial_ask_price - initial_bid_price)*scaling - 1)
+initial_mid_price <- (initial_bid_price + initial_ask_price)/2
+
+
+mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
+
+  if(n == 1){
+    level <- initial_level
+    mid <- initial_mid_price
+  } else {
+    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+    ask <- initial_ask_price + (Nc[n-1,1] - Nc[n-1,2])/100
+    bid <- initial_bid_price + (Nc[n-1,3] - Nc[n-1,4])/100
+    mid <- (ask + bid)/2
+  }
+  if(level <= 0){
+    matrix(c(param["mu1"], 0,
+             0, param["mu1"]), nrow = 4)
+  } else {
+    matrix(c(param["mu1"], param["zeta1"][[1]]*level/mid*scaling,
+             param["zeta1"][[1]]*level/mid*scaling, param["mu1"]), nrow = 4)
+
+  }
+
+}
+
+alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
+                            alpha_w1=11, alpha_w2=7)){
+  matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 0,
+           param["alpha_w1"], 0, 0, param["alpha_w2"],
+           param["alpha_w2"], 0, 0, param["alpha_w1"],
+           0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
+}
+
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
+  if(n == 1){
+    level <-  initial_level
+    mid <- initial_mid_price
+  } else {
+    level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
+    ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])/100
+    bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])/100
+    mid <- (ask + bid)/2
+  }
+
+  l2 <- sum(lambda_component_n[2,])
+  l3 <- sum(lambda_component_n[3,])
+
+  im <- matrix(c(0, 0, 0, 0,
+                 0, -l2 + param["xi"]*level/mid*scaling, -l2 + param["xi"]*level/mid*scaling, 0,
+                 0, -l3 + param["xi"]*level/mid*scaling, -l3 + param["xi"]*level/mid*scaling, 0,
+                 0, 0, 0, 0), nrow = 4, byrow = TRUE)
+
+}
+beta <- matrix(rep(50, 16), nrow = 4, byrow=TRUE)
+
+rmark <- function(param = c(p=0.3), n=n, Nc=Nc, type, ...){
+  if(n == 1){
+    level <-  initial_level
+  } else {
+    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+  }
+  if (type[n] == 2 | type[n] == 3){
+    min(level,  rgeom(1, p=0.65) + 1)
+  } else {
+    rgeom(1, p=0.65) + 1
+  }
+}
+
+
+
+h <- new("hspec", mu = mu, alpha = alpha, beta = beta, impact=impact, rmark = rmark)
+
+hr <- hsim(h, size=1001, lambda_component0 = matrix(rep(1, 16), 4))
+summary(hr)
+```

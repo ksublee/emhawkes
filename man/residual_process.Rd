@@ -6,8 +6,8 @@
 \usage{
 residual_process(
   component,
-  type,
   inter_arrival,
+  type,
   rambda_component,
   mu,
   beta,
@@ -15,34 +15,37 @@ residual_process(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda0 = NULL,
-  N0 = NULL
+  lambda_component0 = NULL,
+  N0 = NULL,
+  ...
 )
 }
 \arguments{
-\item{component}{the component of type to get the residual process}
+\item{component}{The component of type to get the residual process.}
 
-\item{type}{a vector of types. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
+\item{inter_arrival}{Inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
-\item{inter_arrival}{inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{type}{A vector of types distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 
-\item{rambda_component}{right continuous version of lambda process}
+\item{rambda_component}{Right continuous version of lambda process.}
 
-\item{mu}{numeric value or matrix or function, if numeric, automatically converted to matrix}
+\item{mu}{Numeric value or matrix or function. If numeric, automatically converted to matrix.}
 
-\item{beta}{numeric value or matrix or function, if numeric, automatically converted to matrix, exponential decay}
+\item{beta}{Numeric value or matrix or function. If numeric, automatically converted to matrix, exponential decay.}
 
-\item{dimens}{dimension of the model. if omitted, set to be the length of \code{mu}.}
+\item{dimens}{Dimension of the model. If omitted, set to be the length of \code{mu}.}
 
-\item{mark}{a vector of realized mark (jump) sizes. Start with zero.}
+\item{mark}{A vector of realized mark (jump) sizes. Start with zero.}
 
-\item{N}{a matrix of counting processes}
+\item{N}{A matrix of counting processes.}
 
-\item{Nc}{a matrix of cumulated counting processes}
+\item{Nc}{A matrix of counting processes weighted by mark.}
 
-\item{lambda0}{the initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.}
+\item{lambda_component0}{The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.}
 
-\item{N0}{the initial value of N}
+\item{N0}{The initial value of N}
+
+\item{...}{Further arguments passed to or from other methods.}
 }
 \description{
 Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
@@ -55,10 +58,6 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=1000)
-rp <- residual_process(1, res$type, res$inter_arrival, res$rambda_component, mu, beta)
-p <- ppoints(100)
-q <- quantile(rp,p=p)
-plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
-qqline(q, distribution=qexp,col="blue", lty=2)
+residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
 
 }

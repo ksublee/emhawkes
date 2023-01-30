@@ -4,7 +4,7 @@
 \name{hfit}
 \alias{hfit}
 \alias{hfit,hspec-method}
-\title{Perform Maximum Likelihood Estimation}
+\title{Perform maximum likelihood estimation}
 \usage{
 hfit(
   object,
@@ -13,7 +13,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda0 = NULL,
+  lambda_component0 = NULL,
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -32,7 +32,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda0 = NULL,
+  lambda_component0 = NULL,
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -47,35 +47,38 @@ hfit(
 \arguments{
 \item{object}{\code{\link{hspec-class}}. This object includes the parameter values}
 
-\item{inter_arrival}{inter-arrival times of events. Includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{inter_arrival}{Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
-\item{type}{a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
+\item{type}{A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 
-\item{mark}{a vector of mark (jump) sizes. Start with zero.}
+\item{mark}{A vector of mark (jump) sizes. Start with zero.}
 
-\item{N}{a matrix of counting processes}
+\item{N}{A matrix of counting processes.}
 
-\item{Nc}{a matrix of cumulated counting processes}
+\item{Nc}{A matrix of counting processes weighted by mark.}
 
-\item{lambda0}{the inital values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
+\item{lambda_component0}{Initial values of lambda component. It must have the same dimensional matrix (n by n) with \code{object}.}
 
-\item{N0}{the initial values of N.}
+\item{N0}{Initial values of N.}
 
-\item{mylogLik}{user defined log likelihood function. mylogLik function should have 'object' argument, cosistent with \code{hspec}.}
+\item{mylogLik}{User defined log-likelihood function. \code{mylogLik} function should have \code{object} argument consistent with \code{object}.}
 
-\item{reduced}{When TRUE, reduced estimation performed.}
+\item{reduced}{When \code{TRUE}, reduced estimation performed.}
 
-\item{grad}{gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{grad}{A Gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
 
-\item{hess}{Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{hess}{A Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
 
-\item{constraint}{constraint matrix. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{constraint}{Constraint matrices. For more information, see \code{\link[maxLik]{maxLik}}.}
 
-\item{method}{method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{method}{A Method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
 
-\item{verbose}{If TRUE, print the progress of the estimation.}
+\item{verbose}{If \code{TRUE}, print the progress of the estimation.}
 
-\item{...}{other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{...}{Other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+}
+\value{
+\code{\link{maxLik}} object
 }
 \description{
 Generic function hfit.
@@ -95,7 +98,7 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
-summary(hfit(h, res$inter_arrival, res$type))
+summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
 
 
 # example 2
@@ -150,13 +153,13 @@ impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
 h1 <- new("hspec", mu=mu, alpha=alpha, beta=beta,
           rmark = rmark,
           impact=impact)
-res <- hsim(h1, size=100, lambda0 = matrix(rep(0.1,4), nrow=2))
+res <- hsim(h1, size=100, lambda_component0 = matrix(rep(0.1,4), nrow=2))
 
 fit <- hfit(h1,
             inter_arrival = res$inter_arrival,
             type = res$type,
             mark = res$mark,
-            lambda0 = matrix(rep(0.1,4), nrow=2))
+            lambda_component0 = matrix(rep(0.1,4), nrow=2))
 summary(fit)
 }
 # For more information, please see vignettes.

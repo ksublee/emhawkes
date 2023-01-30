@@ -1,20 +1,36 @@
-#' Generics for hreal
+#' Realization of Hawkes process
 #'
-#' Generic functions list for hreal:
+#' @description
+#' `hreal` is the list of the following:
+#'
+#' * `hspec` : S4 object \code{\link{hspec-class}} that specifies the parameter values.
+#' * `inter_arrival` : the time between two consecutive events.
+#' * `arrival` : cumulative sum of `inter_arrival`.
+#' * `type` : integer, the type of event.
+#' * `mark` : the size of mark, an additional information associated with event.
+#' * `N` : counting process that counts the number of events.
+#' * `Nc` : counting process that counts the number of events weighted by mark.
+#' * `lambda` : intensity process, left-continuous version.
+#' * `lambda_component` : the component of intensity process with `mu` not included.
+#' * `rambda` : intensity process, right-continuous version.
+#' * `rambda_component` : the right-continuous version of `lambda_component`.
+#'
+#'
 #'
 #' @name hreal
-NULL
 
+#' @description
+#' Print functions for `hreal` are provided.
 #'
-#' Print function for hreal
 #'
-#' Print the realization of the Haweks model.
+#' @param x S3-object of `hreal`.
+#' @param n Number of rows to diplay.
+#' @param object S3-object of `hreal`.
+#' @param ... Further arguments passed to or from other methods.
 #'
-#' @param x S3-object of hreal.
-#' @param object S3-object of hreal.
-#' @param n number of rows to diplay.
-#' @param ... further arguments passed to or from other methods.
+#'
 #' @rdname hreal
+#'
 #' @export
 print.hreal <- function(x, n=20, ...){
   options(digits=4)
@@ -22,7 +38,7 @@ print.hreal <- function(x, n=20, ...){
   cat("Simulation result of marked Hawkes model.\n")
   print(x$hspec)
 
-  cat("Realized path (with right continuous representation):\n")
+  cat("Realized path :\n")
   mtrx <- as.matrix(x)
   dimens <- x$hspec@dimens
   name_N  <- paste0("N", 1:dimens)
@@ -31,7 +47,12 @@ print.hreal <- function(x, n=20, ...){
 
   len <- min(n, length(mtrx[,"arrival"]))
 
-  print(mtrx[1:len, c("arrival", name_N, name_lambda, name_lambda_component)])
+  if(is.null(x$mark)) {
+    print(mtrx[1:len, c("arrival", name_N, name_lambda, name_lambda_component)])
+  } else {
+    print(mtrx[1:len, c("arrival", name_N, "mark", name_lambda, name_lambda_component)])
+  }
+
   if ( length(mtrx[,"arrival"]) > len){
 
     remaning <- length(mtrx[,"arrival"]) - len
@@ -45,18 +66,17 @@ print.hreal <- function(x, n=20, ...){
   options(digits=7)
 }
 
-#' Summary function for hreal
+
 #'
-#' Print the summary of the Hawkes process realization.
 #'
 #' @rdname hreal
 #' @export
 summary.hreal <- function(object, n=20, ...){
 
   options(digits=5)
-  cat("------------------------------------`------\n")
+  cat("------------------------------------------\n")
   cat("Simulation result of marked Hawkes model.\n")
-  cat("Realized path (with right continuous representation):\n")
+  cat("Realized path :\n")
   mtrx <- as.matrix(object)
   dimens <- object$hspec@dimens
   name_N  <- paste0("N", 1:dimens)
@@ -64,7 +84,12 @@ summary.hreal <- function(object, n=20, ...){
 
   len <- min(n, length(mtrx[,"arrival"]))
 
-  print(mtrx[1:len, c("arrival", name_N, name_lambda)])
+  if(is.null(object$mark)) {
+    print(mtrx[1:len, c("arrival", name_N, name_lambda)])
+  } else {
+    print(mtrx[1:len, c("arrival", name_N, "mark", name_lambda)])
+  }
+
   if ( length(mtrx[,"arrival"]) > len){
 
     remaning <- length(mtrx[,"arrival"]) - len
@@ -79,12 +104,6 @@ summary.hreal <- function(object, n=20, ...){
 }
 
 
-#' Matrix represetation of hreal
-#'
-#' Matrix like ouput of the realization of Hawkes model.
-#'
-#' @rdname hreal
-#' @export
 as.matrix.hreal <- function(x, ...){
 
   mtrx <- numeric()

@@ -1,40 +1,61 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
-#' Simulate a multivariate Hawkes process.
-#' Generic function hsim.
+#' Simulate multivariate Hawkes process with exponential kernel.
+#'
+#' @description
+#' The method simulate multivariate Hawkes processes.
+#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
+#' The mark (jump) structure may or may not be included.
+#' It returns an object of class \code{\link{hreal}} which contains \code{inter_arrival}, \code{arrival},
+#' \code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
 #'
 #'
-#' @param object \code{\link{hspec-class}}. This object includes the parameter values.
-#' @param lambda0 the starting values of lambda component. numeric or matrix.
-#' @param N0 the starting values of N
-#' @param size the number of observations.
+#' @param object \code{\link{hspec-class}}. S4 object that specifies the parameter values.
+#' @param lambda_component0 Starting values of lambda component. numeric or matrix.
+#' @param N0 Starting values of N with default value 0.
+#' @param size Number of observations.
+#' @param ... Further arguments passed to or from other methods.
 #'
-#' @return hreal S3-object, summary of the realization of the Haweks model
+#' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
 #'
 #' @rdname hsim
-#'
+#' @docType methods
 #' @examples
-#' mu <- c(0.1, 0.1)
+#'
+#' # example 1
+#'
+#' mu <- 1; alpha <- 1; beta <- 2
+#' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
+#' hsim(h, size=100)
+#'
+#'
+#' # example 2
+#' mu <- matrix(c(0.1, 0.1), nrow=2)
 #' alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
+#' print(res)
 #'
 #' @export
-setGeneric("hsim", function(object, size = 100, lambda0 = NULL, N0 = NULL) standardGeneric("hsim"))
-#'
-#' The method simulate multivariate Hawkes processes.
-#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
-#' The mark (jump) structure may or may not be included.
-#' It returns an object of class \code{hreal} which contains \code{inter_arrival}, \code{arrival},
-#' \code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
-#'
+setGeneric("hsim", function(object, size = 100, lambda_component0 = NULL,  N0 = NULL, ...)
+  standardGeneric("hsim"))
+
 #' @rdname hsim
 setMethod(
   f="hsim",
   signature(object = "hspec"),
-  definition = function(object, size = 100, lambda0 = NULL, N0 = NULL){
+  definition = function(object, size = 100, lambda_component0 = NULL,  N0 = NULL, ...){
+
+    additional_argument <- list(...)
+    if ("lambda0" %in% names(additional_argument)) {
+
+      warning("lambda0 is deprecated; instead use lambda_component0.")
+
+      lambda_component0 <- additional_argument[["lambda0"]]
+
+    }
 
     # parameter setting
     plist <- setting(object)
@@ -55,7 +76,7 @@ setMethod(
 
     type <- numeric(length = size)
     inter_arrival <- numeric(length = size)
-    mark <- numeric(length = size)
+    mark <- c(0, rep(1, size-1))
 
     if (!is.null(N0)){
       N[1,] <- N0
@@ -70,43 +91,43 @@ setMethod(
       mu0 <- mu
     }
 
-    # default lambda0
+    # default lambda_component0
     if(!is.null(type_col_map)){
-      if(length(type_col_map) > 0 & is.null(lambda0)){
-        stop("In this model, please provide lambda0.")
+      if(length(type_col_map) > 0 & is.null(lambda_component0)){
+        stop("In this model, please provide the initial values of lambda_component0.")
       }
     }
 
 
-    if(!is.null(lambda0)){
+    if(!is.null(lambda_component0)){
 
-      # If the dimensions of model and lambda0 do not match, lambda0 will be adjusted
-      if (dimens * ncol(beta) > length(lambda0)){
-        warning("The size of lambda0 does not match to the dimension of the model and is adjusted. \n
-                lambda0 is now :")
-        lambda0 <- rep(lambda0, dimens * ncol(beta))
+      # If the dimensions of model and lambda_component0 do not match, lambda_component0 will be adjusted
+      if (dimens * ncol(beta) > length(lambda_component0)){
+        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted. \n
+                lambda_component0 is now :")
+        lambda_component0 <- rep(lambda_component0, dimens * ncol(beta))
       }
-      if (dimens * ncol(beta) < length(lambda0)){
-        warning("The size of lambda0 does not match to the dimension of the model and is adjusted.\n
-                lambda0 is now :")
-        lambda0 <- lambda0[1:dimens * ncol(beta)]
+      if (dimens * ncol(beta) < length(lambda_component0)){
+        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted.\n
+                lambda_component0 is now :")
+        lambda_component0 <- lambda_component0[1:dimens * ncol(beta)]
       }
 
-      lambda0 <- as.matrix(lambda0, nrow = dimens)
+      lambda_component0 <- as.matrix(lambda_component0, nrow = dimens)
 
     } else {
-      # default lambda0
-      warning("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
-      lambda0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
+      # default lambda_component0
+      message("The initial values for intensity processes are not provided. Internally determined initial values are used for simulation.\n")
+      lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
                              mu, alpha = alpha, beta = beta)
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
-    rowSums_lambda0 <- rowSums(matrix(lambda0, nrow=dimens))
+    lambda_component <- matrix(sapply(lambda_component0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
+    rowSums_lambda_component0 <- rowSums(matrix(lambda_component0, nrow=dimens))
 
-    lambda <- matrix(sapply(mu0 + rowSums_lambda0, c, numeric(length = size - 1)), ncol = dimens)
+    lambda <- matrix(sapply(mu0 + rowSums_lambda_component0, c, numeric(length = size - 1)), ncol = dimens)
 
     rambda <- lambda
     rambda_component <- lambda_component
@@ -130,7 +151,7 @@ setMethod(
       rmu_n <- mu
     }
 
-    #current_rambda_component <- lambda0
+    #current_rambda_component <- lambda_component0
     for (n in 2:size) {
 
       # only piecewise constant mu is available, mu is left continuous.
@@ -151,15 +172,11 @@ setMethod(
       N[n, type[n]] <- N[n-1, type[n]] + 1
 
       # generate a mark for Hawkes
-      # This quantity is added to the counting process.
       if( !is.null(rmark) ){
         # mark may depends on other variables
-        # mark[n] is a scalar
         mark[n] <- rmark(n = n, Nc = Nc, N = N,
                          lambda = lambda, lambda_component = lambda_component,
                          type = type)
-      } else {
-        mark[n] <- 1
       }
 
       Nc[n, ] <- Nc[n-1, ]
@@ -180,7 +197,7 @@ setMethod(
       # impact by alpha
       impact_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
-      if( length(object@type_col_map) == 0){
+      if( is.null(object@type_col_map)){
         types <- type[n]
       } else{
         types <- object@type_col_map[[type[n]]]
