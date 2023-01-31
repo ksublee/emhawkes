@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Examle : emhawkes package}
+  %\VignetteIndexEntry{Example : emhawkes package}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   markdown: 
@@ -504,10 +504,9 @@ h_sy
 
 ```{r}
 # run simulation
-res_sy <- hsim(h_sy, size = 5000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
+res_sy <- hsim(h_sy, size = 2000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
 summary(res_sy)
 ```
-
 
 The estimation is based on function arguments `param`.
 In addition, the initial values of the numerical optimization is the default values specified in `param`.
@@ -526,13 +525,13 @@ summary(fit_sy)
 The following family of extended multi-variate marked Hawkes models are implemented:
 
 $$
- \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u)M(du \times dz)
+ \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u, z)M(du \times dz)
 $$
 
 where the kernel $h$ is represented by
 
 $$
-h(t) = (\alpha + g(t, z))\Gamma(t),
+h(t, u, z) = (\alpha + g(t, z))\Gamma(t),
 $$
 
 and
@@ -626,6 +625,20 @@ fit <- hfit(h,
 summary(fit)
 ```
 
+If you want to estimate the mark distribution also, then `dmark` slot that describes the density function of mark is required.
+
+```{r, warning=FALSE}
+h_md <- h
+
+h_md@dmark <- function(param = c(p = 0.1), n=n, mark=mark, ...){
+   dgeom(mark[n] - 1, prob = param["p"])
+}
+
+mle_md <- hfit(h_md, 
+               inter_arrival = res$inter_arrival, type = res$type, mark = res$mark)
+summary(mle_md)
+```
+
 ### Hawkes flocking model
 
 The function $g$ is not necessarily depend on mark.
@@ -705,7 +718,7 @@ summary(fit_fl)
 
 ### Bid-ask price model
 
-In this model, we use a system of counting processes with the corresponding conditional intensities:
+In this model, we use a system of counting processes with the corresponding conditional intensities to describe the bid-ask price processes:
 
 $$ N_t = \begin{bmatrix}
 N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
@@ -716,21 +729,23 @@ N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \end{bmatrix}
 $$
 
+The ask price process $N_1(t) - N_2(t)$ and the bid price process is $N_3(t) - N_4(t)$.
 The mid price process is $p(t) = N_1(t) + N_3(t) - N_2(t) - N_4(t)$ plus initial mid price level.
 
 The base intensity process is
 
 $$\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} $$
 
-where \$p(t)\$ is the mid-price and $L(t) \in \{ 0, 1, 2, \cdots \}$ is the absolute level of the bid-ask spread with $L(t)=0$ implying the minimum level.
+where $L(t) \in \{ 0, 1, 2, \cdots \}$ is the absolute level of the bid-ask spread with $L(t)=0$ implying the minimum level.
+Note that in the following code of the definition of `mu`, `n` is needed to represent time $t$ and `Nc` is needed to calculate the level and mid price.
 
 ```{r}
-
+# presumed initial bid and ask prices
 initial_ask_price <- 1250 #cents
 initial_bid_price <- 1150 #cents
 
 initial_level <- round((initial_ask_price - initial_bid_price) - 1)
-initial_mid_price <- (initial_bid_price + initial_ask_price)/2
+initial_mid_price <- (initial_bid_price + initial_ask_price) / 2
 
 mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
 
@@ -776,6 +791,10 @@ for constant $\xi \geq 0$ and $\lambda_{ij}$ is a component of $\lambda_i$ such 
 
 $$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
 
+In the following code, we separate the constant part of $h$ as `alpha` and stochastic part as `impact`.
+To represent $\lambda_{ij}$, we need `lambda_component_n`.
+Note that
+
 ```{r, warning=FALSE}
 
 alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
@@ -786,7 +805,7 @@ alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 }
 
-impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
   if(n == 1){
     level <-  initial_level
     mid <- initial_mid_price
@@ -796,9 +815,11 @@ impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_
     bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])
     mid <- (ask + bid)/2
   }
+  
+  lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
 
-  l2 <- sum(lambda_component_n[2,])
-  l3 <- sum(lambda_component_n[3,])
+  l2 <- sum(lambda_component_matrix[2,]) # sum of second row
+  l3 <- sum(lambda_component_matrix[3,]) # sum of third row
 
   im <- matrix(c(0, 0, 0, 0,
                  0, -l2 + param["xi"]*level/mid, -l2 + param["xi"]*level/mid, 0,
@@ -809,7 +830,7 @@ impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_
 
 beta <- matrix(rep(50, 16), nrow = 4, byrow=TRUE)
 
-rmark <- function(param = c(p=0.3), n=n, Nc=Nc, type, ...){
+rmark <- function(n=n, Nc=Nc, type, ...){
   if(n == 1){
     level <-  initial_level
   } else {
@@ -832,7 +853,9 @@ hr_ba <- hsim(h_ba, size=1000, lambda_component0 = matrix(rep(1, 16), 4))
 summary(hr_ba)
 ```
 
-```{r}
+As a separate log-likelihood estimation performed, the parameter for mark distribution is not estimated.
+
+```{r, warning=FALSE}
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                lambda_component0 = matrix(rep(1, 16), 4))
 summary(mle_ba)
