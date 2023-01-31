@@ -364,7 +364,7 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=1000)
-#' residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
+#' rp <- residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
 #'
 #' @export
 residual_process <- function(component, inter_arrival, type, rambda_component, mu, beta, dimens=NULL,

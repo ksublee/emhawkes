@@ -123,6 +123,7 @@ as.unique.vector <- function(M, notation, sep="."){
 
 as.param <- function(M, prefix, reduced){
   if (is.function(M)){
+    # when the argument M is a function, extract the parameter from the first argument of M
     prs <- eval(formals(M)[[1]])
   } else{
     if(reduced){
