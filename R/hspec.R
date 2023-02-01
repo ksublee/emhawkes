@@ -81,7 +81,7 @@ setMethod(
   "initialize",
   "hspec",
   function(.Object, mu, alpha, beta, eta=NULL, impact=NULL, type_col_map = NULL, dimens=NULL,
-           rmark=NULL, dmark = NULL, stability_check=FALSE){
+           rmark=NULL, dmark = NULL, stability_check = FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
     # if (is.null(rmark)) rmark <- function(...) 1
@@ -115,39 +115,122 @@ setMethod(
     } else {
       .Object@eta <- eta
     }
-#
-#     if( !is.list(type_col_map)){
-#       .Object@type_col_map <-  list(type_col_map)
-#     } else {
-#       .Object@type_col_map <- type_col_map
-#     }
+
 
     .Object@type_col_map <- type_col_map
-    # set dimens
-    if( is.null(dimens)){
-      if( is.matrix(.Object@mu) ){
-        .Object@dimens <- length(.Object@mu)
-      } else if ( is.matrix(.Object@alpha) ) {
-        .Object@dimens <- nrow(.Object@alpha)
-      } else if ( is.matrix(.Object@beta) ) {
-        .Object@dimens <- nrow(.Object@beta)
-      } else if ( is.function(.Object@alpha) ){
-        .Object@dimens <- nrow(evalf(.Object@alpha))
-      } else if (is.function(.Object@beta) ){
-        .Object@dimens <- nrow(evalf(.Object@beta))
-      } else {
-        stop("argument \"dimens\" is missing, with no default")
-      }
-    }
-
 
     .Object@dmark <- dmark
     .Object@impact <- impact
 
 
+    nrow_mu <- ncol_mu <- NULL
+
+    if( is.matrix(.Object@mu) ) {
+
+      nrow_mu <- nrow(.Object@mu)
+      ncol_mu <- ncol(.Object@mu)
+
+      if (ncol_mu != 1) stop("The number of column in mu should be one.")
+
+    } else if( is.function(.Object@mu) && length(formals(.Object@mu)) == 1 && names(formals(.Object@mu)[1]) == "param"){
+
+      nrow_mu <- nrow(evalf(.Object@mu))
+      ncol_mu <- ncol(evalf(.Object@mu))
+
+      if (ncol_mu != 1) stop("The number of column in mu should be one.")
+
+    }
+
+    nrow_alpha <- ncol_alpha <- nrow_beta <- ncol_beta <- nrow_eta <- ncol_eta <- NULL
+
+    if ( is.matrix(.Object@alpha) ) {
+
+      nrow_alpha <- nrow(.Object@alpha)
+      ncol_alpha <- ncol(.Object@alpha)
+
+    } else if( is.function(.Object@alpha) && length(formals(.Object@alpha)) == 1 && names(formals(.Object@alpha)[1]) == "param"){
+
+      nrow_alpha <- nrow(evalf(.Object@alpha))
+      ncol_alpha <- ncol(evalf(.Object@alpha))
+
+    }
+
+    if ( is.matrix(.Object@beta) ) {
+
+      nrow_beta <- nrow(.Object@beta)
+      ncol_beta <- ncol(.Object@beta)
+
+    }  else if( is.function(.Object@beta) && length(formals(.Object@beta)) == 1 && names(formals(.Object@beta)[1]) == "param"){
+
+      nrow_beta <- nrow(evalf(.Object@beta))
+      ncol_beta <- ncol(evalf(.Object@beta))
+
+    }
+
+    if (!is.null(.Object@eta)){
+      if(is.matrix(.Object@eta)){
+
+        nrow_eta <- nrow(.Object@eta)
+        ncol_eta <- ncol(.Object@eta)
+
+      } else if (is.function(.Object@eta) &&length(formals(.Object@eta)) == 1 && names(formals(.Object@eta)[1]) == "param"){
+
+        nrow_eta <- nrow(evalf(.Object@eta))
+        ncol_eta <- ncol(evalf(.Object@eta))
+
+      }
+
+    }
+
+    if(is.null(dimens) & is.null(nrow_mu) & is.null(nrow_alpha) & is.null(nrow_beta) & is.null(nrow_eta)) {
+      stop("dimens should be provided in this model.")
+    }
+
+
+    if (length(unique(c(dimens, nrow_mu, nrow_alpha, nrow_beta, nrow_eta)))==1) {
+
+      .Object@dimens <- unique(c(dimens, nrow_mu, nrow_alpha, nrow_beta, nrow_eta))
+
+    } else {
+
+      stop("The number of rows in parameters and given dimens are all should be the same.")
+
+    }
+
+    if (length(unique(c(ncol_alpha, ncol_beta, ncol_eta))) != 1) {
+      stop("The number of columns in alpha, beta, eta are all should be the same.")
+    }
+
+    if (ncol_alpha > .Object@dimens & is.null(.Object@type_col_map)) {
+      stop("type_col_map should be provided for this model as the number of columns in parameters exceed the dimens")
+    }
+
+
+
+    # set dimens
+    # if( is.null(dimens)){
+    #   if( is.matrix(.Object@mu) ){
+    #     .Object@dimens <- length(.Object@mu)
+    #   } else if ( is.matrix(.Object@alpha) ) {
+    #     .Object@dimens <- nrow(.Object@alpha)
+    #   } else if ( is.matrix(.Object@beta) ) {
+    #     .Object@dimens <- nrow(.Object@beta)
+    #   } else if ( is.function(.Object@mu) ){
+    #     .Object@dimens <- nrow(evalf(.Object@mu))
+    #   } else if ( is.function(.Object@alpha) ){
+    #     .Object@dimens <- nrow(evalf(.Object@alpha))
+    #   } else if (is.function(.Object@beta) ){
+    #     .Object@dimens <- nrow(evalf(.Object@beta))
+    #   } else {
+    #     stop("argument \"dimens\" is missing, with no default")
+    #   }
+    # }
+    #
+
     # Check spectral radius, only works for non marked model
     if ( stability_check==TRUE && max(abs(eigen(alpha/beta)$values)) > 1)
       warning("This model may not satisfy the stability condition.")
+
 
     methods::callNextMethod()
 

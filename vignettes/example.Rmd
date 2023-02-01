@@ -808,7 +808,7 @@ alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
 impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
   if(n == 1){
     level <-  initial_level
-    mid <- initial_mid_price
+    # mid <- initial_mid_price
   } else {
     level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
     ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])
