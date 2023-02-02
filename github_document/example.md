@@ -871,7 +871,7 @@ summary(hfit(h, res_mk$inter_arrival, res_mk$type,
 ### Synchronized intensity model
 
 This model is basically two-kernel model and defined little bit
-complicated reparamterization.
+complicated reparametrization.
 
 $$
  \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
@@ -928,7 +928,7 @@ h_sy
 #>   matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
 #>            theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
 #> }
-#> <bytecode: 0x000001d388c1c4b0>
+#> <bytecode: 0x00000229910b89e8>
 #> 
 #> Slot alpha: 
 #> function(param = c(eta = 5, nu = 3)){
@@ -937,7 +937,7 @@ h_sy
 #>   matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
 #>            zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
 #> }
-#> <bytecode: 0x000001d38dc0aed0>
+#> <bytecode: 0x000002299687cf18>
 #> 
 #> Slot beta: 
 #> function(param = c(beta = 12, kappa = 0.12)){
@@ -946,7 +946,7 @@ h_sy
 #>   matrix(c(beta1, beta2, beta1, beta2,
 #>            beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x000001d38d1c0500>
+#> <bytecode: 0x0000022995b17030>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1379,7 +1379,7 @@ hspec_fl
 #>            0, 0, param["alpha33"], param["alpha34"],
 #>            0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x000001d388d7f3b8>
+#> <bytecode: 0x00000229973ea668>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1643,7 +1643,7 @@ h_ba
 #>            param["alpha_w2"], 0, 0, param["alpha_w1"],
 #>            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x000001d38fa233c0>
+#> <bytecode: 0x0000022996bb06b8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]

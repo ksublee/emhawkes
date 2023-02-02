@@ -24,8 +24,10 @@ Collate:
     'hreal.R'
     'hsim.R'
     'script.R'
-Suggests: knitr,
+Suggests: 
+    knitr,
     rmarkdown,
-    miscTools
+    miscTools,
+    V8
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)

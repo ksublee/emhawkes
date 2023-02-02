@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^github_document$
 cran-comments.md
+^cran-comments\.md$
