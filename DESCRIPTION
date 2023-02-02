@@ -1,6 +1,6 @@
 Package: emhawkes
 Title: Exponential Multivariate Hawkes Model
-Version: 0.9.8
+Version: 0.9.7
 Authors@R: person("Kyungsub", "Lee", email = "kyungsub@gmail.com", role = c("aut", "cre"))
 Maintainer: Kyungsub Lee <kyungsub@gmail.com>
 Description: Simulate and fitting exponential multivariate Hawkes model. 
