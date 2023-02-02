@@ -24,7 +24,7 @@
 #'
 #'
 #' @param x S3-object of `hreal`.
-#' @param n Number of rows to diplay.
+#' @param n Number of rows to display.
 #' @param object S3-object of `hreal`.
 #' @param ... Further arguments passed to or from other methods.
 #'

@@ -14,7 +14,7 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #'
 #' \eqn{\mu} is base intensity.
 #' This is generally a constant vector but can be extended to stochastic processes.
-#' Currently, piecewise constant mu is also possible. mu is left continous.
+#' Currently, piecewise constant mu is also possible. mu is left continuous.
 #'
 #' \eqn{\alpha} is a constant matrix which represents impacts on intensities after events.
 #' It is represented by slot \code{alpha}.
@@ -24,7 +24,7 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #' It is represented by slot \code{impact}.
 #'
 #' \eqn{\beta} is a constant matrix for exponential decay rates.
-#' It is represetned by slot \code{beta}.
+#' It is represented by slot \code{beta}.
 #'
 #' \eqn{z} is mark and represented by slot \code{rmark}.
 #'

@@ -13,7 +13,7 @@
 \arguments{
 \item{x}{S3-object of \code{hreal}.}
 
-\item{n}{Number of rows to diplay.}
+\item{n}{Number of rows to display.}
 
 \item{...}{Further arguments passed to or from other methods.}
 

@@ -85,7 +85,7 @@ Generic function hfit.
 A method for estimating the parameters of the exponential Hawkes model.
 The reason for being constructed as the S4 method is as follows.
 First, to represent the structure of the model as an hspec object.
-There are numerous variations on the mutlivariate marked Hawkes model.
+There are numerous variations on the multivariate marked Hawkes model.
 Second, to convey the starting point of numerical optimization.
 The parameter values assigned to the hspec slots become initial values.
 This function uses \code{\link[maxLik]{maxLik}} for the optimizer.

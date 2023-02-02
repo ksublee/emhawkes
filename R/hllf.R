@@ -7,7 +7,7 @@ NULL
 #' (The log-likelihood for mark (jump) distribution is not provided.)
 #'
 #' @param object \code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.
-#' @param inter_arrival A vector of realized inter-arrival times of events whici includes inter-arrival for events that occur in all dimensions. Start with zero.
+#' @param inter_arrival A vector of realized inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type A vector of realized dimensions distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark A vector of realized mark (jump) sizes. Start with zero.
 #' @param N A matrix of counting processes.

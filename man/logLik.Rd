@@ -20,7 +20,7 @@
 \arguments{
 \item{object}{\code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.}
 
-\item{inter_arrival}{A vector of realized inter-arrival times of events whici includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{inter_arrival}{A vector of realized inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
 \item{type}{A vector of realized dimensions distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 

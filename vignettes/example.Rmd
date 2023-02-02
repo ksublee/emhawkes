@@ -452,7 +452,7 @@ summary(hfit(h, res_mk$inter_arrival, res_mk$type,
 
 ### Synchronized intensity model
 
-This model is basically two-kernel model and defined little bit complicated reparamterization.
+This model is basically two-kernel model and defined by little bit complicated reparameterization.
 
 $$
  \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
