@@ -192,14 +192,29 @@ setMethod(
       # lambda decayed due to time, impact due to mark is not added yet
       lambda_component_n <- rambda_component_n_minus_1 * decayed
 
-      # integration of mu over inter arrival
-      integrated_mu <- sum(mu_n) * inter_arrival[n]
+      # integrate mu over inter_arrival w.r.t. time
+      # mu is matrix or vector
+      if ((is.matrix(mu_n) && nrow(mu_n) == object@dimens && ncol(mu_n) == 1) ||
+          (is.vector(mu_n) && length(mu_n) == 1)) {
+
+        integrated_mu <- sum(mu_n) * inter_arrival[n]
+
+      } else {
+
+        # When mu is observed as piecewise constant between n-1 and n
+        # Rows from 1 to object@dimens are mu values for each dimension.
+        # The last row represents the inter-arrival where mu changes between n-1 and n.
+
+        sum_mu_n <- colSums(mu_n[1:object@dimens, , drop = FALSE])
+        integrated_mu <- sum(sum_mu_n * mu_n[object@dimens + 1, ])
+
+      }
 
 
       if (is.null(object@dresidual) && !infer){
 
         # basic model
-        ## 1. sum of minus integrated_lambda_component and sum of minus mu * inter_arrival
+        ## 1. sum of integrated_lambda_component and sum of mu * inter_arrival
         sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(rambda_component_n / beta * (1 - decayed)) -
           integrated_mu
 
@@ -213,6 +228,7 @@ setMethod(
           phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
                                    rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
                                    beta[k, 1])
+
 
           #phi_value_k <- phi(tau = inter_arrival[n],
           #                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
@@ -245,8 +261,9 @@ setMethod(
 
 
       if(is_lambda_component_necessary) lambda_component[n, ] <- t(lambda_component_n)
-      if(is_lambda_necessary) lambda[n, ] <- as.vector(mu_n) + rowSums(lambda_component_n)
-
+      if(is_lambda_necessary){
+        lambda[n, ] <- as.vector(mu_n[1:object@dimens]) + rowSums(lambda_component_n)
+      }
 
       ## 3. sum of log mark p.d.f. when jump occurs
       if(!is.null(object@dmark)){

@@ -4,11 +4,14 @@
 \alias{hreal}
 \alias{print.hreal}
 \alias{summary.hreal}
+\alias{as.matrix.hreal}
 \title{Realization of Hawkes process}
 \usage{
 \method{print}{hreal}(x, n = 20, ...)
 
 \method{summary}{hreal}(object, n = 20, ...)
+
+\method{as.matrix}{hreal}(x, ...)
 }
 \arguments{
 \item{x}{S3-object of \code{hreal}.}

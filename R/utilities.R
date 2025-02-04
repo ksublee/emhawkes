@@ -1,22 +1,30 @@
 
 #convert type to N and Nc
-type_to_N <- function(type, mark=NULL, dimens){
+type_to_N <- function(type, dimens, N0 = NULL){
 
-  Nc <- N <- matrix(rep(0, dimens*length(type)), ncol=dimens)
-  colnames(Nc)  <- paste0("Nc", 1:dimens)
+  N <- matrix(rep(0, dimens*length(type)), ncol=dimens)
   colnames(N) <- paste0("N", 1:dimens)
+
+  if (!is.null(N0)) N[1,] <- N0
 
   N[cbind(2:length(type), type[2:length(type)])] <- 1
   N <- apply(N, 2, cumsum)
 
-  if(is.null(mark)){
-    Nc <- N
-  } else {
-    Nc[cbind(2:length(type), type[2:length(type)])] <- mark[2:length(mark)]
-    Nc <- apply(Nc, 2, cumsum)
-  }
+  N
 
-  list(N ,Nc)
+}
+
+type_mark_to_Nc <- function(type, mark, dimens, Nc0 = NULL){
+
+  Nc <-  matrix(rep(0, dimens*length(type)), ncol=dimens)
+  colnames(Nc) <- paste0("Nc", 1:dimens)
+
+  if (!is.null(Nc0)) Nc[1,] <- Nc0
+
+  Nc[cbind(2:length(type), type[2:length(type)])] <- mark[2:length(mark)]
+  Nc <- apply(Nc, 2, cumsum)
+
+  Nc
 
 }
 
@@ -121,10 +129,15 @@ as.unique.vector <- function(M, notation, sep="."){
 }
 
 
-as.param <- function(M, prefix, reduced){
+as.param <- function(M, prefix = "", reduced){
+
+  if (is.null(M)) return(NULL)
+
   if (is.function(M)){
-    # when the argument M is a function, extract the parameter from the first argument of M
-    prs <- eval(formals(M)[[1]])
+    # when the argument M is a function, extract the parameter from 'param' argument of M
+    #prs <- eval(formals(M)[[1]])
+
+    prs <- eval(formals(M)$param)
   } else{
     if(reduced){
       prs <- as.unique.vector(M, prefix)
@@ -137,44 +150,55 @@ as.param <- function(M, prefix, reduced){
 }
 
 #automatic parameter setting with object
-setting <- function(object){
+setting <- function(object) {
 
-  #function evaluations with default parameters
-  if (is.function(object@mu)){
-    if (length(formals(object@mu)) == 1){
+  # Evaluate the 'mu' parameter
+  if (is.function(object@mu)) {
+    # If 'mu' is a function with one parameter, evaluate it using default settings
+    if (length(formals(object@mu)) == 1) {
       mu <- evalf(object@mu)
-    } else{
+    } else {
+      # Otherwise, use the function as is
       mu <- object@mu
     }
-  } else{
+  } else {
+    # If 'mu' is not a function, use it directly
     mu <- object@mu
   }
-  if (is.function(object@alpha)){
+
+
+  # Evaluate the 'alpha' parameter
+  if (is.function(object@alpha)) {
+    # Use default parameter settings if 'alpha' is a function
     alpha <- evalf(object@alpha)
-  } else{
+  } else {
+    # Use 'alpha' directly if it is not a function
     alpha <- object@alpha
   }
-  if (is.function(object@beta)){
+
+  # Evaluate the 'beta' parameter
+  if (is.function(object@beta)) {
+    # Use default parameter settings if 'beta' is a function
     beta <- evalf(object@beta)
-  } else{
+  } else {
+    # Use 'beta' directly if it is not a function
     beta <- object@beta
   }
-  if (is.function(object@eta)){
+
+
+  # Evaluate the 'eta' parameter
+  if (is.function(object@eta)) {
+    # Use default parameter settings if 'eta' is a function
     eta <- evalf(object@eta)
-  } else{
+  } else {
+    # Use 'eta' directly if it is not a function
     eta <- object@eta
   }
 
 
-  rmark <- object@rmark
-  dmark <- object@dmark
-  impact <- object@impact
 
-
-  # dimension of Hawkes process
-  dimens <- object@dimens
-
-  list(mu = mu, alpha = alpha, beta = beta, eta = eta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
+  # Return a list containing all the evaluated parameters and attributes
+  list(mu = mu, alpha = alpha, beta = beta, eta = eta)
 
 }
 
@@ -194,8 +218,11 @@ setting <- function(object){
 
 
 # Thanks to https://www.r-bloggers.com/hijacking-r-functions-changing-default-arguments/
-# Copy function with default parameters
+# Copy function with changing default argument
 hijack <- function (FUN, ...) {
+
+  if(is.null(FUN)) return(NULL)
+
   .FUN <- FUN
   args <- list(...)
   invisible(lapply(seq_along(args), function(i) {
@@ -205,11 +232,45 @@ hijack <- function (FUN, ...) {
 }
 
 #function evaluation with default parameters
-evalf <- function(FUN){
-  args <- list()
+evalf <- function(FUN) {
+  # Extract the list of default parameters
+  default_args <- lapply(formals(FUN), eval)
+  # Execute the function with the default parameters using do.call
+  result <- do.call(FUN, default_args)
+  result
+}
+
+#evalf <- function(FUN){
+
+  #args <- list()
   #formals(FUN)[[1]] may look like c(alpha11 = 0.1, alpha12 = 0.2, ...)
-  for (i in seq_along(formals(FUN))){
-    args[[i]] <- eval(formals(FUN)[[i]])
+  #for (i in seq_along(formals(FUN))){
+  #  args[[i]] <- eval(formals(FUN)[[i]])
+  #}
+  #invisible(do.call(FUN, args = args))
+#}
+
+
+
+initialize_slot <- function(object_slot, pr_param, param_name = "", dimens = 0, reduced = TRUE) {
+
+  if(is.null(object_slot)) return(NULL)
+
+  if (is.function(object_slot)){
+
+    slot0 <- hijack(object_slot, param = pr_param)
+
+  } else{
+
+    if(reduced){
+
+      slot0 <- matrix(pr_param[look_up_mtrx(object_slot, param_name)], nrow=dimens)
+
+    } else {
+
+      slot0 <- matrix(pr_param, nrow=dimens)
+
+    }
   }
-  invisible(do.call(FUN, args = args))
+  slot0
 }

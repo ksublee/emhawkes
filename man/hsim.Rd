@@ -6,16 +6,32 @@
 \alias{hsim,hspec-method}
 \title{Simulate multivariate Hawkes process with exponential kernel.}
 \usage{
-hsim(object, size = 100, lambda_component0 = NULL, N0 = NULL, ...)
+hsim(
+  object,
+  size = 100,
+  lambda_component0 = NULL,
+  N0 = NULL,
+  verbose = FALSE,
+  ...
+)
 
-\S4method{hsim}{hspec}(object, size = 100, lambda_component0 = NULL, N0 = NULL, ...)
+\S4method{hsim}{hspec}(
+  object,
+  size = 100,
+  lambda_component0 = NULL,
+  N0 = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{\code{\link{hspec-class}}. S4 object that specifies the parameter values.}
 
 \item{size}{Number of observations.}
 
-\item{lambda_component0}{Starting values of lambda component. numeric or matrix.}
+\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+Can be a numeric value or a matrix.
+Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
 
 \item{N0}{Starting values of N with default value 0.}
 

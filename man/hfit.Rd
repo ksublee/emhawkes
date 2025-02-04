@@ -4,7 +4,7 @@
 \name{hfit}
 \alias{hfit}
 \alias{hfit,hspec-method}
-\title{Perform maximum likelihood estimation}
+\title{Perform Maximum Likelihood Estimation}
 \usage{
 hfit(
   object,
@@ -45,50 +45,56 @@ hfit(
 )
 }
 \arguments{
-\item{object}{\code{\link{hspec-class}}. This object includes the parameter values}
+\item{object}{An \code{\link{hspec-class}} object containing the parameter values.}
 
-\item{inter_arrival}{Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{inter_arrival}{A vector of inter-arrival times for events across all dimensions, starting with zero.}
 
-\item{type}{A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
+\item{type}{A vector indicating the dimensions, represented by numbers like 1, 2, 3, etc., starting with zero.}
 
-\item{mark}{A vector of mark (jump) sizes. Start with zero.}
+\item{mark}{A vector of mark (jump) sizes, starting with zero.}
 
-\item{N}{A matrix of counting processes.}
+\item{N}{A matrix representing counting processes.}
 
-\item{Nc}{A matrix of counting processes weighted by mark.}
+\item{Nc}{A matrix of counting processes weighted by mark sizes.}
 
-\item{lambda_component0}{Initial values of lambda component. It must have the same dimensional matrix (n by n) with \code{object}.}
+\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+Can be a numeric value or a matrix.
+Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
 
-\item{N0}{Initial values of N.}
+\item{N0}{Initial values for the counting processes matrix \code{N}.}
 
-\item{mylogLik}{User defined log-likelihood function. \code{mylogLik} function should have \code{object} argument consistent with \code{object}.}
+\item{mylogLik}{A user-defined log-likelihood function, which must accept an \code{object} argument consistent with \code{object}.}
 
-\item{reduced}{When \code{TRUE}, reduced estimation performed.}
+\item{reduced}{Logical; if \code{TRUE}, performs reduced estimation.}
 
-\item{grad}{A Gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{grad}{A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{hess}{A Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{hess}{A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{constraint}{Constraint matrices. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{constraint}{Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{method}{A Method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{method}{The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{verbose}{If \code{TRUE}, print the progress of the estimation.}
+\item{verbose}{Logical; if \code{TRUE}, prints the progress of the estimation process.}
 
-\item{...}{Other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.}
+\item{...}{Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 }
 \value{
 \code{\link{maxLik}} object
 }
 \description{
-Generic function hfit.
-A method for estimating the parameters of the exponential Hawkes model.
-The reason for being constructed as the S4 method is as follows.
-First, to represent the structure of the model as an hspec object.
-There are numerous variations on the multivariate marked Hawkes model.
-Second, to convey the starting point of numerical optimization.
-The parameter values assigned to the hspec slots become initial values.
-This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
+This is a generic function named \code{hfit} designed for estimating the parameters
+of the exponential Hawkes model. It is implemented as an S4 method for two main reasons:
+}
+\details{
+Model Representation: To represent the structure of the model as an \code{hspec} object.
+The multivariate marked Hawkes model has numerous variations, and using an S4 class
+allows for a flexible and structured approach.
+
+Optimization Initialization: To provide a starting point for numerical optimization.
+The parameter values assigned to the \code{hspec} slots serve as initial values for the optimization process.
+
+This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
 }
 \examples{
 

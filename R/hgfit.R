@@ -14,8 +14,11 @@ NULL
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param N Hawkes process. If not provided, then generate using inter_arrival and type.
 #' @param Nc mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.
-#' @param lambda_component0 the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.
+#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' Can be a numeric value or a matrix.
+#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
 #' @param N0 the initial values of N.
+#' @param Nc0 the initial values of Nc.
 #' @param ... further arguments passed to or from other methods.
 #'
 #' @return \code{\link{hreal}} S3-object, with inferred intensity.
@@ -37,7 +40,7 @@ NULL
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
-                            lambda_component0 = NULL, N0 = NULL, ...) standardGeneric("infer_lambda"))
+                            lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, ...) standardGeneric("infer_lambda"))
 
 #' @rdname infer_lambda
 setMethod(
@@ -46,7 +49,18 @@ setMethod(
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
            N = NULL, Nc = NULL,
-           lambda_component0 = NULL, N0 = NULL, ...){
+           lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, ...){
+
+    warning("The 'infer_lambda' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+
+
+    infered_res <- logLik(object, inter_arrival = inter_arrival, type = type,
+                          mark = mark, N = N, Nc = Nc,  lambda_component0 = lambda_component0,
+                          N0 = N0, Nc0 = Nc0,
+                          infer = TRUE)
+
+    return(infered_res)
+
 
     # Similar to logLik function, need to integrate
 
@@ -61,29 +75,34 @@ setMethod(
     }
 
 
-    #parameter setting
+    ## Parameter setting and initialization
+    # after parameter setting, functions mu, alpha, beta become matrices, if possible
+    # Note that mu, alpha, beta, eta can be given functions even they are essentially matrices.
     plist <- setting(object)
     mu <- plist$mu
     alpha <- plist$alpha
     beta <- plist$beta
     eta <- plist$eta
-    impact <- plist$impact
-    rmark <- plist$rmark
-    dimens <- plist$dimens
-    size <-  length(inter_arrival)
 
-    if(is.null(N) | is.null(Nc)){
-      temp <- type_to_N(type, mark, dimens)
-      if(is.null(N)) N <- temp[[1]]
-      if(is.null(Nc)) Nc <- temp[[2]]
-    }
+    size <-  length(inter_arrival) #
+
+    # check the argument lists in mu and impact
+    mu_args <- impct_args <- c()
+    if(is.function(mu) && length(formals(mu)) > 1) mu_args <- methods::formalArgs(mu)
+    if(!is.null(object@impact)) impct_args <- methods::formalArgs(object@impact)
+
+    # N and Nc are constructed only if they are needed.
+    if("N" %in% c(impct_args, mu_args) && is.null(N)) N <- type_to_N(type, object@dimens, N0 = N0)
+    if("Nc" %in% c(impct_args, mu_args) && is.null(Nc)) N <- type_mark_to_Nc(type, mark, object@dimens, Nc0 = Nc0)
+
 
     if (is.function(mu)){
       mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
                 N = N, Nc = Nc,
-                lambda_component_n = lambda_component_n,
+                lambda = lambda, lambda_component = lambda_component,
                 alpha = alpha, beta = beta)
-    } else {
+    } else{
+      # mu is a matrix
       mu0 <- mu
     }
 
@@ -98,18 +117,18 @@ setMethod(
     if(!is.null(lambda_component0)){
 
       # If the dimensions of model and lambda_component0 do not match, lambda_component0 will be adjusted
-      if (dimens * ncol(beta) > length(lambda_component0)){
+      if (object@dimens * ncol(beta) > length(lambda_component0)){
         warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted. \n
                 lambda_component0 is now :")
-        lambda_component0 <- rep(lambda_component0, dimens^2)
+        lambda_component0 <- rep(lambda_component0, object@dimens^2)
       }
-      if (dimens * ncol(beta) < length(lambda_component0)){
+      if (object@dimens * ncol(beta) < length(lambda_component0)){
         warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted.\n
                 lambda_component0 is now :")
-        lambda_component0 <- lambda_component0[1:dimens^2]
+        lambda_component0 <- lambda_component0[1:object@dimens^2]
       }
 
-      lambda_component0 <- as.matrix(lambda_component0, nrow = dimens)
+      lambda_component0 <- as.matrix(lambda_component0, nrow = object@dimens)
 
     } else {
       # default lambda_component0
@@ -121,22 +140,21 @@ setMethod(
 
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
-    lambda_component <- matrix(sapply(lambda_component0, c, numeric(length = size - 1)), ncol = dimens * ncol(beta))
-    rowSums_lambda_component0 <- rowSums(matrix(lambda_component0, nrow=dimens))
+    lambda_component <- matrix(sapply(lambda_component0, c, numeric(length = size - 1)), ncol = object@dimens * ncol(beta))
+    rowSums_lambda_component0 <- rowSums(matrix(lambda_component0, nrow=object@dimens))
 
-    lambda <- matrix(sapply(mu0 + rowSums_lambda_component0, c, numeric(length = size - 1)), ncol = dimens)
-
+    lambda <- matrix(sapply(mu0 + rowSums_lambda_component0, c, numeric(length = size - 1)), ncol = object@dimens)
     rambda <- lambda
     rambda_component <- lambda_component
 
     # Set column names
-    colnames(lambda) <- paste0("lambda", 1:dimens)
-    indxM <- matrix(rep(1:ncol(beta), dimens), byrow = TRUE, nrow = dimens)
-    colnames(lambda_component) <- as.vector(t(outer(as.vector(outer("lambda", 1:dimens, FUN = paste0)),
+    colnames(lambda) <- paste0("lambda", 1:object@dimens)
+    indxM <- matrix(rep(1:ncol(beta), object@dimens), byrow = TRUE, nrow = object@dimens)
+    colnames(lambda_component) <- as.vector(t(outer(as.vector(outer("lambda", 1:object@dimens, FUN = paste0)),
                                                     1:ncol(beta), FUN=paste0)))
 
-    colnames(rambda) <- paste0("rambda", 1:dimens)
-    colnames(rambda_component) <- as.vector(t(outer(as.vector(outer("rambda", 1:dimens, FUN = paste0)),
+    colnames(rambda) <- paste0("rambda", 1:object@dimens)
+    colnames(rambda_component) <- as.vector(t(outer(as.vector(outer("rambda", 1:object@dimens, FUN = paste0)),
                                                     1:ncol(beta), FUN=paste0)))
 
 
@@ -145,16 +163,17 @@ setMethod(
     # only piecewise constant mu is available, to be updated
     if (is.function(mu)){
       rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                  N = N, Nc = Nc,
+                  lambda = lambda, lambda_component = lambda_component,
                   lambda_component_n = lambda_component_n,
                   alpha = alpha, beta = beta)
     } else{
       rmu_n <- mu
     }
 
-    zero_mat_for_alpha <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
-    zero_mat_for_eta <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
-    zero_mat_for_impact <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)  # for fast computation, pre-initialize
+    zero_mat_for_alpha <- matrix(rep(0, object@dimens * ncol(beta)), nrow = object@dimens)  # for fast computation, pre-initialize
+    zero_mat_for_eta <- matrix(rep(0, object@dimens * ncol(beta)), nrow = object@dimens)  # for fast computation, pre-initialize
+    zero_mat_for_impact <- matrix(rep(0, object@dimens * ncol(beta)), nrow = object@dimens)  # for fast computation, pre-initialize
 
     for (n in 2:size) {
 
@@ -202,13 +221,13 @@ setMethod(
 
       # 3. impact by impact function
       # new_lambda = [[lambda11, lambda12, ...], [lambda21, lambda22, ...], ...]
-      if(!is.null(impact)){
+      if(!is.null(object@impact)){
 
         impact_mark <- zero_mat_for_impact
-        impact_res <- impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                             N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                             lambda_component_n = lambda_component_n,
-                             mu = mu, alpha = alpha, beta = beta)
+        impact_res <- object@impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                                    lambda_component_n = lambda_component_n,
+                                    mu = mu, alpha = alpha, beta = beta)
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -300,9 +319,9 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 
   # only piecewise constant mu is available, to be updated
   if (is.function(mu)){
-    rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-                N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                lambda_component_n = lambda_component_n,
+    rmu_n <- mu(n = 2, type = type, inter_arrival = inter_arrival, mark = mark,
+                N = N, Nc = Nc,
+                lambda = lambda, lambda_component = lambda_component,
                 alpha = alpha, beta = beta)
   } else{
     rmu_n <- mu
@@ -371,6 +390,9 @@ residual_process <- function(component, inter_arrival, type, rambda_component, m
                              mark = NULL,
                              N = NULL, Nc = NULL,
                              lambda_component0 = NULL, N0 = NULL, ...){
+
+  warning("The 'residual_process' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+
 
   additional_argument <- list(...)
   if ("lambda0" %in% names(additional_argument)) {

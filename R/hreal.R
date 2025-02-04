@@ -1,32 +1,29 @@
-#' Realization of Hawkes process
+#' Realization of Hawkes Process
 #'
 #' @description
-#' `hreal` is the list of the following:
+#' `hreal` is a list containing the following components:
 #'
-#' * `hspec` : S4 object \code{\link{hspec-class}} that specifies the parameter values.
-#' * `inter_arrival` : the time between two consecutive events.
-#' * `arrival` : cumulative sum of `inter_arrival`.
-#' * `type` : integer, the type of event.
-#' * `mark` : the size of mark, an additional information associated with event.
-#' * `N` : counting process that counts the number of events.
-#' * `Nc` : counting process that counts the number of events weighted by mark.
-#' * `lambda` : intensity process, left-continuous version.
-#' * `lambda_component` : the component of intensity process with `mu` not included.
-#' * `rambda` : intensity process, right-continuous version.
-#' * `rambda_component` : the right-continuous version of `lambda_component`.
-#'
-#'
+#' * `hspec`: An S4 object of class \code{\link{hspec-class}} that specifies the parameter values.
+#' * `inter_arrival`: The time intervals between consecutive events.
+#' * `arrival`: The cumulative sum of `inter_arrival` times.
+#' * `type`: An integer representing the type of event.
+#' * `mark`: The size of the mark, providing additional information associated with the event.
+#' * `N`: A counting process that tracks the number of events.
+#' * `Nc`: A counting process that tracks the number of events, weighted by mark.
+#' * `lambda`: The left-continuous intensity process.
+#' * `lambda_component`: The component of the intensity process, \eqn{\lambda_{ij}}, that excludes `mu`.
+#' * `rambda`: The right-continuous intensity process.
+#' * `rambda_component`: The right-continuous version of `lambda_component`.
 #'
 #' @name hreal
-
+#'
 #' @description
-#' Print functions for `hreal` are provided.
+#' Functions for printing `hreal` objects are provided.
 #'
-#'
-#' @param x S3-object of `hreal`.
-#' @param n Number of rows to display.
-#' @param object S3-object of `hreal`.
-#' @param ... Further arguments passed to or from other methods.
+#' @param x An S3 object of class `hreal`.
+#' @param n The number of rows to display.
+#' @param object An S3 object of class `hreal`.
+#' @param ... Additional arguments passed to or from other methods.
 #'
 #'
 #' @rdname hreal
@@ -34,8 +31,8 @@
 #' @export
 print.hreal <- function(x, n=20, ...){
   options(digits=4)
-  cat("------------------------------------------\n")
-  cat("Simulation result of marked Hawkes model.\n")
+  cat("-------------------------------------------------------\n")
+  cat("Simulation result of exponential (marked) Hawkes model.\n")
   print(x$hspec)
 
   cat("Realized path :\n")
@@ -62,7 +59,7 @@ print.hreal <- function(x, n=20, ...){
     cat(" more rows \n")
   }
 
-  cat("------------------------------------------\n")
+  cat("-------------------------------------------------------\n")
   options(digits=7)
 }
 
@@ -74,8 +71,8 @@ print.hreal <- function(x, n=20, ...){
 summary.hreal <- function(object, n=20, ...){
 
   options(digits=5)
-  cat("------------------------------------------\n")
-  cat("Simulation result of marked Hawkes model.\n")
+  cat("-------------------------------------------------------\n")
+  cat("Simulation result of exponential (marked) Hawkes model.\n")
   cat("Realized path :\n")
   mtrx <- as.matrix(object)
   dimens <- object$hspec@dimens
@@ -99,11 +96,14 @@ summary.hreal <- function(object, n=20, ...){
     cat(" more rows \n")
   }
 
-  cat("------------------------------------------\n")
+  cat("-------------------------------------------------------\n")
   options(digits=7)
 }
 
-
+#'
+#'
+#' @rdname hreal
+#' @export
 as.matrix.hreal <- function(x, ...){
 
   mtrx <- numeric()
