@@ -4,36 +4,39 @@
 \alias{hreal}
 \alias{print.hreal}
 \alias{summary.hreal}
-\title{Realization of Hawkes process}
+\alias{as.matrix.hreal}
+\title{Realization of Hawkes Process}
 \usage{
 \method{print}{hreal}(x, n = 20, ...)
 
 \method{summary}{hreal}(object, n = 20, ...)
+
+\method{as.matrix}{hreal}(x, ...)
 }
 \arguments{
-\item{x}{S3-object of \code{hreal}.}
+\item{x}{An S3 object of class \code{hreal}.}
 
-\item{n}{Number of rows to display.}
+\item{n}{The number of rows to display.}
 
-\item{...}{Further arguments passed to or from other methods.}
+\item{...}{Additional arguments passed to or from other methods.}
 
-\item{object}{S3-object of \code{hreal}.}
+\item{object}{An S3 object of class \code{hreal}.}
 }
 \description{
-\code{hreal} is the list of the following:
+\code{hreal} is a list containing the following components:
 \itemize{
-\item \code{hspec} : S4 object \code{\link{hspec-class}} that specifies the parameter values.
-\item \code{inter_arrival} : the time between two consecutive events.
-\item \code{arrival} : cumulative sum of \code{inter_arrival}.
-\item \code{type} : integer, the type of event.
-\item \code{mark} : the size of mark, an additional information associated with event.
-\item \code{N} : counting process that counts the number of events.
-\item \code{Nc} : counting process that counts the number of events weighted by mark.
-\item \code{lambda} : intensity process, left-continuous version.
-\item \code{lambda_component} : the component of intensity process with \code{mu} not included.
-\item \code{rambda} : intensity process, right-continuous version.
-\item \code{rambda_component} : the right-continuous version of \code{lambda_component}.
+\item \code{hspec}: An S4 object of class \code{\link{hspec-class}} that specifies the parameter values.
+\item \code{inter_arrival}: The time intervals between consecutive events.
+\item \code{arrival}: The cumulative sum of \code{inter_arrival} times.
+\item \code{type}: An integer representing the type of event.
+\item \code{mark}: The size of the mark, providing additional information associated with the event.
+\item \code{N}: A counting process that tracks the number of events.
+\item \code{Nc}: A counting process that tracks the number of events, weighted by mark.
+\item \code{lambda}: The left-continuous intensity process.
+\item \code{lambda_component}: The component of the intensity process, \eqn{\lambda_{ij}}, that excludes \code{mu}.
+\item \code{rambda}: The right-continuous intensity process.
+\item \code{rambda_component}: The right-continuous version of \code{lambda_component}.
 }
 
-Print functions for \code{hreal} are provided.
+Functions for printing \code{hreal} objects are provided.
 }

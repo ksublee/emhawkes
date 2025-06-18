@@ -3,7 +3,7 @@
 \docType{methods}
 \name{logLik,hspec-method}
 \alias{logLik,hspec-method}
-\title{Compute the log-likelihood function}
+\title{Compute the Log-Likelihood Function}
 \usage{
 \S4method{logLik}{hspec}(
   object,
@@ -13,32 +13,39 @@
   N = NULL,
   Nc = NULL,
   N0 = NULL,
+  Nc0 = NULL,
   lambda_component0 = NULL,
+  infer = FALSE,
   ...
 )
 }
 \arguments{
-\item{object}{\code{\link{hspec-class}}. The parameter values in the object are used to compute the log-likelihood.}
+\item{object}{An \code{\link{hspec-class}} object containing parameter values for computing the log-likelihood.}
 
-\item{inter_arrival}{A vector of realized inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
+\item{inter_arrival}{A vector of inter-arrival times for events across all dimensions, starting with zero.}
 
-\item{type}{A vector of realized dimensions distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
+\item{type}{A vector indicating the dimensions, represented by numbers (1, 2, 3, etc.), starting with zero.}
 
-\item{mark}{A vector of realized mark (jump) sizes. Start with zero.}
+\item{mark}{A vector of mark (jump) sizes, starting with zero.}
 
-\item{N}{A matrix of counting processes.}
+\item{N}{A matrix representing counting processes.}
 
-\item{Nc}{A matrix of counting processes weighted by mark.}
+\item{Nc}{A matrix of counting processes weighted by mark sizes.}
 
-\item{N0}{A matrix of initial values of N.}
+\item{N0}{A matrix of initial values for \code{N}.}
 
-\item{lambda_component0}{The initial values of lambda component. Must have the same dimensional matrix with \code{object}.}
+\item{Nc0}{A matrix of initial values for \code{Nc}.}
 
-\item{...}{Further arguments passed to or from other methods.}
+\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+Can be a numeric value or a matrix.
+Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+
+\item{infer}{Logical}
+
+\item{...}{Additional arguments passed to or from other methods.}
 }
 \description{
-The log-likelihood of the ground process of the Hawkes model.
-(The log-likelihood for mark (jump) distribution is not provided.)
+Calculates the log-likelihood for the Hawkes model.
 }
 \seealso{
 \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}

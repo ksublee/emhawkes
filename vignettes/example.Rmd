@@ -1,5 +1,5 @@
 ---
-title: "Example : emhawkes package "
+title: "Example : emhawkes package"
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+
 ```
 
 ## Basic Hawkes model
@@ -28,67 +29,79 @@ library(emhawkes)
 ```
 
 This subsection outlines the steps for constructing, running simulations, and estimating a univariate Hawkes model.
-To begin, create an `hspec` object which defines the Hawkes model.
-S4 class `hspec` contains slots for the model parameters: `mu`, `alpha`, `beta`, `dimens`, `rmark`, and `impact`.
+To begin, create an `hspec` object, which defines the Hawkes model.
+The S4 class `hspec` contains slots for the model parameters: `mu`, `alpha`, `beta`, `dimens`, `rmark`, and `impact`.
 
-In a univariate model, the basic parameters of the model, `mu`, `alpha`, `beta`, can be given as numeric.
-If numeric values are given, they will be converted to matrices.
+In a univariate model, the basic parameters of the model---`mu`, `alpha`, and `beta`---can be given as numeric values.
+If numeric values are provided, they will be converted to matrices.
 Below is an example of a univariate Hawkes model without a mark.
 
 ```{r}
-set.seed(1107)
 mu1 <- 0.3; alpha1 <- 1.2; beta1 <- 1.5
 hspec1 <- new("hspec", mu = mu1, alpha = alpha1, beta = beta1)
 show(hspec1)
 ```
 
-The function `hsim` implements simulation where the input arguments are `hspec`, `size` and the initial values of intensity component process, `lambda_component0`, and the initial values of Hawkes processes, `N0`.
-More precisely, the intensity process the basic univariate Hawkes model is represented by $$ \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s) $$ where the `lambda_component0` denotes $$ \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).$$ If `lambda_component0` is not provided, the internally determined initial values for intensity process are used.
-If `size` is sufficiently large, exact value of `lambda_component0` may not be important.
-The default initial value of counting process, `N0`, is zero.
+The function `hsim` implements simulation where the input arguments are `hspec`, `size`, and the initial values of the intensity component process, `lambda_component0`, and the initial values of the Hawkes processes, `N0`.
+More precisely, the intensity process of the basic univariate Hawkes model is represented by
+
+$$
+\lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
+$$
+
+where the `lambda_component0` denotes
+
+$$
+\lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
+$$
+
+If `lambda_component0` is not provided, the internally determined initial values for the intensity process are used.
+If `size` is sufficiently large, the exact value of `lambda_component0` may not be important.
+The default initial value of the counting process, `N0`, is zero.
 
 ```{r, warning=FALSE}
+set.seed(1107)
 res1 <- hsim(hspec1, size = 1000)
 summary(res1)
 ```
 
-The results of `hsim` is an S3 class `hreal` which consists of `hspec`, `inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda_component`.
+The results of `hsim` is an S3 class `hreal`, which consists of `hspec`, `inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda_component`.
 
--   `hspec` is the model specification
+-   `hspec` is the model specification.
 
--   `inter_arrival` is the inter-arrival time of every event
+-   `inter_arrival` is the inter-arrival time of every event.
 
--   `arrival` is the cumulative sum of `inter_arrival`
+-   `arrival` is the cumulative sum of `inter_arrival`.
 
--   `type` is the type of events, i.e., $i$ for $N_i$, and used for multivariate model
+-   `type` is the type of events, i.e., $i$ for $N_i$, and is used for a multivariate model.
 
--   `mark` is a numeric vector which represents additional information for the event
+-   `mark` is a numeric vector that represents additional information for the event.
 
--   `lambda` represents $\lambda$ which is the left continuous and right limit version
+-   `lambda` represents $\lambda$, which is the left continuous and right limit version.
 
--   The right continuous version of intensity is `rambda`
+-   The right continuous version of intensity is `rambda`.
 
--   `lambda_component` represents $\lambda_{ij}$ and `rambda_component` is the right continuous version.
+-   `lambda_component` represents $\lambda_{ij}$, and `rambda_component` is the right continuous version.
 
 `inter_arrival`, `type`, `mark`, `N`, and `Nc` start at zero.
-Using `summary()` function, one can print the first 20 elements of `arrival`, `N` and `lambda`.
-`print()` function also can be used.
+Using the `summary()` function, one can print the first 20 elements of `arrival`, `N`, and `lambda`.
+The `print()` function can also be used.
 
-By the definition, we have `lambda == mu + lambda_compoent`:
+By definition, we have `lambda == mu + lambda_component`.
 
 ```{r}
 # first and third columns are the same
 cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
 ```
 
-Except the first row, `rambda == lambda + alpha` .
+For all rows except the first, `rambda` equals `lambda + alpha` in this model.
 
 ```{r}
 # second and third columns are the same
 cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
 ```
 
-Also check the exponential decaying:
+Additionally, verify that the exponential decay is accurately represented in the model.
 
 ```{r}
 # By definition, the following two are equal:
@@ -96,17 +109,19 @@ res1$lambda[2:6]
 mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
 ```
 
-The log-likelihood function is computed by `logLik` method.
-In this case, the inter-arrival times and `hspec` are inputs of the function.
+The log-likelihood function is calculated using the `logLik` method.
+In this context, the inter-arrival times and `hspec` are provided as inputs to the function.
 
 ```{r, warning=FALSE}
 logLik(hspec1, inter_arrival = res1$inter_arrival)
 ```
 
-The likelihood estimation is performed using `mhfit` function.
-The specification of the initial values of the parameters, `hspec0` is needed.
-Note that only `inter_arrival` is needed in this univariate model.
-(Indeed, for more precise simulation, `lambda0`, the initial value of lambda component, should be specified. If not, internally determined initial values are used.) By default, it uses the BFGS method for numerical optimization.
+The likelihood estimation is performed using the `hfit` function.
+The specification of the initial parameter values, `hspec0`, is required.
+Note that only `inter_arrival` is needed for this univariate model.
+For more accurate simulation, it is recommended to specify `lambda0`, the initial value of the lambda component.
+If `lambda0` is not provided, the function uses internally determined initial values.
+By default, the BFGS method is employed for numerical optimization.
 
 ```{r, warning=FALSE}
 # initial value for numerical optimization
@@ -119,7 +134,7 @@ summary(mle)
 
 ### Bivariate Hawkes model
 
-The intensity process of basic bivariate Hawkes model is defined by
+The intensity process of a basic bivariate Hawkes model is defined by
 
 $$
  \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
@@ -129,8 +144,8 @@ $$
  \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
 $$
 
-In a bivariate model, the parameters, the slots of `hspec`, are matrices.
-`mu` is 2-by-1, and `alpha` and `beta` are 2-by-2 matrices:
+In a bivariate model, the parameters within the slots of `hspec` are matrices.
+Specifically, `mu` is a 2-by-1 matrix, while `alpha` and `beta` are 2-by-2 matrices.
 
 $$
 \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
@@ -139,17 +154,15 @@ $$
 \begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
 $$
 
-`rmark` is a random number generating function for mark and is not used for non-mark model.
-`lambda_component0`, 2-by-2 matrix, represents the initial values of `lambda_component`, a set of `lambda11, lambda12, lambda21, lambda22`.
+`rmark` is a random number generating function for marks and is not used in non-mark models.
+`lambda_component0` is a 2-by-2 matrix that represents the initial values of `lambda_component`, which includes the set of values `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
 The intensity processes are represented by
 
 $$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), $$
 
 $$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). $$
 
-$\lambda_{ij}$ called lambda components and `lambda0` is $\lambda_{ij}(0)$.
-
-`lambda_component0` can be omitted and then internally determined initial values are used.
+The terms $\lambda_{ij}$ are referred to as lambda components, and `lambda0` represents \$\lambda\_{ij}(0)`.  The parameter`lambda_component0\` can be omitted in this model, in which case internally determined initial values will be used.
 
 ```{r}
 mu2 <- matrix(c(0.2), nrow = 2)
@@ -159,64 +172,65 @@ hspec2 <- new("hspec", mu=mu2, alpha=alpha2, beta=beta2)
 print(hspec2)
 ```
 
-To simulate, use function `hsim`.
+To perform a simulation, use the `hsim` function.
 
 ```{r}
+set.seed(1107)
 res2 <- hsim(hspec2,  size=1000)
 summary(res2)
 ```
 
-`type` is crucial in multi-variate models, which represents the type of event.
+In multivariate models, `type` is crucial as it represents the type of event.
 
 ```{r}
 # Under bi-variate model, there are two types, 1 or 2.
 res2$type[1:10]
 ```
 
-The column names of `N` are `N1`, `N2`, `N3` and so on, for multivariate models.
+In multivariate models, the column names of `N` are `N1`, `N2`, `N3`, and so on.
 
 ```{r}
 res2$N[1:3, ]
 ```
 
-Similarly, the column names of `lambda` are `lambda1`, `lambda2`, `lambda3` and so on.
+Similarly, the column names of `lambda` are `lambda1`, `lambda2`, `lambda3`, and so on.
 
 ```{r}
 res2$lambda[1:3, ]
 ```
 
-The column names of `lambda_component` are `lambda_component11`, `lambda_component12`, `lambda_component13` and so on.
+The column names of `lambda_component` are `lambda_component11`, `lambda_component12`, `lambda_component13`, and so on.
 
 ```{r}
 res2$lambda_component[1:3, ]
 ```
 
-By definition, the following two are the same:
+By definition, the following two expressions are equivalent:
 
 ```{r}
 mu2[1] + rowSums(res2$lambda_component[1:5, c("lambda11", "lambda12")])
 res2$lambda[1:5, "lambda1"]
 ```
 
-From the result, we get vectors of realized `inter_arrival` and `type`.
-Bivariate model requires `inter_arrival` and `type` for estimation.
+From the results, we obtain vectors of realized `inter_arrival` and `type`.
+A bivariate model requires both `inter_arrival` and `type` for estimation.
 
 ```{r}
 inter_arrival2 <- res2$inter_arrival
 type2 <- res2$type
 ```
 
-Log-likelihood is computed by a function `logLik`.
+The log-likelihood is computed using the `logLik` function.
 
 ```{r}
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
 ```
 
-A maximum log-likelihood estimation is performed using `hfit`.
-In the following, the values of parameter slots in `hspec0`, such as `mu, alpha, beta`, serve as starting points of the numerical optimization.
-For the purpose of illustration, we use `hspec0 <- hspec2`.
-Since the true parameter values are not known in practical applications, the initial guess is used.
-The realized `inter_arrival` and `type` are used for estimation.
+Maximum log-likelihood estimation is performed using the `hfit` function.
+In this process, the parameter values in `hspec0`, such as `mu`, `alpha`, and `beta`, serve as starting points for the numerical optimization.
+For illustration purposes, we set `hspec0 <- hspec2`.
+Since the true parameter values are unknown in practical applications, these initial guesses are used.
+The realized `inter_arrival` and `type` data are utilized for estimation.
 
 ```{r, warning=FALSE}
 hspec0 <- hspec2
@@ -234,28 +248,29 @@ miscTools::stdEr(mle)
 
 ### Parameter setting
 
-This subsection covers about the relation between parameter setting and estimation procedure in multi-variate Hawkes model.
-The number of parameters to be estimated in the model depends on how we set the parameter slots such as `mu`, `alpha` and `beta` in `hspec0`, the specification for initial values.
-Since the parameter slot such as `alpha` is a matrix, and the element in the matrix can be the same or different.
-The number of parameters in the estimation varies depending on whether or not some of the elements in the initial setting are the same or different.
+This subsection explores the relationship between parameter settings and the estimation procedure in a multivariate Hawkes model.
+The number of parameters to be estimated in the model is influenced by how we configure parameter slots such as `mu`, `alpha`, and `beta` in `hspec0`, which specifies the initial values.
 
-For example, if `alpha[1,1]` and `alpha[1,2]` in `hspec0` are different in initial starting, the numerical procedure tries to estimate both parameters of `alpha[1,1]` and `alpha[1,2]` differently.
-If `alpha[1,1]` and `alpha[1,2]` are the same in the initial setting, then the estimation procedure considered two parameters are identical in the model and hence only one value is estimated.
+Since the parameter slot `alpha` is a matrix, its elements can either be the same or different.
+Consequently, the number of parameters estimated varies depending on whether the initial settings have identical or distinct elements.
 
-Recall that the example in the previous section is of a symmetric Hawkes model where the matrix `alpha` is symmetric.
-In addition, the elements of `beta` are all the same.
+For example, if `alpha[1,1]` and `alpha[1,2]` in `hspec0` are initially set to different values, the numerical procedure will estimate `alpha[1,1]` and `alpha[1,2]` separately.
+Conversely, if `alpha[1,1]` and `alpha[1,2]` are the same in the initial setting, the estimation procedure treats these parameters as identical in the model, thus estimating only one value.
+
+Recall that the example in the previous section features a symmetric Hawkes model, where the matrix `alpha` is symmetric and all elements of `beta` are identical.
 
 ```{r}
 print(hspec2)
 ```
 
 ```{r, warning=FALSE}
+set.seed(1107)
 res2 <- hsim(hspec2, size = 1000)
 ```
 
-In the first example of estimation, the initial value of `alpha0` is a matrix where the all elements have the same value of 0.75.
-In this configuration, `hfit` assumes that `alpha11 == alpha12 == alpha21 == alpha22` in the model (even if the actual parameters have different values).
-Similarly, the other parameter matrices `mu0` and `beta0` are also treated in the same way.
+In the first estimation example, the initial value of `alpha0` is a matrix where all elements are set to the same value of 0.75.
+In this configuration, `hfit` assumes that `alpha11`, `alpha12`, `alpha21`, and `alpha22` are identical in the model, even if the actual parameters have different values.
+Similarly, the parameter matrices `mu0` and `beta0` are treated in the same manner.
 
 ```{r, warning=FALSE}
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -266,10 +281,10 @@ hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
-Note that in the above result, `alpha1.1` is somewhere between original `alpha1.1 = 0.5` and `alpha1.2 = 0.9`.
+Note that in the above result, `alpha1.1` falls somewhere between the original values of `alpha1.1 = 0.5` and `alpha1.2 = 0.9`.
 
-In the following second example, `alpha0`'s elements are not same, but symmetric as in the original values in the simulation.
-We have `alpha11 == alpha22` and `alpha11 == alpha22` in `alpha0` and hence `alpha11` and `alpha12` will be estimated differently.
+In the following second example, the elements of `alpha0` are not identical but are symmetric, reflecting the original values used in the simulation.
+Specifically, we have `alpha11 == alpha22` and `alpha12 == alpha21` in `alpha0`, so `alpha11` and `alpha12` will be estimated differently.
 
 ```{r, warning=FALSE}
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -280,7 +295,7 @@ hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
-In the third example, the estimation is performed under the assumption that `mu1` and `mu2` may also be different (even though they are the same in the original model).
+In the third example, the estimation is performed under the assumption that `mu1` and `mu2` may differ, even though they are the same in the original model.
 
 ```{r, warning=FALSE}
 mu0 <- matrix(c(0.15, 0.14), nrow = 2)
@@ -291,41 +306,38 @@ hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 ```
 
-By simply setting `reduced = FALSE`, all parameters are estimated (not recommended).
+By setting `reduced = FALSE`, all parameters are estimated.
 
 ```{r, warning=FALSE}
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
 ```
 
-The same logic is applied to all the higher dimensional model.
+The same logic applies to all higher-dimensional models.
 
 ### Residual process
 
-Residual process can be extracted by `residual_process()`.
-`inter_arrival`, `type`, `rambda_component`, `mu`,`beta` should be provided.
-The `component` denotes the type of the process to be extracted for multivariate model.
-For example, for a bi-variate model, we have $N_1$ and \$N_2\$.
-`component=1` is for the residual of $N_1$ and `component=2` is for the residual of $N_2$.
+The residual process can be extracted using the `logLik()` function by setting `infer = TRUE`.
+When this option is enabled, the `logLik` function returns a list that includes the log-likelihood, inferred intensities, and the residual process.
+Note that the inference is based on the object passed to the `logLik` function.
+In the returned object, `res_process1` represents the residual process.
 
-```{r, warning=FALSE, message = FALSE, fig.height=5, fig.width=5}
+```{r, warning=FALSE, message = FALSE, fig.height=4.5, fig.width=4.5}
 hrp <- new("hspec", mu = 0.3, alpha = 1.2, beta = 1.5)
 res_rp <- hsim(hrp, size = 1000)
 
-rp <- residual_process(component = 1,
-                       inter_arrival = res_rp$inter_arrival, type = res_rp$type, 
-                       rambda_component = res_rp$rambda_component, 
-                       mu = 0.3, beta = 1.5)
+# inferred result
+infered_res <- logLik(hrp, res_rp$inter_arrival, infer = TRUE)
+
+## QQ-plot
 p <- ppoints(100)
-q <- quantile(rp,p=p)
+q <- quantile(infered_res$res_process1, p = p)
 plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
 ```
 
-In case that `rambda_component` is unknown, it can be inferred by `infer_lambda()`.
-For `infer_lambda()`, the model `hspec`, `inter_arrival` and `type` are required.
-The above example is then:
+In practical scenarios, the parameter values are usually unknown, so the model may be estimated before computing the residual processes.
 
-```{r, message=FALSE, fig.height=5, fig.width=5}
+```{r, message=FALSE, fig.height=4.5, fig.width=4.5}
 
 # estimation
 mle_rp <- hfit(new("hspec", mu = 0.2, alpha = 1, beta = 2),
@@ -336,17 +348,62 @@ he <- new("hspec", mu = coef(mle_rp)["mu1"],
           alpha = coef(mle_rp)["alpha1"], beta = coef(mle_rp)["beta1"])
 
 # infer intensity
-infered_res <- infer_lambda(he, res_rp$inter_arrival, res_rp$type)
+infered_res <- logLik(he, res_rp$inter_arrival, res_rp$type, infer = TRUE)
 
-# compute residuals where we use 
-rp2 <- residual_process(component = 1,
-                       inter_arrival = res_rp$inter_arrival, type = res_rp$type, 
-                       rambda_component = infered_res$rambda_component, 
-                       mu = coef(mle_rp)["mu1"], beta = coef(mle_rp)["beta1"])
+rpe <- infered_res$res_process1
+
 p <- ppoints(100)
-q <- quantile(rp2, p=p)
+q <- quantile(rpe, p=p)
 plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
+```
+
+In an $n$-dimensional model, we can compute the residuals in a similar manner.
+In this case, the object returned by the `logLik` function contains $n$ residual processes.
+For example, in the following code, `infer_res2$res_process1` and `infer_res2$res_process2` represent the residual processes for each type.
+
+```{r, message=FALSE, fig.height=4.5, fig.width=4.5}
+hrp2 <- new("hspec", mu = rep(0.3, 2), 
+           alpha = matrix(c(1.2, 1.5, 1.5, 1.2), nrow=2), 
+           beta = matrix(rep(3, 4), nrow=2))
+res_hrp2 <- hsim(hrp2, size = 2000)
+
+infer_res2 <- logLik(hrp2, res_hrp2$inter_arrival, res_hrp2$type, infer = TRUE)
+
+p <- ppoints(100)
+q <- quantile(c(infer_res2$res_process1, infer_res2$res_process2), p=p)
+plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
+qqline(q, distribution=qexp,col="blue", lty=2)
+```
+
+```{r, message = FALSE, warning=FALSE}
+# Infer the residual process using the log-likelihood method
+# 'infer_res_dh1' contains the inferred process data based on the inter-arrival times
+
+# Plot a histogram of the inferred residual process
+hist(
+  c(infer_res2$res_process1, infer_res2$res_process2),
+  breaks = 50,
+  probability = TRUE,
+  main = "Histogram of Inferred Residual Process",
+  xlab = "Residual Value",
+  ylab = "Density"
+)
+
+# Generate a sequence of x values for plotting the theoretical distribution
+x <- seq(0, 8, 0.1)
+
+# Add a line to the histogram representing the theoretical density function
+lines(
+  x,
+  dexp(x),
+  col = 'red',
+  lwd = 2
+)
+
+# Add legend for clarity
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
+
 ```
 
 ## More complicated model
@@ -438,8 +495,8 @@ h
 In addition, `lambda_component0` should be provided for simulation and estimation.
 
 ```{r}
-
-res_mk <- hsim(h, size = 2000, 
+set.seed(620)
+res_mk <- hsim(h, size = 3000, 
                # for an illustration purpose
                lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)) 
 res_mk
@@ -503,6 +560,7 @@ h_sy
 ```
 
 ```{r}
+set.seed(1107)
 # run simulation
 res_sy <- hsim(h_sy, size = 2000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
 summary(res_sy)
@@ -578,7 +636,7 @@ hi
 ```
 
 ```{r, warning=FALSE}
-
+set.seed(1107)
 res_impact <- hsim(hi, size=1000, lambda_component0 = matrix(rep(0.1,4), nrow=2))
 summary(res_impact)
 ```
@@ -613,6 +671,7 @@ h
 ```
 
 ```{r}
+set.seed(1107)
 res <- hsim(h, size = 1000)
 summary(res)
 ```
@@ -642,7 +701,7 @@ summary(mle_md)
 ### Hawkes flocking model
 
 The function $g$ is not necessarily depend on mark.
-In the Hawkes flocking model, the kernel component is represented by$$
+In the Hawkes flocking model, the kernel component is represented by $$
 \alpha = \begin{bmatrix}\alpha_{11} & \alpha_{12} & 0 & 0 \\\alpha_{12}& \alpha_{11} & 0 & 0 \\0 & 0 & \alpha_{33} & \alpha_{34} \\0 & 0 & \alpha_{34} & \alpha_{33} \end{bmatrix},
 $$ $$ 
 g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_{\{C_1(t) < C_2(t)\}} \\ 
@@ -651,7 +710,9 @@ g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_
 \alpha_{2n} 1_{\{C_2(t) > C_1(t)\}} & \alpha_{2w}1_{\{C_2(t) > C_1(t)\}} & 0 & 0 \end{bmatrix},
 $$
 
-where$$
+where
+
+$$
 C_1(t) = N_1(t) - N_2(t), \quad C_2(t) = N_3(t) - N_4(t).
 $$
 
@@ -707,7 +768,8 @@ hspec_fl
 ```
 
 ```{r}
-hr_fl <- hsim(hspec_fl, size=1000)
+set.seed(1107)
+hr_fl <- hsim(hspec_fl, size=2000)
 summary(hr_fl)
 ```
 
@@ -720,7 +782,8 @@ summary(fit_fl)
 
 In this model, we use a system of counting processes with the corresponding conditional intensities to describe the bid-ask price processes:
 
-$$ N_t = \begin{bmatrix}
+$$ 
+N_t = \begin{bmatrix}
 N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \end{bmatrix},
 \quad
@@ -792,7 +855,7 @@ for constant $\xi \geq 0$ and $\lambda_{ij}$ is a component of $\lambda_i$ such 
 $$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
 
 In the following code, we separate the constant part of $h$ as `alpha` and stochastic part as `impact`.
-To represent $\lambda_{ij}$, we need `lambda_component_n`.
+To represent $\lambda_{ij}$, we need `lambda_component`.
 Note that
 
 ```{r, warning=FALSE}
@@ -849,14 +912,235 @@ h_ba
 ```
 
 ```{r}
+set.seed(1107)
 hr_ba <- hsim(h_ba, size=1000, lambda_component0 = matrix(rep(1, 16), 4))
 summary(hr_ba)
 ```
 
 As a separate log-likelihood estimation performed, the parameter for mark distribution is not estimated.
 
+```{r}
+logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, Nc = hr_ba$Nc,
+       lambda_component0 = matrix(rep(1, 16), 4))
+```
+
 ```{r, warning=FALSE}
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                lambda_component0 = matrix(rep(1, 16), 4))
 summary(mle_ba)
+```
+
+## Point process with flexible residual
+
+### One-dimensional model
+
+This code demonstrates how to create a point process with a flexible residual structure.
+The distribution used in this example is a combination of a trapezoid and an exponential distribution.
+The `dresidual` and `presidual` functions receive their necessary parameters bundled into a param vector.
+In the context of a Hawkes process model, these functions correspond to the case where the residuals are unit exponential distributions.
+
+```{r}
+mu1_d <- 0.5; alpha1_d <- 1; beta1_d <- 1.2; a <- 0.7; ell <- 1.6
+hspec1_d <- new("hspec", mu=mu1_d, alpha=alpha1_d, beta=beta1_d,
+              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
+              dresidual = function(x, param = c(a = a, ell = ell))
+                dtzexp(x, a = param["a"], ell = param["ell"]),
+              presidual = function(q, param = c(a = a, ell = ell))
+                  ptzexp(q, a = param["a"], ell = param["ell"]))
+```
+
+```{r, fig.height=4, fig.width=6}
+dh1_real <- hsim(hspec1_d, size = 3000)
+hist(
+  dh1_real$inter_arrival[dh1_real$inter_arrival < 3],
+  breaks = 50,
+  main = "Histogram of Inter-Arrival Times",
+  xlab = "Inter-Arrival Time",
+  ylab = "Frequency"
+)
+```
+
+This R code snippet demonstrates how to analyze the residual process of a point process model using a flexible distribution.
+The logLik function is used to compute the log-likelihood of observed inter-arrival times (`dh1_real$inter_arrival`) based on the distribution specified by `hspec1_d`.
+The `infer = TRUE` parameter allows the function to also infer the residual process, storing the results in `infer_res_dh1`.
+
+```{r, message = FALSE, warning=FALSE}
+# Infer the residual process using the log-likelihood method
+# 'infer_res_dh1' contains the inferred process data based on the inter-arrival times
+infer_res_dh1 <- logLik(hspec1_d, inter_arrival = dh1_real$inter_arrival, infer = TRUE)
+
+# Plot a histogram of the inferred residual process
+hist(
+  infer_res_dh1$res_process1,
+  breaks = 100,
+  probability = TRUE,
+  main = "Histogram of Inferred Residual Process",
+  xlab = "Residual Value",
+  ylab = "Density"
+)
+
+# Generate a sequence of x values for plotting the theoretical distribution
+x <- seq(0, 8, 0.1)
+
+# Add a line to the histogram representing the theoretical density function
+lines(
+  x,
+  dtzexp(x, a = a, ell = ell),
+  col = 'red',
+  lwd = 2
+)
+
+# Add legend for clarity
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
+
+```
+
+### Two-dimenional model
+
+The above method can be extended to multi-dimensions.
+The basic approach to extension is similar to how multi-dimensional Hawkes models are handled.
+
+```{r}
+mu2_d <- matrix(c(0.3), nrow = 2)
+alpha2_d <- matrix(c(0.5, 0.8, 0.8, 0.5), nrow = 2, byrow = TRUE)
+beta2_d <- matrix(c(1.5, 1.5, 1.5, 1.5), nrow = 2, byrow = TRUE)
+a <- 0.7; ell <- 1.6
+
+hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
+              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
+              dresidual = function(x, param = c(a = a, ell = ell))
+                dtzexp(x, a = param["a"], ell = param["ell"]),
+              presidual = function(q, param = c(a = a, ell = ell))
+                  ptzexp(q, a = param["a"], ell = param["ell"]),
+              qresidual = function(p, param = c(a = a, ell = ell))
+                  qtzexp(p, a = param["a"], ell = param["ell"]))
+print(hspec2_du)
+```
+
+
+Histogram of inter-arrival times under `tzexp` distribution.
+
+```{r, fig.height=4, fig.width=6}
+set.seed(1107)
+duh2_real <- hsim(hspec2_du, size = 10000)
+# Plot a histogram of the inter-arrival times less than 5
+hist(
+  duh2_real$inter_arrival[duh2_real$inter_arrival < 5],
+  breaks = 50,
+  main = "Histogram of Inter-Arrival Times",
+  xlab = "Inter-Arrival Time",
+  ylab = "Frequency"
+)
+```
+
+Inference based on the flexible residual model.
+
+```{r, message=FALSE}
+infer_res_dh2 <- logLik(hspec2_du, 
+                        inter_arrival = duh2_real$inter_arrival, 
+                        type = duh2_real$type, infer = TRUE)
+```
+
+The residual process follows the residual distribution in the model.
+
+```{r, fig.height=4, fig.width=6}
+# Plot a histogram of the inferred residual process
+hist(
+  infer_res_dh2$res_process2,
+  breaks = 50,
+  probability = TRUE,
+  main = "Histogram of Inferred Residual Process",
+  xlab = "Residual Value",
+  ylab = "Density"
+)
+
+# Generate a sequence of x values for plotting the theoretical distribution
+x <- seq(0, 8, 0.1)
+
+# Add a line to the histogram representing the theoretical density function
+lines(
+  x,
+  dtzexp(x, a = a, ell = ell),
+  col = 'red',
+  lwd = 2
+)
+
+# Add legend for clarity
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
+
+```
+
+The `eres_process` follows the exponential distribution.
+
+```{r, fig.height=4, fig.width=6}
+hist(
+  infer_res_dh2$eres_process1,
+  breaks = 50,
+  probability = TRUE,
+  main = "Histogram of Inferred eResidual Process",
+  xlab = "Residual Value",
+  ylab = "Density"
+)
+
+# Generate a sequence of x values for plotting the theoretical distribution
+x <- seq(0, 8, 0.1)
+
+# Add a line to the histogram representing the theoretical density function
+lines(
+  x,
+  dexp(x),
+  col = 'red',
+  lwd = 2
+)
+
+# Add legend for clarity
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
+
+```
+
+The maximum likelihood estimation.
+
+```{r, warning=FALSE}
+mle_dh <- hfit(hspec2_du, 
+               inter_arrival = duh2_real$inter_arrival, 
+               type = duh2_real$type,
+               constraint=list(ineqA=rbind(diag(6)), ineqB=matrix(rep(0,6), nrow=6)))
+summary(mle_dh)
+```
+
+Uniform residual distribution example.
+
+```{r, message = FALSE}
+
+#set.seed(117)
+mu2_d <- matrix(c(0.5), nrow = 2)
+alpha2_d <- matrix(c(0.3, 0.3, 0.3, 0.3), nrow = 2, byrow = TRUE)
+beta2_d <- matrix(c(1.2, 1.2, 1.2, 1.2), nrow = 2, byrow = TRUE)
+
+hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
+                 rresidual = function(size) runif(n=size, 0, 2),
+                 dresidual = function(x, param = c()) dunif(x, 0, 2),
+                 presidual = function(q, param = c()) punif(q, 0, 2),
+                 qresidual = function(p, param = c()) qunif(q, 0, 2))
+
+duh2_real <- hsim(hspec2_du, size = 1000)
+```
+
+
+
+```{r, message = FALSE}
+
+infer_res_duh2 <- logLik(hspec2_du, 
+                         inter_arrival = duh2_real$inter_arrival, 
+                         type = duh2_real$type, infer = TRUE)
+
+hist(
+  infer_res_duh2$res_process1,
+  breaks = 50,
+  probability = TRUE,
+  main = "Histogram of Inferred Residual Process",
+  xlab = "Residual Value",
+  ylab = "Density"
+)
+
 ```

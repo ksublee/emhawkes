@@ -15,6 +15,7 @@ infer_lambda(
   Nc = NULL,
   lambda_component0 = NULL,
   N0 = NULL,
+  Nc0 = NULL,
   ...
 )
 
@@ -27,6 +28,7 @@ infer_lambda(
   Nc = NULL,
   lambda_component0 = NULL,
   N0 = NULL,
+  Nc0 = NULL,
   ...
 )
 }
@@ -43,9 +45,13 @@ infer_lambda(
 
 \item{Nc}{mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.}
 
-\item{lambda_component0}{the initial values of lambda component. Must have the same dimensional matrix (n by n) with hspec.}
+\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+Can be a numeric value or a matrix.
+Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
 
 \item{N0}{the initial values of N.}
+
+\item{Nc0}{the initial values of Nc.}
 
 \item{...}{further arguments passed to or from other methods.}
 }

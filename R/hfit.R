@@ -1,33 +1,38 @@
-#' @include hspec.R hmoment.R hllf.R
+#' @include hspec.R hmoment.R hllf.R utilities.R
 NULL
 
-#' Perform maximum likelihood estimation
+#' Perform Maximum Likelihood Estimation
 #'
-#' Generic function hfit.
-#' A method for estimating the parameters of the exponential Hawkes model.
-#' The reason for being constructed as the S4 method is as follows.
-#' First, to represent the structure of the model as an hspec object.
-#' There are numerous variations on the multivariate marked Hawkes model.
-#' Second, to convey the starting point of numerical optimization.
-#' The parameter values assigned to the hspec slots become initial values.
-#' This function uses \code{\link[maxLik]{maxLik}} for the optimizer.
+#' This is a generic function named `hfit` designed for estimating the parameters
+#' of the exponential Hawkes model. It is implemented as an S4 method for two main reasons:
 #'
-#' @param object \code{\link{hspec-class}}. This object includes the parameter values
-#' @param inter_arrival Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.
-#' @param type A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
-#' @param mark A vector of mark (jump) sizes. Start with zero.
-#' @param N A matrix of counting processes.
-#' @param Nc A matrix of counting processes weighted by mark.
-#' @param lambda_component0 Initial values of lambda component. It must have the same dimensional matrix (n by n) with \code{object}.
-#' @param N0 Initial values of N.
-#' @param mylogLik User defined log-likelihood function. `mylogLik` function should have `object` argument consistent with \code{object}.
-#' @param reduced When `TRUE`, reduced estimation performed.
-#' @param constraint Constraint matrices. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param method A Method for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param grad A Gradient matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param hess A Hessian matrix for the likelihood function. For more information, see \code{\link[maxLik]{maxLik}}.
-#' @param verbose If `TRUE`, print the progress of the estimation.
-#' @param ... Other parameters for optimization. For more information, see \code{\link[maxLik]{maxLik}}.
+#' Model Representation: To represent the structure of the model as an `hspec` object.
+#' The multivariate marked Hawkes model has numerous variations, and using an S4 class
+#' allows for a flexible and structured approach.
+#'
+#' Optimization Initialization: To provide a starting point for numerical optimization.
+#' The parameter values assigned to the `hspec` slots serve as initial values for the optimization process.
+#'
+#' This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
+#'
+#' @param object An \code{\link{hspec-class}} object containing the parameter values.
+#' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
+#' @param type A vector indicating the dimensions, represented by numbers like 1, 2, 3, etc., starting with zero.
+#' @param mark A vector of mark (jump) sizes, starting with zero.
+#' @param N A matrix representing counting processes.
+#' @param Nc A matrix of counting processes weighted by mark sizes.
+#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' Can be a numeric value or a matrix.
+#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
+#' @param N0 Initial values for the counting processes matrix \code{N}.
+#' @param mylogLik A user-defined log-likelihood function, which must accept an `object` argument consistent with \code{object}.
+#' @param reduced Logical; if `TRUE`, performs reduced estimation.
+#' @param constraint Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param grad A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param hess A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
+#' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
 #' @return \code{\link{maxLik}} object
 #'
@@ -141,155 +146,87 @@ setMethod(
 
     }
 
-    if(is.null(lambda_component0)){
-      message("The initial values for intensity processes are not provided. Internally determined initial values are used for estimation.\n")
+    if(verbose == TRUE && is.null(lambda_component0)){
+      message("Initial values for intensity processes were not provided.
+              Using internally determined default values for estimation.\n")
     }
 
-    # parameter setting
-    plist <- setting(object)
-    mu <- plist$mu
-    alpha <- plist$alpha
-    beta <- plist$beta
-    eta <- plist$eta
-    impact <- plist$impact
-    rmark <- plist$rmark
-    dmark <- plist$dmark
-    dimens <- plist$dimens
 
-    # parameter setting
-    if(is.function(mu)){
-      # When mu is provided by a function,
-      # the first formal arguments is a parameter vector.
-      # For, example, formals(object@mu)[[1]] is equal to c("mu1"=0.1, "mu2"=0.2)
-      pr_mus <- eval(formals(object@mu)[[1]])
-    }else{
-      # When mu is a matrix, select only unique values as parameters (if reduced is TRUE)
-      pr_mus <- as.param(object@mu, "mu", reduced)
+    # Define mapping from slot name to prefix
+    param_prefix <- list(
+      mu = "mu",
+      alpha = "alpha",
+      beta = "beta",
+      eta = "eta",
+      impact = "",
+      dmark = "",
+      dresidual = "",
+      presidual = "",
+      qresidual = ""
+    )
+
+
+    # Extract each parameter group from the hspec object
+    param_list <- lapply(names(param_prefix), function(slot_name) {
+      prefix <- param_prefix[[slot_name]]
+      slot_value <- slot(object, slot_name)
+      as.param(slot_value, prefix = prefix, reduced = reduced)
+    })
+
+
+    # Extract parameter names for each group
+    param_names <- lapply(param_list, names)
+
+    # Create a list to store names for lookup during initialization
+    names_list <- setNames(vector("list", length(param_prefix)), names(param_prefix))
+    for (slot in names(param_prefix)) {
+      idx <- match(slot, names(param_prefix))
+      names_list[[slot]] <- param_names[[idx]]
     }
 
-    pr_alphas <- as.param(object@alpha, "alpha", reduced)
-    pr_betas <- as.param(object@beta, "beta", reduced)
 
-    if(!is.null(eta)){
-      pr_etas <- as.param(object@eta, "eta", reduced)
-    } else {
-      pr_etas <- NULL
-    }
+    # Flatten all parameters into a named numeric vector
+    input_parameters <- unlist(param_list, recursive = FALSE, use.names = TRUE)
 
-    if(!is.null(impact)){
-      #get default parameter values
-      pr_impact <- eval(formals(object@impact)[[1]])
-    } else {
-      pr_impact <- NULL
-    }
-
-    if(!is.null(dmark)){
-      #get default parameter values
-      pr_mark <- eval(formals(object@dmark)[[1]])
-    } else {
-      pr_mark <- NULL
-    }
-
-    names_mu <- names(pr_mus)
-    names_alpha <- names(pr_alphas)
-    names_beta <- names(pr_betas)
-    names_eta <- names(pr_etas)
-    names_impact <- names(pr_impact)
-    names_mark <- names(pr_mark)
-
-    # same name same parameter rule
-    input_parameters <- c(pr_mus, pr_alphas, pr_betas, pr_etas, pr_impact, pr_mark)
+    # Rule: Parameters with the same name are treated as identical
     starting_point <- input_parameters[unique(names(input_parameters))]
 
-    # loglikelihood function for maxLik
 
+
+    # Log-likelihood function passed to maxLik
     llh_function <- function(param){
 
-      # These values may be generated by maxLik repeatedly.
-      # name based query
+      # This function may be run by maxLik repeatedly.
+      # param may be automatically generated by optimizer
 
-      pr_mus <- param[names_mu]
-      pr_alphas <- param[names_alpha]
-      pr_betas <- param[names_beta]
-      pr_etas <- param[names_eta]
+      # Reconstruct hspec0 for likelihood function with given param
+      # object is defined in the bounding environment, i.e., hfit
 
-      pr_impact <- param[names_impact]
-      pr_mark <- param[names_mark]
+      init_values <- lapply(names(param_prefix), function(slot_name) {
+        initialize_slot(slot(object, slot_name), param[names_list[[slot_name]]],
+                        param_name = slot_name, object@dimens, reduced)
+      })
 
-      # Reconstruct hspec
-      # Convert to matrix
-      if (is.function(object@mu)){
-        mu0 <- hijack(object@mu, param = pr_mus)
-      } else{
-        if(reduced){
-          mu0 <- matrix(pr_mus[look_up_mtrx(mu, "mu")], nrow=dimens)
-        } else {
-          mu0 <- matrix(pr_mus, nrow=dimens)
-        }
-      }
-      if (is.function(object@alpha)){
-        alpha0 <- hijack(object@alpha, param = pr_alphas)
-      } else{
-        if(reduced){
-          alpha0 <- matrix(pr_alphas[look_up_mtrx(alpha, "alpha")], nrow=dimens)
-        } else {
-          alpha0 <- matrix(pr_alphas, nrow=dimens)
-        }
-      }
-      if (is.function(object@beta)){
+      names(init_values) <- paste0(names(param_prefix), "0")
+      list2env(init_values, envir = environment())
 
-        beta0 <- hijack(object@beta, param = pr_betas)
 
-      } else{
-        if(reduced){
-          beta0 <- matrix(pr_betas[look_up_mtrx(beta, "beta")], nrow=dimens)
-        } else {
-          beta0 <- matrix(pr_betas, nrow=dimens)
-        }
-      }
-
-      if (!is.null(object@eta)){
-        if(is.function(object@eta)) {
-          eta0 <- hijack(object@eta, param = pr_etas)
-        } else{
-          if(reduced){
-            eta0 <- matrix(pr_etas[look_up_mtrx(eta, "eta")], nrow=dimens)
-          } else {
-            eta0 <- matrix(pr_etas, nrow=dimens)
-          }
-        }
-      } else {
-        eta0 <- NULL
-      }
-
-      if (!is.null(object@dmark)){
-        dmark0 <- hijack(object@dmark, param = pr_mark)
-      } else {
-        dmark0 <- NULL
-      }
-
-      #object@impact is user defined impact function
-      if (!is.null(object@impact)){
-        impact0 <- hijack(object@impact, param = pr_impact)
-      } else {
-        impact0 <- NULL
-      }
-
+      # hspec for logLik
       hspec0 <- methods::new("hspec", mu = mu0, alpha = alpha0, beta = beta0, eta = eta0,
                              impact = impact0, dmark = dmark0,
-                             rmark = object@rmark, type_col_map = object@type_col_map)
-
-
-      #this_flag_represents_binding_env_is_hfit <- TRUE
+                             dresidual = dresidual0, presidual = presidual0, qresidual = qresidual0,
+                             type_col_map = object@type_col_map)
 
 
       if (is.null(mylogLik)){
 
         logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
-                       mark = mark, N = N, Nc = Nc, N0 = N0, lambda_component0 = lambda_component0,
+                       mark = mark, N = N, Nc = Nc, N0 = N0,
+                       lambda_component0 = lambda_component0,
                        showWarning = FALSE)
 
       } else {
+
         # arguments names for mylogLik
         args_needed <- names(formals(mylogLik))
         if ( !("object" %in% args_needed)) {
@@ -321,4 +258,6 @@ setMethod(
 
   }
 )
+
+
 
