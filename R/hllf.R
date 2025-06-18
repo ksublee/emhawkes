@@ -369,7 +369,7 @@ setMethod(
                             lambda = lambda, lambda_component = lambda_component,
                             rambda = rambda, rambda_component = rambda_component)
 
-      if (is.null(object@dresidual) || object@dimens == 1){
+      if (is.null(object@dresidual)){
 
         # basic model
 
