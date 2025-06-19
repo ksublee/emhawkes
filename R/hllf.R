@@ -192,10 +192,7 @@ setMethod(
     rambda_component_n <- lambda_component0
 
 
-    # handling both basic and flexible models
-    dresidual <- if(is.null(object@dresidual)) stats::dexp else object@dresidual
-    presidual <- if(is.null(object@presidual)) stats::pexp else object@presidual
-    qresidual <- object@qresidual
+
 
     ## main loop
     for (n in 2:size) {
@@ -231,15 +228,34 @@ setMethod(
 
       if (is.null(object@dresidual) && !infer){
 
-        # basic model
+        # basic model and do not need to infer
         ## 1. sum of integrated_lambda_component and sum of mu * inter_arrival
         ## In the log-likelihood calculation, a negative sign is applied, so it's subtracted here.
         sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(rambda_component_n_minus_1 / beta * (1 - decayed)) - sum(integrated_mu)
 
 
+      } else if (is.null(object@dresidual)) {
+
+        # basic model and need to infer
+        for (k in 1:object@dimens){
+
+          phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
+                                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
+                                   beta[k, 1])
+
+          # partial residual for k-th dimension
+          phi_value_k <- phi_k_wo_mu + integrated_mu[k]
+          sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - phi_value_k
+
+          phis[n, k] <- phi_value_k
+
+        }
+
       } else {
 
-        # flexible model or when needed to infer
+
+        # flexible model
+
         for (k in 1:object@dimens){
 
           phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
@@ -249,7 +265,7 @@ setMethod(
           # partial residual for k-th dimension
           phi_value_k <- phi_k_wo_mu + integrated_mu[k]
 
-          log_value <- suppressWarnings(if (k == type_n) log(dresidual( phi_value_k)) else log(1-presidual(phi_value_k)))
+          log_value <- suppressWarnings(if (k == type_n) log(object@dresidual(phi_value_k)) else log(1-object@presidual(phi_value_k)))
           sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi + log_value
 
           if(infer) phis[n, k] <- phi_value_k
@@ -365,6 +381,8 @@ setMethod(
 
     } else {
 
+      # residual inference
+
       return_object <- list(loglikelihood = sum_log_lambda + sum_log_f_epsilon_phi + sum_log_dmark,
                             lambda = lambda, lambda_component = lambda_component,
                             rambda = rambda, rambda_component = rambda_component)
@@ -405,9 +423,9 @@ setMethod(
             # n_k[j]+1 : index of previous jump + 1
             # n_k[j+1] : index of current jump
             # F(phi(tau)) = F(epsilon)
-            F_phi_taus <- presidual(phis[(n_k[j]+1):n_k[j+1], k])
+            F_phi_taus <- object@presidual(phis[(n_k[j]+1):n_k[j+1], k])
 
-            res_process[j] <- qresidual(1 - prod(1 - F_phi_taus))
+            res_process[j] <- object@qresidual(1 - prod(1 - F_phi_taus))
 
             eres_process[j] <- - sum(log(1 - F_phi_taus))
 
