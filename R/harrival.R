@@ -193,3 +193,57 @@ darrival <- function(...){
   c(inter_arrival = inter_arrival, type = type)
 }
 
+
+
+#' @title Expected Inter-Arrival Time
+#' @description Computes the conditional expected time until the next event.
+#' @param object An object of class \code{hspec}.
+#' @param rambda_component Rambda component.
+#' @param type Process dimension index (default is 1).
+#' @param mu Optional mu value (overrides object@mu if provided).
+#' @param beta Optional beta value (overrides object@beta if provided).
+#' @param tol Relative tolerance for numerical integration.
+#' @param max_upper Upper integration limit.
+#' @param subdivisions Number of subdivisions for numerical integration.
+#' @return Expected value of next inter-arrival time.
+#' @export
+setGeneric("expected_tau", function(object, rambda_component, type = 1,
+                                    mu = NULL, beta = NULL,
+                                    tol = .Machine$double.eps^0.25,
+                                    max_upper = Inf,
+                                    subdivisions = 400L)
+  standardGeneric("expected_tau"))
+
+setMethod("expected_tau", signature(object = "hspec"),
+          function(object, rambda_component, type = 1,
+                   mu = NULL, beta = NULL,
+                   tol = .Machine$double.eps^0.25,
+                   max_upper = Inf,
+                   subdivisions = 400L) {
+
+            # Use slot values if mu or beta not provided
+            mu <- if (is.null(mu)) object@mu[type] else mu
+            beta <- if (is.null(beta)) object@beta[type, 1] else beta
+
+            # Handle residual density
+            if (is.null(object@dresidual)) {
+              dresidual_fn <- function(x, param = NULL) dexp(x)
+              default_param <- NULL
+            } else {
+              dresidual_fn <- object@dresidual
+              default_param <- formals(dresidual_fn)$param
+            }
+
+            # Define integrand
+            integrand <- function(s) {
+              phi_val <- phi(s, rambda_component, mu, beta)
+              dens_val <- dresidual_fn(phi_val, param = default_param)
+              s * dens_val * psi(s, rambda_component, mu, beta)
+            }
+
+            # Numerical integration
+            result <- integrate(integrand, lower = 0, upper = max_upper,
+                                rel.tol = tol, subdivisions = subdivisions)
+
+            return(result$value)
+          })

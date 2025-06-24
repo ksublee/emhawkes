@@ -376,7 +376,7 @@ plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
 ```
 
-```{r, message = FALSE, warning=FALSE,  fig.height=5, fig.width=7}
+```{r, message = FALSE, warning=FALSE}
 # Infer the residual process using the log-likelihood method
 # 'infer_res_dh1' contains the inferred process data based on the inter-arrival times
 
@@ -946,9 +946,7 @@ hspec1_d <- new("hspec", mu=mu1_d, alpha=alpha1_d, beta=beta1_d,
               dresidual = function(x, param = c(a = a, ell = ell))
                 dtzexp(x, a = param["a"], ell = param["ell"]),
               presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]),
-              qresidual = function(p, param = c(a = a, ell = ell))
-                  qtzexp(p, a = param["a"], ell = param["ell"]))
+                  ptzexp(q, a = param["a"], ell = param["ell"]))
 ```
 
 ```{r, fig.height=4, fig.width=6}
@@ -966,7 +964,7 @@ This R code snippet demonstrates how to analyze the residual process of a point 
 The logLik function is used to compute the log-likelihood of observed inter-arrival times (`dh1_real$inter_arrival`) based on the distribution specified by `hspec1_d`.
 The `infer = TRUE` parameter allows the function to also infer the residual process, storing the results in `infer_res_dh1`.
 
-```{r, message = FALSE, warning=FALSE, fig.height=5, fig.width=7}
+```{r, message = FALSE, warning=FALSE}
 # Infer the residual process using the log-likelihood method
 # 'infer_res_dh1' contains the inferred process data based on the inter-arrival times
 infer_res_dh1 <- logLik(hspec1_d, inter_arrival = dh1_real$inter_arrival, infer = TRUE)
@@ -974,7 +972,7 @@ infer_res_dh1 <- logLik(hspec1_d, inter_arrival = dh1_real$inter_arrival, infer 
 # Plot a histogram of the inferred residual process
 hist(
   infer_res_dh1$res_process1,
-  breaks = 50,
+  breaks = 100,
   probability = TRUE,
   main = "Histogram of Inferred Residual Process",
   xlab = "Residual Value",
@@ -1022,7 +1020,7 @@ print(hspec2_du)
 
 Histogram of inter-arrival times under `tzexp` distribution.
 
-```{r, fig.height=5, fig.width=7}
+```{r, fig.height=4, fig.width=6}
 set.seed(1107)
 duh2_real <- hsim(hspec2_du, size = 10000)
 # Plot a histogram of the inter-arrival times less than 5
@@ -1045,7 +1043,7 @@ infer_res_dh2 <- logLik(hspec2_du,
 
 The residual process follows the residual distribution in the model.
 
-```{r, fig.height=5, fig.width=7}
+```{r, fig.height=4, fig.width=6}
 # Plot a histogram of the inferred residual process
 hist(
   infer_res_dh2$res_process2,
@@ -1074,7 +1072,7 @@ legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 
 The `eres_process` follows the exponential distribution.
 
-```{r, fig.height=5, fig.width=7}
+```{r, fig.height=4, fig.width=6}
 hist(
   infer_res_dh2$eres_process1,
   breaks = 50,
@@ -1123,14 +1121,14 @@ hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
                  rresidual = function(size) runif(n=size, 0, 2),
                  dresidual = function(x, param = c()) dunif(x, 0, 2),
                  presidual = function(q, param = c()) punif(q, 0, 2),
-                 qresidual = function(p, param = c()) qunif(p, 0, 2))
+                 qresidual = function(p, param = c()) qunif(q, 0, 2))
 
-duh2_real <- hsim(hspec2_du, size = 5000)
+duh2_real <- hsim(hspec2_du, size = 1000)
 ```
 
 
 
-```{r, message = FALSE, fig.height=5, fig.width=7}
+```{r, message = FALSE}
 
 infer_res_duh2 <- logLik(hspec2_du, 
                          inter_arrival = duh2_real$inter_arrival, 
