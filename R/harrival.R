@@ -1,3 +1,6 @@
+#' @include hspec.R
+NULL
+
 rarrival <- function(...){
 
   # Extract named arguments from ...

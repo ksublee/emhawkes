@@ -14,9 +14,9 @@ LazyData: true
 RoxygenNote: 7.3.2
 Imports: methods, maxLik
 Collate: 
+    'hspec.R'
     'harrival.R'
     'utilities.R'
-    'hspec.R'
     'hmoment.R'
     'hllf.R'
     'hfit.R'
