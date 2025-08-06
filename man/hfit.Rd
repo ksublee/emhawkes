@@ -80,7 +80,7 @@ Must have the same number of rows and columns as \code{alpha} or \code{beta} in 
 \item{...}{Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 }
 \value{
-\code{\link{maxLik}} object
+\code{\link[maxLik]{maxLik}} object
 }
 \description{
 This is a generic function named \code{hfit} designed for estimating the parameters

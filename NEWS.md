@@ -1,5 +1,14 @@
 # emhawkes 0.9.7
 
+Fixed some bugs
+
+## Breaking changes
+
+* Flexible residual point process with self/mutually exciting and exponential decay model is available.
+
+
+# emhawkes 0.9.7
+
 Fixed some bugs, improved efficiency in this version and several features have been added.
 
 ## Breaking changes

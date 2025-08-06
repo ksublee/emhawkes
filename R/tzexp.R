@@ -180,17 +180,17 @@ rtzexp <- function(n, a, ell){
 
   ## first selection
 
-  idx_exp <- rbinom(n, size = 1, prob = p)
+  idx_exp <- stats::rbinom(n, size = 1, prob = p)
 
-  rv_exp <- rexp(sum(idx_exp == 1), ell) + a
+  rv_exp <- stats::rexp(sum(idx_exp == 1), ell) + a
 
   n_to_generate_trapziod <- sum(idx_exp == 0)
 
   while(TRUE){
 
     # 3 times are enough?
-    X <- runif(n_to_generate_trapziod * 3, 0, a)
-    Y <- runif(n_to_generate_trapziod * 3, 0, p*ell)
+    X <- stats::runif(n_to_generate_trapziod * 3, 0, a)
+    Y <- stats::runif(n_to_generate_trapziod * 3, 0, p*ell)
 
     selected_X <- X[Y < dtzexp(X, a, ell)]
     if(length(selected_X) >= n_to_generate_trapziod) break

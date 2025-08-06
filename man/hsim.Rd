@@ -39,6 +39,8 @@ Must have the same number of rows and columns as \code{alpha} or \code{beta} in 
 
 \item{Nc0}{Starting values of Nc with default value 0.}
 
+\item{verbose}{Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.}
+
 \item{...}{Further arguments passed to or from other methods.}
 }
 \value{

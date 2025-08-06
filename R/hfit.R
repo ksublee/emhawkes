@@ -34,7 +34,7 @@ NULL
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
-#' @return \code{\link{maxLik}} object
+#' @return \code{\link[maxLik]{maxLik}} object
 #'
 #' @docType methods
 #' @rdname hfit
@@ -178,7 +178,7 @@ setMethod(
     param_names <- lapply(param_list, names)
 
     # Create a list to store names for lookup during initialization
-    names_list <- setNames(vector("list", length(param_prefix)), names(param_prefix))
+    names_list <- stats::setNames(vector("list", length(param_prefix)), names(param_prefix))
     for (slot in names(param_prefix)) {
       idx <- match(slot, names(param_prefix))
       names_list[[slot]] <- param_names[[idx]]

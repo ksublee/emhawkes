@@ -18,6 +18,7 @@ NULL
 #' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
 #' @param N0 Starting values of N with default value 0.
 #' @param Nc0 Starting values of Nc with default value 0.
+#' @param verbose Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.

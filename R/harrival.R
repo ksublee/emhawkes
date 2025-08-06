@@ -164,7 +164,7 @@ darrival <- function(...){
 
     for (i in 1:dimens){
 
-      candidate_arrival[i] <- uniroot(function(x) phi(x,
+      candidate_arrival[i] <- stats::uniroot(function(x) phi(x,
                                                       rowSums_rambda_component_n_miuns_1[i],
                                                       mu[i], beta[i, 1]) - residuals_for_each_dimension[i],
                                       interval = c(0, 10000), tol = 1e-09)$root
@@ -189,7 +189,7 @@ darrival <- function(...){
 
   } else {
 
-    Stop("All elements of beta[i,] should be identical.")
+    stop("All elements of beta[i,] should be identical.")
 
   }
 
@@ -209,6 +209,9 @@ darrival <- function(...){
 #' @param max_upper Upper integration limit.
 #' @param subdivisions Number of subdivisions for numerical integration.
 #' @return Expected value of next inter-arrival time.
+#'
+#' @rdname expected_tau
+#' @aliases expected_tau expected_tau,hspec-method
 #' @export
 setGeneric("expected_tau", function(object, rambda_component, type = 1,
                                     mu = NULL, beta = NULL,
@@ -230,7 +233,7 @@ setMethod("expected_tau", signature(object = "hspec"),
 
             # Handle residual density
             if (is.null(object@dresidual)) {
-              dresidual_fn <- function(x, param = NULL) dexp(x)
+              dresidual_fn <- function(x, param = NULL) stats::dexp(x)
               default_param <- NULL
             } else {
               dresidual_fn <- object@dresidual
@@ -245,7 +248,7 @@ setMethod("expected_tau", signature(object = "hspec"),
             }
 
             # Numerical integration
-            result <- integrate(integrand, lower = 0, upper = max_upper,
+            result <- stats::integrate(integrand, lower = 0, upper = max_upper,
                                 rel.tol = tol, subdivisions = subdivisions)
 
             return(result$value)

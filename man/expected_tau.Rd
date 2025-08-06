@@ -2,6 +2,7 @@
 % Please edit documentation in R/harrival.R
 \name{expected_tau}
 \alias{expected_tau}
+\alias{expected_tau,hspec-method}
 \title{Expected Inter-Arrival Time}
 \usage{
 expected_tau(

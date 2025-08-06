@@ -946,7 +946,9 @@ hspec1_d <- new("hspec", mu=mu1_d, alpha=alpha1_d, beta=beta1_d,
               dresidual = function(x, param = c(a = a, ell = ell))
                 dtzexp(x, a = param["a"], ell = param["ell"]),
               presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]))
+                  ptzexp(q, a = param["a"], ell = param["ell"]),
+              qresidual = function(p, param = c(a = a, ell = ell))
+                  qtzexp(p, a = param["a"], ell = param["ell"]))
 ```
 
 ```{r, fig.height=4, fig.width=6}
@@ -1108,7 +1110,7 @@ mle_dh <- hfit(hspec2_du,
 summary(mle_dh)
 ```
 
-Uniform residual distribution example.
+Uniform residual distribution example is also provided.
 
 ```{r, message = FALSE}
 
@@ -1121,12 +1123,12 @@ hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
                  rresidual = function(size) runif(n=size, 0, 2),
                  dresidual = function(x, param = c()) dunif(x, 0, 2),
                  presidual = function(q, param = c()) punif(q, 0, 2),
-                 qresidual = function(p, param = c()) qunif(q, 0, 2))
+                 qresidual = function(p, param = c()) qunif(p, 0, 2))
 
-duh2_real <- hsim(hspec2_du, size = 1000)
+duh2_real <- hsim(hspec2_du, size = 5000)
 ```
 
-
+Histogram of the residual process:
 
 ```{r, message = FALSE}
 
