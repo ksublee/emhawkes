@@ -5,4 +5,4 @@
 .Rbuildignore
 CRAN-SUBMISSION
 inst/doc
-docs
+#docs
