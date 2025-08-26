@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   example: example.html
   extended_example: extended_example.html
-last_built: 2025-08-26T02:20Z
+last_built: 2025-08-26T02:30Z
 urls:
   reference: https://ksublee.github.io/emhawkes/reference
   article: https://ksublee.github.io/emhawkes/articles
