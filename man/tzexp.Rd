@@ -37,7 +37,7 @@ rtzexp(n, a, ell)
 }
 \description{
 These functions implement a custom distribution combining a trapezoidal section (0 < x < a)
-and an exponential tail (x ≥ a). The distribution is parameterized by:
+and an exponential tail (\eqn{x \geq a}). The distribution is parameterized by:
 \itemize{
 \item \code{a}: transition point between trapezoid and exponential
 \item \code{ell}: rate parameter for the exponential tail
@@ -66,28 +66,9 @@ c = \frac{2 - 2p - p\ell a}{a}
 
 The trapezoid+exponential distribution has the following characteristics:
 \itemize{
-\item Support on [0, ∞)
+\item Support on \eqn{[0, \infty)}
 \item Continuous probability distribution
 \item Linear density from 0 to a
 \item Exponential decay for x > a
 }
-}
-\examples{
-# Example usage of dtzexp function
-x_values <- seq(-1, 5, by = 0.1)
-a_value <- 2
-ell_value <- 1
-pdf_values <- dtzexp(x_values, a_value, ell_value)
-plot(x_values, pdf_values, type = "l", main = "PDF of Custom Distribution")
-
-# Example usage of ptzexp function
-cdf_values <- ptzexp(x_values, a_value, ell_value)
-plot(x_values, cdf_values, type = "l", main = "CDF of Custom Distribution")
-
-# Example usage of rtzexp function
-set.seed(123)
-n_samples <- 1000
-random_samples <- rtzexp(n_samples, a_value, ell_value)
-hist(random_samples, breaks = 30, main = "Histogram of Random Samples")
-
 }

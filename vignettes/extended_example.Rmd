@@ -1,9 +1,8 @@
 ---
-title: "Example : emhawkes package "
+title: "Extended example : emhawkes package"
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
-output:
-  github_document: default
+output: html_document
 ---
 
 ```{r setup, include = FALSE}

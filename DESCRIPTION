@@ -29,7 +29,7 @@ Collate:
 Suggests: 
     knitr,
     rmarkdown,
-    miscTools,
-    V8
+    miscTools
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
+URL: https://github.com/ksublee/emhawkes, https://ksublee.github.io/emhawkes/
