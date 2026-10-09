@@ -1,7 +1,7 @@
 Example : emhawkes package
 ================
 Kyungsub Lee
-2025-08-26
+2026-02-16
 
 ## Basic Hawkes model
 
@@ -47,15 +47,17 @@ process, `lambda_component0`, and the initial values of the Hawkes
 processes, `N0`. More precisely, the intensity process of the basic
 univariate Hawkes model is represented by
 
-$$
+``` math
+
 \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
-$$
+```
 
 where the `lambda_component0` denotes
 
-$$
+``` math
+
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
-$$
+```
 
 If `lambda_component0` is not provided, the internally determined
 initial values for the intensity process are used. If `size` is
@@ -105,18 +107,18 @@ The results of `hsim` is an S3 class `hreal`, which consists of `hspec`,
 
 - `arrival` is the cumulative sum of `inter_arrival`.
 
-- `type` is the type of events, i.e., $i$ for $N_i$, and is used for a
-  multivariate model.
+- `type` is the type of events, i.e., $`i`$ for $`N_i`$, and is used for
+  a multivariate model.
 
 - `mark` is a numeric vector that represents additional information for
   the event.
 
-- `lambda` represents $\lambda$, which is the left continuous and right
-  limit version.
+- `lambda` represents $`\lambda`$, which is the left continuous and
+  right limit version.
 
 - The right continuous version of intensity is `rambda`.
 
-- `lambda_component` represents $\lambda_{ij}$, and `rambda_component`
+- `lambda_component` represents $`\lambda_{ij}`$, and `rambda_component`
   is the right continuous version.
 
 `inter_arrival`, `type`, `mark`, `N`, and `Nc` start at zero. Using the
@@ -207,24 +209,27 @@ summary(mle)
 
 The intensity process of a basic bivariate Hawkes model is defined by
 
-$$
- \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
-$$
+``` math
 
-$$
+ \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
+```
+
+``` math
+
  \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
-$$
+```
 
 In a bivariate model, the parameters within the slots of `hspec` are
 matrices. Specifically, `mu` is a 2-by-1 matrix, while `alpha` and
 `beta` are 2-by-2 matrices.
 
-$$
+``` math
+
 \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
 \alpha = \begin{bmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{bmatrix}, \quad
 \beta = 
 \begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
-$$
+```
 
 `rmark` is a random number generating function for marks and is not used
 in non-mark models. `lambda_component0` is a 2-by-2 matrix that
@@ -232,11 +237,15 @@ represents the initial values of `lambda_component`, which includes the
 set of values `lambda11`, `lambda12`, `lambda21`, and `lambda22`. The
 intensity processes are represented by
 
-$$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), $$
+``` math
+ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), 
+```
 
-$$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). $$
+``` math
+ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). 
+```
 
-The terms $\lambda_{ij}$ are referred to as lambda components, and
+The terms $`\lambda_{ij}`$ are referred to as lambda components, and
 `lambda0` represents \$\_{ij}(0)`.  The parameter`lambda_component0\`
 can be omitted in this model, in which case internally determined
 initial values will be used.
@@ -630,9 +639,9 @@ qqline(q, distribution=qexp,col="blue", lty=2)
 
 ![](example_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
-In an $n$-dimensional model, we can compute the residuals in a similar
+In an $`n`$-dimensional model, we can compute the residuals in a similar
 manner. In this case, the object returned by the `logLik` function
-contains $n$ residual processes. For example, in the following code,
+contains $`n`$ residual processes. For example, in the following code,
 `infer_res2$res_process1` and `infer_res2$res_process2` represent the
 residual processes for each type.
 
@@ -685,21 +694,28 @@ legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 
 In a multi-kernel Hawkes model, `type_col_map` is required for `hspec`.
 `type_col_map` is a list that represents the mapping between type and
-column number. For example, consider a bi-variate multi-kernel model: $$
+column number. For example, consider a bi-variate multi-kernel model:
+``` math
+
 \lambda_t = \mu + \int_{-\infty}^{t} h(t-u) d N(u)
-$$ where $$ h = \sum_{k=1}^{K} h_k, \quad 
+```
+where
+``` math
+ h = \sum_{k=1}^{K} h_k, \quad 
 h_k (t) = \alpha_k \circ \begin{bmatrix}
 e^{-\beta_{k11} t} & e^{-\beta_{k12} t} \\
 e^{-\beta_{k21} t} & e^{-\beta_{k22} t}
 \end{bmatrix}
- $$
+ 
+```
 
-with matrix $\alpha_k$ and $k$ denoting kernel number.
+with matrix $`\alpha_k`$ and $`k`$ denoting kernel number.
 
 For example, in a bi-variate Hawkes model with two kernels, the
 intensity processes are
 
-$$
+``` math
+
  \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \end{bmatrix} = 
 \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix} + \int_{-\infty}^{t} \begin{bmatrix}
 \alpha_{111} e^{-\beta_{111} t} & \alpha_{112} e^{-\beta_{112} t} \\
@@ -709,19 +725,20 @@ $$
 \alpha_{211} e^{-\beta_{211} t} & \alpha_{212} e^{-\beta_{212} t} \\
 \alpha_{221}e^{-\beta_{221} t} & \alpha_{222}e^{-\beta_{222} t}
 \end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}.
-$$
+```
 
 The parameter matrix is defined by
 
-$$
+``` math
+
  \alpha = \begin{bmatrix} \alpha_{111} & \alpha_{112} & \alpha_{211} & \alpha_{212} \\ \alpha_{121} & \alpha_{122} & \alpha_{221} & \alpha_{222}
 \end{bmatrix}, \quad
  \beta = \begin{bmatrix} \beta_{111} & \beta_{112} & \beta_{211} & \beta_{212} \\ \beta_{121} & \beta_{122} & \beta_{221} & \beta_{222}
 \end{bmatrix} \quad
-$$
+```
 
 and we should specify which columns of matrix are associated with which
-$N_i$.
+$`N_i`$.
 
 ``` r
 mu <- matrix(c(0.02, 0.02), nrow=2)
@@ -742,9 +759,9 @@ print(alpha)
 #> [2,]    2    3  0.2  0.3
 ```
 
-Note that $d N_1(s)$ is multiplied by first and third columns of
-$\alpha$ and $dN_2(s)$ is multiplied by second and fourth columns of
-$\alpha$ and hence `type_col_map` is
+Note that $`d N_1(s)`$ is multiplied by first and third columns of
+$`\alpha`$ and $`dN_2(s)`$ is multiplied by second and fourth columns of
+$`\alpha`$ and hence `type_col_map` is
 
 ``` r
 type_col_map <- list(c(1,3),  # columns for dN1
@@ -926,21 +943,24 @@ summary(hfit(h, res_mk$inter_arrival, res_mk$type,
 This model is basically two-kernel model and defined by little bit
 complicated reparameterization.
 
-$$
+``` math
+
  \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
 \theta/(1 - \kappa)/2 - \tilde\theta/(1 + \kappa)/2 \end{bmatrix}, \quad \theta = (\theta^- + \theta^+)/2,\quad \tilde\theta=(\theta^- -\theta^+)/2
-$$
+```
 
-$$
+``` math
+
 \alpha = \begin{bmatrix} \zeta & \tilde\zeta & \zeta & -\tilde\zeta \\
 \zeta & -\tilde\zeta & \zeta & \tilde\zeta
 \end{bmatrix}, \quad \zeta = (\eta + \nu) / 2, \quad \tilde \zeta = (\eta - \nu)/ 2 
-$$
+```
 
-$$
+``` math
+
 \beta = \begin{bmatrix} \beta_1 & \beta_2 & \beta_1 & \beta_2 \\
 \beta_1 & \beta_2 & \beta_1 & \beta_2 \end{bmatrix}, \quad \beta_1 = (\eta + \nu) / 2, \quad \beta_2 = (\eta - \nu)/2
-$$
+```
 
 In order to handle complex re-parametrization, each slot is expressed as
 a function rather than a matrix. The first argument `param` is a set of
@@ -975,35 +995,31 @@ h_sy
 #> An object of class "hspec" of 2-dimensional Hawkes process
 #> 
 #> Slot mu: 
-#> function (param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)) 
-#> {
-#>     theta <- (param["theta_n"] + param["theta_p"])/2
-#>     theta_tl <- (param["theta_n"] - param["theta_p"])/2
-#>     matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]), 
-#>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
-#>         nrow = 2)
+#> function(param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)){
+#>   theta    <- (param["theta_n"] + param["theta_p"])/2
+#>   theta_tl <- (param["theta_n"] - param["theta_p"])/2
+#>   matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
+#>            theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
 #> }
-#> <bytecode: 0x00000225aa03ceb0>
+#> <bytecode: 0x000002081a3c6870>
 #> 
 #> Slot alpha: 
-#> function (param = c(eta = 5, nu = 3)) 
-#> {
-#>     zeta <- (param["eta"] + param["nu"])/2
-#>     zeta_tl <- (param["eta"] - param["nu"])/2
-#>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
-#>         zeta_tl), nrow = 2, byrow = TRUE)
+#> function(param = c(eta = 5, nu = 3)){
+#>   zeta    <- (param["eta"] + param["nu"])/2
+#>   zeta_tl <- (param["eta"] - param["nu"])/2
+#>   matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
+#>            zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
 #> }
-#> <bytecode: 0x00000225a944ec40>
+#> <bytecode: 0x0000020818d1b720>
 #> 
 #> Slot beta: 
-#> function (param = c(beta = 12, kappa = 0.12)) 
-#> {
-#>     beta1 <- param["beta"] * (1 - param["kappa"])
-#>     beta2 <- param["beta"] * (1 + param["kappa"])
-#>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
-#>         beta2), nrow = 2, byrow = TRUE)
+#> function(param = c(beta = 12, kappa = 0.12)){
+#>   beta1 <- param["beta"] * (1 - param["kappa"])
+#>   beta2 <- param["beta"] * (1 + param["kappa"])
+#>   matrix(c(beta1, beta2, beta1, beta2,
+#>            beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x00000225a6f97ee0>
+#> <bytecode: 0x0000020819803928>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1081,38 +1097,41 @@ summary(fit_sy)
 The following family of extended multi-variate marked Hawkes models are
 implemented:
 
-$$
+``` math
+
  \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u, z)M(du \times dz)
-$$
+```
 
-where the kernel $h$ is represented by
+where the kernel $`h`$ is represented by
 
-$$
+``` math
+
 h(t, u, z) = (\alpha + g(t, z))\Gamma(t),
-$$
+```
 
 and
 
-- $\alpha$ is a constant matrix,
+- $`\alpha`$ is a constant matrix,
 
-- $g(t, z)$ is additional impacts on intensities, which may depend on
+- $`g(t, z)`$ is additional impacts on intensities, which may depend on
   mark, or any information generated by underlying processes,
 
-- $\Gamma(t)$ is exponential decaying matrix such that
-  $\Gamma_{ij}(t) = e^{-\beta_{ij}(t)}$,
+- $`\Gamma(t)`$ is exponential decaying matrix such that
+  $`\Gamma_{ij}(t) = e^{-\beta_{ij}(t)}`$,
 
-- $M$ denotes the random measures defined on the product of time and
+- $`M`$ denotes the random measures defined on the product of time and
   mark spaces.
 
 ### Linear impact model
 
 In the linear impact model,
 
-$$
- g(t, z) = \eta (z-1).
-$$
+``` math
 
-`impact` represents $\Psi(z)$, the impact of mark on future intensity.
+ g(t, z) = \eta (z-1).
+```
+
+`impact` represents $`\Psi(z)`$, the impact of mark on future intensity.
 For details, see [Marked Hawkes process modeling of price dynamics and
 volatility
 estimation](https://www.sciencedirect.com/science/article/abs/pii/S0927539816300810).
@@ -1158,16 +1177,14 @@ hi
 #> [2,]  2.6  2.6
 #> 
 #> Slot impact: 
-#> function (param = c(eta1 = 0.2), alpha, n, mark, ...) 
-#> {
-#>     ma <- matrix(rep(mark[n] - 1, 4), nrow = 2)
-#>     ma * matrix(rep(param["eta1"], 4), nrow = 2)
+#> function(param = c(eta1=0.2), alpha, n, mark, ...){
+#>   ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
+#>   ma * matrix( rep(param["eta1"], 4), nrow=2)
 #> }
 #> 
 #> Slot rmark: 
-#> function (param = c(p = 0.65), ...) 
-#> {
-#>     rgeom(1, p = param[1]) + 1
+#> function(param = c(p=0.65), ...){
+#>   rgeom(1, p=param[1]) + 1
 #> }
 ```
 
@@ -1234,9 +1251,10 @@ implementation is recommended. In a marked Hawkes model, the additional
 linear impact can be represented by slot `eta`. In this model, the
 intensity process is
 
-$$
+``` math
+
  \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(dt \times dz).
-$$
+```
 
 ``` r
 
@@ -1266,9 +1284,8 @@ h
 #> [1,]  0.3
 #> 
 #> Slot rmark: 
-#> function (param = c(p = 0.65), ...) 
-#> {
-#>     rgeom(1, p = param[1]) + 1
+#> function(param = c(p=0.65), ...){
+#>   rgeom(1, p=param[1]) + 1
 #> }
 ```
 
@@ -1342,17 +1359,17 @@ mle_md <- hfit(h_md,
 summary(mle_md)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 46 iterations
+#> BFGS maximization, 51 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -2657.079 
 #> 5  free parameters
 #> Estimates:
 #>        Estimate Std. error t value  Pr(> t)    
-#> mu1    0.145574   0.008468  17.190  < 2e-16 ***
-#> alpha1 0.639168   0.069753   9.163  < 2e-16 ***
-#> beta1  1.489843   0.124301  11.986  < 2e-16 ***
-#> eta1   0.336259   0.076904   4.372 1.23e-05 ***
-#> p      0.658970   0.012203  54.002  < 2e-16 ***
+#> mu1    0.145574   0.008416  17.298  < 2e-16 ***
+#> alpha1 0.639168   0.066621   9.594  < 2e-16 ***
+#> beta1  1.489843   0.114953  12.960  < 2e-16 ***
+#> eta1   0.336259   0.076911   4.372 1.23e-05 ***
+#> p      0.658970   0.012232  53.874  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1360,26 +1377,32 @@ summary(mle_md)
 
 ### Hawkes flocking model
 
-The function $g$ is not necessarily depend on mark. In the Hawkes
-flocking model, the kernel component is represented by $$
+The function $`g`$ is not necessarily depend on mark. In the Hawkes
+flocking model, the kernel component is represented by
+``` math
+
 \alpha = \begin{bmatrix}\alpha_{11} & \alpha_{12} & 0 & 0 \\\alpha_{12}& \alpha_{11} & 0 & 0 \\0 & 0 & \alpha_{33} & \alpha_{34} \\0 & 0 & \alpha_{34} & \alpha_{33} \end{bmatrix},
-$$ $$ 
+```
+``` math
+ 
 g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_{\{C_1(t) < C_2(t)\}} \\ 
 0 & 0 & \alpha_{1n} 1_{\{C_1(t) > C_2(t)\}} & \alpha_{1w}1_{\{C_1(t) > C_2(t)\}} \\
 \alpha_{2w} 1_{\{C_2(t) < C_1(t)\}} & \alpha_{2n}1_{\{C_2(t) < C_1(t)\}} & 0 & 0 \\
 \alpha_{2n} 1_{\{C_2(t) > C_1(t)\}} & \alpha_{2w}1_{\{C_2(t) > C_1(t)\}} & 0 & 0 \end{bmatrix},
-$$
+```
 
 where
 
-$$
+``` math
+
 C_1(t) = N_1(t) - N_2(t), \quad C_2(t) = N_3(t) - N_4(t).
-$$ For details, see [Systemic risk in market microstructure of crude oil
+```
+For details, see [Systemic risk in market microstructure of crude oil
 and gasoline futures prices: A Hawkes flocking model
 approach](https://onlinelibrary.wiley.com/doi/full/10.1002/fut.22048).
 
 In the basic model, `alpha` is a matrix, but it can be a function as in
-the following code. The function `alpha` simply return a $4\times4$
+the following code. The function `alpha` simply return a $`4\times4`$
 matrix but by doing so, we can fix some of elements as specific vales
 when estimating. When estimating, the optimization is only applied for
 the specified parameters in the argument `param`. In the case of
@@ -1403,7 +1426,7 @@ beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = TRUE)
 
 `impact()` function is little bit complicated, but it is nothing more
 than expressing the definition of the model to an R function. Note that
-we specify `N=N, n=n` in the argument. `N` is for counting process $N$
+we specify `N=N, n=n` in the argument. `N` is for counting process $`N`$
 and `n` denotes the time step. Both are needed to implement the function
 body and it is required to specify in the argument. `…` also should not
 be omitted.
@@ -1440,15 +1463,13 @@ hspec_fl
 #> [4,] 0.04
 #> 
 #> Slot alpha: 
-#> function (param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, 
-#>     alpha34 = 0.4)) 
-#> {
-#>     matrix(c(param["alpha11"], param["alpha12"], 0, 0, param["alpha12"], 
-#>         param["alpha11"], 0, 0, 0, 0, param["alpha33"], param["alpha34"], 
-#>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
-#>         byrow = TRUE)
+#> function(param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, alpha34 = 0.4)){
+#>   matrix(c(param["alpha11"], param["alpha12"], 0, 0,
+#>            param["alpha12"], param["alpha11"], 0, 0,
+#>            0, 0, param["alpha33"], param["alpha34"],
+#>            0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x00000225a7447628>
+#> <bytecode: 0x0000020818b11ea0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1458,18 +1479,22 @@ hspec_fl
 #> [4,]  1.1  1.1  1.1  1.1
 #> 
 #> Slot impact: 
-#> function (param = c(alpha1n = 0.25, alpha1w = 0.1, alpha2n = 0.1, 
-#>     alpha2w = 0.2), N = N, n = n, ...) 
-#> {
-#>     Psi <- matrix(c(0, 0, param["alpha1w"], param["alpha1n"], 
-#>         0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], 
-#>         param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], 
-#>         0, 0), nrow = 4, byrow = TRUE)
-#>     ind <- N[, "N1"][n] - N[, "N2"][n] > N[, "N3"][n] - N[, "N4"][n]
-#>     km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, 
-#>         ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, 
-#>         byrow = TRUE)
-#>     km * Psi
+#> function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
+#>                    N=N, n=n, ...){
+#>   
+#>   Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
+#>                   0, 0, param['alpha1n'], param['alpha1w'],
+#>                   param['alpha2w'], param['alpha2n'], 0, 0,
+#>                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
+#>   
+#>   ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n]
+#>   
+#>   km <- matrix(c(!ind, !ind, !ind, !ind,
+#>                  ind, ind, ind, ind,
+#>                  ind, ind, ind, ind,
+#>                  !ind, !ind, !ind, !ind), nrow = 4, byrow = TRUE)
+#>   
+#>   km * Psi
 #> }
 ```
 
@@ -1539,7 +1564,8 @@ In this model, we use a system of counting processes with the
 corresponding conditional intensities to describe the bid-ask price
 processes:
 
-$$ 
+``` math
+ 
 N_t = \begin{bmatrix}
 N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \end{bmatrix},
@@ -1547,25 +1573,28 @@ N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \lambda_t =
 \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \\ \lambda_3(t) \\ \lambda_4(t)
 \end{bmatrix}
-$$
+```
 
-The ask price process $N_1(t) - N_2(t)$ and the bid price process is
-$N_3(t) - N_4(t)$. The mid price process is
-$p(t) = N_1(t) + N_3(t) - N_2(t) - N_4(t)$ plus initial mid price level.
+The ask price process $`N_1(t) - N_2(t)`$ and the bid price process is
+$`N_3(t) - N_4(t)`$. The mid price process is
+$`p(t) = N_1(t) + N_3(t) - N_2(t) - N_4(t)`$ plus initial mid price
+level.
 
 The base intensity process is
 
-$$\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} $$
+``` math
+\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} 
+```
 
-where $L(t) \in \{ 0, 1, 2, \cdots \}$ is the absolute level of the
-bid-ask spread with $L(t)=0$ implying the minimum level. For details,
+where $`L(t) \in \{ 0, 1, 2, \cdots \}`$ is the absolute level of the
+bid-ask spread with $`L(t)=0`$ implying the minimum level. For details,
 see [Modeling bid and ask price dynamics with an extended Hawkes process
 and its empirical applications for high-frequency stock market
 data](https://academic.oup.com/jfec/article/21/4/1099/6513935?login=true).
 
 Note that in the following code of the definition of `mu`, `n` is needed
-to represent time $t$ and `Nc` is needed to calculate the level and mid
-price.
+to represent time $`t`$ and `Nc` is needed to calculate the level and
+mid price.
 
 ``` r
 # presumed initial bid and ask prices
@@ -1605,23 +1634,27 @@ mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
 
 In addition, the kernel is represented by
 
-$$h(t, u) = 
+``` math
+h(t, u) = 
 \begin{bmatrix} \alpha_{s1} & \alpha_{m} & \alpha_{s2} & 0 \\   \alpha_{w1} & \alpha_{n1}(u) & \alpha_{n1}(u) & \alpha_{w2} \\  \alpha_{w2} & \alpha_{n2}(u) & \alpha_{n2}(u) & \alpha_{w1} \\  0 & \alpha_{s2} & \alpha_{m} & \alpha_{s1} \\   \end{bmatrix},
-$$
+```
 
 where
 
-$$
+``` math
+
 \alpha_{n1}(u) = - \sum_{j=1}^4 \lambda_{2j}(u) + \xi \ell(u), \quad \alpha_{n2}(u) = - \sum_{j=1}^4 \lambda_{3j}(u) + \xi \ell(u),
-$$
+```
 
-for constant $\xi \geq 0$ and $\lambda_{ij}$ is a component of
-$\lambda_i$ such that
+for constant $`\xi \geq 0`$ and $`\lambda_{ij}`$ is a component of
+$`\lambda_i`$ such that
 
-$$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
+``` math
+\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).
+```
 
-In the following code, we separate the constant part of $h$ as `alpha`
-and stochastic part as `impact`. To represent $\lambda_{ij}$, we need
+In the following code, we separate the constant part of $`h`$ as `alpha`
+and stochastic part as `impact`. To represent $`\lambda_{ij}`$, we need
 `lambda_component`. Note that
 
 ``` r
@@ -1678,41 +1711,42 @@ h_ba
 #> An object of class "hspec" of 4-dimensional Hawkes process
 #> 
 #> Slot mu: 
-#> function (param = c(mu1 = 0.08, zeta1 = 0.1), n = n, Nc = Nc, 
-#>     ...) 
-#> {
-#>     if (n == 1) {
-#>         level <- initial_level
-#>         mid <- initial_mid_price
-#>     }
-#>     else {
-#>         level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - 
-#>             Nc[n - 1, 4]) + initial_level
-#>         ask <- initial_ask_price + (Nc[n - 1, 1] - Nc[n - 1, 
-#>             2])
-#>         bid <- initial_bid_price + (Nc[n - 1, 3] - Nc[n - 1, 
-#>             4])
-#>         mid <- (ask + bid)/2
-#>     }
-#>     if (level <= 0) {
-#>         matrix(c(param["mu1"], 0, 0, param["mu1"]), nrow = 4)
-#>     }
-#>     else {
-#>         matrix(c(param["mu1"], param["zeta1"] * level/mid, param["zeta1"] * 
-#>             level/mid, param["mu1"]), nrow = 4)
-#>     }
+#> function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
+#> 
+#>   if(n == 1){
+#>     
+#>     level <- initial_level
+#>     mid <- initial_mid_price
+#>     
+#>   } else {
+#>     
+#>     level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+#>     ask <- initial_ask_price + (Nc[n-1,1] - Nc[n-1,2]) 
+#>     bid <- initial_bid_price + (Nc[n-1,3] - Nc[n-1,4]) 
+#>     mid <- (ask + bid) / 2
+#>     
+#>   }
+#>   
+#>   if(level <= 0){
+#>     matrix(c(param["mu1"], 0,
+#>              0, param["mu1"]), nrow = 4)
+#>   } else {
+#>     matrix(c(param["mu1"], param["zeta1"] * level / mid,
+#>              param["zeta1"]*level / mid, param["mu1"]), nrow = 4)
+#> 
+#>   }
+#> 
 #> }
 #> 
 #> Slot alpha: 
-#> function (param = c(alpha_s1 = 4, alpha_m = 26, alpha_s2 = 5, 
-#>     alpha_w1 = 11, alpha_w2 = 7)) 
-#> {
-#>     matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 
-#>         0, param["alpha_w1"], 0, 0, param["alpha_w2"], param["alpha_w2"], 
-#>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
-#>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
+#> function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
+#>                             alpha_w1=11, alpha_w2=7)){
+#>   matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 0,
+#>            param["alpha_w1"], 0, 0, param["alpha_w2"],
+#>            param["alpha_w2"], 0, 0, param["alpha_w1"],
+#>            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x00000225a9dab508>
+#> <bytecode: 0x0000020819c82330>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1722,45 +1756,41 @@ h_ba
 #> [4,]   50   50   50   50
 #> 
 #> Slot impact: 
-#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component = lambda_component, 
-#>     ...) 
-#> {
-#>     if (n == 1) {
-#>         level <- initial_level
-#>     }
-#>     else {
-#>         level <- Nc[n, 1] - Nc[n, 2] - (Nc[n, 3] - Nc[n, 4]) + 
-#>             initial_level
-#>         ask <- initial_ask_price + (Nc[n, 1] - Nc[n, 2])
-#>         bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])
-#>         mid <- (ask + bid)/2
-#>     }
-#>     lambda_component_matrix <- matrix(lambda_component[n, ], 
-#>         nrow = 4, byrow = TRUE)
-#>     l2 <- sum(lambda_component_matrix[2, ])
-#>     l3 <- sum(lambda_component_matrix[3, ])
-#>     im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, 
-#>         -l2 + param["xi"] * level/mid, 0, 0, -l3 + param["xi"] * 
-#>             level/mid, -l3 + param["xi"] * level/mid, 0, 0, 0, 
-#>         0, 0), nrow = 4, byrow = TRUE)
+#> function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
+#>   if(n == 1){
+#>     level <-  initial_level
+#>     # mid <- initial_mid_price
+#>   } else {
+#>     level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
+#>     ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])
+#>     bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])
+#>     mid <- (ask + bid)/2
+#>   }
+#>   
+#>   lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
+#> 
+#>   l2 <- sum(lambda_component_matrix[2,]) # sum of second row
+#>   l3 <- sum(lambda_component_matrix[3,]) # sum of third row
+#> 
+#>   im <- matrix(c(0, 0, 0, 0,
+#>                  0, -l2 + param["xi"]*level/mid, -l2 + param["xi"]*level/mid, 0,
+#>                  0, -l3 + param["xi"]*level/mid, -l3 + param["xi"]*level/mid, 0,
+#>                  0, 0, 0, 0), nrow = 4, byrow = TRUE)
+#> 
 #> }
 #> 
 #> Slot rmark: 
-#> function (n = n, Nc = Nc, type, ...) 
-#> {
-#>     if (n == 1) {
-#>         level <- initial_level
-#>     }
-#>     else {
-#>         level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - 
-#>             Nc[n - 1, 4]) + initial_level
-#>     }
-#>     if (type[n] == 2 | type[n] == 3) {
-#>         min(level, rgeom(1, p = 0.65) + 1)
-#>     }
-#>     else {
-#>         rgeom(1, p = 0.65) + 1
-#>     }
+#> function(n=n, Nc=Nc, type, ...){
+#>   if(n == 1){
+#>     level <-  initial_level
+#>   } else {
+#>     level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+#>   }
+#>   if (type[n] == 2 | type[n] == 3){
+#>     min(level,  rgeom(1, p=0.65) + 1)
+#>   } else {
+#>     rgeom(1, p=0.65) + 1
+#>   }
 #> }
 ```
 
@@ -1949,20 +1979,19 @@ print(hspec2_du)
 #> [2,]  1.5  1.5
 #> 
 #> Slot rresidual: 
-#> function (size) 
-#> rtzexp(n = size, a = a, ell = ell)
+#> function(size) rtzexp(n=size, a = a, ell = ell)
 #> 
 #> Slot dresidual: 
-#> function (x, param = c(a = a, ell = ell)) 
-#> dtzexp(x, a = param["a"], ell = param["ell"])
+#> function(x, param = c(a = a, ell = ell))
+#>                 dtzexp(x, a = param["a"], ell = param["ell"])
 #> 
 #> Slot presidual: 
-#> function (q, param = c(a = a, ell = ell)) 
-#> ptzexp(q, a = param["a"], ell = param["ell"])
+#> function(q, param = c(a = a, ell = ell))
+#>                   ptzexp(q, a = param["a"], ell = param["ell"])
 #> 
 #> Slot qresidual: 
-#> function (p, param = c(a = a, ell = ell)) 
-#> qtzexp(p, a = param["a"], ell = param["ell"])
+#> function(p, param = c(a = a, ell = ell))
+#>                   qtzexp(p, a = param["a"], ell = param["ell"])
 ```
 
 Histogram of inter-arrival times under `tzexp` distribution.

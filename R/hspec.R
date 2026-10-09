@@ -204,19 +204,48 @@ setMethod(
       stop("The number of columns in alpha, beta, and eta should all be the same.")
     }
 
-    # Require type_col_map if column numbers exceed dimensions
-    if (ncol_alpha > .Object@dimens & is.null(.Object@type_col_map)) {
-      stop("type_col_map should be provided for this model as the number of columns in parameters exceeds the dimens.")
+    kernel_cols <- unique(c(ncol_alpha, ncol_beta, ncol_eta))[1]
+    if (is.null(type_col_map) && kernel_cols != .Object@dimens) {
+      stop("type_col_map must be provided when the kernel column count differs from dimens.")
     }
-
-
-    # Check spectral radius for stability if required
-    if (stability_check == TRUE && max(abs(eigen(alpha / beta)$values)) > 1) {
-      warning("This model may not satisfy the stability condition.")
+    if (!is.null(type_col_map)) {
+      valid_map <- length(type_col_map) == .Object@dimens &&
+        all(vapply(type_col_map, function(x) {
+          is.numeric(x) && length(x) > 0 && all(is.finite(x)) &&
+            all(x == floor(x) & x >= 1 & x <= kernel_cols) && !anyDuplicated(x)
+        }, logical(1)))
+      if (!valid_map) stop("type_col_map must contain valid, nonduplicated kernel column indices for each type.")
     }
+    values <- setting(.Object)
+    for (name in names(values)) {
+      value <- values[[name]]
+      if (!is.null(value) && !is.function(value) && any(!is.finite(value))) {
+        stop(name, " must contain finite values.")
+      }
+    }
+    if (!is.function(values$beta) && any(values$beta <= 0)) stop("beta must be positive.")
+    if (!is.function(values$mu) && any(values$mu < 0)) stop("mu must be nonnegative.")
 
-    # Call the next method in the chain
-    methods::callNextMethod()
+    if (isTRUE(stability_check)) {
+      supported <- !is.function(values$mu) && !is.function(values$alpha) &&
+        !is.function(values$beta) && all(values$alpha >= 0) &&
+        is.null(impact) && (is.null(values$eta) || all(values$eta == 0)) &&
+        is.null(dresidual) && is.null(rresidual)
+      if (supported) {
+        mapping <- if (is.null(type_col_map)) as.list(seq_len(.Object@dimens)) else type_col_map
+        integrated <- values$alpha / values$beta
+        branching <- vapply(mapping, function(columns) {
+          rowSums(integrated[, columns, drop = FALSE])
+        }, numeric(.Object@dimens))
+        dim(branching) <- c(.Object@dimens, .Object@dimens)
+        if (max(abs(eigen(branching, only.values = TRUE)$values)) >= 1) {
+          warning("This model does not satisfy the stability condition (spectral radius < 1).")
+        }
+      } else {
+        warning("Stability checking is only available for constant, nonnegative Hawkes kernels without state-dependent or residual effects.")
+      }
+    }
+    methods::validObject(.Object)
 
     # Return the initialized object
     .Object
@@ -245,6 +274,10 @@ setMethod(
 #'
 #' The `param` argument in these functions defaults to the parameters provided during
 #' setup and is used for estimation.
+#' Density wrappers accept `log`; CDF and quantile wrappers accept `lower.tail`
+#' and `log.p`. These options are forwarded when the supplied distribution
+#' supports them. User-defined distributions should provide log-density and
+#' upper-tail log-probability options to retain accuracy in extreme tails.
 #'
 #' @examples
 #' \dontrun{
@@ -294,19 +327,9 @@ setMethod(
 
     # Create dresidual function with desired interface
     if (!is.null(dresidual)) {
-      object@dresidual <- function(x, param = stored_param) {
-        # Extract required arguments from param vector
-        args_list <- list(x = x)
-        fun_args <- methods::formalArgs(dresidual)
-
-        # Map parameters to function arguments
-        for (arg_name in names(param)) {
-          if (arg_name %in% fun_args) {
-            args_list[[arg_name]] <- param[arg_name]
-          }
-        }
-
-        do.call(dresidual, args_list)
+      object@dresidual <- function(x, param = stored_param, log = FALSE) {
+        residual_density(dresidual, x, log = log,
+                         params = distribution_parameters(dresidual, param))
       }
 
       # Set function default parameter values
@@ -315,34 +338,18 @@ setMethod(
 
     # Create presidual function (same pattern)
     if (!is.null(presidual)) {
-      object@presidual <- function(q, param = stored_param) {
-        args_list <- list(q = q)
-        fun_args <- methods::formalArgs(presidual)
-
-        for (arg_name in names(param)) {
-          if (arg_name %in% fun_args) {
-            args_list[[arg_name]] <- param[arg_name]
-          }
-        }
-
-        do.call(presidual, args_list)
+      object@presidual <- function(q, param = stored_param, lower.tail = TRUE, log.p = FALSE) {
+        residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p,
+                     params = distribution_parameters(presidual, param))
       }
       formals(object@presidual)$param <- stored_param
     }
 
     # Create qresidual function
     if (!is.null(qresidual)) {
-      object@qresidual <- function(p, param = stored_param) {
-        args_list <- list(p = p)
-        fun_args <- methods::formalArgs(qresidual)
-
-        for (arg_name in names(param)) {
-          if (arg_name %in% fun_args) {
-            args_list[[arg_name]] <- param[arg_name]
-          }
-        }
-
-        do.call(qresidual, args_list)
+      object@qresidual <- function(p, param = stored_param, lower.tail = TRUE, log.p = FALSE) {
+        residual_quantile(qresidual, p, lower.tail = lower.tail, log.p = log.p,
+                          params = distribution_parameters(qresidual, param))
       }
       formals(object@qresidual)$param <- stored_param
     }
@@ -350,16 +357,7 @@ setMethod(
     # Create rresidual function (only size argument required)
     if (!is.null(rresidual)) {
       object@rresidual <- function(size, param = stored_param) {
-        args_list <- list(n = size)
-        fun_args <- methods::formalArgs(rresidual)
-
-        for (arg_name in names(param)) {
-          if (arg_name %in% fun_args) {
-            args_list[[arg_name]] <- param[arg_name]
-          }
-        }
-
-        do.call(rresidual, args_list)
+        do.call(rresidual, c(list(size), distribution_parameters(rresidual, param)))
       }
       formals(object@rresidual)$param <- stored_param
     }

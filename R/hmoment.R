@@ -1,4 +1,4 @@
-#' @include hspec.R
+#' @include hspec.R hinterface.R
 NULL
 
 setGeneric("get_lambda0", function(object, ...) standardGeneric("get_lambda0"))
@@ -19,13 +19,13 @@ setMethod(
 
     # parameter setting
     if (is.function(object@mu)){
-      if(length(formals(object@mu)) == 1){
+      if(identical(names(formals(object@mu)), "param")){
         mu0 <- evalf(object@mu)
       } else {
-        mu0 <- mu(n = 1, inter_arrival = inter_arrival, type = type, mark = mark,
-                  N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                  lambda_component_n = lambda_component_n,
-                  alpha = alpha, beta = beta)
+        context <- list(n = 1, inter_arrival = inter_arrival, type = type, mark = mark,
+                        N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                        lambda_component_n = lambda_component_n, mu = mu, alpha = alpha, beta = beta)
+        mu0 <- call_component(mu, callback_plan(mu, names(context), "mu"), context)
       }
     } else{
       mu0 <- object@mu
@@ -43,7 +43,7 @@ setMethod(
 
 
     if (dimens == 1){
-      lamb0 <- (mu[1]*beta[1]/(beta[1]- alpha[1]) - mu[1])/2
+      lamb0 <- (mu0[1]*beta[1]/(beta[1]- alpha[1]) - mu0[1])/2
       LAMBDA0 <- matrix(lamb0, nrow=1)
 
     } else {

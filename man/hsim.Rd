@@ -33,7 +33,9 @@ hsim(
 
 \item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
 Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
+A scalar is expanded to every kernel component. Other size adjustments are
+deprecated and produce a warning.}
 
 \item{N0}{Starting values of N with default value 0.}
 
@@ -45,6 +47,9 @@ Must have the same number of rows and columns as \code{alpha} or \code{beta} in 
 }
 \value{
 \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
+If no further event can occur, the result contains only the generated rows
+and a warning reports the early termination. The initial row is included.
+Simulation requires finite, nonnegative baseline and kernel components.
 }
 \description{
 The method simulate multivariate Hawkes processes.

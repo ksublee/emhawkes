@@ -19,10 +19,11 @@ hfit(
   reduced = TRUE,
   grad = NULL,
   hess = NULL,
-  constraint = NULL,
+  constraints = NULL,
   method = "BFGS",
   verbose = FALSE,
-  ...
+  ...,
+  Nc0 = NULL
 )
 
 \S4method{hfit}{hspec}(
@@ -38,10 +39,11 @@ hfit(
   reduced = TRUE,
   grad = NULL,
   hess = NULL,
-  constraint = NULL,
+  constraints = NULL,
   method = "BFGS",
   verbose = FALSE,
-  ...
+  ...,
+  Nc0 = NULL
 )
 }
 \arguments{
@@ -65,19 +67,24 @@ Must have the same number of rows and columns as \code{alpha} or \code{beta} in 
 
 \item{mylogLik}{A user-defined log-likelihood function, which must accept an \code{object} argument consistent with \code{object}.}
 
-\item{reduced}{Logical; if \code{TRUE}, performs reduced estimation.}
+\item{reduced}{Logical; if \code{TRUE}, equal entries within each parameter matrix
+share one parameter. If \code{FALSE}, each matrix entry is estimated separately.
+Function components share parameters by name. Conflicting starting values for
+a shared name produce a warning; the first value is used.}
 
 \item{grad}{A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
 \item{hess}{A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{constraint}{Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{constraints}{constraints matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
 \item{method}{The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
 \item{verbose}{Logical; if \code{TRUE}, prints the progress of the estimation process.}
 
 \item{...}{Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+
+\item{Nc0}{Initial values for the mark-weighted counting processes. This argument must be named.}
 }
 \value{
 \code{\link[maxLik]{maxLik}} object
@@ -95,6 +102,15 @@ Optimization Initialization: To provide a starting point for numerical optimizat
 The parameter values assigned to the \code{hspec} slots serve as initial values for the optimization process.
 
 This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
+
+Observations are checked once before optimization. The first row is the initial
+state, and supplied counting processes contain values after each event.
+Functions with a \code{param} argument must provide a default named numeric vector;
+\code{numeric(0)} and functions without \code{param} are allowed for fixed components.
+A custom \code{mylogLik} receives its declared arguments from \code{object}, the observation
+arguments, \code{lambda_component0}, \code{param}, and \code{reduced}. Optional defaults are
+preserved; \code{...} receives the remaining context. Additional inputs should be
+captured in the function's environment or given defaults.
 }
 \examples{
 

@@ -51,6 +51,10 @@ This method allows setting residual distribution functions for a flexible model.
 
 The \code{param} argument in these functions defaults to the parameters provided during
 setup and is used for estimation.
+Density wrappers accept \code{log}; CDF and quantile wrappers accept \code{lower.tail}
+and \code{log.p}. These options are forwarded when the supplied distribution
+supports them. User-defined distributions should provide log-density and
+upper-tail log-probability options to retain accuracy in extreme tails.
 }
 \examples{
 \dontrun{

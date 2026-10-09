@@ -57,7 +57,7 @@ setMethod(
     infered_res <- logLik(object, inter_arrival = inter_arrival, type = type,
                           mark = mark, N = N, Nc = Nc,  lambda_component0 = lambda_component0,
                           N0 = N0, Nc0 = Nc0,
-                          infer = TRUE)
+                          infer = TRUE, ...)
 
     return(infered_res)
 
@@ -279,10 +279,10 @@ integrate_rambda_component <- function(inter_arrival, rambda_componet, beta, dim
   current_lambda <- matrix(rambda_componet[1,], nrow = dimens, byrow=TRUE)
 
 
-  for (n in 2:size) {
+  for (n in seq_len(size - 1L) + 1L) {
 
     decayed <- exp(-beta * inter_arrival[n])
-    integrated_rambda_component[n,] <- t(current_lambda / beta * ( 1 - decayed ))
+    integrated_rambda_component[n,] <- t(integrate_exp_kernel(current_lambda, beta, inter_arrival[n]))
     new_lambda <- rambda_componet[n,]
     current_lambda <- matrix(new_lambda, nrow=dimens, byrow=TRUE)
 
@@ -328,13 +328,13 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
   }
 
 
-  for (n in 2:size) {
+  for (n in seq_len(size - 1L) + 1L) {
 
     mu_n <- rmu_n
 
     decayed <- exp(-beta * inter_arrival[n])
 
-    integrated_rambda[n, ] <- rowSums(current_lambda / beta * ( 1 - decayed )) +
+    integrated_rambda[n, ] <- rowSums(integrate_exp_kernel(current_lambda, beta, inter_arrival[n])) +
       mu_n * inter_arrival[n]
 
     new_lambda <- rambda_component[n,]

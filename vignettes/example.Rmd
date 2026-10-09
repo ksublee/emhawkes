@@ -1,11 +1,11 @@
 ---
-title: "Example : emhawkes package"
+title: "Examples for the emhawkes package"
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Example : emhawkes package}
+  %\VignetteIndexEntry{Examples for the emhawkes package}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   markdown: 
@@ -28,13 +28,12 @@ knitr::opts_chunk$set(
 library(emhawkes)
 ```
 
-This subsection outlines the steps for constructing, running simulations, and estimating a univariate Hawkes model.
-To begin, create an `hspec` object, which defines the Hawkes model.
-The S4 class `hspec` contains slots for the model parameters: `mu`, `alpha`, `beta`, `dimens`, `rmark`, and `impact`.
+This section shows how to specify, simulate, and fit a univariate Hawkes model.
+First, create an `hspec` object to define the model.
+The S4 class `hspec` includes slots such as `mu`, `alpha`, `beta`, `dimens`, `rmark`, and `impact`.
 
-In a univariate model, the basic parameters of the model---`mu`, `alpha`, and `beta`---can be given as numeric values.
-If numeric values are provided, they will be converted to matrices.
-Below is an example of a univariate Hawkes model without a mark.
+In a univariate model, `mu`, `alpha`, and `beta` can be supplied as numeric values, which are converted to matrices.
+The following example defines an unmarked univariate Hawkes model.
 
 ```{r}
 mu1 <- 0.3; alpha1 <- 1.2; beta1 <- 1.5
@@ -42,21 +41,23 @@ hspec1 <- new("hspec", mu = mu1, alpha = alpha1, beta = beta1)
 show(hspec1)
 ```
 
-The function `hsim` implements simulation where the input arguments are `hspec`, `size`, and the initial values of the intensity component process, `lambda_component0`, and the initial values of the Hawkes processes, `N0`.
-More precisely, the intensity process of the basic univariate Hawkes model is represented by
+The `hsim` function simulates a path from an `hspec` object.
+The `size` argument specifies the number of rows, including the initial state.
+The optional arguments `lambda_component0` and `N0` specify the initial intensity components and event counts, respectively.
+The intensity of the basic univariate Hawkes model is
 
 $$
 \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
 $$
 
-where the `lambda_component0` denotes
+where `lambda_component0` denotes
 
 $$
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
 $$
 
-If `lambda_component0` is not provided, the internally determined initial values for the intensity process are used.
-If `size` is sufficiently large, the exact value of `lambda_component0` may not be important.
+If `lambda_component0` is omitted, the function determines the initial intensity components internally.
+For a sufficiently long simulation of a stable model, the effect of the initial intensity diminishes over time.
 The default initial value of the counting process, `N0`, is zero.
 
 ```{r, warning=FALSE}
@@ -65,43 +66,47 @@ res1 <- hsim(hspec1, size = 1000)
 summary(res1)
 ```
 
-The results of `hsim` is an S3 class `hreal`, which consists of `hspec`, `inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`, `lambda_component`, `rambda`, `rambda_component`.
+The `hsim` function returns an S3 object of class `hreal` with the following components.
 
 -   `hspec` is the model specification.
 
--   `inter_arrival` is the inter-arrival time of every event.
+-   `inter_arrival` contains the times between consecutive events.
 
 -   `arrival` is the cumulative sum of `inter_arrival`.
 
--   `type` is the type of events, i.e., $i$ for $N_i$, and is used for a multivariate model.
+-   `type` identifies the counting process associated with each event: type $i$ corresponds to $N_i$.
 
--   `mark` is a numeric vector that represents additional information for the event.
+-   `mark` contains the mark associated with each event.
 
--   `lambda` represents $\lambda$, which is the left continuous and right limit version.
+-   `N` contains the cumulative event counts for each type.
 
--   The right continuous version of intensity is `rambda`.
+-   `Nc` contains the cumulative marks for each type.
 
--   `lambda_component` represents $\lambda_{ij}$, and `rambda_component` is the right continuous version.
+-   `lambda` contains the intensity immediately before each event.
 
-`inter_arrival`, `type`, `mark`, `N`, and `Nc` start at zero.
-Using the `summary()` function, one can print the first 20 elements of `arrival`, `N`, and `lambda`.
-The `print()` function can also be used.
+-   `rambda` contains the intensity immediately after each event.
 
-By definition, we have `lambda == mu + lambda_component`.
+-   `lambda_component` and `rambda_component` contain the intensity components $\lambda_{ij}$ immediately before and after each event, respectively.
+
+With the default initial values, `inter_arrival`, `type`, `mark`, `N`, and `Nc` begin with zero.
+The `summary()` function displays the first 20 rows of the realized path by default.
+The `print()` function also displays the model specification and intensity components.
+
+In this univariate model, `lambda == mu + lambda_component`.
 
 ```{r}
-# first and third columns are the same
+# The first and third columns are equal.
 cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
 ```
 
 For all rows except the first, `rambda` equals `lambda + alpha` in this model.
 
 ```{r}
-# second and third columns are the same
+# The second and third columns are equal except in the initial row.
 cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
 ```
 
-Additionally, verify that the exponential decay is accurately represented in the model.
+The following calculation verifies the exponential decay between events.
 
 ```{r}
 # By definition, the following two are equal:
@@ -109,25 +114,23 @@ res1$lambda[2:6]
 mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
 ```
 
-The log-likelihood function is calculated using the `logLik` method.
-In this context, the inter-arrival times and `hspec` are provided as inputs to the function.
+Use `logLik` to evaluate the log-likelihood from the model specification and observed inter-arrival times.
 
 ```{r, warning=FALSE}
 logLik(hspec1, inter_arrival = res1$inter_arrival)
 ```
 
-The likelihood estimation is performed using the `hfit` function.
-The specification of the initial parameter values, `hspec0`, is required.
-Note that only `inter_arrival` is needed for this univariate model.
-For more accurate simulation, it is recommended to specify `lambda0`, the initial value of the lambda component.
-If `lambda0` is not provided, the function uses internally determined initial values.
-By default, the BFGS method is employed for numerical optimization.
+Use `hfit` for maximum likelihood estimation.
+The `hspec0` object supplies the initial parameter values for optimization.
+For this univariate model, `inter_arrival` is the only required data argument.
+If the initial intensity component is known, pass it as `lambda_component0`; otherwise, the function determines it internally.
+The default optimization method is BFGS.
 
 ```{r, warning=FALSE}
-# initial value for numerical optimization
+# Initial parameter values for numerical optimization.
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
 hspec0 <- new("hspec", mu = mu0, alpha = alpha0, beta = beta0)
-# the intial values are provided through hspec
+# Supply the initial values through hspec0.
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
 summary(mle)
 ```
@@ -144,8 +147,7 @@ $$
  \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
 $$
 
-In a bivariate model, the parameters within the slots of `hspec` are matrices.
-Specifically, `mu` is a 2-by-1 matrix, while `alpha` and `beta` are 2-by-2 matrices.
+For this bivariate model, `mu` is a 2-by-1 matrix, and `alpha` and `beta` are 2-by-2 matrices.
 
 $$
 \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
@@ -154,15 +156,16 @@ $$
 \begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
 $$
 
-`rmark` is a random number generating function for marks and is not used in non-mark models.
-`lambda_component0` is a 2-by-2 matrix that represents the initial values of `lambda_component`, which includes the set of values `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
+`rmark` generates marks during simulation and can be omitted for unmarked models.
+The 2-by-2 matrix `lambda_component0` specifies the initial values of `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
 The intensity processes are represented by
 
 $$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), $$
 
 $$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). $$
 
-The terms $\lambda_{ij}$ are referred to as lambda components, and `lambda0` represents \$\lambda\_{ij}(0)`.  The parameter`lambda_component0\` can be omitted in this model, in which case internally determined initial values will be used.
+The terms $\lambda_{ij}$ are called intensity components, and `lambda_component0` specifies their initial values $\lambda_{ij}(0)$.
+If `lambda_component0` is omitted, the function determines these values internally.
 
 ```{r}
 mu2 <- matrix(c(0.2), nrow = 2)
@@ -172,7 +175,7 @@ hspec2 <- new("hspec", mu=mu2, alpha=alpha2, beta=beta2)
 print(hspec2)
 ```
 
-To perform a simulation, use the `hsim` function.
+Use `hsim` to simulate the model.
 
 ```{r}
 set.seed(1107)
@@ -180,10 +183,10 @@ res2 <- hsim(hspec2,  size=1000)
 summary(res2)
 ```
 
-In multivariate models, `type` is crucial as it represents the type of event.
+In multivariate models, `type` identifies the counting process associated with each event.
 
 ```{r}
-# Under bi-variate model, there are two types, 1 or 2.
+# A bivariate model has two event types: 1 and 2.
 res2$type[1:10]
 ```
 
@@ -199,7 +202,7 @@ Similarly, the column names of `lambda` are `lambda1`, `lambda2`, `lambda3`, and
 res2$lambda[1:3, ]
 ```
 
-The column names of `lambda_component` are `lambda_component11`, `lambda_component12`, `lambda_component13`, and so on.
+In this bivariate model, the columns of `lambda_component` are `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
 
 ```{r}
 res2$lambda_component[1:3, ]
@@ -212,25 +215,24 @@ mu2[1] + rowSums(res2$lambda_component[1:5, c("lambda11", "lambda12")])
 res2$lambda[1:5, "lambda1"]
 ```
 
-From the results, we obtain vectors of realized `inter_arrival` and `type`.
-A bivariate model requires both `inter_arrival` and `type` for estimation.
+Extract the observed `inter_arrival` and `type` vectors from the simulation result.
+Both are required to fit a bivariate model.
 
 ```{r}
 inter_arrival2 <- res2$inter_arrival
 type2 <- res2$type
 ```
 
-The log-likelihood is computed using the `logLik` function.
+Use `logLik` to evaluate the log-likelihood.
 
 ```{r}
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
 ```
 
-Maximum log-likelihood estimation is performed using the `hfit` function.
-In this process, the parameter values in `hspec0`, such as `mu`, `alpha`, and `beta`, serve as starting points for the numerical optimization.
-For illustration purposes, we set `hspec0 <- hspec2`.
-Since the true parameter values are unknown in practical applications, these initial guesses are used.
-The realized `inter_arrival` and `type` data are utilized for estimation.
+Use `hfit` to estimate the parameters from `inter_arrival` and `type`.
+The values of `mu`, `alpha`, and `beta` in `hspec0` provide starting points for optimization.
+Here, we use the simulation parameters by setting `hspec0 <- hspec2`.
+For observed data, choose initial values because the true parameters are unknown.
 
 ```{r, warning=FALSE}
 hspec0 <- hspec2
@@ -245,3 +247,5 @@ coef(mle)
 ```{r}
 miscTools::stdEr(mle)
 ```
+
+Also see the [extended vignette on GitHub](https://ksublee.github.io/emhawkes/articles/extended_example.html).

@@ -1,4 +1,4 @@
-#' @include hspec.R hmoment.R
+#' @include hspec.R hmoment.R hinterface.R
 NULL
 
 #' Compute the Log-Likelihood Function
@@ -18,6 +18,15 @@ NULL
 #' @param Nc0 A matrix of initial values for \code{Nc}.
 #' @param infer Logical
 #' @param ... Additional arguments passed to or from other methods.
+#'
+#' @details
+#' The first row represents the initial state and is not an event.
+#' Counting-process rows contain values after the corresponding event.
+#' Supplied `N` and `Nc` matrices must agree with `type`, `mark`, and any
+#' supplied initial counts. Event order is preserved, including zero intervals.
+#' Component functions receive the arguments they declare; functions with `...`
+#' receive the available event context. Intensity histories are `NULL` before
+#' initialization. Baseline functions use `n - 1` to access the preceding event.
 #'
 #' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
@@ -41,6 +50,17 @@ setMethod(
 
     }
 
+    callbacks <- model_callback_plans(object)
+    observation <- normalize_observation(object, inter_arrival, type, mark, N, Nc, N0, Nc0)
+    loglik_hspec(object, observation, lambda_component0, infer, callbacks,
+                 show_initial_message = !("showWarning" %in% names(additional_argument)))
+  }
+)
+
+# Internal entry point for observations already checked by hfit.
+loglik_hspec <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
+                         callbacks = model_callback_plans(object), show_initial_message = TRUE) {
+
     ## Parameter setting and initialization
     # after parameter setting, functions mu, alpha, beta become matrices, if possible
     # Note that mu, alpha, beta, eta can be given functions even they are essentially matrices.
@@ -48,33 +68,28 @@ setMethod(
     # mu, alpha, beta, eta
     list2env(plist, envir = environment())
 
+    inter_arrival <- observation$inter_arrival
+    type <- observation$type
+    mark <- observation$mark
+    N <- observation$N
+    Nc <- observation$Nc
     size <- length(inter_arrival)
-
-    # When the mark sizes are not provided, the jumps are all unit jumps
-    if(is.null(mark)) mark <- rep(1, size)
-
-    if (is.null(type)) {
-      if (object@dimens != 1) stop("The argument type should be provided.")
-      type <- rep(1, size)
-    }
+    lambda <- lambda_component <- lambda_component_n <- NULL
+    context_at <- function(n) list(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                                   lambda_component_n = lambda_component_n, mu = mu, alpha = alpha, beta = beta)
 
     # check the argument lists in mu and impact
     mu_args <- impct_args <- c()
-    if(is.function(mu) && length(formals(mu)) > 1) mu_args <- methods::formalArgs(mu)
+    if(is.function(mu)) mu_args <- methods::formalArgs(mu)
     if(!is.null(object@impact)) impct_args <- methods::formalArgs(object@impact)
-
-    # N and Nc are constructed only if they are needed.
-    if("N" %in% c(impct_args, mu_args) && is.null(N)) N <- type_to_N(type, object@dimens, N0 = N0)
-    if("Nc" %in% c(impct_args, mu_args) && is.null(Nc)) Nc <- type_mark_to_Nc(type, mark, object@dimens, Nc0 = Nc0)
+    mark_args <- if (is.function(object@dmark)) methods::formalArgs(object@dmark) else character(0)
+    history_args <- c(impct_args, mu_args, mark_args)
 
 
     if (is.function(mu)){
 
-      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                N = N, Nc = Nc,
-                lambda = lambda, lambda_component = lambda_component,
-                lambda_component_n = lambda_component_n,
-                alpha = alpha, beta = beta)
+      mu0 <- call_component(mu, callbacks$mu, context_at(1))
 
 
     } else{
@@ -88,7 +103,7 @@ setMethod(
         stop("In this model, please provide lambda_component0.")
       }
 
-      if (!("showWarning" %in% names(additional_argument))) {
+      if (show_initial_message) {
         message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
       }
 
@@ -103,10 +118,12 @@ setMethod(
         beta = beta
       )
     }
+    lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, ncol(beta))
+    lambda_component_n <- lambda_component0
 
     # ---- Determine necessity for lambda/lambda_component ----
-    is_lambda_necessary <- infer || "lambda" %in% c(impct_args, mu_args)
-    is_lambda_component_necessary <- infer || "lambda_component" %in% c(impct_args, mu_args)
+    is_lambda_necessary <- infer || "lambda" %in% history_args
+    is_lambda_component_necessary <- infer || "lambda_component" %in% history_args
 
     # ---- lambda_component ----
     if (is_lambda_component_necessary) {
@@ -154,14 +171,7 @@ setMethod(
 
       # historical right-continuous version of mus
       rmus <- matrix(nrow = length(inter_arrival), ncol = object@dimens)
-      rmus[1, ] <-  if (is.function(mu)) {
-        mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-           N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-           lambda_component_n = lambda_component_n,
-           alpha = alpha, beta = beta)
-      } else {
-        mu
-      }
+      rmus[1, ] <- mu0
     }
 
 
@@ -174,13 +184,10 @@ setMethod(
 
 
     # ---- Evaluate piecewise constant mu (only supported form) ----
-    rmu_n <- if (is.function(mu)) {
-      mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-         N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-         lambda_component_n = lambda_component_n,
-         alpha = alpha, beta = beta)
+    rmu_n <- if (is.function(mu) && size > 1L) {
+      call_component(mu, callbacks$mu, context_at(2))
     } else {
-      mu
+      mu0
     }
 
 
@@ -195,7 +202,7 @@ setMethod(
 
 
     ## main loop
-    for (n in 2:size) {
+    for (n in seq_len(size - 1L) + 1L) {
 
       mu_n <- rmu_n; rambda_component_n_minus_1 <- rambda_component_n
 
@@ -206,6 +213,8 @@ setMethod(
 
       # lambda decayed due to time, impact due to mark is not added yet
       lambda_component_n <- rambda_component_n_minus_1 * decayed
+      integrated_component <- integrate_exp_kernel(rambda_component_n_minus_1,
+                                                    beta, inter_arrival[n])
 
       # integrate mu over inter_arrival w.r.t. time
       if ((is.matrix(mu_n) && nrow(mu_n) == object@dimens && ncol(mu_n) == 1) ||
@@ -231,7 +240,7 @@ setMethod(
         # basic model and do not need to infer
         ## 1. sum of integrated_lambda_component and sum of mu * inter_arrival
         ## In the log-likelihood calculation, a negative sign is applied, so it's subtracted here.
-        sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(rambda_component_n_minus_1 / beta * (1 - decayed)) - sum(integrated_mu)
+        sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(integrated_component) - sum(integrated_mu)
 
 
       } else if (is.null(object@dresidual)) {
@@ -239,9 +248,8 @@ setMethod(
         # basic model and need to infer
         for (k in 1:object@dimens){
 
-          phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
-                                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
-                                   beta[k, 1])
+          # Integrate each kernel with its own decay rate.
+          phi_k_wo_mu <- sum(integrated_component[k, ])
 
           # partial residual for k-th dimension
           phi_value_k <- phi_k_wo_mu + integrated_mu[k]
@@ -258,14 +266,17 @@ setMethod(
 
         for (k in 1:object@dimens){
 
-          phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
-                                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
-                                   beta[k, 1])
+          # Integrate each kernel with its own decay rate.
+          phi_k_wo_mu <- sum(integrated_component[k, ])
 
           # partial residual for k-th dimension
           phi_value_k <- phi_k_wo_mu + integrated_mu[k]
 
-          log_value <- suppressWarnings(if (k == type_n) log(object@dresidual(phi_value_k)) else log(1-object@presidual(phi_value_k)))
+          log_value <- suppressWarnings(if (k == type_n) {
+            residual_density(object@dresidual, phi_value_k, log = TRUE)
+          } else {
+            residual_cdf(object@presidual, phi_value_k, lower.tail = FALSE, log.p = TRUE)
+          })
           sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi + log_value
 
           if(infer) phis[n, k] <- phi_value_k
@@ -279,11 +290,7 @@ setMethod(
 
       ## 2. sum of log lambda when jump occurs
       # Calculate sum of log lambda when a jump occurs
-      lambda_at_event <- if (object@dimens == 1) {
-        mu_n + lambda_component_n
-      } else {
-        mu_n[type_n] + sum(lambda_component_n[type_n, ])
-      }
+      lambda_at_event <- mu_n[type_n] + sum(lambda_component_n[type_n, ])
 
       # Update the sum of log lambda with a warning suppression for log calculation
       sum_log_lambda <- sum_log_lambda + suppressWarnings(log(lambda_at_event))
@@ -295,10 +302,7 @@ setMethod(
       ## 3. sum of log mark p.d.f. when jump occurs
       if(!is.null(object@dmark)){
         sum_log_dmark <- sum_log_dmark +
-          log(object@dmark(mark = mark, n = n, type = type, inter_arrival = inter_arrival,
-                           N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                           lambda_component_n = lambda_component_n,
-                           mu = mu, alpha = alpha, beta = beta))
+          log(call_component(object@dmark, callbacks$dmark, context_at(n)))
 
       }
 
@@ -338,10 +342,7 @@ setMethod(
       if(!is.null(object@impact)){
 
         impact_mark <- zero_mat_for_impact
-        impact_res <- object@impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                    lambda_component_n = lambda_component_n,
-                                    mu = mu, alpha = alpha, beta = beta)
+        impact_res <- call_component(object@impact, callbacks$impact, context_at(n))
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -350,24 +351,19 @@ setMethod(
 
       }
 
-      if(infer){
-
-        rambda_component[n, ] <- t(rambda_component_n)
-        rambda[n, ] <- as.vector(rmu_n) + rowSums(rambda_component_n)
-        rmus[n, ] <- rmu_n
-
-      }
-
-
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
         # mu is represented by a function
-        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                   N = N, Nc = Nc,
-                   alpha = alpha, beta = beta)
+        rmu_n <- call_component(mu, callbacks$mu, context_at(n + 1))
       } else{
         # mu is a matrix
         rmu_n <- mu
+      }
+
+      if(infer){
+        rambda_component[n, ] <- t(rambda_component_n)
+        rambda[n, ] <- as.vector(rmu_n) + rowSums(rambda_component_n)
+        rmus[n, ] <- rmu_n
       }
 
 
@@ -394,8 +390,8 @@ setMethod(
         for (k in 1:object@dimens){
 
           # the ordered sequence of indices associated with type k
-          n_k <- which(type == k)
-          res_process <- rep(0, length(n_k) - 1)
+          n_k <- which(type == k & seq_along(type) > 1L)
+          res_process <- numeric(max(0L, length(n_k) - 1L))
 
           for(j in seq_along(res_process)){
             # n_k[j]+1 : index of previous jump + 1
@@ -413,9 +409,9 @@ setMethod(
         for (k in 1:object@dimens){
 
           # the ordered sequence of indices associated with type k
-          n_k <- which(type == k)
-          res_process <- rep(0, length(n_k) - 1)
-          eres_process <- rep(0, length(n_k) - 1)
+          n_k <- which(type == k & seq_along(type) > 1L)
+          res_process <- numeric(max(0L, length(n_k) - 1L))
+          eres_process <- numeric(max(0L, length(n_k) - 1L))
 
           for(j in seq_along(res_process)){
 
@@ -423,11 +419,11 @@ setMethod(
             # n_k[j]+1 : index of previous jump + 1
             # n_k[j+1] : index of current jump
             # F(phi(tau)) = F(epsilon)
-            F_phi_taus <- object@presidual(phis[(n_k[j]+1):n_k[j+1], k])
-
-            res_process[j] <- object@qresidual(1 - prod(1 - F_phi_taus))
-
-            eres_process[j] <- - sum(log(1 - F_phi_taus))
+            log_survival <- sum(residual_cdf(object@presidual,
+              phis[(n_k[j]+1):n_k[j+1], k], lower.tail = FALSE, log.p = TRUE))
+            res_process[j] <- residual_quantile(object@qresidual, log_survival,
+                                               lower.tail = FALSE, log.p = TRUE)
+            eres_process[j] <- -log_survival
 
           }
 
@@ -441,8 +437,7 @@ setMethod(
 
     }
 
-  }
-)
+}
 
 # Helpers: Initialization for lambda matrices
 initialize_lambda_matrix <- function(prefix, size, dimens, beta_cols, lambda0) {

@@ -1,4 +1,4 @@
-#' @include hspec.R hmoment.R hllf.R utilities.R
+#' @include hspec.R hmoment.R hllf.R utilities.R hinterface.R
 NULL
 
 #' Perform Maximum Likelihood Estimation
@@ -25,9 +25,13 @@ NULL
 #' Can be a numeric value or a matrix.
 #' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
 #' @param N0 Initial values for the counting processes matrix \code{N}.
+#' @param Nc0 Initial values for the mark-weighted counting processes. This argument must be named.
 #' @param mylogLik A user-defined log-likelihood function, which must accept an `object` argument consistent with \code{object}.
-#' @param reduced Logical; if `TRUE`, performs reduced estimation.
-#' @param constraint Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param reduced Logical; if `TRUE`, equal entries within each parameter matrix
+#' share one parameter. If `FALSE`, each matrix entry is estimated separately.
+#' Function components share parameters by name. Conflicting starting values for
+#' a shared name produce a warning; the first value is used.
+#' @param constraints constraints matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #' @param grad A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #' @param hess A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
@@ -35,6 +39,16 @@ NULL
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
 #' @return \code{\link[maxLik]{maxLik}} object
+#'
+#' @details
+#' Observations are checked once before optimization. The first row is the initial
+#' state, and supplied counting processes contain values after each event.
+#' Functions with a `param` argument must provide a default named numeric vector;
+#' `numeric(0)` and functions without `param` are allowed for fixed components.
+#' A custom `mylogLik` receives its declared arguments from `object`, the observation
+#' arguments, `lambda_component0`, `param`, and `reduced`. Optional defaults are
+#' preserved; `...` receives the remaining context. Additional inputs should be
+#' captured in the function's environment or given defaults.
 #'
 #' @docType methods
 #' @rdname hfit
@@ -121,8 +135,8 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             lambda_component0 = NULL, N0 = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
-                            grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
-                            verbose = FALSE, ...) standardGeneric("hfit"))
+                            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
+                            verbose = FALSE, ..., Nc0 = NULL) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -134,8 +148,8 @@ setMethod(
            lambda_component0 = NULL, N0 = NULL,
            mylogLik = NULL,
            reduced = TRUE,
-           grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
-           verbose = FALSE, ...){
+           grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
+           verbose = FALSE, ..., Nc0 = NULL){
 
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
@@ -143,8 +157,23 @@ setMethod(
       warning("lambda0 is deprecated; instead use lambda_component0")
 
       lambda_component0 <- additional_argument[["lambda0"]]
+      additional_argument[["lambda0"]] <- NULL
 
     }
+
+    # legacy argument 처리
+    if ("constraint" %in% names(additional_argument)) {
+
+      if (!is.null(constraints)) {
+        stop("Use only one of 'constraints' or 'constraint'.")
+      }
+
+      constraints <- additional_argument[["constraint"]]
+      additional_argument[["constraint"]] <- NULL
+
+      warning("'constraint' is deprecated; use 'constraints' instead.")
+    }
+
 
     if(verbose == TRUE && is.null(lambda_component0)){
       message("Initial values for intensity processes were not provided.
@@ -152,44 +181,27 @@ setMethod(
     }
 
 
-    # Define mapping from slot name to prefix
-    param_prefix <- list(
-      mu = "mu",
-      alpha = "alpha",
-      beta = "beta",
-      eta = "eta",
-      impact = "",
-      dmark = "",
-      dresidual = "",
-      presidual = "",
-      qresidual = ""
-    )
-
-
-    # Extract each parameter group from the hspec object
-    param_list <- lapply(names(param_prefix), function(slot_name) {
-      prefix <- param_prefix[[slot_name]]
-      slot_value <- slot(object, slot_name)
-      as.param(slot_value, prefix = prefix, reduced = reduced)
-    })
-
-
-    # Extract parameter names for each group
-    param_names <- lapply(param_list, names)
-
-    # Create a list to store names for lookup during initialization
-    names_list <- stats::setNames(vector("list", length(param_prefix)), names(param_prefix))
-    for (slot in names(param_prefix)) {
-      idx <- match(slot, names(param_prefix))
-      names_list[[slot]] <- param_names[[idx]]
+    parameter_map <- build_parameter_map(object, reduced)
+    starting_point <- parameter_map$start
+    callbacks <- if (is.null(mylogLik)) model_callback_plans(object) else NULL
+    if (is.null(inter_arrival) && !is.null(mylogLik)) {
+      # Custom objectives need not use event observations.
+      observation <- list(inter_arrival = inter_arrival, type = type, mark = mark,
+                          N = N, Nc = Nc, N0 = N0, Nc0 = Nc0)
+    } else {
+      observation <- normalize_observation(object, inter_arrival, type, mark, N, Nc, N0, Nc0,
+                                           needs = required_count_paths(object, mylogLik))
     }
-
-
-    # Flatten all parameters into a named numeric vector
-    input_parameters <- unlist(param_list, recursive = FALSE, use.names = TRUE)
-
-    # Rule: Parameters with the same name are treated as identical
-    starting_point <- input_parameters[unique(names(input_parameters))]
+    kernel_cols <- ncol(eval_param(object@beta))
+    lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, kernel_cols)
+    if (is.null(mylogLik) && is.null(lambda_component0) && length(object@type_col_map)) {
+      stop("In this model, please provide lambda_component0.")
+    }
+    custom_plan <- callback_plan(mylogLik,
+      c("object", names(observation), "lambda_component0", "param", "reduced"), "mylogLik")
+    if (!is.null(mylogLik) && (!is.function(mylogLik) || !("object" %in% names(formals(mylogLik))))) {
+      stop("mylogLik must be a function with an 'object' argument.")
+    }
 
 
 
@@ -202,13 +214,19 @@ setMethod(
       # Reconstruct hspec0 for likelihood function with given param
       # object is defined in the bounding environment, i.e., hfit
 
-      init_values <- lapply(names(param_prefix), function(slot_name) {
-        initialize_slot(slot(object, slot_name), param[names_list[[slot_name]]],
-                        param_name = slot_name, object@dimens, reduced)
-      })
-
-      names(init_values) <- paste0(names(param_prefix), "0")
+      init_values <- restore_parameters(parameter_map, param)
+      names(init_values) <- paste0(names(init_values), "0")
       list2env(init_values, envir = environment())
+
+      # Invalid optimizer proposals must not become constructor errors.
+      beta_values <- eval_param(beta0)
+      if (!is.function(beta_values) &&
+          (any(!is.finite(beta_values)) || any(beta_values <= 0))) return(-Inf)
+      for (value in list(eval_param(mu0), eval_param(alpha0), eval_param(eta0))) {
+        if (!is.function(value) && any(!is.finite(value))) return(-Inf)
+      }
+      mu_values <- eval_param(mu0)
+      if (!is.function(mu_values) && any(mu_values < 0)) return(-Inf)
 
 
       # hspec for logLik
@@ -220,26 +238,14 @@ setMethod(
 
       if (is.null(mylogLik)){
 
-        logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
-                       mark = mark, N = N, Nc = Nc, N0 = N0,
-                       lambda_component0 = lambda_component0,
-                       showWarning = FALSE)
+        logl <- loglik_hspec(hspec0, observation, lambda_component0,
+                            callbacks = callbacks, show_initial_message = FALSE)
 
       } else {
 
-        # arguments names for mylogLik
-        args_needed <- names(formals(mylogLik))
-        if ( !("object" %in% args_needed)) {
-          stop('mylogLik needs \'object\' arguments with hspec')
-        }
-        args_logLik <- vector("list", length(args_needed))
-        for (i in seq_along(args_needed)){
-          # find necessary object for mylogLik arguments
-          if(args_needed[i] == "object") args_logLik[[i]] <- hspec0
-          else args_logLik[[i]] <- get(args_needed[i])
-        }
-        names(args_logLik) <- args_needed
-        logl <- do.call(mylogLik, args = args_logLik)
+        context <- c(list(object = hspec0), observation,
+                     list(lambda_component0 = lambda_component0, param = param, reduced = reduced))
+        logl <- call_component(mylogLik, custom_plan, context)
       }
 
       if(verbose){
@@ -253,8 +259,23 @@ setMethod(
 
 
     #llh_function(starting_point)
-    maxLik::maxLik(logLik=llh_function,
-                   start=starting_point, grad, hess, method = method, constraint = constraint, ...)
+    #maxLik::maxLik(logLik=llh_function,
+    #               start=starting_point, grad, hess, method = method, constraints = constraints, ...)
+
+    ml_args <- c(
+      list(
+        logLik = llh_function,
+        start  = starting_point,
+        grad   = grad,
+        hess   = hess,
+        method = method,
+        constraints = constraints
+      ),
+      additional_argument
+    )
+
+    do.call(maxLik::maxLik, ml_args)
+
 
   }
 )

@@ -22,26 +22,16 @@ rarrival <- function(...){
 
     rowSums_rambda_component_n_miuns_1 <- rowSums(matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE))
 
-    rowSums_rambda_component_n_miuns_1[abs(rowSums_rambda_component_n_miuns_1) < 1e-10] <- 0
-
-    matrixD <- 1 + beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
-
-    candidate_arrival <- cbind(candidate_arrival, -1 / beta[,1] * log(pmax(matrixD, 0)))
+    scaled_log_u <- beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
+    excited_arrival <- rep(Inf, dimens)
+    finite_arrival <- rowSums_rambda_component_n_miuns_1 > 0 & scaled_log_u > -1
+    excited_arrival[finite_arrival] <- -log1p(scaled_log_u[finite_arrival]) / beta[finite_arrival, 1]
+    candidate_arrival <- cbind(candidate_arrival, excited_arrival)
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
 
-    minIndex <- which(candidate_arrival == inter_arrival, arr.ind = TRUE)
-
-    type <- minIndex[1]
-
-    if(length(type_col_map) > 0){
-      for (j in 1:length(type_col_map)) {
-        if (minIndex[1] %in% type_col_map[[j]]){
-          type <- j
-          break
-        }
-      }
-    }
+    # Rows identify event types; kernel column mappings do not change them.
+    type <- if (is.finite(inter_arrival)) which(candidate_arrival == inter_arrival, arr.ind = TRUE)[1, 1] else NA_real_
 
 
   } else{
@@ -51,8 +41,6 @@ rarrival <- function(...){
     rambda_component_n_miuns_1 <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
     rowSums_rambda_component_n_miuns_1 <- rowSums(rambda_component_n_miuns_1)
     rambda_n_minus_1 <- rowSums_rambda_component_n_miuns_1 + mu
-
-    rambda_n_minus_1[abs(rambda_n_minus_1) < 1e-10] <- 0
 
     candidate_arrival <- rep(0, dimens)
 
@@ -64,6 +52,11 @@ rarrival <- function(...){
       if(rambda_n_minus_1[i] == 0){
 
         candidate_arrival[i] <- Inf
+
+      } else if (mu[i] == 0) {
+
+        candidate_arrival[i] <- invert_exp_hazard(stats::rexp(1),
+          rambda_component_n_miuns_1[i, ], 0, beta[i, ])
 
       } else {
 
@@ -95,11 +88,27 @@ rarrival <- function(...){
 
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
-    type <- which(candidate_arrival == inter_arrival)
+    type <- if (is.finite(inter_arrival)) which.min(candidate_arrival) else NA_real_
 
   }
 
-  c(inter_arrival = inter_arrival, type = type)
+  c(inter_arrival = unname(inter_arrival), type = unname(type))
+}
+
+# Invert a nonnegative, decaying intensity. A finite total hazard leaves
+# positive probability at an infinite waiting time.
+invert_exp_hazard <- function(target, component, mu, beta) {
+  if (length(target) != 1L || is.na(target) || target < 0) stop("Residual waiting times must be nonnegative.")
+  if (is.infinite(target)) return(Inf)
+  if (target == 0) return(0)
+  if (mu == 0 && target >= sum(component / beta)) return(Inf)
+  hazard <- function(time) mu * time + sum(integrate_exp_kernel(component, beta, time))
+  upper <- target / (mu + sum(component))
+  if (upper == 0) return(0)
+  while (is.finite(upper) && hazard(upper) < target) upper <- upper * 2
+  if (!is.finite(upper)) return(Inf)
+  upper * stats::uniroot(function(x) hazard(upper * x) - target,
+                        interval = c(0, 1), tol = 1e-12, check.conv = TRUE)$root
 }
 
 
@@ -110,7 +119,7 @@ phi <- function(tau, rowSum_rambda_component_n_miuns_1, mu, beta){
   # rambda means after jump intensity
   # for arrival time n, row sum of rambda component at n-1 is needed
 
-  mu * tau + rowSum_rambda_component_n_miuns_1  * (-exp(-beta * tau) + 1) / beta
+  mu * tau + integrate_exp_kernel(rowSum_rambda_component_n_miuns_1, beta, tau)
 
 }
 
@@ -119,7 +128,7 @@ phi_wo_mu <- function(tau, rowSum_rambda_component_n_miuns_1,  beta){
   # rambda means after jump intensity
   # for arrival time n, row sum of rambda component at n-1 is needed
 
-  rowSum_rambda_component_n_miuns_1  * (-exp(-beta * tau) + 1) / beta
+  integrate_exp_kernel(rowSum_rambda_component_n_miuns_1, beta, tau)
 
 }
 
@@ -164,17 +173,15 @@ darrival <- function(...){
 
     for (i in 1:dimens){
 
-      candidate_arrival[i] <- stats::uniroot(function(x) phi(x,
-                                                      rowSums_rambda_component_n_miuns_1[i],
-                                                      mu[i], beta[i, 1]) - residuals_for_each_dimension[i],
-                                      interval = c(0, 10000), tol = 1e-09)$root
+      candidate_arrival[i] <- invert_exp_hazard(residuals_for_each_dimension[i],
+        rowSums_rambda_component_n_miuns_1[i], mu[i], beta[i, 1])
 
     }
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
     minIndex <- which(candidate_arrival == inter_arrival, arr.ind = TRUE)
 
-    type <- minIndex[1]
+    type <- if (is.finite(inter_arrival)) minIndex[1] else NA_real_
 
 
     #if(length(type_col_map) > 0){
@@ -193,7 +200,7 @@ darrival <- function(...){
 
   }
 
-  c(inter_arrival = inter_arrival, type = type)
+  c(inter_arrival = unname(inter_arrival), type = unname(type))
 }
 
 

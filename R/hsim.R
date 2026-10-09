@@ -1,4 +1,4 @@
-#' @include hspec.R hmoment.R utilities.R
+#' @include hspec.R hmoment.R utilities.R hinterface.R
 NULL
 
 #' Simulate multivariate Hawkes process with exponential kernel.
@@ -16,12 +16,17 @@ NULL
 #' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
 #' Can be a numeric value or a matrix.
 #' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
+#' A scalar is expanded to every kernel component. Other size adjustments are
+#' deprecated and produce a warning.
 #' @param N0 Starting values of N with default value 0.
 #' @param Nc0 Starting values of Nc with default value 0.
 #' @param verbose Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
+#' If no further event can occur, the result contains only the generated rows
+#' and a warning reports the early termination. The initial row is included.
+#' Simulation requires finite, nonnegative baseline and kernel components.
 #'
 #' @rdname hsim
 #' @docType methods
@@ -58,6 +63,9 @@ setMethod(
 
     # Process additional arguments passed through '...'
     additional_argument <- list(...)
+    if (length(size) != 1L || !is.finite(size) || size < 1 || size != floor(size)) {
+      stop("size must be a positive integer, including the initial row.")
+    }
 
     # Check if "lambda0" is among the additional arguments
     if ("lambda0" %in% names(additional_argument)) {
@@ -76,6 +84,7 @@ setMethod(
     alpha <- plist$alpha
     beta <- plist$beta
     eta <- plist$eta
+    callbacks <- model_callback_plans(object, simulation = TRUE)
 
     # Check for each type, beta are equal
     all_rows_beta_equal <- TRUE
@@ -98,13 +107,17 @@ setMethod(
     type <- inter_arrival <- numeric(length = size)
     mark <- c(0, rep(1, size-1))
 
-    if (!is.null(N0)) N[1,] <- N0
-    if (!is.null(Nc0)) Nc[1,] <- Nc0
+    N0 <- normalize_count_initial(N0, dimens, "N0")
+    Nc0 <- normalize_count_initial(Nc0, dimens, "Nc0")
+    N[1,] <- N0
+    Nc[1,] <- Nc0
+    lambda <- lambda_component <- lambda_component_n <- NULL
+    context_at <- function(n) list(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
+                                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
+                                   lambda_component_n = lambda_component_n, mu = mu, alpha = alpha, beta = beta)
 
     if (is.function(mu)){
-      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc,
-                 alpha = alpha, beta = beta)
+      mu0 <- call_component(mu, callbacks$mu, context_at(1))
     } else {
       mu0 <- mu
     }
@@ -121,19 +134,7 @@ setMethod(
 
     if(!is.null(lambda_component0)){
 
-      # If the dimensions of model and lambda_component0 do not match, lambda_component0 will be adjusted
-      if (dimens * ncol(beta) > length(lambda_component0)){
-        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted. \n
-                lambda_component0 is now :")
-        lambda_component0 <- rep(lambda_component0, dimens * ncol(beta))
-      }
-      if (dimens * ncol(beta) < length(lambda_component0)){
-        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted.\n
-                lambda_component0 is now :")
-        lambda_component0 <- lambda_component0[1:dimens * ncol(beta)]
-      }
-
-      lambda_component0 <- as.matrix(lambda_component0, nrow = dimens)
+      lambda_component0 <- normalize_lambda_initial(lambda_component0, dimens, ncol(beta), legacy = TRUE)
 
     } else {
       # default lambda_component0
@@ -144,6 +145,12 @@ setMethod(
       lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
                              N = N, Nc = Nc,
                              mu, alpha = alpha, beta = beta)
+    }
+
+    lambda_component0 <- normalize_lambda_initial(lambda_component0, dimens, ncol(beta))
+    lambda_component_n <- lambda_component0
+    if (any(!is.finite(lambda_component0)) || any(lambda_component0 < 0)) {
+      stop("Simulation requires finite, nonnegative initial kernel components.")
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
@@ -186,9 +193,7 @@ setMethod(
     # Mathematically, mu is a left continuous process, therefore, this is equivalent to mu(1 + dt)
     if (is.function(mu)){
       # Even if, we pass n=2 as argument, mu function probably use information up to n-1.
-      rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                 alpha = alpha, beta = beta)
+      rmu_n <- call_component(mu, callbacks$mu, context_at(2))
     } else{
       rmu_n <- mu
     }
@@ -208,11 +213,16 @@ setMethod(
 
 
     #current_rambda_component <- lambda_component0
-    for (n in 2:size) {
+    generated <- 1L
+    for (n in seq_len(size - 1L) + 1L) {
 
       # only piecewise constant mu is available, mu is left continuous.
       # rmu_n is previously defined right continuous version.
       mu_n <- rmu_n
+      if (length(mu_n) != dimens || any(!is.finite(mu_n)) || any(mu_n < 0) ||
+          any(!is.finite(rambda_component[n - 1, ])) || any(rambda_component[n - 1, ] < 0)) {
+        stop("Simulation requires finite, nonnegative baseline and kernel components.")
+      }
 
 
       ### Determine the next arrival, type and mark #######################################################
@@ -222,9 +232,15 @@ setMethod(
                             rresidual = object@rresidual, dresidual = object@dresidual,
                             presidual = object@presidual, all_rows_beta_equal = all_rows_beta_equal)
 
+      if (is.infinite(res["inter_arrival"])) {
+        warning("Simulation stopped early: no further event occurs on this path.")
+        break
+      }
+
 
       inter_arrival[n] <- res["inter_arrival"]
       type[n] <- res["type"]
+      generated <- n
 
 
       N[n, ] <- N[n-1, ]
@@ -233,9 +249,7 @@ setMethod(
       # generate a mark for Hawkes
       if( !is.null(object@rmark) ){
         # mark may depends on other variables
-        mark[n] <- object@rmark(n = n, Nc = Nc, N = N,
-                                lambda = lambda, lambda_component = lambda_component,
-                                type = type)
+        mark[n] <- call_component(object@rmark, callbacks$rmark, context_at(n))
       }
 
       Nc[n, ] <- Nc[n-1, ]
@@ -283,10 +297,7 @@ setMethod(
         # impact by mark
         impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
-        impact_res <- object@impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                    lambda_component_n = lambda_component_n,
-                                    mu = mu, alpha = alpha, beta = beta)
+        impact_res <- call_component(object@impact, callbacks$impact, context_at(n))
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -301,15 +312,21 @@ setMethod(
 
 
       if (is.function(mu)){
-        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                    alpha = alpha, beta = beta)
+        rmu_n <- call_component(mu, callbacks$mu, context_at(n + 1))
       } else{
         rmu_n <- mu
       }
       rambda[n, ] <- rmu_n + rowSums(new_lambda)
 
     }
+
+    rows <- seq_len(generated)
+    inter_arrival <- inter_arrival[rows]; type <- type[rows]; mark <- mark[rows]
+    N <- N[rows, , drop = FALSE]; Nc <- Nc[rows, , drop = FALSE]
+    lambda <- lambda[rows, , drop = FALSE]
+    rambda <- rambda[rows, , drop = FALSE]
+    lambda_component <- lambda_component[rows, , drop = FALSE]
+    rambda_component <- rambda_component[rows, , drop = FALSE]
 
     realization <- list(object, inter_arrival, cumsum(inter_arrival), type, mark,
                         N, Nc, lambda, lambda_component, rambda, rambda_component)

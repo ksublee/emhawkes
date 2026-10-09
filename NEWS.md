@@ -1,3 +1,17 @@
+# emhawkes 0.9.9
+
+* Resolve parameter sharing once per fit while preserving coefficient names and order. Validate function parameter defaults and warn about conflicting shared starting values.
+* Share observation and initial-state validation across estimation, likelihood evaluation, and simulation. Check supplied counting processes against event data.
+* Add the named `Nc0` argument to `hfit`. Select declared callback arguments and preserve optional defaults and `...`.
+* Expand scalar initial excitation consistently. Warn that simulation's legacy recycling and truncation of other initial values is deprecated.
+* Correct event types for multi-kernel simulation and likelihoods for univariate multi-kernel models.
+* Record state-dependent baselines at the correct side of each event. Return empty residuals for types with fewer than two events.
+* Stop simulation when no further event occurs, preserving only generated rows.
+* Use stable exponential integrals and log-scale residual densities and survival probabilities.
+* Validate decay rates and kernel mappings. Correct stability checks for constant multi-kernel Hawkes models.
+* Correct trapezoid-exponential random generation and validate its parameter domain. Add log and tail options to its distribution functions.
+* Simulation draws can change for the same seed where event selection or random generation was corrected.
+
 # emhawkes 0.9.7
 
 Fixed some bugs

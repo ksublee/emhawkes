@@ -47,6 +47,15 @@ Must have the same number of rows and columns as \code{alpha} or \code{beta} in 
 \description{
 Calculates the log-likelihood for the Hawkes model.
 }
+\details{
+The first row represents the initial state and is not an event.
+Counting-process rows contain values after the corresponding event.
+Supplied \code{N} and \code{Nc} matrices must agree with \code{type}, \code{mark}, and any
+supplied initial counts. Event order is preserved, including zero intervals.
+Component functions receive the arguments they declare; functions with \code{...}
+receive the available event context. Intensity histories are \code{NULL} before
+initialization. Baseline functions use \code{n - 1} to access the preceding event.
+}
 \seealso{
 \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 }
