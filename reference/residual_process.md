@@ -1,0 +1,98 @@
+# Compute residual process
+
+Using random time change, this function compute the residual process,
+which is the inter-arrival time of a standard Poisson process.
+Therefore, the return values should follow the exponential distribution
+with rate 1, if model and rambda are correctly specified.
+
+## Usage
+
+``` r
+residual_process(
+  component,
+  inter_arrival,
+  type,
+  rambda_component,
+  mu,
+  beta,
+  dimens = NULL,
+  mark = NULL,
+  N = NULL,
+  Nc = NULL,
+  lambda_component0 = NULL,
+  N0 = NULL,
+  ...
+)
+```
+
+## Arguments
+
+- component:
+
+  The component of type to get the residual process.
+
+- inter_arrival:
+
+  Inter-arrival times of events. This includes inter-arrival for events
+  that occur in all dimensions. Start with zero.
+
+- type:
+
+  A vector of types distinguished by numbers, 1, 2, 3, and so on. Start
+  with zero.
+
+- rambda_component:
+
+  Right continuous version of lambda process.
+
+- mu:
+
+  Numeric value or matrix or function. If numeric, automatically
+  converted to matrix.
+
+- beta:
+
+  Numeric value or matrix or function. If numeric, automatically
+  converted to matrix, exponential decay.
+
+- dimens:
+
+  Dimension of the model. If omitted, set to be the length of `mu`.
+
+- mark:
+
+  A vector of realized mark (jump) sizes. Start with zero.
+
+- N:
+
+  A matrix of counting processes.
+
+- Nc:
+
+  A matrix of counting processes weighted by mark.
+
+- lambda_component0:
+
+  The initial values of lambda component. Must have the same dimensional
+  matrix with `hspec`.
+
+- N0:
+
+  The initial value of N
+
+- ...:
+
+  Further arguments passed to or from other methods.
+
+## Examples
+
+``` r
+
+mu <- c(0.1, 0.1)
+alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
+beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
+h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
+res <- hsim(h, size=1000)
+rp <- residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
+#> Warning: The 'residual_process' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.
+```
