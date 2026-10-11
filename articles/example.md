@@ -388,10 +388,19 @@ points for optimization. Here, we use the simulation parameters by
 setting `hspec0 <- hspec2`. For observed data, choose initial values
 because the true parameters are unknown.
 
+By default, `reduced = TRUE` groups equal starting values within each
+parameter matrix. Here, the two entries of `mu` share one parameter, the
+diagonal and off-diagonal entries of `alpha` give two parameters, and
+all entries of `beta` share one parameter. The fit therefore estimates
+four parameters. `hfit` prints a short explanation once before
+optimization.
+
 ``` r
 
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -423,6 +432,39 @@ miscTools::stdEr(mle)
 #>        mu1   alpha1.1   alpha1.2    beta1.1 
 #> 0.01638200 0.07430500 0.09575744 0.17202504
 ```
+
+Set `reduced = FALSE` to estimate all ten matrix entries separately,
+even when their starting values are equal. Use
+`suppressMessages(hfit(...))` to hide the startup explanation. For
+function components, parameters with the same name are shared under
+either setting. A zero in a numeric matrix is an estimated starting
+value; use a component function to fix selected entries at zero.
+
+### Observed data and initial state
+
+The first row represents the initial state and is not an event. For
+event times measured from the observation start, prepare the input as
+follows:
+
+``` r
+
+inter_arrival <- c(0, diff(c(0, event_times)))
+type <- c(0, event_types)
+mark <- c(0, event_marks)
+```
+
+Omit `type` for a univariate model and `mark` for unit marks. The
+vectors must have the same length; event types range from 1 to the model
+dimension. Event order is preserved, including events at the same time.
+The likelihood currently ends at the last supplied event.
+
+`N0` and `Nc0` specify initial event counts and mark totals. Pass `Nc0`
+by name in `hfit`, and use the same initial state when comparing
+simulation and likelihood results. `lambda_component0` can be a scalar
+or a matrix matching `alpha` and `beta`. If supplied, `N` and `Nc` must
+have one row per input row and one column per dimension, and must agree
+with the events and initial counts. Their rows contain the cumulative
+values after each event.
 
 Also see the [extended vignette on
 GitHub](https://ksublee.github.io/emhawkes/articles/extended_example.html).

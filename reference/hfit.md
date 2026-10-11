@@ -1,8 +1,10 @@
 # Perform Maximum Likelihood Estimation
 
-This is a generic function named `hfit` designed for estimating the
-parameters of the exponential Hawkes model. It is implemented as an S4
-method for two main reasons:
+Estimate exponential Hawkes model parameters by maximum likelihood. The
+supplied
+[`hspec-class`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
+object defines the model and the starting values for optimization with
+[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html).
 
 ## Usage
 
@@ -146,19 +148,6 @@ hfit(
 
 ## Details
 
-Model Representation: To represent the structure of the model as an
-`hspec` object. The multivariate marked Hawkes model has numerous
-variations, and using an S4 class allows for a flexible and structured
-approach.
-
-Optimization Initialization: To provide a starting point for numerical
-optimization. The parameter values assigned to the `hspec` slots serve
-as initial values for the optimization process.
-
-This function utilizes the
-[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) package for
-optimization.
-
 Observations are checked once before optimization. The first row is the
 initial state, and supplied counting processes contain values after each
 event. Functions with a `param` argument must provide a default named
@@ -168,6 +157,13 @@ arguments from `object`, the observation arguments, `lambda_component0`,
 `param`, and `reduced`. Optional defaults are preserved; `...` receives
 the remaining context. Additional inputs should be captured in the
 function's environment or given defaults.
+
+When equal matrix entries are grouped, a message lists the affected
+components once before optimization. Use `suppressMessages(hfit(...))`
+to hide it. Setting `reduced = FALSE` separates matrix entries; function
+parameters still share values by name. A numeric zero is a starting
+value, not a fixed zero. To fix entries at zero, use a component
+function with constants at those positions.
 
 ## See also
 
@@ -185,6 +181,8 @@ beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
 summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 29 iterations
@@ -237,6 +235,8 @@ plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
 lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 
 fit <- hfit(h, hr$inter_arrival, hr$type)
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -246,18 +246,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42494   1.629   0.1033    
+#> mu1      0.69221    0.42741   1.620   0.1053    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04916   0.291   0.7712    
-#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
-#> alpha34  0.29568    0.11634   2.542   0.0110 *  
-#> beta1.1  0.10275    0.08833   1.163   0.2447    
-#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
-#> alpha1n  0.03456    0.06731   0.513   0.6077    
-#> alpha1w  0.04976    0.06831   0.728   0.4664    
-#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
-#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
+#> alpha12  0.01429    0.04931   0.290   0.7719    
+#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
+#> alpha34  0.29568    0.11642   2.540   0.0111 *  
+#> beta1.1  0.10275    0.08867   1.159   0.2465    
+#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
+#> alpha1n  0.03456    0.06732   0.513   0.6077    
+#> alpha1w  0.04976    0.06843   0.727   0.4671    
+#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
+#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
@@ -285,6 +285,8 @@ fit <- hfit(h1,
             type = res$type,
             mark = res$mark,
             lambda_component0 = matrix(rep(0.1,4), nrow=2))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation

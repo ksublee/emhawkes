@@ -75,7 +75,13 @@ hsim(
 S3-object, summary of the Hawkes process realization. If no further
 event can occur, the result contains only the generated rows and a
 warning reports the early termination. The initial row is included.
-Simulation requires finite, nonnegative baseline and kernel components.
+Simulation requires finite, nonnegative baselines. Signed kernel
+components are allowed when their sum is nonnegative and decreasing
+between events. For equal decay rates within a row, this requires a
+nonnegative row sum. For unequal rates, the simulator uses a sufficient
+condition: group components by decay rate, multiply each group sum by
+its rate, and check that cumulative sums in increasing rate order are
+nonnegative.
 
 ## Examples
 

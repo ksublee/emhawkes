@@ -2,6 +2,17 @@
 
 ## emhawkes 0.9.9
 
+- Add a registered Rcpp engine for numeric Hawkes likelihoods and
+  inference, including unequal decay rates, multi-kernel mappings,
+  signed components, and numeric mark effects. Retain the R engine for
+  callbacks and residual-distribution models. The `emhawkes.engine`
+  option selects automatic, R, or forced C++ evaluation.
+- Explain shared matrix parameters once at the start of a reduced fit.
+  Update examples and the documentation build to use the current
+  interfaces.
+- Preserve state-dependent resets and synchronized-model simulation by
+  allowing signed components whose aggregate excitation satisfies a
+  nonnegative, decreasing decay-rate condition.
 - Resolve parameter sharing once per fit while preserving coefficient
   names and order. Validate function parameter defaults and warn about
   conflicting shared starting values.

@@ -82,7 +82,12 @@ supplied initial counts. Event order is preserved, including zero
 intervals. Component functions receive the arguments they declare;
 functions with `...` receive the available event context. Intensity
 histories are `NULL` before initialization. Baseline functions use
-`n - 1` to access the preceding event.
+`n - 1` to access the preceding event. Numeric Hawkes specifications use
+the Rcpp engine. Function-valued parameters, impact functions, mark
+densities, and residual distributions use the R engine. Set
+`options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
+automatic selection, or `"cpp"` to require a supported numeric
+specification.
 
 ## See also
 

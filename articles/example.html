@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/example.html">Examples for the emhawkes package</a></li>
+    <li><a class="dropdown-item" href="../articles/extended_example.html">Extended examples for the emhawkes package</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -60,7 +61,7 @@
                         <h4 data-toc-skip class="author">Kyungsub
 Lee</h4>
             
-            <h4 data-toc-skip class="date">2026-10-09</h4>
+            <h4 data-toc-skip class="date">2026-10-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ksublee/emhawkes/blob/master/vignettes/example.Rmd" class="external-link"><code>vignettes/example.Rmd</code></a></small>
       <div class="d-none name"><code>example.Rmd</code></div>
@@ -393,9 +394,18 @@ model.</p>
 use the simulation parameters by setting
 <code>hspec0 &lt;- hspec2</code>. For observed data, choose initial
 values because the true parameters are unknown.</p>
+<p>By default, <code>reduced = TRUE</code> groups equal starting values
+within each parameter matrix. Here, the two entries of <code>mu</code>
+share one parameter, the diagonal and off-diagonal entries of
+<code>alpha</code> give two parameters, and all entries of
+<code>beta</code> share one parameter. The fit therefore estimates four
+parameters. <code>hfit</code> prints a short explanation once before
+optimization.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="va">hspec2</span></span>
 <span><span class="va">mle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival2</span>, type <span class="op">=</span> <span class="va">type2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
+<span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
@@ -420,6 +430,37 @@ values because the true parameters are unknown.</p>
 <code class="sourceCode R"><span><span class="fu">miscTools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/miscTools/man/stdEr.html" class="external-link">stdEr</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
 <span><span class="co">#&gt; 0.01638200 0.07430500 0.09575744 0.17202504</span></span></code></pre></div>
+<p>Set <code>reduced = FALSE</code> to estimate all ten matrix entries
+separately, even when their starting values are equal. Use
+<code>suppressMessages(hfit(...))</code> to hide the startup
+explanation. For function components, parameters with the same name are
+shared under either setting. A zero in a numeric matrix is an estimated
+starting value; use a component function to fix selected entries at
+zero.</p>
+</div>
+<div class="section level3">
+<h3 id="observed-data-and-initial-state">Observed data and initial state<a class="anchor" aria-label="anchor" href="#observed-data-and-initial-state"></a>
+</h3>
+<p>The first row represents the initial state and is not an event. For
+event times measured from the observation start, prepare the input as
+follows:</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">inter_arrival</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">event_times</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">type</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">event_types</span><span class="op">)</span></span>
+<span><span class="va">mark</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">event_marks</span><span class="op">)</span></span></code></pre></div>
+<p>Omit <code>type</code> for a univariate model and <code>mark</code>
+for unit marks. The vectors must have the same length; event types range
+from 1 to the model dimension. Event order is preserved, including
+events at the same time. The likelihood currently ends at the last
+supplied event.</p>
+<p><code>N0</code> and <code>Nc0</code> specify initial event counts and
+mark totals. Pass <code>Nc0</code> by name in <code>hfit</code>, and use
+the same initial state when comparing simulation and likelihood results.
+<code>lambda_component0</code> can be a scalar or a matrix matching
+<code>alpha</code> and <code>beta</code>. If supplied, <code>N</code>
+and <code>Nc</code> must have one row per input row and one column per
+dimension, and must agree with the events and initial counts. Their rows
+contain the cumulative values after each event.</p>
 <p>Also see the <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">extended
 vignette on GitHub</a>.</p>
 </div>
