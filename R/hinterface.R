@@ -60,6 +60,18 @@ restore_parameters <- function(map, param) {
   })
 }
 
+message_parameter_sharing <- function(map) {
+  shared <- vapply(map$components, function(x) {
+    x$kind == "matrix" && anyDuplicated(x$index) > 0L
+  }, logical(1))
+  if (any(shared)) {
+    message("hfit: equal starting values within each matrix share a parameter ",
+            "(reduced = TRUE; ", paste(names(map$components)[shared], collapse = ", "), ").\n",
+            "Use reduced = FALSE to estimate matrix entries separately.")
+  }
+  invisible(NULL)
+}
+
 # Compile argument selection without evaluating user defaults.
 callback_plan <- function(FUN, available, label) {
   if (is.null(FUN) || !is.function(FUN)) return(NULL)

@@ -55,6 +55,10 @@ supplied initial counts. Event order is preserved, including zero intervals.
 Component functions receive the arguments they declare; functions with \code{...}
 receive the available event context. Intensity histories are \code{NULL} before
 initialization. Baseline functions use \code{n - 1} to access the preceding event.
+Numeric Hawkes specifications use the Rcpp engine. Function-valued parameters,
+impact functions, mark densities, and residual distributions use the R engine.
+Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
+automatic selection, or \code{"cpp"} to require a supported numeric specification.
 }
 \seealso{
 \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}

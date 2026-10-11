@@ -1,7 +1,7 @@
-Example : emhawkes package
+Extended examples for the emhawkes package
 ================
 Kyungsub Lee
-2026-02-16
+2026-10-09
 
 ## Basic Hawkes model
 
@@ -11,16 +11,14 @@ Kyungsub Lee
 library(emhawkes)
 ```
 
-This subsection outlines the steps for constructing, running
-simulations, and estimating a univariate Hawkes model. To begin, create
-an `hspec` object, which defines the Hawkes model. The S4 class `hspec`
-contains slots for the model parameters: `mu`, `alpha`, `beta`,
-`dimens`, `rmark`, and `impact`.
+This section shows how to specify, simulate, and fit a univariate Hawkes
+model. First, create an `hspec` object to define the model. The S4 class
+`hspec` includes slots such as `mu`, `alpha`, `beta`, `dimens`, `rmark`,
+and `impact`.
 
-In a univariate model, the basic parameters of the model—`mu`, `alpha`,
-and `beta`—can be given as numeric values. If numeric values are
-provided, they will be converted to matrices. Below is an example of a
-univariate Hawkes model without a mark.
+In a univariate model, `mu`, `alpha`, and `beta` can be supplied as
+numeric values, which are converted to matrices. The following example
+defines an unmarked univariate Hawkes model.
 
 ``` r
 mu1 <- 0.3; alpha1 <- 1.2; beta1 <- 1.5
@@ -41,29 +39,26 @@ show(hspec1)
 #> [1,]  1.5
 ```
 
-The function `hsim` implements simulation where the input arguments are
-`hspec`, `size`, and the initial values of the intensity component
-process, `lambda_component0`, and the initial values of the Hawkes
-processes, `N0`. More precisely, the intensity process of the basic
-univariate Hawkes model is represented by
+The `hsim` function simulates a path from an `hspec` object. The `size`
+argument specifies the number of rows, including the initial state. The
+optional arguments `lambda_component0` and `N0` specify the initial
+intensity components and event counts, respectively. The intensity of
+the basic univariate Hawkes model is
 
-``` math
-
+$$
 \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
-```
+$$
 
-where the `lambda_component0` denotes
+where `lambda_component0` denotes
 
-``` math
-
+$$
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
-```
+$$
 
-If `lambda_component0` is not provided, the internally determined
-initial values for the intensity process are used. If `size` is
-sufficiently large, the exact value of `lambda_component0` may not be
-important. The default initial value of the counting process, `N0`, is
-zero.
+If `lambda_component0` is omitted, the function determines the initial
+intensity components internally. For a sufficiently long simulation of a
+stable model, the effect of the initial intensity diminishes over time.
+The default initial value of the counting process, `N0`, is zero.
 
 ``` r
 set.seed(1107)
@@ -97,38 +92,41 @@ summary(res1)
 #> -------------------------------------------------------
 ```
 
-The results of `hsim` is an S3 class `hreal`, which consists of `hspec`,
-`inter_arrival`, `arrival`, `type`, `mark`, `N`, `Nc`, `lambda`,
-`lambda_component`, `rambda`, `rambda_component`.
+The `hsim` function returns an S3 object of class `hreal` with the
+following components.
 
 - `hspec` is the model specification.
 
-- `inter_arrival` is the inter-arrival time of every event.
+- `inter_arrival` contains the times between consecutive events.
 
 - `arrival` is the cumulative sum of `inter_arrival`.
 
-- `type` is the type of events, i.e., $`i`$ for $`N_i`$, and is used for
-  a multivariate model.
+- `type` identifies the counting process associated with each event:
+  type $i$ corresponds to $N_i$.
 
-- `mark` is a numeric vector that represents additional information for
-  the event.
+- `mark` contains the mark associated with each event.
 
-- `lambda` represents $`\lambda`$, which is the left continuous and
-  right limit version.
+- `N` contains the cumulative event counts for each type.
 
-- The right continuous version of intensity is `rambda`.
+- `Nc` contains the cumulative marks for each type.
 
-- `lambda_component` represents $`\lambda_{ij}`$, and `rambda_component`
-  is the right continuous version.
+- `lambda` contains the intensity immediately before each event.
 
-`inter_arrival`, `type`, `mark`, `N`, and `Nc` start at zero. Using the
-`summary()` function, one can print the first 20 elements of `arrival`,
-`N`, and `lambda`. The `print()` function can also be used.
+- `rambda` contains the intensity immediately after each event.
 
-By definition, we have `lambda == mu + lambda_component`.
+- `lambda_component` and `rambda_component` contain the intensity
+  components $\lambda_{ij}$ immediately before and after each event,
+  respectively.
+
+With the default initial values, `inter_arrival`, `type`, `mark`, `N`,
+and `Nc` begin with zero. The `summary()` function displays the first 20
+rows of the realized path by default. The `print()` function also
+displays the model specification and intensity components.
+
+In this univariate model, `lambda == mu + lambda_component`.
 
 ``` r
-# first and third columns are the same
+# The first and third columns are equal.
 cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
 #>          [,1]     [,2]     [,3]
 #> [1,] 0.900000 0.600000 0.900000
@@ -142,7 +140,7 @@ For all rows except the first, `rambda` equals `lambda + alpha` in this
 model.
 
 ``` r
-# second and third columns are the same
+# The second and third columns are equal except in the initial row.
 cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
 #>          [,1]     [,2]     [,3]
 #> [1,] 0.900000 0.900000 2.100000
@@ -152,8 +150,7 @@ cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
 #> [5,] 2.335269 3.535269 3.535269
 ```
 
-Additionally, verify that the exponential decay is accurately
-represented in the model.
+The following calculation verifies the exponential decay between events.
 
 ``` r
 # By definition, the following two are equal:
@@ -163,9 +160,8 @@ mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
 #> [1] 0.438383 1.431282 2.027111 2.335269 3.011391
 ```
 
-The log-likelihood function is calculated using the `logLik` method. In
-this context, the inter-arrival times and `hspec` are provided as inputs
-to the function.
+Use `logLik` to evaluate the log-likelihood from the model specification
+and observed inter-arrival times.
 
 ``` r
 logLik(hspec1, inter_arrival = res1$inter_arrival)
@@ -174,19 +170,18 @@ logLik(hspec1, inter_arrival = res1$inter_arrival)
 #>     -214.2385
 ```
 
-The likelihood estimation is performed using the `hfit` function. The
-specification of the initial parameter values, `hspec0`, is required.
-Note that only `inter_arrival` is needed for this univariate model. For
-more accurate simulation, it is recommended to specify `lambda0`, the
-initial value of the lambda component. If `lambda0` is not provided, the
-function uses internally determined initial values. By default, the BFGS
-method is employed for numerical optimization.
+Use `hfit` for maximum likelihood estimation. The `hspec0` object
+supplies the initial parameter values for optimization. For this
+univariate model, `inter_arrival` is the only required data argument. If
+the initial intensity component is known, pass it as
+`lambda_component0`; otherwise, the function determines it internally.
+The default optimization method is BFGS.
 
 ``` r
-# initial value for numerical optimization
+# Initial parameter values for numerical optimization.
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
 hspec0 <- new("hspec", mu = mu0, alpha = alpha0, beta = beta0)
-# the intial values are provided through hspec
+# Supply the initial values through hspec0.
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
 summary(mle)
 #> --------------------------------------------
@@ -197,9 +192,9 @@ summary(mle)
 #> 3  free parameters
 #> Estimates:
 #>        Estimate Std. error t value Pr(> t)    
-#> mu1     0.33641    0.03475   9.682  <2e-16 ***
-#> alpha1  1.16654    0.09608  12.141  <2e-16 ***
-#> beta1   1.52270    0.12468  12.213  <2e-16 ***
+#> mu1     0.33641    0.03505   9.597  <2e-16 ***
+#> alpha1  1.16654    0.10400  11.217  <2e-16 ***
+#> beta1   1.52270    0.13615  11.184  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -209,46 +204,37 @@ summary(mle)
 
 The intensity process of a basic bivariate Hawkes model is defined by
 
-``` math
-
+$$
  \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
-```
+$$
 
-``` math
-
+$$
  \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
-```
+$$
 
-In a bivariate model, the parameters within the slots of `hspec` are
-matrices. Specifically, `mu` is a 2-by-1 matrix, while `alpha` and
+For this bivariate model, `mu` is a 2-by-1 matrix, and `alpha` and
 `beta` are 2-by-2 matrices.
 
-``` math
-
+$$
 \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
 \alpha = \begin{bmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{bmatrix}, \quad
 \beta = 
 \begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
-```
+$$
 
-`rmark` is a random number generating function for marks and is not used
-in non-mark models. `lambda_component0` is a 2-by-2 matrix that
-represents the initial values of `lambda_component`, which includes the
-set of values `lambda11`, `lambda12`, `lambda21`, and `lambda22`. The
-intensity processes are represented by
+`rmark` generates marks during simulation and can be omitted for
+unmarked models. The 2-by-2 matrix `lambda_component0` specifies the
+initial values of `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
+The intensity processes are represented by
 
-``` math
- \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), 
-```
+$$ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t), $$
 
-``` math
- \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). 
-```
+$$ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t). $$
 
-The terms $`\lambda_{ij}`$ are referred to as lambda components, and
-`lambda0` represents \$\_{ij}(0)`.  The parameter`lambda_component0\`
-can be omitted in this model, in which case internally determined
-initial values will be used.
+The terms $\lambda_{ij}$ are called intensity components, and
+`lambda_component0` specifies their initial values $\lambda_{ij}(0)$. If
+`lambda_component0` is omitted, the function determines these values
+internally.
 
 ``` r
 mu2 <- matrix(c(0.2), nrow = 2)
@@ -274,7 +260,7 @@ print(hspec2)
 #> [2,] 2.25 2.25
 ```
 
-To perform a simulation, use the `hsim` function.
+Use `hsim` to simulate the model.
 
 ``` r
 set.seed(1107)
@@ -308,11 +294,11 @@ summary(res2)
 #> -------------------------------------------------------
 ```
 
-In multivariate models, `type` is crucial as it represents the type of
-event.
+In multivariate models, `type` identifies the counting process
+associated with each event.
 
 ``` r
-# Under bi-variate model, there are two types, 1 or 2.
+# A bivariate model has two event types: 1 and 2.
 res2$type[1:10]
 #>  [1] 0 1 2 2 2 1 1 1 2 2
 ```
@@ -339,8 +325,8 @@ res2$lambda[1:3, ]
 #> [3,] 0.2507301 0.2850475
 ```
 
-The column names of `lambda_component` are `lambda_component11`,
-`lambda_component12`, `lambda_component13`, and so on.
+In this bivariate model, the columns of `lambda_component` are
+`lambda11`, `lambda12`, `lambda21`, and `lambda22`.
 
 ``` r
 res2$lambda_component[1:3, ]
@@ -359,16 +345,15 @@ res2$lambda[1:5, "lambda1"]
 #> [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889
 ```
 
-From the results, we obtain vectors of realized `inter_arrival` and
-`type`. A bivariate model requires both `inter_arrival` and `type` for
-estimation.
+Extract the observed `inter_arrival` and `type` vectors from the
+simulation result. Both are required to fit a bivariate model.
 
 ``` r
 inter_arrival2 <- res2$inter_arrival
 type2 <- res2$type
 ```
 
-The log-likelihood is computed using the `logLik` function.
+Use `logLik` to evaluate the log-likelihood.
 
 ``` r
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
@@ -377,30 +362,34 @@ logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
 #>     -974.2809
 ```
 
-Maximum log-likelihood estimation is performed using the `hfit`
-function. In this process, the parameter values in `hspec0`, such as
-`mu`, `alpha`, and `beta`, serve as starting points for the numerical
-optimization. For illustration purposes, we set `hspec0 <- hspec2`.
-Since the true parameter values are unknown in practical applications,
-these initial guesses are used. The realized `inter_arrival` and `type`
-data are utilized for estimation.
+Use `hfit` to estimate the parameters from `inter_arrival` and `type`.
+The values of `mu`, `alpha`, and `beta` in `hspec0` provide starting
+points for optimization. Here, we use the simulation parameters by
+setting `hspec0 <- hspec2`. For observed data, choose initial values
+because the true parameters are unknown.
+
+The default fit groups equal starting values within each matrix and
+estimates four parameters here: one for `mu`, two for `alpha`, and one
+for `beta`. `hfit` explains this rule once before optimization.
 
 ``` r
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 36 iterations
+#> BFGS maximization, 35 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -970.1408 
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.19095    0.01636  11.671  < 2e-16 ***
-#> alpha1.1  0.48217    0.07405   6.511 7.45e-11 ***
-#> alpha1.2  0.98625    0.09495  10.387  < 2e-16 ***
-#> beta1.1   2.07987    0.16952  12.269  < 2e-16 ***
+#> mu1       0.19095    0.01635   11.68  < 2e-16 ***
+#> alpha1.1  0.48217    0.07373    6.54 6.15e-11 ***
+#> alpha1.2  0.98625    0.09484   10.40  < 2e-16 ***
+#> beta1.1   2.07987    0.16728   12.43  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -409,38 +398,30 @@ summary(mle)
 ``` r
 coef(mle)
 #>       mu1  alpha1.1  alpha1.2   beta1.1 
-#> 0.1909541 0.4821725 0.9862542 2.0798691
+#> 0.1909541 0.4821725 0.9862542 2.0798690
 ```
 
 ``` r
 miscTools::stdEr(mle)
 #>        mu1   alpha1.1   alpha1.2    beta1.1 
-#> 0.01636127 0.07405118 0.09495461 0.16952428
+#> 0.01635080 0.07372719 0.09484410 0.16727659
 ```
 
-### Parameter setting
+### Parameter settings
 
-This subsection explores the relationship between parameter settings and
-the estimation procedure in a multivariate Hawkes model. The number of
-parameters to be estimated in the model is influenced by how we
-configure parameter slots such as `mu`, `alpha`, and `beta` in `hspec0`,
-which specifies the initial values.
+The initial values in `hspec0` determine which parameters are estimated
+separately. With the default setting `reduced = TRUE`, equal entries
+within a parameter matrix share one estimated value. The rule is applied
+separately to each matrix; equal values in `mu` and `alpha` do not link
+those components. The startup message lists the matrices with shared
+entries. Use `suppressMessages(hfit(...))` to hide it.
 
-Since the parameter slot `alpha` is a matrix, its elements can either be
-the same or different. Consequently, the number of parameters estimated
-varies depending on whether the initial settings have identical or
-distinct elements.
+For example, if `alpha[1,1]` and `alpha[1,2]` have different initial
+values, `hfit` estimates them separately. If they have the same initial
+value, `hfit` treats them as a single parameter.
 
-For example, if `alpha[1,1]` and `alpha[1,2]` in `hspec0` are initially
-set to different values, the numerical procedure will estimate
-`alpha[1,1]` and `alpha[1,2]` separately. Conversely, if `alpha[1,1]`
-and `alpha[1,2]` are the same in the initial setting, the estimation
-procedure treats these parameters as identical in the model, thus
-estimating only one value.
-
-Recall that the example in the previous section features a symmetric
-Hawkes model, where the matrix `alpha` is symmetric and all elements of
-`beta` are identical.
+The previous example uses a symmetric Hawkes model: `alpha` is
+symmetric, and all entries of `beta` are equal.
 
 ``` r
 print(hspec2)
@@ -467,12 +448,10 @@ set.seed(1107)
 res2 <- hsim(hspec2, size = 1000)
 ```
 
-In the first estimation example, the initial value of `alpha0` is a
-matrix where all elements are set to the same value of 0.75. In this
-configuration, `hfit` assumes that `alpha11`, `alpha12`, `alpha21`, and
-`alpha22` are identical in the model, even if the actual parameters have
-different values. Similarly, the parameter matrices `mu0` and `beta0`
-are treated in the same manner.
+In the first example, all entries of `alpha0` are set to 0.75. This
+constrains `alpha11`, `alpha12`, `alpha21`, and `alpha22` to share one
+estimated value, even though their simulation values differ. The same
+rule applies within `mu0` and `beta0`.
 
 ``` r
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -481,30 +460,32 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 44 iterations
+#> BFGS maximization, 45 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -979.5687 
 #> 3  free parameters
 #> Estimates:
 #>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.19125    0.01636   11.69  <2e-16 ***
-#> alpha1.1  0.73981    0.05951   12.43  <2e-16 ***
-#> beta1.1   2.09707    0.16524   12.69  <2e-16 ***
+#> mu1       0.19125    0.01641   11.65  <2e-16 ***
+#> alpha1.1  0.73981    0.06270   11.80  <2e-16 ***
+#> beta1.1   2.09707    0.17502   11.98  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-Note that in the above result, `alpha1.1` falls somewhere between the
-original values of `alpha1.1 = 0.5` and `alpha1.2 = 0.9`.
+This fit estimates one excitation parameter for both self-excitation and
+mutual excitation, whose simulation values are 0.5 and 0.9,
+respectively.
 
-In the following second example, the elements of `alpha0` are not
-identical but are symmetric, reflecting the original values used in the
-simulation. Specifically, we have `alpha11 == alpha22` and
-`alpha12 == alpha21` in `alpha0`, so `alpha11` and `alpha12` will be
-estimated differently.
+In the second example, `alpha0` has the same symmetry as the simulation
+model. Its diagonal entries are equal, and its off-diagonal entries
+share a different value. The model therefore has two excitation
+parameters to estimate.
 
 ``` r
 mu0 <- matrix(c(0.15, 0.15), nrow = 2)
@@ -513,6 +494,8 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 30 iterations
@@ -520,19 +503,18 @@ summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 #> Log-Likelihood: -970.1408 
 #> 4  free parameters
 #> Estimates:
-#>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.19095    0.01653  11.555 < 2e-16 ***
-#> alpha1.1  0.48226    0.07572   6.369 1.9e-10 ***
-#> alpha1.2  0.98626    0.09869   9.993 < 2e-16 ***
-#> beta1.1   2.08008    0.18449  11.275 < 2e-16 ***
+#>          Estimate Std. error t value  Pr(> t)    
+#> mu1       0.19095    0.01635  11.676  < 2e-16 ***
+#> alpha1.1  0.48226    0.07204   6.694 2.17e-11 ***
+#> alpha1.2  0.98626    0.09114  10.821  < 2e-16 ***
+#> beta1.1   2.08008    0.15980  13.017  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-In the third example, the estimation is performed under the assumption
-that `mu1` and `mu2` may differ, even though they are the same in the
-original model.
+The third example allows `mu1` and `mu2` to differ, even though they are
+equal in the simulation model.
 
 ``` r
 mu0 <- matrix(c(0.15, 0.14), nrow = 2)
@@ -541,25 +523,28 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 42 iterations
+#> BFGS maximization, 44 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -969.9914 
 #> 5  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.18300    0.02154   8.495  < 2e-16 ***
-#> mu2       0.19872    0.02203   9.020  < 2e-16 ***
-#> alpha1.1  0.48149    0.07425   6.484 8.91e-11 ***
-#> alpha1.2  0.98720    0.09556  10.331  < 2e-16 ***
-#> beta1.1   2.07973    0.17094  12.166  < 2e-16 ***
+#> mu1       0.18300    0.02157   8.483  < 2e-16 ***
+#> mu2       0.19872    0.02206   9.009  < 2e-16 ***
+#> alpha1.1  0.48149    0.07355   6.546 5.89e-11 ***
+#> alpha1.2  0.98720    0.09427  10.472  < 2e-16 ***
+#> beta1.1   2.07973    0.17051  12.197  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-By setting `reduced = FALSE`, all parameters are estimated.
+Set `reduced = FALSE` to estimate each matrix entry separately,
+including entries with equal initial values.
 
 ``` r
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
@@ -571,31 +556,59 @@ summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduc
 #> 10  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.17997    0.02312   7.784 7.05e-15 ***
-#> mu2       0.20060    0.02442   8.214  < 2e-16 ***
-#> alpha1.1  0.44726    0.16627   2.690  0.00714 ** 
-#> alpha2.1  1.17743    0.22909   5.140 2.75e-07 ***
-#> alpha1.2  0.97048    0.14242   6.814 9.47e-12 ***
-#> alpha2.2  0.48979    0.15398   3.181  0.00147 ** 
-#> beta1.1   2.52210    1.16375   2.167  0.03022 *  
-#> beta2.1   3.15498    0.67702   4.660 3.16e-06 ***
-#> beta1.2   1.80167    0.25695   7.012 2.35e-12 ***
-#> beta2.2   1.51338    0.54476   2.778  0.00547 ** 
+#> mu1       0.17997    0.02271   7.926 2.27e-15 ***
+#> mu2       0.20060    0.02430   8.255  < 2e-16 ***
+#> alpha1.1  0.44726    0.16076   2.782 0.005400 ** 
+#> alpha2.1  1.17743    0.26171   4.499 6.83e-06 ***
+#> alpha1.2  0.97048    0.13597   7.137 9.51e-13 ***
+#> alpha2.2  0.48979    0.11381   4.304 1.68e-05 ***
+#> beta1.1   2.52210    1.00909   2.499 0.012441 *  
+#> beta2.1   3.15498    0.88787   3.553 0.000380 ***
+#> beta1.2   1.80167    0.23773   7.579 3.49e-14 ***
+#> beta2.2   1.51338    0.40168   3.768 0.000165 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-The same logic applies to all higher-dimensional models.
+The same rules apply to higher-dimensional models. For function
+components, the named entries in `param` define the estimated
+parameters. Matching parameter names are shared across functions, even
+with `reduced = FALSE`. Use different names for independent parameters
+with equal starting values. Conflicting starting values for a shared
+name produce a warning, and the first value is used. A zero in a numeric
+matrix is an estimated starting value; constants inside a component
+function remain fixed.
+
+### Observed data and initial state
+
+The first row is the initial state, followed by the observed events. For
+event times measured from the observation start, use
+`c(0, diff(c(0, event_times)))` for `inter_arrival` and prepend zero to
+the event-type and mark vectors. The likelihood currently ends at the
+last supplied event, and the input order is preserved when event times
+coincide.
+
+`N0` and `Nc0` specify initial event counts and mark totals. Pass `Nc0`
+by name in `hfit`. Use the same initial counts and `lambda_component0`
+for simulation and likelihood evaluation when comparing their paths. A
+scalar `lambda_component0` is expanded to all kernel components; a
+matrix must match the kernel dimensions. For multi-kernel models, supply
+`lambda_component0` explicitly.
+
+Counting-process matrices supplied as `N` or `Nc` must agree with the
+event data and initial counts. Each row contains the values after that
+event. A baseline function called with index `n` uses row `n - 1` for
+the preceding state; an impact function uses row `n` for the current
+event. Component functions can declare only the arguments they need, and
+use `...` to receive the remaining context.
 
 ### Residual process
 
-The residual process can be extracted using the `logLik()` function by
-setting `infer = TRUE`. When this option is enabled, the `logLik`
-function returns a list that includes the log-likelihood, inferred
-intensities, and the residual process. Note that the inference is based
-on the object passed to the `logLik` function. In the returned object,
-`res_process1` represents the residual process.
+Set `infer = TRUE` in `logLik` to obtain the log-likelihood, intensity
+paths, and residual processes. These are computed using the parameters
+in the supplied `hspec` object. For a univariate model, `res_process1`
+contains the residual inter-arrival times.
 
 ``` r
 hrp <- new("hspec", mu = 0.3, alpha = 1.2, beta = 1.5)
@@ -611,10 +624,10 @@ plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
-In practical scenarios, the parameter values are usually unknown, so the
-model may be estimated before computing the residual processes.
+For observed data, estimate the parameters before computing the residual
+processes.
 
 ``` r
 
@@ -637,13 +650,11 @@ plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
-In an $`n`$-dimensional model, we can compute the residuals in a similar
-manner. In this case, the object returned by the `logLik` function
-contains $`n`$ residual processes. For example, in the following code,
-`infer_res2$res_process1` and `infer_res2$res_process2` represent the
-residual processes for each type.
+For an $n$-dimensional model, `logLik` returns one residual process for
+each event type. In the following bivariate example, these are
+`infer_res2$res_process1` and `infer_res2$res_process2`.
 
 ``` r
 hrp2 <- new("hspec", mu = rep(0.3, 2), 
@@ -659,11 +670,10 @@ plot(qexp(p), q, xlab="Theoretical Quantiles",ylab="Sample Quantiles")
 qqline(q, distribution=qexp,col="blue", lty=2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ``` r
-# Infer the residual process using the log-likelihood method
-# 'infer_res_dh1' contains the inferred process data based on the inter-arrival times
+# Plot the pooled residuals for both event types.
 
 hist(
   c(infer_res2$res_process1, infer_res2$res_process2),
@@ -686,59 +696,59 @@ lines(
 legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
-## More complicated model
+## More complex models
 
 ### Multi-kernel model
 
-In a multi-kernel Hawkes model, `type_col_map` is required for `hspec`.
-`type_col_map` is a list that represents the mapping between type and
-column number. For example, consider a bi-variate multi-kernel model:
-``` math
+A multi-kernel Hawkes model requires `type_col_map` in its `hspec`
+object. This list maps each event type to the corresponding columns of
+the kernel parameter matrices. Consider a bivariate multi-kernel model:
 
+$$
 \lambda_t = \mu + \int_{-\infty}^{t} h(t-u) d N(u)
-```
+$$
+
 where
-``` math
- h = \sum_{k=1}^{K} h_k, \quad 
+
+$$
+h = \sum_{k=1}^{K} h_k, \quad
 h_k (t) = \alpha_k \circ \begin{bmatrix}
 e^{-\beta_{k11} t} & e^{-\beta_{k12} t} \\
 e^{-\beta_{k21} t} & e^{-\beta_{k22} t}
 \end{bmatrix}
- 
-```
+$$
 
-with matrix $`\alpha_k`$ and $`k`$ denoting kernel number.
+Here, $k$ indexes the kernels, $\alpha_k$ is the excitation matrix for
+kernel $k$, and $\circ$ denotes elementwise multiplication.
 
-For example, in a bi-variate Hawkes model with two kernels, the
-intensity processes are
+For a bivariate Hawkes model with two kernels, the intensity processes
+are
 
-``` math
-
+$$
  \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \end{bmatrix} = 
 \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix} + \int_{-\infty}^{t} \begin{bmatrix}
-\alpha_{111} e^{-\beta_{111} t} & \alpha_{112} e^{-\beta_{112} t} \\
-\alpha_{121}e^{-\beta_{121} t} & \alpha_{122}e^{-\beta_{122} t}
+\alpha_{111} e^{-\beta_{111}(t-s)} & \alpha_{112} e^{-\beta_{112}(t-s)} \\
+\alpha_{121}e^{-\beta_{121}(t-s)} & \alpha_{122}e^{-\beta_{122}(t-s)}
 \end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix} 
 + \int_{-\infty}^{t} \begin{bmatrix}
-\alpha_{211} e^{-\beta_{211} t} & \alpha_{212} e^{-\beta_{212} t} \\
-\alpha_{221}e^{-\beta_{221} t} & \alpha_{222}e^{-\beta_{222} t}
+\alpha_{211} e^{-\beta_{211}(t-s)} & \alpha_{212} e^{-\beta_{212}(t-s)} \\
+\alpha_{221}e^{-\beta_{221}(t-s)} & \alpha_{222}e^{-\beta_{222}(t-s)}
 \end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}.
-```
+$$
 
-The parameter matrix is defined by
+The parameter matrices are
 
-``` math
-
+$$
  \alpha = \begin{bmatrix} \alpha_{111} & \alpha_{112} & \alpha_{211} & \alpha_{212} \\ \alpha_{121} & \alpha_{122} & \alpha_{221} & \alpha_{222}
 \end{bmatrix}, \quad
  \beta = \begin{bmatrix} \beta_{111} & \beta_{112} & \beta_{211} & \beta_{212} \\ \beta_{121} & \beta_{122} & \beta_{221} & \beta_{222}
 \end{bmatrix} \quad
-```
+$$
 
-and we should specify which columns of matrix are associated with which
-$`N_i`$.
+The mapping must specify which columns correspond to each counting
+process $N_i$.
 
 ``` r
 mu <- matrix(c(0.02, 0.02), nrow=2)
@@ -759,9 +769,9 @@ print(alpha)
 #> [2,]    2    3  0.2  0.3
 ```
 
-Note that $`d N_1(s)`$ is multiplied by first and third columns of
-$`\alpha`$ and $`dN_2(s)`$ is multiplied by second and fourth columns of
-$`\alpha`$ and hence `type_col_map` is
+The first and third columns of $\alpha$ correspond to $N_1$, and the
+second and fourth columns correspond to $N_2$. Thus, define
+`type_col_map` as follows:
 
 ``` r
 type_col_map <- list(c(1,3),  # columns for dN1
@@ -774,7 +784,10 @@ type_col_map
 #> [1] 2 4
 ```
 
-where type `i` is associated with columns of `type_col_map[[i]]`. Thus,
+The entry `type_col_map[[i]]` lists the columns associated with event
+type `i`. Rows of the intensity matrix identify event types. After a
+type `i` event, `type_col_map[[i]]` selects the kernel columns to
+update. Use this mapping to extract the corresponding parameters:
 
 ``` r
 cat("Part of alpha associated with N1: \n")
@@ -832,13 +845,13 @@ h
 #> [1] 2 4
 ```
 
-In addition, `lambda_component0` should be provided for simulation and
-estimation.
+For this multi-kernel model, `lambda_component0` must be supplied for
+both simulation and estimation.
 
 ``` r
 set.seed(620)
 res_mk <- hsim(h, size = 3000, 
-               # for an illustration purpose
+               # Initial intensity components for this example.
                lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)) 
 res_mk
 #> -------------------------------------------------------
@@ -918,21 +931,23 @@ res_mk
 ``` r
 summary(hfit(h, res_mk$inter_arrival, res_mk$type,
              lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 77 iterations
+#> BFGS maximization, 75 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: 6084.72 
+#> Log-Likelihood: 6084.702 
 #> 7  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1      0.011160   0.007537   1.481    0.139    
-#> alpha1.1 2.474055   0.206092  12.005  < 2e-16 ***
-#> alpha1.2 1.380731   0.220328   6.267 3.69e-10 ***
-#> alpha1.3 0.044029   0.071762   0.614    0.540    
-#> alpha1.4 0.231188   0.058453   3.955 7.65e-05 ***
-#> beta1.1  6.202489   0.077197  80.346  < 2e-16 ***
-#> beta1.3  0.700718   0.117474   5.965 2.45e-09 ***
+#> mu1      0.011595   0.007788   1.489   0.1365    
+#> alpha1.1 2.488156        NaN     NaN      NaN    
+#> alpha1.2 1.354102   0.315797   4.288 1.80e-05 ***
+#> alpha1.3 0.057583   0.045042   1.278   0.2011    
+#> alpha1.4 0.253481   0.099810   2.540   0.0111 *  
+#> beta1.1  6.383569   0.037911 168.383  < 2e-16 ***
+#> beta1.3  0.755507   0.188863   4.000 6.33e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -940,31 +955,27 @@ summary(hfit(h, res_mk$inter_arrival, res_mk$type,
 
 ### Synchronized intensity model
 
-This model is basically two-kernel model and defined by little bit
-complicated reparameterization.
+This is a two-kernel model with the following reparameterization.
 
-``` math
-
+$$
  \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
 \theta/(1 - \kappa)/2 - \tilde\theta/(1 + \kappa)/2 \end{bmatrix}, \quad \theta = (\theta^- + \theta^+)/2,\quad \tilde\theta=(\theta^- -\theta^+)/2
-```
+$$
 
-``` math
-
+$$
 \alpha = \begin{bmatrix} \zeta & \tilde\zeta & \zeta & -\tilde\zeta \\
 \zeta & -\tilde\zeta & \zeta & \tilde\zeta
 \end{bmatrix}, \quad \zeta = (\eta + \nu) / 2, \quad \tilde \zeta = (\eta - \nu)/ 2 
-```
+$$
 
-``` math
-
+$$
 \beta = \begin{bmatrix} \beta_1 & \beta_2 & \beta_1 & \beta_2 \\
-\beta_1 & \beta_2 & \beta_1 & \beta_2 \end{bmatrix}, \quad \beta_1 = (\eta + \nu) / 2, \quad \beta_2 = (\eta - \nu)/2
-```
+\beta_1 & \beta_2 & \beta_1 & \beta_2 \end{bmatrix}, \quad \beta_1 = \beta(1 - \kappa), \quad \beta_2 = \beta(1 + \kappa)
+$$
 
-In order to handle complex re-parametrization, each slot is expressed as
-a function rather than a matrix. The first argument `param` is a set of
-parameters.
+To implement this reparameterization, define `mu`, `alpha`, and `beta`
+as functions. Each function takes a named parameter vector, `param`, as
+its first argument.
 
 ``` r
 mu <- function(param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)){
@@ -995,31 +1006,36 @@ h_sy
 #> An object of class "hspec" of 2-dimensional Hawkes process
 #> 
 #> Slot mu: 
-#> function(param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)){
-#>   theta    <- (param["theta_n"] + param["theta_p"])/2
-#>   theta_tl <- (param["theta_n"] - param["theta_p"])/2
-#>   matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
-#>            theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
+#> function (param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)) 
+#> {
+#>     theta <- (param["theta_n"] + param["theta_p"])/2
+#>     theta_tl <- (param["theta_n"] - param["theta_p"])/2
+#>     matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]), 
+#>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
+#>         nrow = 2)
 #> }
-#> <bytecode: 0x000002081a3c6870>
+#> <bytecode: 0x0000022ca39bc660>
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot alpha: 
-#> function(param = c(eta = 5, nu = 3)){
-#>   zeta    <- (param["eta"] + param["nu"])/2
-#>   zeta_tl <- (param["eta"] - param["nu"])/2
-#>   matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
-#>            zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
+#> function (param = c(eta = 5, nu = 3)) 
+#> {
+#>     zeta <- (param["eta"] + param["nu"])/2
+#>     zeta_tl <- (param["eta"] - param["nu"])/2
+#>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
+#>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x0000020818d1b720>
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot beta: 
-#> function(param = c(beta = 12, kappa = 0.12)){
-#>   beta1 <- param["beta"] * (1 - param["kappa"])
-#>   beta2 <- param["beta"] * (1 + param["kappa"])
-#>   matrix(c(beta1, beta2, beta1, beta2,
-#>            beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
+#> function (param = c(beta = 12, kappa = 0.12)) 
+#> {
+#>     beta1 <- param["beta"] * (1 - param["kappa"])
+#>     beta2 <- param["beta"] * (1 + param["kappa"])
+#>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
+#>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x0000020819803928>
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1062,11 +1078,10 @@ summary(res_sy)
 #> -------------------------------------------------------
 ```
 
-The estimation is based on function arguments `param`. In addition, the
-initial values of the numerical optimization is the default values
-specified in `param`. Note that the same name arguments are treated as
-the same parameter. `kappa` is in both of `mu` and `beta`, but only one
-`kappa` appears in the estimation result.
+The parameters to estimate and their initial values are taken from the
+default `param` vectors. Parameters with the same name are shared across
+functions. For example, `kappa` appears in both `mu` and `beta`, but
+only one `kappa` is estimated.
 
 ``` r
 fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival, 
@@ -1075,72 +1090,68 @@ fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
 summary(fit_sy)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 77 iterations
+#> BFGS maximization, 73 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -260.6273 
 #> 6  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> theta_p  0.08291    0.01587   5.223 1.76e-07 ***
-#> theta_n  0.16264    0.01695   9.594  < 2e-16 ***
-#> kappa    0.40990    0.02294  17.866  < 2e-16 ***
-#> eta      5.23253    0.36946  14.163  < 2e-16 ***
-#> nu       2.89429    0.32969   8.779  < 2e-16 ***
-#> beta    18.01820        NaN     NaN      NaN    
+#> theta_p  0.08291    0.01108   7.485 7.15e-14 ***
+#> theta_n  0.16264    0.01528  10.643  < 2e-16 ***
+#> kappa    0.40990        NaN     NaN      NaN    
+#> eta      5.23254        NaN     NaN      NaN    
+#> nu       2.89428        NaN     NaN      NaN    
+#> beta    18.01836        NaN     NaN      NaN    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-## Extended model
+## Extended models
 
-The following family of extended multi-variate marked Hawkes models are
-implemented:
+The package supports the following family of extended multivariate
+marked Hawkes models:
 
-``` math
-
+$$
  \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u, z)M(du \times dz)
-```
+$$
 
-where the kernel $`h`$ is represented by
+where the kernel $h$ is
 
-``` math
-
+$$
 h(t, u, z) = (\alpha + g(t, z))\Gamma(t),
-```
+$$
 
-and
+The components are:
 
-- $`\alpha`$ is a constant matrix,
+- $\alpha$ is a constant matrix.
 
-- $`g(t, z)`$ is additional impacts on intensities, which may depend on
-  mark, or any information generated by underlying processes,
+- $g(t, z)$ describes additional effects on the intensities and may
+  depend on the mark or the history of the underlying processes.
 
-- $`\Gamma(t)`$ is exponential decaying matrix such that
-  $`\Gamma_{ij}(t) = e^{-\beta_{ij}(t)}`$,
+- $\Gamma(t)$ is a matrix of exponential decay terms, with
+  $\Gamma_{ij}(t) = e^{-\beta_{ij}t}$.
 
-- $`M`$ denotes the random measures defined on the product of time and
-  mark spaces.
+- $M$ is a vector of random measures on the product of the time and mark
+  spaces.
 
 ### Linear impact model
 
 In the linear impact model,
 
-``` math
-
+$$
  g(t, z) = \eta (z-1).
-```
+$$
 
-`impact` represents $`\Psi(z)`$, the impact of mark on future intensity.
-For details, see [Marked Hawkes process modeling of price dynamics and
-volatility
+The `impact` function represents $g(t, z)$, the additional effect of a
+mark on future intensity. For details, see [Marked Hawkes process
+modeling of price dynamics and volatility
 estimation](https://www.sciencedirect.com/science/article/abs/pii/S0927539816300810).
 
-It is a function, and the first argument is `param` represents the
-parameter of the model. `impact()` function can have additional
-arguments related to the model specification or generated path, such as
-`n`, `mark`, etc. Do not miss `...` as the ellipsis is omitted, an error
-occurs. `rmark()` is a function that generate marks for simulation.
+Its first argument, `param`, contains the model parameters. Additional
+arguments, such as `n` and `mark`, provide information about the model
+or realized path. Include `...` to accept other arguments supplied by
+the package. The `rmark` function generates marks during simulation.
 
 ``` r
 mu <- matrix(c(0.15, 0.15), nrow=2)
@@ -1177,15 +1188,19 @@ hi
 #> [2,]  2.6  2.6
 #> 
 #> Slot impact: 
-#> function(param = c(eta1=0.2), alpha, n, mark, ...){
-#>   ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
-#>   ma * matrix( rep(param["eta1"], 4), nrow=2)
+#> function (param = c(eta1 = 0.2), alpha, n, mark, ...) 
+#> {
+#>     ma <- matrix(rep(mark[n] - 1, 4), nrow = 2)
+#>     ma * matrix(rep(param["eta1"], 4), nrow = 2)
 #> }
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot rmark: 
-#> function(param = c(p=0.65), ...){
-#>   rgeom(1, p=param[1]) + 1
+#> function (param = c(p = 0.65), ...) 
+#> {
+#>     rgeom(1, p = param[1]) + 1
 #> }
+#> <environment: 0x0000022ca0a56d90>
 ```
 
 ``` r
@@ -1226,6 +1241,8 @@ fit <- hfit(hi,
             type = res_impact$type,
             mark = res_impact$mark,
             lambda_component0 = matrix(rep(0.1,4), nrow=2))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 
 summary(fit)
 #> --------------------------------------------
@@ -1236,25 +1253,22 @@ summary(fit)
 #> 5  free parameters
 #> Estimates:
 #>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.13190    0.00891  14.804  <2e-16 ***
-#> alpha1.1  0.67609    0.07742   8.732  <2e-16 ***
-#> alpha1.2  0.60345    0.07211   8.368  <2e-16 ***
-#> beta1.1   2.22126    0.16730  13.277  <2e-16 ***
-#> eta1      0.11635    0.05549   2.097   0.036 *  
+#> mu1      0.131904   0.008917  14.792  <2e-16 ***
+#> alpha1.1 0.676090   0.078474   8.615  <2e-16 ***
+#> alpha1.2 0.603453   0.072927   8.275  <2e-16 ***
+#> beta1.1  2.221258   0.168596  13.175  <2e-16 ***
+#> eta1     0.116345   0.055108   2.111  0.0348 *  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-For a special case of linear impact function, the following
-implementation is recommended. In a marked Hawkes model, the additional
-linear impact can be represented by slot `eta`. In this model, the
+For linear mark effects, specify the `eta` slot directly. The resulting
 intensity process is
 
-``` math
-
- \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(dt \times dz).
-```
+$$
+ \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(du \times dz).
+$$
 
 ``` r
 
@@ -1284,9 +1298,11 @@ h
 #> [1,]  0.3
 #> 
 #> Slot rmark: 
-#> function(param = c(p=0.65), ...){
-#>   rgeom(1, p=param[1]) + 1
+#> function (param = c(p = 0.65), ...) 
+#> {
+#>     rgeom(1, p = param[1]) + 1
 #> }
+#> <environment: 0x0000022ca0a56d90>
 ```
 
 ``` r
@@ -1329,23 +1345,23 @@ fit <- hfit(h,
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 37 iterations
+#> BFGS maximization, 36 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -1684.238 
 #> 4  free parameters
 #> Estimates:
 #>        Estimate Std. error t value  Pr(> t)    
-#> mu1     0.14557    0.00847  17.187  < 2e-16 ***
-#> alpha1  0.63917    0.06892   9.275  < 2e-16 ***
-#> beta1   1.48983    0.12320  12.092  < 2e-16 ***
-#> eta1    0.33626    0.07723   4.354 1.34e-05 ***
+#> mu1    0.145573   0.008443  17.242  < 2e-16 ***
+#> alpha1 0.639166   0.068761   9.295  < 2e-16 ***
+#> beta1  1.489826   0.120189  12.396  < 2e-16 ***
+#> eta1   0.336264   0.076699   4.384 1.16e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-If you want to estimate the mark distribution also, then `dmark` slot
-that describes the density function of mark is required.
+To estimate the parameters of the mark distribution as well, supply its
+density or probability mass function in the `dmark` slot.
 
 ``` r
 h_md <- h
@@ -1359,17 +1375,17 @@ mle_md <- hfit(h_md,
 summary(mle_md)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 51 iterations
+#> BFGS maximization, 45 iterations
 #> Return code 0: successful convergence 
 #> Log-Likelihood: -2657.079 
 #> 5  free parameters
 #> Estimates:
 #>        Estimate Std. error t value  Pr(> t)    
-#> mu1    0.145574   0.008416  17.298  < 2e-16 ***
-#> alpha1 0.639168   0.066621   9.594  < 2e-16 ***
-#> beta1  1.489843   0.114953  12.960  < 2e-16 ***
-#> eta1   0.336259   0.076911   4.372 1.23e-05 ***
-#> p      0.658970   0.012232  53.874  < 2e-16 ***
+#> mu1    0.145574   0.008479  17.168  < 2e-16 ***
+#> alpha1 0.639168   0.070045   9.125  < 2e-16 ***
+#> beta1  1.489843   0.126707  11.758  < 2e-16 ***
+#> eta1   0.336259   0.077297   4.350 1.36e-05 ***
+#> p      0.658970   0.012147  54.250  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1377,37 +1393,29 @@ summary(mle_md)
 
 ### Hawkes flocking model
 
-The function $`g`$ is not necessarily depend on mark. In the Hawkes
-flocking model, the kernel component is represented by
-``` math
-
+The function $g$ need not depend on the mark. In the Hawkes flocking
+model, the kernel components are $$
 \alpha = \begin{bmatrix}\alpha_{11} & \alpha_{12} & 0 & 0 \\\alpha_{12}& \alpha_{11} & 0 & 0 \\0 & 0 & \alpha_{33} & \alpha_{34} \\0 & 0 & \alpha_{34} & \alpha_{33} \end{bmatrix},
-```
-``` math
- 
+$$ $$ 
 g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_{\{C_1(t) < C_2(t)\}} \\ 
 0 & 0 & \alpha_{1n} 1_{\{C_1(t) > C_2(t)\}} & \alpha_{1w}1_{\{C_1(t) > C_2(t)\}} \\
 \alpha_{2w} 1_{\{C_2(t) < C_1(t)\}} & \alpha_{2n}1_{\{C_2(t) < C_1(t)\}} & 0 & 0 \\
 \alpha_{2n} 1_{\{C_2(t) > C_1(t)\}} & \alpha_{2w}1_{\{C_2(t) > C_1(t)\}} & 0 & 0 \end{bmatrix},
-```
+$$
 
 where
 
-``` math
-
+$$
 C_1(t) = N_1(t) - N_2(t), \quad C_2(t) = N_3(t) - N_4(t).
-```
-For details, see [Systemic risk in market microstructure of crude oil
+$$ For details, see [Systemic risk in market microstructure of crude oil
 and gasoline futures prices: A Hawkes flocking model
 approach](https://onlinelibrary.wiley.com/doi/full/10.1002/fut.22048).
 
-In the basic model, `alpha` is a matrix, but it can be a function as in
-the following code. The function `alpha` simply return a $`4\times4`$
-matrix but by doing so, we can fix some of elements as specific vales
-when estimating. When estimating, the optimization is only applied for
-the specified parameters in the argument `param`. In the case of
-simulation, there is no difference whether the parameter set is
-represented by a matrix or a function.
+The `alpha` slot can contain a function that returns a matrix. In the
+following example, the function returns a $4\times4$ matrix with some
+entries fixed at zero. Only the parameters in `param` are estimated. For
+simulation, a fixed matrix and a function returning the same matrix give
+the same model.
 
 ``` r
 mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
@@ -1424,12 +1432,11 @@ alpha <- function(param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, alpha34
 beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = TRUE)
 ```
 
-`impact()` function is little bit complicated, but it is nothing more
-than expressing the definition of the model to an R function. Note that
-we specify `N=N, n=n` in the argument. `N` is for counting process $`N`$
-and `n` denotes the time step. Both are needed to implement the function
-body and it is required to specify in the argument. `…` also should not
-be omitted.
+The `impact` function below implements the model definition. Its `N`
+argument contains the counting process values, and `n` identifies the
+current event index. Include both arguments because the function uses
+them, along with `...` to accept other arguments supplied by the
+package.
 
 ``` r
 impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
@@ -1463,13 +1470,15 @@ hspec_fl
 #> [4,] 0.04
 #> 
 #> Slot alpha: 
-#> function(param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, alpha34 = 0.4)){
-#>   matrix(c(param["alpha11"], param["alpha12"], 0, 0,
-#>            param["alpha12"], param["alpha11"], 0, 0,
-#>            0, 0, param["alpha33"], param["alpha34"],
-#>            0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
+#> function (param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, 
+#>     alpha34 = 0.4)) 
+#> {
+#>     matrix(c(param["alpha11"], param["alpha12"], 0, 0, param["alpha12"], 
+#>         param["alpha11"], 0, 0, 0, 0, param["alpha33"], param["alpha34"], 
+#>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
+#>         byrow = TRUE)
 #> }
-#> <bytecode: 0x0000020818b11ea0>
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1479,23 +1488,20 @@ hspec_fl
 #> [4,]  1.1  1.1  1.1  1.1
 #> 
 #> Slot impact: 
-#> function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
-#>                    N=N, n=n, ...){
-#>   
-#>   Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
-#>                   0, 0, param['alpha1n'], param['alpha1w'],
-#>                   param['alpha2w'], param['alpha2n'], 0, 0,
-#>                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
-#>   
-#>   ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n]
-#>   
-#>   km <- matrix(c(!ind, !ind, !ind, !ind,
-#>                  ind, ind, ind, ind,
-#>                  ind, ind, ind, ind,
-#>                  !ind, !ind, !ind, !ind), nrow = 4, byrow = TRUE)
-#>   
-#>   km * Psi
+#> function (param = c(alpha1n = 0.25, alpha1w = 0.1, alpha2n = 0.1, 
+#>     alpha2w = 0.2), N = N, n = n, ...) 
+#> {
+#>     Psi <- matrix(c(0, 0, param["alpha1w"], param["alpha1n"], 
+#>         0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], 
+#>         param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], 
+#>         0, 0), nrow = 4, byrow = TRUE)
+#>     ind <- N[, "N1"][n] - N[, "N2"][n] > N[, "N3"][n] - N[, "N4"][n]
+#>     km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, 
+#>         ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, 
+#>         byrow = TRUE)
+#>     km * Psi
 #> }
+#> <environment: 0x0000022ca0a56d90>
 ```
 
 ``` r
@@ -1532,6 +1538,8 @@ summary(hr_fl)
 
 ``` r
 fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_fl)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -1541,18 +1549,18 @@ summary(fit_fl)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1     0.028055   0.004301   6.524 6.87e-11 ***
-#> mu3     0.033179   0.004262   7.784 7.02e-15 ***
-#> alpha11 0.199720   0.028740   6.949 3.68e-12 ***
-#> alpha12 0.312236   0.030169  10.349  < 2e-16 ***
-#> alpha33 0.283861   0.036653   7.745 9.59e-15 ***
-#> alpha34 0.341250   0.039297   8.684  < 2e-16 ***
-#> beta1.1 0.734703   0.052068  14.110  < 2e-16 ***
-#> beta3.1 0.899924   0.074849  12.023  < 2e-16 ***
-#> alpha1n 0.250338   0.044534   5.621 1.90e-08 ***
-#> alpha1w 0.107483   0.029787   3.608 0.000308 ***
-#> alpha2n 0.083683   0.037638   2.223 0.026191 *  
-#> alpha2w 0.172788   0.033958   5.088 3.61e-07 ***
+#> mu1     0.028055   0.004296   6.531 6.54e-11 ***
+#> mu3     0.033179   0.004252   7.802 6.07e-15 ***
+#> alpha11 0.199720   0.028381   7.037 1.96e-12 ***
+#> alpha12 0.312236   0.029858  10.457  < 2e-16 ***
+#> alpha33 0.283861   0.036080   7.868 3.61e-15 ***
+#> alpha34 0.341250   0.037963   8.989  < 2e-16 ***
+#> beta1.1 0.734703   0.050791  14.465  < 2e-16 ***
+#> beta3.1 0.899924   0.071253  12.630  < 2e-16 ***
+#> alpha1n 0.250338   0.044109   5.675 1.38e-08 ***
+#> alpha1w 0.107483   0.029794   3.608 0.000309 ***
+#> alpha2n 0.083683   0.037832   2.212 0.026968 *  
+#> alpha2w 0.172788   0.033722   5.124 2.99e-07 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1560,12 +1568,10 @@ summary(fit_fl)
 
 ### Bid-ask price model
 
-In this model, we use a system of counting processes with the
-corresponding conditional intensities to describe the bid-ask price
-processes:
+This model describes bid and ask prices using a system of counting
+processes and their conditional intensities:
 
-``` math
- 
+$$ 
 N_t = \begin{bmatrix}
 N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \end{bmatrix},
@@ -1573,28 +1579,27 @@ N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
 \lambda_t =
 \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \\ \lambda_3(t) \\ \lambda_4(t)
 \end{bmatrix}
-```
+$$
 
-The ask price process $`N_1(t) - N_2(t)`$ and the bid price process is
-$`N_3(t) - N_4(t)`$. The mid price process is
-$`p(t) = N_1(t) + N_3(t) - N_2(t) - N_4(t)`$ plus initial mid price
-level.
+In the unmarked case, the changes in ask and bid prices are
+$N_1(t) - N_2(t)$ and $N_3(t) - N_4(t)$, respectively. The marked
+example below uses `Nc` to accumulate price changes. The midprice $p(t)$
+is the average of the ask and bid prices, including their initial
+levels.
 
 The base intensity process is
 
-``` math
-\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} 
-```
+$$\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} $$
 
-where $`L(t) \in \{ 0, 1, 2, \cdots \}`$ is the absolute level of the
-bid-ask spread with $`L(t)=0`$ implying the minimum level. For details,
-see [Modeling bid and ask price dynamics with an extended Hawkes process
-and its empirical applications for high-frequency stock market
+where $L(t) \in \{0, 1, 2, \ldots\}$ measures the bid-ask spread above
+its minimum level, so $L(t)=0$ corresponds to the minimum spread. For
+details, see [Modeling bid and ask price dynamics with an extended
+Hawkes process and its empirical applications for high-frequency stock
+market
 data](https://academic.oup.com/jfec/article/21/4/1099/6513935?login=true).
 
-Note that in the following code of the definition of `mu`, `n` is needed
-to represent time $`t`$ and `Nc` is needed to calculate the level and
-mid price.
+In the `mu` function below, `n` identifies the current event index, and
+`Nc` is used to calculate the spread level and midprice.
 
 ``` r
 # presumed initial bid and ask prices
@@ -1634,28 +1639,26 @@ mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
 
 In addition, the kernel is represented by
 
-``` math
-h(t, u) = 
+$$h(t, u) = 
 \begin{bmatrix} \alpha_{s1} & \alpha_{m} & \alpha_{s2} & 0 \\   \alpha_{w1} & \alpha_{n1}(u) & \alpha_{n1}(u) & \alpha_{w2} \\  \alpha_{w2} & \alpha_{n2}(u) & \alpha_{n2}(u) & \alpha_{w1} \\  0 & \alpha_{s2} & \alpha_{m} & \alpha_{s1} \\   \end{bmatrix},
-```
+$$
 
 where
 
-``` math
-
+$$
 \alpha_{n1}(u) = - \sum_{j=1}^4 \lambda_{2j}(u) + \xi \ell(u), \quad \alpha_{n2}(u) = - \sum_{j=1}^4 \lambda_{3j}(u) + \xi \ell(u),
-```
+$$
 
-for constant $`\xi \geq 0`$ and $`\lambda_{ij}`$ is a component of
-$`\lambda_i`$ such that
+Here, $\xi \geq 0$ is a constant, and $\lambda_{ij}$ is a component of
+$\lambda_i$, defined by
 
-``` math
-\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).
-```
+$$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
 
-In the following code, we separate the constant part of $`h`$ as `alpha`
-and stochastic part as `impact`. To represent $`\lambda_{ij}`$, we need
-`lambda_component`. Note that
+The following code places the constant part of $h$ in `alpha` and the
+state-dependent part in `impact`. The `lambda_component` argument
+supplies the values of $\lambda_{ij}$. Individual components can be
+negative after a reset. The equal decay rates used here allow simulation
+as long as the sum of the components in each row remains nonnegative.
 
 ``` r
 
@@ -1711,42 +1714,42 @@ h_ba
 #> An object of class "hspec" of 4-dimensional Hawkes process
 #> 
 #> Slot mu: 
-#> function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
-#> 
-#>   if(n == 1){
-#>     
-#>     level <- initial_level
-#>     mid <- initial_mid_price
-#>     
-#>   } else {
-#>     
-#>     level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
-#>     ask <- initial_ask_price + (Nc[n-1,1] - Nc[n-1,2]) 
-#>     bid <- initial_bid_price + (Nc[n-1,3] - Nc[n-1,4]) 
-#>     mid <- (ask + bid) / 2
-#>     
-#>   }
-#>   
-#>   if(level <= 0){
-#>     matrix(c(param["mu1"], 0,
-#>              0, param["mu1"]), nrow = 4)
-#>   } else {
-#>     matrix(c(param["mu1"], param["zeta1"] * level / mid,
-#>              param["zeta1"]*level / mid, param["mu1"]), nrow = 4)
-#> 
-#>   }
-#> 
+#> function (param = c(mu1 = 0.08, zeta1 = 0.1), n = n, Nc = Nc, 
+#>     ...) 
+#> {
+#>     if (n == 1) {
+#>         level <- initial_level
+#>         mid <- initial_mid_price
+#>     }
+#>     else {
+#>         level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - 
+#>             Nc[n - 1, 4]) + initial_level
+#>         ask <- initial_ask_price + (Nc[n - 1, 1] - Nc[n - 1, 
+#>             2])
+#>         bid <- initial_bid_price + (Nc[n - 1, 3] - Nc[n - 1, 
+#>             4])
+#>         mid <- (ask + bid)/2
+#>     }
+#>     if (level <= 0) {
+#>         matrix(c(param["mu1"], 0, 0, param["mu1"]), nrow = 4)
+#>     }
+#>     else {
+#>         matrix(c(param["mu1"], param["zeta1"] * level/mid, param["zeta1"] * 
+#>             level/mid, param["mu1"]), nrow = 4)
+#>     }
 #> }
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot alpha: 
-#> function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
-#>                             alpha_w1=11, alpha_w2=7)){
-#>   matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 0,
-#>            param["alpha_w1"], 0, 0, param["alpha_w2"],
-#>            param["alpha_w2"], 0, 0, param["alpha_w1"],
-#>            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
+#> function (param = c(alpha_s1 = 4, alpha_m = 26, alpha_s2 = 5, 
+#>     alpha_w1 = 11, alpha_w2 = 7)) 
+#> {
+#>     matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 
+#>         0, param["alpha_w1"], 0, 0, param["alpha_w2"], param["alpha_w2"], 
+#>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
+#>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x0000020819c82330>
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1756,42 +1759,48 @@ h_ba
 #> [4,]   50   50   50   50
 #> 
 #> Slot impact: 
-#> function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
-#>   if(n == 1){
-#>     level <-  initial_level
-#>     # mid <- initial_mid_price
-#>   } else {
-#>     level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
-#>     ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])
-#>     bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])
-#>     mid <- (ask + bid)/2
-#>   }
-#>   
-#>   lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
-#> 
-#>   l2 <- sum(lambda_component_matrix[2,]) # sum of second row
-#>   l3 <- sum(lambda_component_matrix[3,]) # sum of third row
-#> 
-#>   im <- matrix(c(0, 0, 0, 0,
-#>                  0, -l2 + param["xi"]*level/mid, -l2 + param["xi"]*level/mid, 0,
-#>                  0, -l3 + param["xi"]*level/mid, -l3 + param["xi"]*level/mid, 0,
-#>                  0, 0, 0, 0), nrow = 4, byrow = TRUE)
-#> 
+#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component = lambda_component, 
+#>     ...) 
+#> {
+#>     if (n == 1) {
+#>         level <- initial_level
+#>     }
+#>     else {
+#>         level <- Nc[n, 1] - Nc[n, 2] - (Nc[n, 3] - Nc[n, 4]) + 
+#>             initial_level
+#>         ask <- initial_ask_price + (Nc[n, 1] - Nc[n, 2])
+#>         bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])
+#>         mid <- (ask + bid)/2
+#>     }
+#>     lambda_component_matrix <- matrix(lambda_component[n, ], 
+#>         nrow = 4, byrow = TRUE)
+#>     l2 <- sum(lambda_component_matrix[2, ])
+#>     l3 <- sum(lambda_component_matrix[3, ])
+#>     im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, 
+#>         -l2 + param["xi"] * level/mid, 0, 0, -l3 + param["xi"] * 
+#>             level/mid, -l3 + param["xi"] * level/mid, 0, 0, 0, 
+#>         0, 0), nrow = 4, byrow = TRUE)
 #> }
+#> <environment: 0x0000022ca0a56d90>
 #> 
 #> Slot rmark: 
-#> function(n=n, Nc=Nc, type, ...){
-#>   if(n == 1){
-#>     level <-  initial_level
-#>   } else {
-#>     level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
-#>   }
-#>   if (type[n] == 2 | type[n] == 3){
-#>     min(level,  rgeom(1, p=0.65) + 1)
-#>   } else {
-#>     rgeom(1, p=0.65) + 1
-#>   }
+#> function (n = n, Nc = Nc, type, ...) 
+#> {
+#>     if (n == 1) {
+#>         level <- initial_level
+#>     }
+#>     else {
+#>         level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - 
+#>             Nc[n - 1, 4]) + initial_level
+#>     }
+#>     if (type[n] == 2 | type[n] == 3) {
+#>         min(level, rgeom(1, p = 0.65) + 1)
+#>     }
+#>     else {
+#>         rgeom(1, p = 0.65) + 1
+#>     }
 #> }
+#> <environment: 0x0000022ca0a56d90>
 ```
 
 ``` r
@@ -1826,11 +1835,12 @@ summary(hr_ba)
 #> -------------------------------------------------------
 ```
 
-As a separate log-likelihood estimation performed, the parameter for
-mark distribution is not estimated.
+The following likelihood calculation and fit do not estimate the mark
+distribution because no `dmark` function is supplied.
 
 ``` r
-logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, Nc = hr_ba$Nc,
+logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+       mark = hr_ba$mark, Nc = hr_ba$Nc,
        lambda_component0 = matrix(rep(1, 16), 4))
 #> loglikelihood 
 #>     -1817.794
@@ -1838,56 +1848,56 @@ logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, Nc = hr_ba$
 
 ``` r
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+               mark = hr_ba$mark,
                lambda_component0 = matrix(rep(1, 16), 4))
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle_ba)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 37 iterations
+#> BFGS maximization, 41 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -1810.43 
+#> Log-Likelihood: -1810.892 
 #> 9  free parameters
 #> Estimates:
 #>           Estimate Std. error t value  Pr(> t)    
-#> mu1       0.069541   0.003612  19.254  < 2e-16 ***
-#> zeta1     0.135214   0.010751  12.577  < 2e-16 ***
-#> alpha_s1  4.656123   3.576523   1.302  0.19297    
-#> alpha_m  23.554234   9.212687   2.557  0.01057 *  
-#> alpha_s2  5.849629   6.196964   0.944  0.34519    
-#> alpha_w1 10.283680   3.279791   3.135  0.00172 ** 
-#> alpha_w2  7.402709   1.284394   5.764 8.23e-09 ***
-#> beta1.1  51.868581   2.314850  22.407  < 2e-16 ***
-#> xi        2.376550   3.956622   0.601  0.54807    
+#> mu1       0.069543   0.003565  19.507  < 2e-16 ***
+#> zeta1     0.101083   0.007953  12.710  < 2e-16 ***
+#> alpha_s1  4.656356   0.767171   6.070 1.28e-09 ***
+#> alpha_m  23.562090   0.720984  32.680  < 2e-16 ***
+#> alpha_s2  5.850393   0.669341   8.741  < 2e-16 ***
+#> alpha_w1 10.286442   0.775941  13.257  < 2e-16 ***
+#> alpha_w2  7.403582   0.531549  13.928  < 2e-16 ***
+#> beta1.1  51.873784   0.355353 145.978  < 2e-16 ***
+#> xi        1.765309        NaN     NaN      NaN    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 ```
 
-## Point process with flexible residual
+## Point processes with flexible residuals
 
 ### One-dimensional model
 
-This code demonstrates how to create a point process with a flexible
-residual structure. For details, see [Self and mutually exciting point
-process embedding flexible residuals and intensity with discretely
-Markovian
+The following example defines a point process with a custom residual
+distribution. For details, see [Self and mutually exciting point process
+embedding flexible residuals and intensity with discretely Markovian
 dynamics](https://link.springer.com/article/10.1007/s11009-025-10159-5).
-The distribution used in this example is a combination of a trapezoid
-and an exponential distribution. The `dresidual` and `presidual`
-functions receive their necessary parameters bundled into a param
-vector. In the context of a Hawkes process model, these functions
-correspond to the case where the residuals are unit exponential
-distributions.
+The residual density has a trapezoidal section and an exponential tail.
+The `dresidual`, `presidual`, and `qresidual` functions receive their
+distribution parameters through the `param` vector. The ordinary Hawkes
+model is the special case with an exponential residual distribution of
+rate 1. Use `set_residual` to wrap the distribution functions with
+log-density and tail-probability support.
 
 ``` r
 mu1_d <- 0.5; alpha1_d <- 1; beta1_d <- 1.2; a <- 0.7; ell <- 1.6
-hspec1_d <- new("hspec", mu=mu1_d, alpha=alpha1_d, beta=beta1_d,
-              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
-              dresidual = function(x, param = c(a = a, ell = ell))
-                dtzexp(x, a = param["a"], ell = param["ell"]),
-              presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]),
-              qresidual = function(p, param = c(a = a, ell = ell))
-                  qtzexp(p, a = param["a"], ell = param["ell"]))
+hspec1_d <- set_residual(
+  new("hspec", mu = mu1_d, alpha = alpha1_d, beta = beta1_d),
+  param = c(a = a, ell = ell),
+  dresidual = dtzexp, presidual = ptzexp,
+  qresidual = qtzexp, rresidual = rtzexp
+)
 ```
 
 ``` r
@@ -1901,14 +1911,11 @@ hist(
 )
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-58-1.png)<!-- -->
 
-This R code snippet demonstrates how to analyze the residual process of
-a point process model using a flexible distribution. The logLik function
-is used to compute the log-likelihood of observed inter-arrival times
-(`dh1_real$inter_arrival`) based on the distribution specified by
-`hspec1_d`. The `infer = TRUE` parameter allows the function to also
-infer the residual process, storing the results in `infer_res_dh1`.
+Use `logLik` to evaluate the observed inter-arrival times under
+`hspec1_d`. Setting `infer = TRUE` also returns the intensity and
+residual processes in `infer_res_dh1`.
 
 ``` r
 # Infer the residual process using the log-likelihood method
@@ -1938,13 +1945,12 @@ lines(
 legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-58-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-59-1.png)<!-- -->
 
-### Two-dimenional model
+### Two-dimensional model
 
-The above method can be extended to multi-dimensions. The basic approach
-to extension is similar to how multi-dimensional Hawkes models are
-handled.
+The same approach extends to multiple dimensions, using parameter
+matrices as in a multivariate Hawkes model.
 
 ``` r
 mu2_d <- matrix(c(0.3), nrow = 2)
@@ -1952,14 +1958,12 @@ alpha2_d <- matrix(c(0.5, 0.8, 0.8, 0.5), nrow = 2, byrow = TRUE)
 beta2_d <- matrix(c(1.5, 1.5, 1.5, 1.5), nrow = 2, byrow = TRUE)
 a <- 0.7; ell <- 1.6
 
-hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
-              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
-              dresidual = function(x, param = c(a = a, ell = ell))
-                dtzexp(x, a = param["a"], ell = param["ell"]),
-              presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]),
-              qresidual = function(p, param = c(a = a, ell = ell))
-                  qtzexp(p, a = param["a"], ell = param["ell"]))
+hspec2_du <- set_residual(
+  new("hspec", mu = mu2_d, alpha = alpha2_d, beta = beta2_d),
+  param = c(a = a, ell = ell),
+  dresidual = dtzexp, presidual = ptzexp,
+  qresidual = qtzexp, rresidual = rtzexp
+)
 print(hspec2_du)
 #> An object of class "hspec" of 2-dimensional Hawkes process
 #> 
@@ -1979,22 +1983,43 @@ print(hspec2_du)
 #> [2,]  1.5  1.5
 #> 
 #> Slot rresidual: 
-#> function(size) rtzexp(n=size, a = a, ell = ell)
+#> function (size, param = c(a = 0.7, ell = 1.6)) 
+#> {
+#>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
+#>         param)))
+#> }
+#> <environment: 0x0000022ca3f78a48>
 #> 
 #> Slot dresidual: 
-#> function(x, param = c(a = a, ell = ell))
-#>                 dtzexp(x, a = param["a"], ell = param["ell"])
+#> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
+#> {
+#>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
+#>         param))
+#> }
+#> <environment: 0x0000022ca3f78a48>
 #> 
 #> Slot presidual: 
-#> function(q, param = c(a = a, ell = ell))
-#>                   ptzexp(q, a = param["a"], ell = param["ell"])
+#> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
+#>     log.p = FALSE) 
+#> {
+#>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
+#>         params = distribution_parameters(presidual, param))
+#> }
+#> <environment: 0x0000022ca3f78a48>
 #> 
 #> Slot qresidual: 
-#> function(p, param = c(a = a, ell = ell))
-#>                   qtzexp(p, a = param["a"], ell = param["ell"])
+#> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
+#>     log.p = FALSE) 
+#> {
+#>     residual_quantile(qresidual, p, lower.tail = lower.tail, 
+#>         log.p = log.p, params = distribution_parameters(qresidual, 
+#>             param))
+#> }
+#> <environment: 0x0000022ca3f78a48>
 ```
 
-Histogram of inter-arrival times under `tzexp` distribution.
+The following histogram shows inter-arrival times from a model with
+`tzexp` residuals.
 
 ``` r
 set.seed(1107)
@@ -2009,9 +2034,10 @@ hist(
 )
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-60-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-61-1.png)<!-- -->
 
-Inference based on the flexible residual model.
+Use `logLik` with `infer = TRUE` to recover the intensity and residual
+processes.
 
 ``` r
 infer_res_dh2 <- logLik(hspec2_du, 
@@ -2019,7 +2045,8 @@ infer_res_dh2 <- logLik(hspec2_du,
                         type = duh2_real$type, infer = TRUE)
 ```
 
-The residual process follows the residual distribution in the model.
+Under a correctly specified model, the inferred residuals follow the
+specified residual distribution.
 
 ``` r
 # Plot a histogram of the inferred residual process
@@ -2047,9 +2074,10 @@ lines(
 legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-62-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-63-1.png)<!-- -->
 
-The `eres_process` follows the exponential distribution.
+The transformed residuals in `eres_process1` follow an exponential
+distribution with rate 1 under a correctly specified model.
 
 ``` r
 hist(
@@ -2076,40 +2104,63 @@ lines(
 legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-63-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-64-1.png)<!-- -->
 
-The maximum likelihood estimation.
+Use `hfit` for maximum likelihood estimation. The distribution requires
+`0 < a <= 3`, `ell > 0`, and a nonnegative density. The last condition
+is nonlinear, so the custom objective below checks each candidate with
+`dtzexp` and returns `-Inf` when the distribution is invalid.
 
 ``` r
+residual_loglik <- function(object, inter_arrival, type, param) {
+  valid <- tryCatch({
+    dtzexp(1, a = param["a"], ell = param["ell"])
+    TRUE
+  }, error = function(e) FALSE)
+  if (!valid) return(-Inf)
+  suppressMessages(logLik(object, inter_arrival = inter_arrival, type = type))
+}
+constraints <- list(
+  ineqA = rbind(diag(6), c(0, 0, 0, 0, -1, 0)),
+  ineqB = c(rep(0, 6), 3)
+)
 mle_dh <- hfit(hspec2_du, 
                inter_arrival = duh2_real$inter_arrival, 
                type = duh2_real$type,
-               constraint=list(ineqA=rbind(diag(6)), ineqB=matrix(rep(0,6), nrow=6)))
+               mylogLik = residual_loglik,
+               constraints = constraints)
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle_dh)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 65 iterations
+#> BFGS maximization, 56 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -12548.98 
+#> Log-Likelihood: -12407.47 
 #> 6  free parameters
 #> Estimates:
 #>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.28959        NaN     NaN     NaN    
-#> alpha1.1  0.49525        NaN     NaN     NaN    
-#> alpha1.2  0.81380    0.02412   33.74  <2e-16 ***
-#> beta1.1   1.50551    0.02784   54.07  <2e-16 ***
-#> a         0.69286        NaN     NaN     NaN    
-#> ell       1.58421        NaN     NaN     NaN    
+#> mu1      0.305672   0.008354   36.59  <2e-16 ***
+#> alpha1.1 0.533487   0.019566   27.27  <2e-16 ***
+#> alpha1.2 0.843634   0.022186   38.03  <2e-16 ***
+#> beta1.1  1.590127   0.038181   41.65  <2e-16 ***
+#> a        0.718160        NaN     NaN     NaN    
+#> ell      1.637916        NaN     NaN     NaN    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Warning: constrained likelihood estimation. Inference is probably wrong
 #> Constrained optimization based on constrOptim 
-#> 1  outer iterations, barrier value -0.00051762 
+#> 1  outer iterations, barrier value -0.0002565683 
 #> --------------------------------------------
 ```
 
-Uniform residual distribution example is also provided.
+These constraints keep the six parameters nonnegative and enforce
+`a <= 3`, the upper limit of the trapezoid-exponential distribution. The
+parameter order is `mu1`, `alpha1.1`, `alpha1.2`, `beta1.1`, `a`, and
+`ell`.
+
+The following example uses a uniform residual distribution on $[0, 2]$.
 
 ``` r
 
@@ -2120,14 +2171,17 @@ beta2_d <- matrix(c(1.2, 1.2, 1.2, 1.2), nrow = 2, byrow = TRUE)
 
 hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
                  rresidual = function(size) runif(n=size, 0, 2),
-                 dresidual = function(x, param = c()) dunif(x, 0, 2),
-                 presidual = function(q, param = c()) punif(q, 0, 2),
-                 qresidual = function(p, param = c()) qunif(p, 0, 2))
+                 dresidual = function(x, param = numeric(0), log = FALSE)
+                   dunif(x, 0, 2, log = log),
+                 presidual = function(q, param = numeric(0), lower.tail = TRUE, log.p = FALSE)
+                   punif(q, 0, 2, lower.tail = lower.tail, log.p = log.p),
+                 qresidual = function(p, param = numeric(0), lower.tail = TRUE, log.p = FALSE)
+                   qunif(p, 0, 2, lower.tail = lower.tail, log.p = log.p))
 
 duh2_real <- hsim(hspec2_du, size = 5000)
 ```
 
-Histogram of the residual process:
+Plot a histogram of the inferred residuals:
 
 ``` r
 
@@ -2145,4 +2199,4 @@ hist(
 )
 ```
 
-![](example_files/figure-gfm/unnamed-chunk-66-1.png)<!-- -->
+![](example_files/figure-gfm/unnamed-chunk-67-1.png)<!-- -->

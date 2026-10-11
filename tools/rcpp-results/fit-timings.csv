@@ -1,0 +1,3 @@
+"case","rows","operation","r_seconds","cpp_seconds","speedup","r_evaluations","cpp_evaluations","loglik_abs_difference","coefficient_max_abs_difference"
+"univariate",2001,"hfit",1.49000000000001,0.0700000000000003,21.2857142857143,126,126,0,0
+"multi_kernel",2001,"hfit",4.43000000000001,0.590000000000003,7.50847457627115,328,328,0,0

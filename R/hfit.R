@@ -3,17 +3,9 @@ NULL
 
 #' Perform Maximum Likelihood Estimation
 #'
-#' This is a generic function named `hfit` designed for estimating the parameters
-#' of the exponential Hawkes model. It is implemented as an S4 method for two main reasons:
-#'
-#' Model Representation: To represent the structure of the model as an `hspec` object.
-#' The multivariate marked Hawkes model has numerous variations, and using an S4 class
-#' allows for a flexible and structured approach.
-#'
-#' Optimization Initialization: To provide a starting point for numerical optimization.
-#' The parameter values assigned to the `hspec` slots serve as initial values for the optimization process.
-#'
-#' This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
+#' Estimate exponential Hawkes model parameters by maximum likelihood.
+#' The supplied \code{\link{hspec-class}} object defines the model and the starting
+#' values for optimization with \code{\link[maxLik]{maxLik}}.
 #'
 #' @param object An \code{\link{hspec-class}} object containing the parameter values.
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
@@ -49,6 +41,12 @@ NULL
 #' arguments, `lambda_component0`, `param`, and `reduced`. Optional defaults are
 #' preserved; `...` receives the remaining context. Additional inputs should be
 #' captured in the function's environment or given defaults.
+#'
+#' When equal matrix entries are grouped, a message lists the affected components
+#' once before optimization. Use `suppressMessages(hfit(...))` to hide it.
+#' Setting `reduced = FALSE` separates matrix entries; function parameters still
+#' share values by name. A numeric zero is a starting value, not a fixed zero.
+#' To fix entries at zero, use a component function with constants at those positions.
 #'
 #' @docType methods
 #' @rdname hfit
@@ -274,6 +272,7 @@ setMethod(
       additional_argument
     )
 
+    message_parameter_sharing(parameter_map)
     do.call(maxLik::maxLik, ml_args)
 
 

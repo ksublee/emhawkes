@@ -26,7 +26,12 @@ NULL
 #' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
 #' If no further event can occur, the result contains only the generated rows
 #' and a warning reports the early termination. The initial row is included.
-#' Simulation requires finite, nonnegative baseline and kernel components.
+#' Simulation requires finite, nonnegative baselines. Signed kernel components
+#' are allowed when their sum is nonnegative and decreasing between events.
+#' For equal decay rates within a row, this requires a nonnegative row sum.
+#' For unequal rates, the simulator uses a sufficient condition: group components
+#' by decay rate, multiply each group sum by its rate, and check that cumulative
+#' sums in increasing rate order are nonnegative.
 #'
 #' @rdname hsim
 #' @docType methods
@@ -98,6 +103,31 @@ setMethod(
     }
 
     dimens <- object@dimens
+    rate_groups <- lapply(seq_len(dimens), function(i) {
+      split(seq_len(ncol(beta)), factor(beta[i, ], levels = sort(unique(beta[i, ]))))
+    })
+    valid_components <- function(component) {
+      if (any(!is.finite(component))) return(FALSE)
+      if (all(component >= 0)) return(TRUE)
+      component <- matrix(component, nrow = dimens)
+      for (i in seq_len(dimens)) {
+        if (all(component[i, ] >= 0)) next
+        # Equal-rate resets can cancel to zero up to floating-point error.
+        if (length(rate_groups[[i]]) == 1L) {
+          weight <- component[i, ]
+          cumulative <- sum(weight)
+        } else {
+          weight <- component[i, ] * beta[i, ]
+          cumulative <- cumsum(vapply(rate_groups[[i]], function(j) sum(weight[j]), numeric(1)))
+        }
+        scale <- sum(abs(weight))
+        # Abel summation: nonnegative cumulative derivative weights ensure a
+        # decreasing excitation, whose limit is zero. It is thus nonnegative.
+        if (!is.finite(scale) || any(!is.finite(cumulative)) ||
+            any(cumulative < -32 * .Machine$double.eps * max(1, scale))) return(FALSE)
+      }
+      TRUE
+    }
 
     N <- matrix(numeric(length = dimens * size), ncol = dimens)
     Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
@@ -149,8 +179,8 @@ setMethod(
 
     lambda_component0 <- normalize_lambda_initial(lambda_component0, dimens, ncol(beta))
     lambda_component_n <- lambda_component0
-    if (any(!is.finite(lambda_component0)) || any(lambda_component0 < 0)) {
-      stop("Simulation requires finite, nonnegative initial kernel components.")
+    if (!valid_components(lambda_component0)) {
+      stop("Initial kernel components must define nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
@@ -220,8 +250,8 @@ setMethod(
       # rmu_n is previously defined right continuous version.
       mu_n <- rmu_n
       if (length(mu_n) != dimens || any(!is.finite(mu_n)) || any(mu_n < 0) ||
-          any(!is.finite(rambda_component[n - 1, ])) || any(rambda_component[n - 1, ] < 0)) {
-        stop("Simulation requires finite, nonnegative baseline and kernel components.")
+          !valid_components(matrix(rambda_component[n - 1, ], nrow = dimens, byrow = TRUE))) {
+        stop("Simulation requires finite, nonnegative baselines and nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
       }
 
 

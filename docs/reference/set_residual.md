@@ -1,0 +1,105 @@
+# Set Residual Distribution Functions for Hawkes Model Specification
+
+Sets residual distribution functions (density, CDF, quantile, and random
+generation) for a Hawkes model specification object with fixed
+parameters.
+
+## Usage
+
+``` r
+set_residual(
+  object,
+  param,
+  dresidual = NULL,
+  presidual = NULL,
+  qresidual = NULL,
+  rresidual = NULL,
+  ...
+)
+
+# S4 method for class 'hspec'
+set_residual(
+  object,
+  param,
+  dresidual = NULL,
+  presidual = NULL,
+  qresidual = NULL,
+  rresidual = NULL
+)
+```
+
+## Arguments
+
+- object:
+
+  An object of class `hspec` (Hawkes model specification)
+
+- param:
+
+  A named numeric vector of parameters for the residual distribution
+
+- dresidual:
+
+  Density function of the residual distribution (optional)
+
+- presidual:
+
+  Cumulative distribution function (CDF) of the residual distribution
+  (optional)
+
+- qresidual:
+
+  Quantile function of the residual distribution (optional)
+
+- rresidual:
+
+  Random generation function of the residual distribution (optional)
+
+- ...:
+
+  Additional arguments for future extensions
+
+## Value
+
+An updated `hspec` object with residual functions set
+
+## Details
+
+This method allows setting residual distribution functions for a
+flexible model.
+
+The `param` argument in these functions defaults to the parameters
+provided during setup and is used for estimation. Density wrappers
+accept `log`; CDF and quantile wrappers accept `lower.tail` and `log.p`.
+These options are forwarded when the supplied distribution supports
+them. User-defined distributions should provide log-density and
+upper-tail log-probability options to retain accuracy in extreme tails.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Create basic Hawkes specification
+hspec_obj <- new("hspec",
+                 mu = matrix(0.1, nrow = 1),
+                 alpha = matrix(0.5, nrow = 1),
+                 beta = matrix(1.0, nrow = 1))
+
+# Set residual distribution parameters
+params <- c(a = 0.5, ell = 1.0)
+
+# Apply residual functions
+hspec_obj <- set_residual(
+  hspec_obj,
+  param = params,
+  dresidual = dtzexp,
+  presidual = ptzexp,
+  qresidual = qtzexp,
+  rresidual = rtzexp
+)
+
+# Check resulting functions
+hspec_obj@dresidual
+hspec_obj@rresidual
+} # }
+```

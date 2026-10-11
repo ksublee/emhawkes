@@ -3,22 +3,27 @@ Title: Exponential Multivariate Hawkes Model
 Version: 0.9.9
 Authors@R: person("Kyungsub", "Lee", email = "kyungsub@gmail.com", role = c("aut", "cre"))
 Maintainer: Kyungsub Lee <kyungsub@gmail.com>
-Description: Simulate and fitting exponential multivariate Hawkes model. 
-    This package simulates a multivariate Hawkes model, introduced by Hawkes (1971) <doi:10.2307/2334319>, with an exponential kernel and fits the parameters from the data. 
-    Models with the constant parameters, as well as complex dependent structures, can also be simulated and estimated. 
-    The estimation is based on the maximum likelihood method, introduced by introduced by Ozaki (1979) <doi:10.1007/BF02480272>, with 'maxLik' package.
+Description: Simulate and fit multivariate Hawkes models with exponential
+    kernels, introduced by Hawkes (1971) <doi:10.2307/2334319>.
+    Includes marked, state-dependent, and multi-kernel specifications.
+    Parameter estimation uses maximum likelihood, following Ozaki (1979)
+    <doi:10.1007/BF02480272>, through the 'maxLik' package.
 Depends: R (>= 4.0.0)
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
-Imports: methods, maxLik
+Imports: methods, maxLik, Rcpp
+LinkingTo: Rcpp
+NeedsCompilation: yes
 Collate: 
+    'RcppExports.R'
     'hspec.R'
     'harrival.R'
     'utilities.R'
     'hinterface.R'
     'hmoment.R'
+    'hengine.R'
     'hllf.R'
     'hfit.R'
     'hgfit.R'

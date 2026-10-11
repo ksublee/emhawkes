@@ -227,6 +227,9 @@ The values of `mu`, `alpha`, and `beta` in `hspec0` provide starting points for 
 Here, we use the simulation parameters by setting `hspec0 <- hspec2`.
 For observed data, choose initial values because the true parameters are unknown.
 
+The default fit groups equal starting values within each matrix and estimates four parameters here: one for `mu`, two for `alpha`, and one for `beta`.
+`hfit` explains this rule once before optimization.
+
 ```{r, warning=FALSE}
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
@@ -245,6 +248,9 @@ miscTools::stdEr(mle)
 
 The initial values in `hspec0` determine which parameters are estimated separately.
 With the default setting `reduced = TRUE`, equal entries within a parameter matrix share one estimated value.
+The rule is applied separately to each matrix; equal values in `mu` and `alpha` do not link those components.
+The startup message lists the matrices with shared entries.
+Use `suppressMessages(hfit(...))` to hide it.
 
 For example, if `alpha[1,1]` and `alpha[1,2]` have different initial values, `hfit` estimates them separately.
 If they have the same initial value, `hfit` treats them as a single parameter.
@@ -306,6 +312,28 @@ summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduc
 ```
 
 The same rules apply to higher-dimensional models.
+For function components, the named entries in `param` define the estimated parameters.
+Matching parameter names are shared across functions, even with `reduced = FALSE`.
+Use different names for independent parameters with equal starting values.
+Conflicting starting values for a shared name produce a warning, and the first value is used.
+A zero in a numeric matrix is an estimated starting value; constants inside a component function remain fixed.
+
+### Observed data and initial state
+
+The first row is the initial state, followed by the observed events.
+For event times measured from the observation start, use `c(0, diff(c(0, event_times)))` for `inter_arrival` and prepend zero to the event-type and mark vectors.
+The likelihood currently ends at the last supplied event, and the input order is preserved when event times coincide.
+
+`N0` and `Nc0` specify initial event counts and mark totals.
+Pass `Nc0` by name in `hfit`.
+Use the same initial counts and `lambda_component0` for simulation and likelihood evaluation when comparing their paths.
+A scalar `lambda_component0` is expanded to all kernel components; a matrix must match the kernel dimensions.
+For multi-kernel models, supply `lambda_component0` explicitly.
+
+Counting-process matrices supplied as `N` or `Nc` must agree with the event data and initial counts.
+Each row contains the values after that event.
+A baseline function called with index `n` uses row `n - 1` for the preceding state; an impact function uses row `n` for the current event.
+Component functions can declare only the arguments they need, and use `...` to receive the remaining context.
 
 ### Residual process
 
@@ -467,6 +495,8 @@ type_col_map
 ```
 
 The entry `type_col_map[[i]]` lists the columns associated with event type `i`.
+Rows of the intensity matrix identify event types.
+After a type `i` event, `type_col_map[[i]]` selects the kernel columns to update.
 Use this mapping to extract the corresponding parameters:
 
 ```{r}
@@ -854,6 +884,8 @@ $$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
 
 The following code places the constant part of $h$ in `alpha` and the state-dependent part in `impact`.
 The `lambda_component` argument supplies the values of $\lambda_{ij}$.
+Individual components can be negative after a reset.
+The equal decay rates used here allow simulation as long as the sum of the components in each row remains nonnegative.
 
 ```{r, warning=FALSE}
 
@@ -917,12 +949,14 @@ summary(hr_ba)
 The following likelihood calculation and fit do not estimate the mark distribution because no `dmark` function is supplied.
 
 ```{r}
-logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, Nc = hr_ba$Nc,
+logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+       mark = hr_ba$mark, Nc = hr_ba$Nc,
        lambda_component0 = matrix(rep(1, 16), 4))
 ```
 
 ```{r, warning=FALSE}
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+               mark = hr_ba$mark,
                lambda_component0 = matrix(rep(1, 16), 4))
 summary(mle_ba)
 ```
@@ -936,17 +970,16 @@ For details, see [Self and mutually exciting point process embedding flexible re
 The residual density has a trapezoidal section and an exponential tail.
 The `dresidual`, `presidual`, and `qresidual` functions receive their distribution parameters through the `param` vector.
 The ordinary Hawkes model is the special case with an exponential residual distribution of rate 1.
+Use `set_residual` to wrap the distribution functions with log-density and tail-probability support.
 
 ```{r}
 mu1_d <- 0.5; alpha1_d <- 1; beta1_d <- 1.2; a <- 0.7; ell <- 1.6
-hspec1_d <- new("hspec", mu=mu1_d, alpha=alpha1_d, beta=beta1_d,
-              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
-              dresidual = function(x, param = c(a = a, ell = ell))
-                dtzexp(x, a = param["a"], ell = param["ell"]),
-              presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]),
-              qresidual = function(p, param = c(a = a, ell = ell))
-                  qtzexp(p, a = param["a"], ell = param["ell"]))
+hspec1_d <- set_residual(
+  new("hspec", mu = mu1_d, alpha = alpha1_d, beta = beta1_d),
+  param = c(a = a, ell = ell),
+  dresidual = dtzexp, presidual = ptzexp,
+  qresidual = qtzexp, rresidual = rtzexp
+)
 ```
 
 ```{r, fig.height=4, fig.width=6}
@@ -1002,14 +1035,12 @@ alpha2_d <- matrix(c(0.5, 0.8, 0.8, 0.5), nrow = 2, byrow = TRUE)
 beta2_d <- matrix(c(1.5, 1.5, 1.5, 1.5), nrow = 2, byrow = TRUE)
 a <- 0.7; ell <- 1.6
 
-hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
-              rresidual = function(size) rtzexp(n=size, a = a, ell = ell),
-              dresidual = function(x, param = c(a = a, ell = ell))
-                dtzexp(x, a = param["a"], ell = param["ell"]),
-              presidual = function(q, param = c(a = a, ell = ell))
-                  ptzexp(q, a = param["a"], ell = param["ell"]),
-              qresidual = function(p, param = c(a = a, ell = ell))
-                  qtzexp(p, a = param["a"], ell = param["ell"]))
+hspec2_du <- set_residual(
+  new("hspec", mu = mu2_d, alpha = alpha2_d, beta = beta2_d),
+  param = c(a = a, ell = ell),
+  dresidual = dtzexp, presidual = ptzexp,
+  qresidual = qtzexp, rresidual = rtzexp
+)
 print(hspec2_du)
 ```
 
@@ -1095,14 +1126,33 @@ legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ```
 
 Use `hfit` for maximum likelihood estimation.
+The distribution requires `0 < a <= 3`, `ell > 0`, and a nonnegative density.
+The last condition is nonlinear, so the custom objective below checks each
+candidate with `dtzexp` and returns `-Inf` when the distribution is invalid.
 
 ```{r, warning=FALSE}
+residual_loglik <- function(object, inter_arrival, type, param) {
+  valid <- tryCatch({
+    dtzexp(1, a = param["a"], ell = param["ell"])
+    TRUE
+  }, error = function(e) FALSE)
+  if (!valid) return(-Inf)
+  suppressMessages(logLik(object, inter_arrival = inter_arrival, type = type))
+}
+constraints <- list(
+  ineqA = rbind(diag(6), c(0, 0, 0, 0, -1, 0)),
+  ineqB = c(rep(0, 6), 3)
+)
 mle_dh <- hfit(hspec2_du, 
                inter_arrival = duh2_real$inter_arrival, 
                type = duh2_real$type,
-               constraints=list(ineqA=rbind(diag(6)), ineqB=matrix(rep(0,6), nrow=6)))
+               mylogLik = residual_loglik,
+               constraints = constraints)
 summary(mle_dh)
 ```
+
+These constraints keep the six parameters nonnegative and enforce `a <= 3`, the upper limit of the trapezoid-exponential distribution.
+The parameter order is `mu1`, `alpha1.1`, `alpha1.2`, `beta1.1`, `a`, and `ell`.
 
 The following example uses a uniform residual distribution on $[0, 2]$.
 
@@ -1115,9 +1165,12 @@ beta2_d <- matrix(c(1.2, 1.2, 1.2, 1.2), nrow = 2, byrow = TRUE)
 
 hspec2_du <- new("hspec", mu=mu2_d, alpha=alpha2_d, beta=beta2_d,
                  rresidual = function(size) runif(n=size, 0, 2),
-                 dresidual = function(x, param = c()) dunif(x, 0, 2),
-                 presidual = function(q, param = c()) punif(q, 0, 2),
-                 qresidual = function(p, param = c()) qunif(p, 0, 2))
+                 dresidual = function(x, param = numeric(0), log = FALSE)
+                   dunif(x, 0, 2, log = log),
+                 presidual = function(q, param = numeric(0), lower.tail = TRUE, log.p = FALSE)
+                   punif(q, 0, 2, lower.tail = lower.tail, log.p = log.p),
+                 qresidual = function(p, param = numeric(0), lower.tail = TRUE, log.p = FALSE)
+                   qunif(p, 0, 2, lower.tail = lower.tail, log.p = log.p))
 
 duh2_real <- hsim(hspec2_du, size = 5000)
 ```

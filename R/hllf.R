@@ -27,6 +27,10 @@ NULL
 #' Component functions receive the arguments they declare; functions with `...`
 #' receive the available event context. Intensity histories are `NULL` before
 #' initialization. Baseline functions use `n - 1` to access the preceding event.
+#' Numeric Hawkes specifications use the Rcpp engine. Function-valued parameters,
+#' impact functions, mark densities, and residual distributions use the R engine.
+#' Set `options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
+#' automatic selection, or `"cpp"` to require a supported numeric specification.
 #'
 #' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
@@ -59,7 +63,24 @@ setMethod(
 
 # Internal entry point for observations already checked by hfit.
 loglik_hspec <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
-                         callbacks = model_callback_plans(object), show_initial_message = TRUE) {
+                         callbacks = model_callback_plans(object), show_initial_message = TRUE,
+                         engine = getOption("emhawkes.engine", "auto")) {
+    engine <- match.arg(engine, c("auto", "r", "cpp"))
+    if (engine != "r") {
+      reason <- native_hawkes_reason(object, observation)
+      if (is.null(reason)) {
+        return(loglik_hspec_cpp(object, observation, lambda_component0, infer,
+                                show_initial_message))
+      }
+      if (engine == "cpp") stop("C++ Hawkes engine does not support this model: ", reason, call. = FALSE)
+    }
+    loglik_hspec_r(object, observation, lambda_component0, infer, callbacks,
+                    show_initial_message)
+}
+
+# Keep the R implementation as the general callback engine and reference.
+loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
+                           callbacks = model_callback_plans(object), show_initial_message = TRUE) {
 
     ## Parameter setting and initialization
     # after parameter setting, functions mu, alpha, beta become matrices, if possible
