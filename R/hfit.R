@@ -11,30 +11,43 @@ NULL
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
 #' @param type A vector indicating the dimensions, represented by numbers like 1, 2, 3, etc., starting with zero.
 #' @param mark A vector of mark (jump) sizes, starting with zero.
-#' @param N A matrix representing counting processes.
-#' @param Nc A matrix of counting processes weighted by mark sizes.
+#' @param N Optional cumulative event-count matrix, with one row per input row
+#' and one column per event type. Each row contains counts after that event.
+#' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
 #' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 Initial values for the counting processes matrix \code{N}.
-#' @param Nc0 Initial values for the mark-weighted counting processes. This argument must be named.
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. For the built-in likelihood, supply this
+#' argument when `type_col_map` is set.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `Nc`, or zero when `Nc` is absent.
+#' This argument must be named.
 #' @param mylogLik A user-defined log-likelihood function, which must accept an `object` argument consistent with \code{object}.
 #' @param reduced Logical; if `TRUE`, equal entries within each parameter matrix
 #' share one parameter. If `FALSE`, each matrix entry is estimated separately.
 #' Function components share parameters by name. Conflicting starting values for
 #' a shared name produce a warning; the first value is used.
-#' @param constraints constraints matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param constraints `NULL` or a constraint list passed to [maxLik::maxLik()].
 #' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
-#' @param grad A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
-#' @param hess A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param grad Optional gradient function passed to [maxLik::maxLik()]. Its first
+#' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
+#' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
+#' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
-#' @return \code{\link[maxLik]{maxLik}} object
+#' @return A \code{\link[maxLik]{maxLik}} object with an `emhawkes` attribute
+#' containing the original specification, parameter map, normalized initial-state
+#' arguments, and `reduced` setting. Use [fitted_hspec()] to restore the estimated
+#' specification and [fit_initial_state()] to retrieve its initial-state arguments.
 #'
 #' @details
 #' Observations are checked once before optimization. The first row is the initial
 #' state, and supplied counting processes contain values after each event.
+#' Omit `type` for a univariate model and `mark` for unit marks. The observation
+#' vectors have the same length. The likelihood ends at the last supplied event.
+#'
 #' Functions with a `param` argument must provide a default named numeric vector;
 #' `numeric(0)` and functions without `param` are allowed for fixed components.
 #' A custom `mylogLik` receives its declared arguments from `object`, the observation
@@ -47,12 +60,27 @@ NULL
 #' Setting `reduced = FALSE` separates matrix entries; function parameters still
 #' share values by name. A numeric zero is a starting value, not a fixed zero.
 #' To fix entries at zero, use a component function with constants at those positions.
+#' To hold optimization parameters at their starting values, pass `fixed` through
+#' `...` as described by [maxLik::maxLik()]. Fixing a shared parameter fixes all
+#' entries that use it.
+#'
+#' The built-in likelihood uses the calculation engine selected by
+#' `options(emhawkes.engine = "auto")`; see [logLik()] for supported models.
+#' Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
+#' supplied separately, or computed numerically by `maxLik`.
+#'
+#' [fitted_hspec()] uses the saved parameter map to restore the estimated model.
+#' [fit_initial_state()] retrieves the observation window's initial-state arguments.
+#' These are suitable for re-evaluating the likelihood and starting a new simulation.
+#' The fit does not store the observations; keep them separately. Save the fit
+#' with `saveRDS()` to retain its model, parameter map, and initial-state information.
 #'
 #' @docType methods
 #' @rdname hfit
 #' @export
 #'
-#' @seealso \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
+#' @seealso [fitted_hspec()], [fit_initial_state()], [logLik()],
+#' \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 #'
 #' @examples
 #'
@@ -62,7 +90,13 @@ NULL
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
-#' summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+#' fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
+#' summary(fit)
+#' estimated <- fitted_hspec(fit)
+#' initial <- fit_initial_state(fit)
+#' inferred <- do.call(logLik, c(list(object = estimated,
+#'   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
+#' c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 #'
 #'
 #' # example 2
@@ -273,7 +307,19 @@ setMethod(
     )
 
     message_parameter_sharing(parameter_map)
-    do.call(maxLik::maxLik, ml_args)
+    fit <- do.call(maxLik::maxLik, ml_args)
+    if (!is.null(fit)) {
+      attr(fit, "emhawkes") <- list(
+        version = 1L,
+        specification = object,
+        parameter_map = parameter_map,
+        initial_state = list(lambda_component0 = lambda_component0,
+                             N0 = observation$N0, Nc0 = observation$Nc0),
+        reduced = reduced,
+        custom_loglik = !is.null(mylogLik)
+      )
+    }
+    fit
 
 
   }

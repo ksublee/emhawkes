@@ -23,15 +23,15 @@
 \item{object}{An S3 object of class \code{hreal}.}
 }
 \description{
-\code{hreal} is a list containing the following components:
+\code{hreal} is an S3 list returned by \code{\link[=hsim]{hsim()}}, containing the following components:
 \itemize{
 \item \code{hspec}: An S4 object of class \code{\link{hspec-class}} that specifies the parameter values.
 \item \code{inter_arrival}: The time intervals between consecutive events.
 \item \code{arrival}: The cumulative sum of \code{inter_arrival} times.
-\item \code{type}: An integer representing the type of event.
-\item \code{mark}: The size of the mark, providing additional information associated with the event.
-\item \code{N}: A counting process that tracks the number of events.
-\item \code{Nc}: A counting process that tracks the number of events, weighted by mark.
+\item \code{type}: An event-type vector. Values 1, ..., \code{dimens} identify intensity rows.
+\item \code{mark}: A vector of event marks.
+\item \code{N}: A cumulative event-count matrix, with one column per event type.
+\item \code{Nc}: A cumulative mark-total matrix, with one column per event type.
 \item \code{lambda}: The left-continuous intensity process.
 \item \code{lambda_component}: The component of the intensity process, \eqn{\lambda_{ij}}, that excludes \code{mu}.
 \item \code{rambda}: The right-continuous intensity process.
@@ -39,4 +39,15 @@
 }
 
 Functions for printing \code{hreal} objects are provided.
+}
+\details{
+The first row is the initial state, with zero \code{inter_arrival}, \code{type}, and \code{mark}.
+Initial counts and mark totals are stored in the first rows of \code{N} and \code{Nc}.
+Subsequent counting-process rows contain values after each event.
+Kernel-component columns are ordered by intensity row, then kernel column.
+\code{\link[=logLik]{logLik()}} with \code{infer = TRUE} returns an inference list, with likelihood and
+residual fields, rather than an \code{hreal} simulation result.
+}
+\seealso{
+\code{\link[=hsim]{hsim()}}, \code{\link[=logLik]{logLik()}}
 }

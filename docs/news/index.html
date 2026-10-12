@@ -39,7 +39,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
-<ul><li>Add a registered Rcpp engine for numeric Hawkes likelihoods and inference, including unequal decay rates, multi-kernel mappings, signed components, and numeric mark effects. Retain the R engine for callbacks and residual-distribution models. The <code>emhawkes.engine</code> option selects automatic, R, or forced C++ evaluation.</li>
+<ul><li>Preserve the original model, parameter map, and initial-state arguments in <code><a href="../reference/hfit.html">hfit()</a></code> results. Add <code><a href="../reference/fitted_hspec.html">fitted_hspec()</a></code> and <code><a href="../reference/fit_initial_state.html">fit_initial_state()</a></code> to reuse fitted models with the existing <code>maxLik</code> interface.</li>
+<li>Add a registered Rcpp engine for numeric Hawkes likelihoods and inference, including unequal decay rates, multi-kernel mappings, signed components, and numeric mark effects. Retain the R engine for callbacks and residual-distribution models. The <code>emhawkes.engine</code> option selects automatic, R, or forced C++ evaluation.</li>
 <li>Explain shared matrix parameters once at the start of a reduced fit. Update examples and the documentation build to use the current interfaces.</li>
 <li>Preserve state-dependent resets and synchronized-model simulation by allowing signed components whose aggregate excitation satisfies a nonnegative, decreasing decay-rate condition.</li>
 <li>Resolve parameter sharing once per fit while preserving coefficient names and order. Validate function parameter defaults and warn about conflicting shared starting values.</li>

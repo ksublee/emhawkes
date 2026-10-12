@@ -1,20 +1,28 @@
 #' Realization of Hawkes Process
 #'
 #' @description
-#' `hreal` is a list containing the following components:
+#' `hreal` is an S3 list returned by [hsim()], containing the following components:
 #'
 #' * `hspec`: An S4 object of class \code{\link{hspec-class}} that specifies the parameter values.
 #' * `inter_arrival`: The time intervals between consecutive events.
 #' * `arrival`: The cumulative sum of `inter_arrival` times.
-#' * `type`: An integer representing the type of event.
-#' * `mark`: The size of the mark, providing additional information associated with the event.
-#' * `N`: A counting process that tracks the number of events.
-#' * `Nc`: A counting process that tracks the number of events, weighted by mark.
+#' * `type`: An event-type vector. Values 1, ..., `dimens` identify intensity rows.
+#' * `mark`: A vector of event marks.
+#' * `N`: A cumulative event-count matrix, with one column per event type.
+#' * `Nc`: A cumulative mark-total matrix, with one column per event type.
 #' * `lambda`: The left-continuous intensity process.
 #' * `lambda_component`: The component of the intensity process, \eqn{\lambda_{ij}}, that excludes `mu`.
 #' * `rambda`: The right-continuous intensity process.
 #' * `rambda_component`: The right-continuous version of `lambda_component`.
 #'
+#' @details
+#' The first row is the initial state, with zero `inter_arrival`, `type`, and `mark`.
+#' Initial counts and mark totals are stored in the first rows of `N` and `Nc`.
+#' Subsequent counting-process rows contain values after each event.
+#' Kernel-component columns are ordered by intensity row, then kernel column.
+#' [logLik()] with `infer = TRUE` returns an inference list, with likelihood and
+#' residual fields, rather than an `hreal` simulation result.
+#' @seealso [hsim()], [logLik()]
 #' @name hreal
 #'
 #' @description

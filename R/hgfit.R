@@ -1,27 +1,27 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
-#' Infer lambda process with given Hawkes model and realized path
+#' Infer Intensity Paths (Deprecated)
 #'
-#' This method compute the inferred lambda process and returns it as \code{hreal} form.
-#' If we have realized path of Hawkes process and its parameter value, then we can compute the inferred lambda processes.
-#' Similarly with other method such as \code{hfit}, the input arguments are \code{inter_arrival}, \code{type}, \code{mark},
-#' or equivalently, \code{N} and \code{Nc}.
+#' Deprecated wrapper for [logLik()] with `infer = TRUE`. Use `logLik()` directly
+#' to compute intensity paths and residual processes from a specified model.
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param inter_arrival inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param N Hawkes process. If not provided, then generate using inter_arrival and type.
-#' @param Nc mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.
+#' @param N Optional cumulative event-count matrix consistent with `type`.
+#' @param Nc Optional cumulative mark-total matrix consistent with `type` and `mark`.
 #' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 the initial values of N.
-#' @param Nc0 the initial values of Nc.
+#' A scalar is expanded to every kernel component. A matrix must match the
+#' shape of `alpha` and `beta`.
+#' @param N0 Initial event counts: a scalar or one value per event type.
+#' @param Nc0 Initial mark totals: a scalar or one value per event type.
 #' @param ... further arguments passed to or from other methods.
 #'
-#' @return \code{\link{hreal}} S3-object, with inferred intensity.
+#' @return The inference list returned by `logLik(object, infer = TRUE)`.
+#' It contains the likelihood, intensity matrices, and residual vectors.
+#' @seealso [logLik()], [fitted_hspec()], [fit_initial_state()]
 #'
 #' @docType methods
 #' @rdname infer_lambda
@@ -34,8 +34,9 @@ NULL
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
 #' summary(res)
-#' res2 <- infer_lambda(h, res$inter_arrival, res$type)
-#' summary(res2)
+#' inferred <- logLik(h, inter_arrival = res$inter_arrival,
+#'                    type = res$type, infer = TRUE)
+#' head(inferred$lambda)
 #'
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
@@ -357,10 +358,11 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 
 }
 
-#' Compute residual process
+#' Compute a Residual Process (Deprecated)
 #'
-#' Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
-#' Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
+#' Legacy helper that integrates a supplied intensity path for one event type.
+#' Use [logLik()] with `infer = TRUE` to compute intensities and residuals together.
+#' For a correctly specified Hawkes model, residual intervals have a unit-exponential distribution.
 #'
 #' @param component The component of type to get the residual process.
 #' @param type A vector of types distinguished by numbers, 1, 2, 3, and so on. Start with zero.
@@ -376,6 +378,14 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' @param N0 The initial value of N
 #' @param ... Further arguments passed to or from other methods.
 #'
+#' @return A numeric vector of residual intervals for the selected event type.
+#' @details
+#' This function is deprecated. The replacement `logLik()` returns residuals in
+#' `res_process1`, ..., `res_processD` and handles types with fewer than two events
+#' by returning empty vectors. For fitted parameters, first use [fitted_hspec()]
+#' and preserve initialization with [fit_initial_state()].
+#' @seealso [logLik()], [fitted_hspec()], [fit_initial_state()]
+#'
 #' @examples
 #'
 #' mu <- c(0.1, 0.1)
@@ -383,7 +393,9 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=1000)
-#' rp <- residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
+#' inferred <- logLik(h, inter_arrival = res$inter_arrival,
+#'                    type = res$type, infer = TRUE)
+#' rp <- inferred$res_process1
 #'
 #' @export
 residual_process <- function(component, inter_arrival, type, rambda_component, mu, beta, dimens=NULL,

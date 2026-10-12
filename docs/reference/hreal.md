@@ -1,6 +1,8 @@
 # Realization of Hawkes Process
 
-`hreal` is a list containing the following components:
+`hreal` is an S3 list returned by
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md),
+containing the following components:
 
 - `hspec`: An S4 object of class
   [`hspec-class`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
@@ -10,15 +12,14 @@
 
 - `arrival`: The cumulative sum of `inter_arrival` times.
 
-- `type`: An integer representing the type of event.
+- `type`: An event-type vector. Values 1, ..., `dimens` identify
+  intensity rows.
 
-- `mark`: The size of the mark, providing additional information
-  associated with the event.
+- `mark`: A vector of event marks.
 
-- `N`: A counting process that tracks the number of events.
+- `N`: A cumulative event-count matrix, with one column per event type.
 
-- `Nc`: A counting process that tracks the number of events, weighted by
-  mark.
+- `Nc`: A cumulative mark-total matrix, with one column per event type.
 
 - `lambda`: The left-continuous intensity process.
 
@@ -62,3 +63,19 @@ as.matrix(x, ...)
 - object:
 
   An S3 object of class `hreal`.
+
+## Details
+
+The first row is the initial state, with zero `inter_arrival`, `type`,
+and `mark`. Initial counts and mark totals are stored in the first rows
+of `N` and `Nc`. Subsequent counting-process rows contain values after
+each event. Kernel-component columns are ordered by intensity row, then
+kernel column.
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+with `infer = TRUE` returns an inference list, with likelihood and
+residual fields, rather than an `hreal` simulation result.
+
+## See also
+
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md),
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)

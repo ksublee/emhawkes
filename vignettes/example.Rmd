@@ -135,6 +135,46 @@ mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
 summary(mle)
 ```
 
+Use `fitted_hspec()` to reconstruct the model with the estimated parameters.
+The fit retains its original parameter map, including shared parameters and fixed
+constants in component functions. `fit_initial_state()` retrieves the initial
+counts and initial intensity setting.
+
+```{r fit-reconstruction, message=FALSE}
+estimated <- fitted_hspec(mle)
+initial <- fit_initial_state(mle)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res1$inter_arrival, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(mle)), restored = inferred$loglikelihood)
+head(inferred$lambda)
+head(inferred$res_process1)
+```
+
+When the initial intensity was omitted, its saved setting remains `NULL` and is
+recalculated using the restored parameters. The restored specification also
+retains the mark and residual generators for subsequent simulation.
+
+Pass the restored model and initial-state arguments to `hsim()` to generate a new path.
+These arguments describe the start of the fitted observation window.
+They do not continue the path after its last event.
+Check the fit's convergence and the model's suitability for simulation first.
+
+```{r fitted-simulation, message=FALSE}
+set.seed(1108)
+simulated <- do.call(hsim, c(list(object = estimated, size = 100), initial))
+head(simulated$arrival)
+```
+
+The saved fit retains the information needed to reconstruct the model later.
+Keep the observed data separately when re-evaluating the likelihood.
+
+```{r save-fit, eval=FALSE}
+saveRDS(mle, "hawkes-fit.rds")
+saved_fit <- readRDS("hawkes-fit.rds")
+estimated <- fitted_hspec(saved_fit)
+initial <- fit_initial_state(saved_fit)
+```
+
 ### Bivariate Hawkes model
 
 The intensity process of a basic bivariate Hawkes model is defined by
@@ -251,6 +291,15 @@ coef(mle)
 
 ```{r}
 miscTools::stdEr(mle)
+```
+
+The restored matrices retain the shared parameters from this fit.
+The diagonal entries of `alpha` remain equal, as do its off-diagonal entries.
+
+```{r shared-matrices}
+estimated2 <- fitted_hspec(mle)
+estimated2@alpha
+estimated2@beta
 ```
 
 Set `reduced = FALSE` to estimate all ten matrix entries separately, even when their starting values are equal.

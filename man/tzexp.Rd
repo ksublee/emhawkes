@@ -19,9 +19,10 @@ rtzexp(n, a, ell)
 \arguments{
 \item{x, q}{vector of quantiles}
 
-\item{a}{location parameter for transition (must be > 0)}
+\item{a}{Finite scalar transition point satisfying \eqn{0 < a \leq 3}.}
 
-\item{ell}{rate parameter for exponential decay (must be > 0)}
+\item{ell}{Finite positive scalar rate for exponential decay. The pair \code{a},
+\code{ell} must also define a nonnegative density; see Details.}
 
 \item{log, log.p}{logical; return or accept probabilities on the log scale.}
 
@@ -76,7 +77,7 @@ random draws from earlier versions for the same seed.
 
 The trapezoid+exponential distribution has the following characteristics:
 \itemize{
-\item Support on \eqn{[0, \infty)}
+\item Support on \eqn{[0, \infty)} when \eqn{p > 0}, or \eqn{[0,a]} when \eqn{p=0}
 \item Continuous probability distribution
 \item Linear density from 0 to a
 \item Exponential decay for x > a

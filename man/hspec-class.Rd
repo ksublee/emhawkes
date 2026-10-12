@@ -23,6 +23,30 @@ For more details, refer to the vignettes.
 
 \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
 \code{rmark} and \code{impact} are additional slots.
+
+For \code{D} event types and \code{K} kernel columns, numeric \code{mu} has shape \code{D} by 1,
+and \code{alpha}, \code{beta}, and optional \code{eta} have shape \code{D} by \code{K}.
+Baselines are finite and nonnegative; decay rates are finite and positive.
+Use \code{type_col_map} when \code{K} differs from \code{D}. Its \code{D} entries contain nonempty
+vectors of distinct, one-based kernel column indices. Intensity rows identify
+event types; the mapping selects columns updated after each event. Supply
+\code{lambda_component0} for simulation and likelihood evaluation when a mapping is set.
+
+Functions whose sole argument is \code{param} can reparameterize numeric components.
+A state-dependent \code{mu} or \code{impact} function declares the event context it needs.
+For estimation, \code{param} has a default finite numeric vector with unique names;
+\code{numeric(0)} is allowed for fixed components. \code{\link[=hfit]{hfit()}} shares matching function
+parameter names and, by default, equal values within each numeric matrix.
+
+\code{rmark} and \code{rresidual} generate simulation draws. Their parameters alone do
+not add coefficients to a fit. Supply \code{dmark} or residual likelihood functions
+to estimate distribution parameters. \code{\link[=fitted_hspec]{fitted_hspec()}} retains the generators
+and updates named defaults that match estimated coefficient names.
+
+Pass \code{stability_check = TRUE} to \code{new("hspec", ...)} to check the spectral
+radius for constant, nonnegative Hawkes kernels without state-dependent,
+mark-dependent, or residual-distribution effects. For other specifications,
+the constructor reports that this stability check is unavailable.
 }
 \section{Slots}{
 
@@ -33,13 +57,14 @@ For more details, refer to the vignettes.
 
 \item{\code{beta}}{A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the exponential decay.}
 
-\item{\code{eta}}{A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the impact of an additional mark.}
+\item{\code{eta}}{An optional numeric value, matrix, or function specifying the linear
+additional effect \code{eta * (mark - 1)}. Numeric values are converted to a matrix.}
 
 \item{\code{impact}}{A function defining the change in kernel components after an event.
 Declare the state arguments needed by the function. For estimation, an optional
 \code{param} argument supplies a default named numeric parameter vector.}
 
-\item{\code{dimens}}{The dimension of the model.}
+\item{\code{dimens}}{The number of event types, distinct from the number of kernel columns.}
 
 \item{\code{rmark}}{A function that generates marks for the counting process, used in simulations.}
 
@@ -64,4 +89,7 @@ BETA <- matrix(c(2.25, 2.25, 2.25, 2.25), nrow = 2, byrow=TRUE)
 mhspec2 <- new("hspec", mu=MU, alpha=ALPHA, beta=BETA)
 mhspec2
 
+}
+\seealso{
+\code{\link[=hfit]{hfit()}}, \code{\link[=hsim]{hsim()}}, \code{\link[=logLik]{logLik()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=set_residual]{set_residual()}}
 }

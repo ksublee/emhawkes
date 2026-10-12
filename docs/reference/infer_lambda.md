@@ -1,10 +1,11 @@
-# Infer lambda process with given Hawkes model and realized path
+# Infer Intensity Paths (Deprecated)
 
-This method compute the inferred lambda process and returns it as
-`hreal` form. If we have realized path of Hawkes process and its
-parameter value, then we can compute the inferred lambda processes.
-Similarly with other method such as `hfit`, the input arguments are
-`inter_arrival`, `type`, `mark`, or equivalently, `N` and `Nc`.
+Deprecated wrapper for
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+with `infer = TRUE`. Use
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+directly to compute intensity paths and residual processes from a
+specified model.
 
 ## Usage
 
@@ -60,27 +61,26 @@ infer_lambda(
 
 - N:
 
-  Hawkes process. If not provided, then generate using inter_arrival and
-  type.
+  Optional cumulative event-count matrix consistent with `type`.
 
 - Nc:
 
-  mark accumulated Hawkes process. If not provided, then generate using
-  inter_arrival, type and mark.
+  Optional cumulative mark-total matrix consistent with `type` and
+  `mark`.
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. Can be a
-  numeric value or a matrix. Must have the same number of rows and
-  columns as `alpha` or `beta` in `object`.
+  Initial values for the lambda component \\\lambda\_{ij}\\. A scalar is
+  expanded to every kernel component. A matrix must match the shape of
+  `alpha` and `beta`.
 
 - N0:
 
-  the initial values of N.
+  Initial event counts: a scalar or one value per event type.
 
 - Nc0:
 
-  the initial values of Nc.
+  Initial mark totals: a scalar or one value per event type.
 
 - ...:
 
@@ -88,8 +88,14 @@ infer_lambda(
 
 ## Value
 
-[`hreal`](https://ksublee.github.io/emhawkes/reference/hreal.md)
-S3-object, with inferred intensity.
+The inference list returned by `logLik(object, infer = TRUE)`. It
+contains the likelihood, intensity matrices, and residual vectors.
+
+## See also
+
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md),
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 
 ## Examples
 
@@ -126,16 +132,15 @@ summary(res)
 #> [20,] 39.4787 13  6    1 0.11765 0.12041
 #> ... with 80 more rows 
 #> -------------------------------------------------------
-res2 <- infer_lambda(h, res$inter_arrival, res$type)
-#> Warning: The 'infer_lambda' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.
+inferred <- logLik(h, inter_arrival = res$inter_arrival,
+                   type = res$type, infer = TRUE)
 #> The initial values for intensity processes are not provided. Internally determined initial values are used.
-summary(res2)
-#>                  Length Class  Mode   
-#> loglikelihood      1    -none- numeric
-#> lambda           200    -none- numeric
-#> lambda_component 400    -none- numeric
-#> rambda           200    -none- numeric
-#> rambda_component 400    -none- numeric
-#> res_process1      42    -none- numeric
-#> res_process2      55    -none- numeric
+head(inferred$lambda)
+#>        lambda1   lambda2
+#> [1,] 0.1500000 0.1500000
+#> [2,] 0.1008077 0.1008077
+#> [3,] 0.1610746 0.1306601
+#> [4,] 0.1324218 0.1464282
+#> [5,] 0.2868801 0.2177365
+#> [6,] 0.1000477 0.1000528
 ```

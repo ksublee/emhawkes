@@ -1,37 +1,51 @@
 #' @include hspec.R hmoment.R utilities.R hinterface.R
 NULL
 
-#' Simulate multivariate Hawkes process with exponential kernel.
+#' Simulate an Exponential Hawkes Process
 #'
 #' @description
-#' The method simulate multivariate Hawkes processes.
-#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
-#' The mark (jump) structure may or may not be included.
-#' It returns an object of class \code{\link{hreal}} which contains \code{inter_arrival}, \code{arrival},
-#' \code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
+#' Simulate a univariate or multivariate path from an \code{\link{hspec-class}}
+#' specification, including marked and multi-kernel models.
 #'
 #'
 #' @param object \code{\link{hspec-class}}. S4 object that specifies the parameter values.
-#' @param size Number of observations.
+#' @param size Positive integer giving the number of output rows, including the
+#' initial state. At most `size - 1` events are simulated.
 #' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' A scalar is expanded to every kernel component. Other size adjustments are
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. Supply this argument when `type_col_map` is set.
+#' Other size adjustments are
 #' deprecated and produce a warning.
-#' @param N0 Starting values of N with default value 0.
-#' @param Nc0 Starting values of Nc with default value 0.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' The default is zero.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' The default is zero.
 #' @param verbose Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.
 #' @param ... Further arguments passed to or from other methods.
 #'
-#' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
+#' @return An S3 \code{\link{hreal}} object containing the simulated path,
+#' counting processes, and intensity components.
 #' If no further event can occur, the result contains only the generated rows
 #' and a warning reports the early termination. The initial row is included.
+#'
+#' @details
+#' The first row is the initial state. Its `inter_arrival`, `type`, and `mark`
+#' entries are zero; its `N` and `Nc` rows contain `N0` and `Nc0`.
+#' Event types identify intensity rows. After a type `i` event, `type_col_map[[i]]`
+#' selects the kernel columns to update; without a mapping, column `i` is updated.
+#'
 #' Simulation requires finite, nonnegative baselines. Signed kernel components
 #' are allowed when their sum is nonnegative and decreasing between events.
 #' For equal decay rates within a row, this requires a nonnegative row sum.
 #' For unequal rates, the simulator uses a sufficient condition: group components
 #' by decay rate, multiply each group sum by its rate, and check that cumulative
 #' sums in increasing rate order are nonnegative.
+#'
+#' Simulation uses R. To simulate an estimated model, use [fitted_hspec()] and
+#' pass [fit_initial_state()] to `hsim()` with `do.call()`. These arguments describe
+#' the start of the fitted observation window. Continuing after its last event
+#' requires the state at that event.
+#' @seealso [fitted_hspec()], [fit_initial_state()], [logLik()]
 #'
 #' @rdname hsim
 #' @docType methods

@@ -4,7 +4,7 @@
 \name{infer_lambda}
 \alias{infer_lambda}
 \alias{infer_lambda,hspec-method}
-\title{Infer lambda process with given Hawkes model and realized path}
+\title{Infer Intensity Paths (Deprecated)}
 \usage{
 infer_lambda(
   object,
@@ -41,28 +41,27 @@ infer_lambda(
 
 \item{mark}{a vector of mark (jump) sizes. Start with zero.}
 
-\item{N}{Hawkes process. If not provided, then generate using inter_arrival and type.}
+\item{N}{Optional cumulative event-count matrix consistent with \code{type}.}
 
-\item{Nc}{mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.}
+\item{Nc}{Optional cumulative mark-total matrix consistent with \code{type} and \code{mark}.}
 
 \item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+A scalar is expanded to every kernel component. A matrix must match the
+shape of \code{alpha} and \code{beta}.}
 
-\item{N0}{the initial values of N.}
+\item{N0}{Initial event counts: a scalar or one value per event type.}
 
-\item{Nc0}{the initial values of Nc.}
+\item{Nc0}{Initial mark totals: a scalar or one value per event type.}
 
 \item{...}{further arguments passed to or from other methods.}
 }
 \value{
-\code{\link{hreal}} S3-object, with inferred intensity.
+The inference list returned by \code{logLik(object, infer = TRUE)}.
+It contains the likelihood, intensity matrices, and residual vectors.
 }
 \description{
-This method compute the inferred lambda process and returns it as \code{hreal} form.
-If we have realized path of Hawkes process and its parameter value, then we can compute the inferred lambda processes.
-Similarly with other method such as \code{hfit}, the input arguments are \code{inter_arrival}, \code{type}, \code{mark},
-or equivalently, \code{N} and \code{Nc}.
+Deprecated wrapper for \code{\link[=logLik]{logLik()}} with \code{infer = TRUE}. Use \code{logLik()} directly
+to compute intensity paths and residual processes from a specified model.
 }
 \examples{
 mu <- c(0.1, 0.1)
@@ -71,7 +70,11 @@ beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
 summary(res)
-res2 <- infer_lambda(h, res$inter_arrival, res$type)
-summary(res2)
+inferred <- logLik(h, inter_arrival = res$inter_arrival,
+                   type = res$type, infer = TRUE)
+head(inferred$lambda)
 
+}
+\seealso{
+\code{\link[=logLik]{logLik()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}
 }

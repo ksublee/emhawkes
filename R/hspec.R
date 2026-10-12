@@ -25,14 +25,40 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #' \code{mu}, \code{alpha} and \code{beta} are required slots for every exponential Hawkes model.
 #' \code{rmark} and \code{impact} are additional slots.
 #'
+#' For `D` event types and `K` kernel columns, numeric `mu` has shape `D` by 1,
+#' and `alpha`, `beta`, and optional `eta` have shape `D` by `K`.
+#' Baselines are finite and nonnegative; decay rates are finite and positive.
+#' Use `type_col_map` when `K` differs from `D`. Its `D` entries contain nonempty
+#' vectors of distinct, one-based kernel column indices. Intensity rows identify
+#' event types; the mapping selects columns updated after each event. Supply
+#' `lambda_component0` for simulation and likelihood evaluation when a mapping is set.
+#'
+#' Functions whose sole argument is `param` can reparameterize numeric components.
+#' A state-dependent `mu` or `impact` function declares the event context it needs.
+#' For estimation, `param` has a default finite numeric vector with unique names;
+#' `numeric(0)` is allowed for fixed components. [hfit()] shares matching function
+#' parameter names and, by default, equal values within each numeric matrix.
+#'
+#' `rmark` and `rresidual` generate simulation draws. Their parameters alone do
+#' not add coefficients to a fit. Supply `dmark` or residual likelihood functions
+#' to estimate distribution parameters. [fitted_hspec()] retains the generators
+#' and updates named defaults that match estimated coefficient names.
+#'
+#' Pass `stability_check = TRUE` to `new("hspec", ...)` to check the spectral
+#' radius for constant, nonnegative Hawkes kernels without state-dependent,
+#' mark-dependent, or residual-distribution effects. For other specifications,
+#' the constructor reports that this stability check is unavailable.
+#' @seealso [hfit()], [hsim()], [logLik()], [fitted_hspec()], [set_residual()]
+#'
 #' @slot mu A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix.
 #' @slot alpha A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the exciting term.
 #' @slot beta A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the exponential decay.
-#' @slot eta A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the impact of an additional mark.
+#' @slot eta An optional numeric value, matrix, or function specifying the linear
+#' additional effect `eta * (mark - 1)`. Numeric values are converted to a matrix.
 #' @slot impact A function defining the change in kernel components after an event.
 #' Declare the state arguments needed by the function. For estimation, an optional
 #' `param` argument supplies a default named numeric parameter vector.
-#' @slot dimens The dimension of the model.
+#' @slot dimens The number of event types, distinct from the number of kernel columns.
 #' @slot rmark A function that generates marks for the counting process, used in simulations.
 #' @slot dmark A density function for the mark, used in estimation.
 #' @slot type_col_map A list whose element `i` selects the kernel columns updated
@@ -259,11 +285,13 @@ setMethod(
 
 #' Set Residual Distribution Functions for Hawkes Model Specification
 #'
-#' Sets residual distribution functions (density, CDF, quantile, and random generation)
-#' for a Hawkes model specification object with fixed parameters.
+#' Attach residual density, distribution, quantile, and random-generation functions
+#' to an `hspec` object, with named parameter defaults for simulation and estimation.
 #'
 #' @param object An object of class `hspec` (Hawkes model specification)
-#' @param param A named numeric vector of parameters for the residual distribution
+#' @param param A named numeric vector of residual-distribution parameters.
+#' Names match the declared formal arguments of the supplied distribution functions.
+#' For estimation, the values supply starting points rather than fixed constants.
 #' @param dresidual Density function of the residual distribution (optional)
 #' @param presidual Cumulative distribution function (CDF) of the residual distribution (optional)
 #' @param qresidual Quantile function of the residual distribution (optional)
@@ -273,17 +301,24 @@ setMethod(
 #' @return An updated `hspec` object with residual functions set
 #'
 #' @details
-#' This method allows setting residual distribution functions for a flexible model.
+#' The updated specification represents a model with the supplied residual distribution.
+#' Functions left `NULL` retain their existing slots. Supply consistent density
+#' and CDF functions for likelihood evaluation, a quantile function for residual
+#' inference, and a random generator for simulation.
 #'
 #' The `param` argument in these functions defaults to the parameters provided during
 #' setup and is used for estimation.
+#' Only parameter names declared by each supplied distribution function are forwarded.
+#' Matching names across the wrapped functions share one estimated parameter.
+#' [fitted_hspec()] updates the residual generator when its named defaults match
+#' estimated coefficient names.
 #' Density wrappers accept `log`; CDF and quantile wrappers accept `lower.tail`
 #' and `log.p`. These options are forwarded when the supplied distribution
 #' supports them. User-defined distributions should provide log-density and
 #' upper-tail log-probability options to retain accuracy in extreme tails.
+#' @seealso [logLik()], [hfit()], [fitted_hspec()], [dtzexp()]
 #'
 #' @examples
-#' \dontrun{
 #' # Create basic Hawkes specification
 #' hspec_obj <- new("hspec",
 #'                  mu = matrix(0.1, nrow = 1),
@@ -306,7 +341,8 @@ setMethod(
 #' # Check resulting functions
 #' hspec_obj@dresidual
 #' hspec_obj@rresidual
-#' }
+#' hspec_obj@dresidual(c(0.2, 1), log = TRUE)
+#' hspec_obj@presidual(c(0.2, 1), lower.tail = FALSE, log.p = TRUE)
 #'
 #' @export
 setGeneric(

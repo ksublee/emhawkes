@@ -3,39 +3,67 @@ NULL
 
 #' Compute the Log-Likelihood Function
 #'
-#' Calculates the log-likelihood for the Hawkes model.
+#' Evaluate a specified model's likelihood, with optional intensity and residual paths.
 #'
 #' @param object An \code{\link{hspec-class}} object containing parameter values for computing the log-likelihood.
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
 #' @param type A vector indicating the dimensions, represented by numbers (1, 2, 3, etc.), starting with zero.
 #' @param mark A vector of mark (jump) sizes, starting with zero.
-#' @param N A matrix representing counting processes.
-#' @param Nc A matrix of counting processes weighted by mark sizes.
+#' @param N Optional cumulative event-count matrix, with one row per input row
+#' and one column per event type. Each row contains counts after that event.
+#' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
 #' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 A matrix of initial values for \code{N}.
-#' @param Nc0 A matrix of initial values for \code{Nc}.
-#' @param infer Logical
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. Supply this argument when `type_col_map` is set.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `Nc`, or zero when `Nc` is absent.
+#' @param infer Logical; if `TRUE`, return intensity paths and residual processes
+#' together with the likelihood.
 #' @param ... Additional arguments passed to or from other methods.
+#'
+#' @return With `infer = FALSE`, a length-one numeric vector named `loglikelihood`.
+#' With `infer = TRUE`, a list containing:
+#' * `loglikelihood`: the same likelihood value.
+#' * `lambda` and `rambda`: intensity matrices immediately before and after events.
+#' * `lambda_component` and `rambda_component`: the corresponding kernel components,
+#'   with columns ordered by intensity row, then kernel column.
+#' * `res_process1`, ..., `res_processD`: residuals between successive events of
+#'   each type. Types with fewer than two events have empty residual vectors.
+#'
+#' Intensity matrices include the initial row. For residual-distribution models,
+#' `res_process` values use the specified distribution and `eres_process1`, ...,
+#' `eres_processD` give their unit-exponential transforms.
 #'
 #' @details
 #' The first row represents the initial state and is not an event.
+#' Omit `type` for a univariate model and `mark` for unit marks. The observation
+#' vectors have the same length. The likelihood ends at the last supplied event.
 #' Counting-process rows contain values after the corresponding event.
 #' Supplied `N` and `Nc` matrices must agree with `type`, `mark`, and any
 #' supplied initial counts. Event order is preserved, including zero intervals.
 #' Component functions receive the arguments they declare; functions with `...`
 #' receive the available event context. Intensity histories are `NULL` before
 #' initialization. Baseline functions use `n - 1` to access the preceding event.
+#' If initial intensity components are omitted, they are determined from the
+#' supplied model. For a fitted model, use [fitted_hspec()] with the arguments
+#' returned by [fit_initial_state()] to preserve the fit's initialization setting.
+#'
 #' Numeric Hawkes specifications use the Rcpp engine. Function-valued parameters,
-#' impact functions, mark densities, and residual distributions use the R engine.
+#' impact functions, mark densities, residual distributions, and classed numeric
+#' inputs use the R engine. `rmark` and `rresidual` are simulation generators and
+#' do not by themselves prevent numeric likelihood acceleration.
 #' Set `options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
 #' automatic selection, or `"cpp"` to require a supported numeric specification.
+#' The engine supports unequal decay rates within a row and multi-kernel mappings.
 #'
-#' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
+#' @seealso [fitted_hspec()], [fit_initial_state()],
+#' \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
 #' @docType methods
 #' @rdname logLik
+#' @aliases logLik
 #'
 #' @export
 setMethod(

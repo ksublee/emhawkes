@@ -7,8 +7,9 @@
 #' @param x,q vector of quantiles
 #' @param p vector of probabilities
 #' @param n number of observations
-#' @param a location parameter for transition (must be > 0)
-#' @param ell rate parameter for exponential decay (must be > 0)
+#' @param a Finite scalar transition point satisfying \eqn{0 < a \leq 3}.
+#' @param ell Finite positive scalar rate for exponential decay. The pair `a`,
+#' `ell` must also define a nonnegative density; see Details.
 #' @param log,log.p logical; return or accept probabilities on the log scale.
 #' @param lower.tail logical; if FALSE, use upper-tail probabilities.
 #' @return
@@ -54,7 +55,7 @@
 #'
 #' The trapezoid+exponential distribution has the following characteristics:
 #' \itemize{
-#'   \item Support on \eqn{[0, \infty)}
+#'   \item Support on \eqn{[0, \infty)} when \eqn{p > 0}, or \eqn{[0,a]} when \eqn{p=0}
 #'   \item Continuous probability distribution
 #'   \item Linear density from 0 to a
 #'   \item Exponential decay for x > a

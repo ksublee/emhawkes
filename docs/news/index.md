@@ -2,6 +2,14 @@
 
 ## emhawkes 0.9.9
 
+- Preserve the original model, parameter map, and initial-state
+  arguments in
+  [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md)
+  results. Add
+  [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+  and
+  [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+  to reuse fitted models with the existing `maxLik` interface.
 - Add a registered Rcpp engine for numeric Hawkes likelihoods and
   inference, including unequal decay rates, multi-kernel mappings,
   signed components, and numeric mark effects. Retain the R engine for

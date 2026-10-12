@@ -55,15 +55,18 @@ hfit(
 
 \item{mark}{A vector of mark (jump) sizes, starting with zero.}
 
-\item{N}{A matrix representing counting processes.}
+\item{N}{Optional cumulative event-count matrix, with one row per input row
+and one column per event type. Each row contains counts after that event.}
 
-\item{Nc}{A matrix of counting processes weighted by mark sizes.}
+\item{Nc}{Optional cumulative mark-total matrix with the same shape as \code{N}.}
 
 \item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+A finite scalar is expanded to every kernel component. A matrix must match
+the shape of \code{alpha} and \code{beta}. For the built-in likelihood, supply this
+argument when \code{type_col_map} is set.}
 
-\item{N0}{Initial values for the counting processes matrix \code{N}.}
+\item{N0}{Initial event counts: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{N}, or zero when \code{N} is absent.}
 
 \item{mylogLik}{A user-defined log-likelihood function, which must accept an \code{object} argument consistent with \code{object}.}
 
@@ -72,11 +75,13 @@ share one parameter. If \code{FALSE}, each matrix entry is estimated separately.
 Function components share parameters by name. Conflicting starting values for
 a shared name produce a warning; the first value is used.}
 
-\item{grad}{A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{grad}{Optional gradient function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
+argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
 
-\item{hess}{A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{hess}{Optional Hessian function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
+argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
 
-\item{constraints}{constraints matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{constraints}{\code{NULL} or a constraint list passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}.}
 
 \item{method}{The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
@@ -84,10 +89,15 @@ a shared name produce a warning; the first value is used.}
 
 \item{...}{Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
-\item{Nc0}{Initial values for the mark-weighted counting processes. This argument must be named.}
+\item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.
+This argument must be named.}
 }
 \value{
-\code{\link[maxLik]{maxLik}} object
+A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
+containing the original specification, parameter map, normalized initial-state
+arguments, and \code{reduced} setting. Use \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
+specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retrieve its initial-state arguments.
 }
 \description{
 Estimate exponential Hawkes model parameters by maximum likelihood.
@@ -97,6 +107,9 @@ values for optimization with \code{\link[maxLik]{maxLik}}.
 \details{
 Observations are checked once before optimization. The first row is the initial
 state, and supplied counting processes contain values after each event.
+Omit \code{type} for a univariate model and \code{mark} for unit marks. The observation
+vectors have the same length. The likelihood ends at the last supplied event.
+
 Functions with a \code{param} argument must provide a default named numeric vector;
 \code{numeric(0)} and functions without \code{param} are allowed for fixed components.
 A custom \code{mylogLik} receives its declared arguments from \code{object}, the observation
@@ -109,6 +122,20 @@ once before optimization. Use \code{suppressMessages(hfit(...))} to hide it.
 Setting \code{reduced = FALSE} separates matrix entries; function parameters still
 share values by name. A numeric zero is a starting value, not a fixed zero.
 To fix entries at zero, use a component function with constants at those positions.
+To hold optimization parameters at their starting values, pass \code{fixed} through
+\code{...} as described by \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Fixing a shared parameter fixes all
+entries that use it.
+
+The built-in likelihood uses the calculation engine selected by
+\code{options(emhawkes.engine = "auto")}; see \code{\link[=logLik]{logLik()}} for supported models.
+Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
+supplied separately, or computed numerically by \code{maxLik}.
+
+\code{\link[=fitted_hspec]{fitted_hspec()}} uses the saved parameter map to restore the estimated model.
+\code{\link[=fit_initial_state]{fit_initial_state()}} retrieves the observation window's initial-state arguments.
+These are suitable for re-evaluating the likelihood and starting a new simulation.
+The fit does not store the observations; keep them separately. Save the fit
+with \code{saveRDS()} to retain its model, parameter map, and initial-state information.
 }
 \examples{
 
@@ -118,7 +145,13 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
-summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
+summary(fit)
+estimated <- fitted_hspec(fit)
+initial <- fit_initial_state(fit)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 
 
 # example 2
@@ -185,5 +218,6 @@ summary(fit)
 # For more information, please see vignettes.
 }
 \seealso{
+\code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}},
 \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 }

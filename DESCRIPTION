@@ -13,7 +13,7 @@ License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
-Imports: methods, maxLik, Rcpp
+Imports: methods, maxLik, Rcpp, stats
 LinkingTo: Rcpp
 NeedsCompilation: yes
 Collate: 
@@ -26,6 +26,7 @@ Collate:
     'hengine.R'
     'hllf.R'
     'hfit.R'
+    'hfitted.R'
     'hgfit.R'
     'hreal.R'
     'hsim.R'

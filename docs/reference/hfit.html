@@ -113,21 +113,24 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>A matrix representing counting processes.</p></dd>
+<dd><p>Optional cumulative event-count matrix, with one row per input row
+and one column per event type. Each row contains counts after that event.</p></dd>
 
 
 <dt id="arg-nc">Nc<a class="anchor" aria-label="anchor" href="#arg-nc"></a></dt>
-<dd><p>A matrix of counting processes weighted by mark sizes.</p></dd>
+<dd><p>Optional cumulative mark-total matrix with the same shape as <code>N</code>.</p></dd>
 
 
 <dt id="arg-lambda-component-">lambda_component0<a class="anchor" aria-label="anchor" href="#arg-lambda-component-"></a></dt>
 <dd><p>Initial values for the lambda component \(\lambda_{ij}\).
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as <code>alpha</code> or <code>beta</code> in <code>object</code>.</p></dd>
+A finite scalar is expanded to every kernel component. A matrix must match
+the shape of <code>alpha</code> and <code>beta</code>. For the built-in likelihood, supply this
+argument when <code>type_col_map</code> is set.</p></dd>
 
 
 <dt id="arg-n-">N0<a class="anchor" aria-label="anchor" href="#arg-n-"></a></dt>
-<dd><p>Initial values for the counting processes matrix <code>N</code>.</p></dd>
+<dd><p>Initial event counts: a finite scalar or one value per event type.
+If omitted, use the first row of supplied <code>N</code>, or zero when <code>N</code> is absent.</p></dd>
 
 
 <dt id="arg-myloglik">mylogLik<a class="anchor" aria-label="anchor" href="#arg-myloglik"></a></dt>
@@ -142,15 +145,17 @@ a shared name produce a warning; the first value is used.</p></dd>
 
 
 <dt id="arg-grad">grad<a class="anchor" aria-label="anchor" href="#arg-grad"></a></dt>
-<dd><p>A gradient matrix for the likelihood function. Refer to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> for more details.</p></dd>
+<dd><p>Optional gradient function passed to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik::maxLik()</a></code>. Its first
+argument is the optimization parameter vector. If <code>NULL</code>, use numerical differentiation.</p></dd>
 
 
 <dt id="arg-hess">hess<a class="anchor" aria-label="anchor" href="#arg-hess"></a></dt>
-<dd><p>A Hessian matrix for the likelihood function. Refer to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> for more details.</p></dd>
+<dd><p>Optional Hessian function passed to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik::maxLik()</a></code>. Its first
+argument is the optimization parameter vector. If <code>NULL</code>, use numerical differentiation.</p></dd>
 
 
 <dt id="arg-constraints">constraints<a class="anchor" aria-label="anchor" href="#arg-constraints"></a></dt>
-<dd><p>constraints matrices. Refer to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> for more details.</p></dd>
+<dd><p><code>NULL</code> or a constraint list passed to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik::maxLik()</a></code>.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -166,18 +171,25 @@ a shared name produce a warning; the first value is used.</p></dd>
 
 
 <dt id="arg-nc-">Nc0<a class="anchor" aria-label="anchor" href="#arg-nc-"></a></dt>
-<dd><p>Initial values for the mark-weighted counting processes. This argument must be named.</p></dd>
+<dd><p>Initial mark totals: a finite scalar or one value per event type.
+If omitted, use the first row of supplied <code>Nc</code>, or zero when <code>Nc</code> is absent.
+This argument must be named.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> object</p>
+    <p>A <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> object with an <code>emhawkes</code> attribute
+containing the original specification, parameter map, normalized initial-state
+arguments, and <code>reduced</code> setting. Use <code><a href="fitted_hspec.html">fitted_hspec()</a></code> to restore the estimated
+specification and <code><a href="fit_initial_state.html">fit_initial_state()</a></code> to retrieve its initial-state arguments.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Observations are checked once before optimization. The first row is the initial
 state, and supplied counting processes contain values after each event.
-Functions with a <code>param</code> argument must provide a default named numeric vector;
+Omit <code>type</code> for a univariate model and <code>mark</code> for unit marks. The observation
+vectors have the same length. The likelihood ends at the last supplied event.</p>
+<p>Functions with a <code>param</code> argument must provide a default named numeric vector;
 <code>numeric(0)</code> and functions without <code>param</code> are allowed for fixed components.
 A custom <code>mylogLik</code> receives its declared arguments from <code>object</code>, the observation
 arguments, <code>lambda_component0</code>, <code>param</code>, and <code>reduced</code>. Optional defaults are
@@ -187,11 +199,24 @@ captured in the function's environment or given defaults.</p>
 once before optimization. Use <code>suppressMessages(hfit(...))</code> to hide it.
 Setting <code>reduced = FALSE</code> separates matrix entries; function parameters still
 share values by name. A numeric zero is a starting value, not a fixed zero.
-To fix entries at zero, use a component function with constants at those positions.</p>
+To fix entries at zero, use a component function with constants at those positions.
+To hold optimization parameters at their starting values, pass <code>fixed</code> through
+<code>...</code> as described by <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik::maxLik()</a></code>. Fixing a shared parameter fixes all
+entries that use it.</p>
+<p>The built-in likelihood uses the calculation engine selected by
+<code>options(emhawkes.engine = "auto")</code>; see <code><a href="logLik.html">logLik()</a></code> for supported models.
+Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
+supplied separately, or computed numerically by <code>maxLik</code>.</p>
+<p><code><a href="fitted_hspec.html">fitted_hspec()</a></code> uses the saved parameter map to restore the estimated model.
+<code><a href="fit_initial_state.html">fit_initial_state()</a></code> retrieves the observation window's initial-state arguments.
+These are suitable for re-evaluating the likelihood and starting a new simulation.
+The fit does not store the observations; keep them separately. Save the fit
+with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> to retain its model, parameter map, and initial-state information.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="hspec-class.html">hspec-class</a></code>, <code><a href="hsim.html">hsim,hspec-method</a></code></p></div>
+    <div class="dont-index"><p><code><a href="fitted_hspec.html">fitted_hspec()</a></code>, <code><a href="fit_initial_state.html">fit_initial_state()</a></code>, <code><a href="logLik.html">logLik()</a></code>,
+<code><a href="hspec-class.html">hspec-class</a></code>, <code><a href="hsim.html">hsim,hspec-method</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -203,9 +228,10 @@ To fix entries at zero, use a component function with constants at those positio
 <span class="r-in"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu</span>, alpha<span class="op">=</span><span class="va">alpha</span>, beta<span class="op">=</span><span class="va">beta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size<span class="op">=</span><span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">hfit</span><span class="op">(</span><span class="va">h</span>, inter_arrival<span class="op">=</span><span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>, type<span class="op">=</span><span class="va">res</span><span class="op">$</span><span class="va">type</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">hfit</span><span class="op">(</span><span class="va">h</span>, inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Use reduced = FALSE to estimate matrix entries separately.</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BFGS maximization, 29 iterations</span>
@@ -221,6 +247,14 @@ To fix entries at zero, use a component function with constants at those positio
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
+<span class="r-in"><span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">initial</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>,</span></span>
+<span class="r-in"><span>  inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">initial</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The initial values for intensity processes are not provided. Internally determined initial values are used.</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>fitted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="logLik.html">logLik</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span>, restored <span class="op">=</span> <span class="va">inferred</span><span class="op">$</span><span class="va">loglikelihood</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    fitted  restored </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -245.0405 -245.0405 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># example 2</span></span></span>

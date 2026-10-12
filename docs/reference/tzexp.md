@@ -28,11 +28,12 @@ rtzexp(n, a, ell)
 
 - a:
 
-  location parameter for transition (must be \> 0)
+  Finite scalar transition point satisfying \\0 \< a \leq 3\\.
 
 - ell:
 
-  rate parameter for exponential decay (must be \> 0)
+  Finite positive scalar rate for exponential decay. The pair `a`, `ell`
+  must also define a nonnegative density; see Details.
 
 - log, log.p:
 
@@ -84,7 +85,8 @@ random draws from earlier versions for the same seed.
 The trapezoid+exponential distribution has the following
 characteristics:
 
-- Support on \\\[0, \infty)\\
+- Support on \\\[0, \infty)\\ when \\p \> 0\\, or \\\[0,a\]\\ when
+  \\p=0\\
 
 - Continuous probability distribution
 

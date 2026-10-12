@@ -27,7 +27,9 @@ set_residual(
 \arguments{
 \item{object}{An object of class \code{hspec} (Hawkes model specification)}
 
-\item{param}{A named numeric vector of parameters for the residual distribution}
+\item{param}{A named numeric vector of residual-distribution parameters.
+Names match the declared formal arguments of the supplied distribution functions.
+For estimation, the values supply starting points rather than fixed constants.}
 
 \item{dresidual}{Density function of the residual distribution (optional)}
 
@@ -43,21 +45,27 @@ set_residual(
 An updated \code{hspec} object with residual functions set
 }
 \description{
-Sets residual distribution functions (density, CDF, quantile, and random generation)
-for a Hawkes model specification object with fixed parameters.
+Attach residual density, distribution, quantile, and random-generation functions
+to an \code{hspec} object, with named parameter defaults for simulation and estimation.
 }
 \details{
-This method allows setting residual distribution functions for a flexible model.
+The updated specification represents a model with the supplied residual distribution.
+Functions left \code{NULL} retain their existing slots. Supply consistent density
+and CDF functions for likelihood evaluation, a quantile function for residual
+inference, and a random generator for simulation.
 
 The \code{param} argument in these functions defaults to the parameters provided during
 setup and is used for estimation.
+Only parameter names declared by each supplied distribution function are forwarded.
+Matching names across the wrapped functions share one estimated parameter.
+\code{\link[=fitted_hspec]{fitted_hspec()}} updates the residual generator when its named defaults match
+estimated coefficient names.
 Density wrappers accept \code{log}; CDF and quantile wrappers accept \code{lower.tail}
 and \code{log.p}. These options are forwarded when the supplied distribution
 supports them. User-defined distributions should provide log-density and
 upper-tail log-probability options to retain accuracy in extreme tails.
 }
 \examples{
-\dontrun{
 # Create basic Hawkes specification
 hspec_obj <- new("hspec",
                  mu = matrix(0.1, nrow = 1),
@@ -80,6 +88,10 @@ hspec_obj <- set_residual(
 # Check resulting functions
 hspec_obj@dresidual
 hspec_obj@rresidual
-}
+hspec_obj@dresidual(c(0.2, 1), log = TRUE)
+hspec_obj@presidual(c(0.2, 1), lower.tail = FALSE, log.p = TRUE)
 
+}
+\seealso{
+\code{\link[=logLik]{logLik()}}, \code{\link[=hfit]{hfit()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=dtzexp]{dtzexp()}}
 }

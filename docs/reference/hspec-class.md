@@ -24,6 +24,37 @@ by `impact` for a general function.
 `mu`, `alpha` and `beta` are required slots for every exponential Hawkes
 model. `rmark` and `impact` are additional slots.
 
+For `D` event types and `K` kernel columns, numeric `mu` has shape `D`
+by 1, and `alpha`, `beta`, and optional `eta` have shape `D` by `K`.
+Baselines are finite and nonnegative; decay rates are finite and
+positive. Use `type_col_map` when `K` differs from `D`. Its `D` entries
+contain nonempty vectors of distinct, one-based kernel column indices.
+Intensity rows identify event types; the mapping selects columns updated
+after each event. Supply `lambda_component0` for simulation and
+likelihood evaluation when a mapping is set.
+
+Functions whose sole argument is `param` can reparameterize numeric
+components. A state-dependent `mu` or `impact` function declares the
+event context it needs. For estimation, `param` has a default finite
+numeric vector with unique names; `numeric(0)` is allowed for fixed
+components.
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) shares
+matching function parameter names and, by default, equal values within
+each numeric matrix.
+
+`rmark` and `rresidual` generate simulation draws. Their parameters
+alone do not add coefficients to a fit. Supply `dmark` or residual
+likelihood functions to estimate distribution parameters.
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+retains the generators and updates named defaults that match estimated
+coefficient names.
+
+Pass `stability_check = TRUE` to `new("hspec", ...)` to check the
+spectral radius for constant, nonnegative Hawkes kernels without
+state-dependent, mark-dependent, or residual-distribution effects. For
+other specifications, the constructor reports that this stability check
+is unavailable.
+
 ## Slots
 
 - `mu`:
@@ -43,8 +74,9 @@ model. `rmark` and `impact` are additional slots.
 
 - `eta`:
 
-  A numeric value, matrix, or function. If numeric, it is automatically
-  converted to a matrix, representing the impact of an additional mark.
+  An optional numeric value, matrix, or function specifying the linear
+  additional effect `eta * (mark - 1)`. Numeric values are converted to
+  a matrix.
 
 - `impact`:
 
@@ -55,7 +87,7 @@ model. `rmark` and `impact` are additional slots.
 
 - `dimens`:
 
-  The dimension of the model.
+  The number of event types, distinct from the number of kernel columns.
 
 - `rmark`:
 
@@ -87,6 +119,14 @@ model. `rmark` and `impact` are additional slots.
 - `qresidual`:
 
   A quantile function for the residual.
+
+## See also
+
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md),
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md),
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md),
+[`set_residual()`](https://ksublee.github.io/emhawkes/reference/set_residual.md)
 
 ## Examples
 
