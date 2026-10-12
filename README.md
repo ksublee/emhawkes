@@ -67,4 +67,4 @@ For comparison or troubleshooting, set `options(emhawkes.engine = "r")` to use t
 
 See the [basic vignette](https://ksublee.github.io/emhawkes/articles/example.html) and [extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html).
 
-The website is generated with `Rscript tools/build-docs.R` after installing the current package and `pkgdown`. The script includes the extended article from `vignettes_ext`, which is excluded from the CRAN package. The [GitHub Markdown example](https://github.com/ksublee/emhawkes/blob/master/github_document/example.md) uses the same extended source.
+The website is generated with `Rscript tools/build-docs.R` after installing the current package and `pkgdown`. The script includes the extended article from `vignettes_ext`, which is excluded from the CRAN package. The [GitHub Markdown example](https://github.com/ksublee/emhawkes/blob/main/github_document/example.md) uses the same extended source.
