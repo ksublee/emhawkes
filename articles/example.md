@@ -207,6 +207,67 @@ summary(mle)
 #> --------------------------------------------
 ```
 
+Use
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+to reconstruct the model with the estimated parameters. The fit retains
+its original parameter map, including shared parameters and fixed
+constants in component functions.
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+retrieves the initial counts and initial intensity setting.
+
+``` r
+
+estimated <- fitted_hspec(mle)
+initial <- fit_initial_state(mle)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res1$inter_arrival, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(mle)), restored = inferred$loglikelihood)
+#>    fitted  restored 
+#> -213.4658 -213.4658
+head(inferred$lambda)
+#>        lambda1
+#> [1,] 0.8873272
+#> [2,] 0.4606831
+#> [3,] 1.4247076
+#> [4,] 1.9993195
+#> [5,] 2.2929804
+#> [6,] 2.9468134
+head(inferred$res_process1)
+#> [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413
+```
+
+When the initial intensity was omitted, its saved setting remains `NULL`
+and is recalculated using the restored parameters. The restored
+specification also retains the mark and residual generators for
+subsequent simulation.
+
+Pass the restored model and initial-state arguments to
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
+generate a new path. These arguments describe the start of the fitted
+observation window. They do not continue the path after its last event.
+Check the fit’s convergence and the model’s suitability for simulation
+first.
+
+``` r
+
+set.seed(1108)
+simulated <- do.call(hsim, c(list(object = estimated, size = 100), initial))
+head(simulated$arrival)
+#> [1] 0.000000 1.434237 1.782855 3.231614 3.984735 4.465780
+```
+
+The saved fit retains the information needed to reconstruct the model
+later. Keep the observed data separately when re-evaluating the
+likelihood.
+
+``` r
+
+saveRDS(mle, "hawkes-fit.rds")
+saved_fit <- readRDS("hawkes-fit.rds")
+estimated <- fitted_hspec(saved_fit)
+initial <- fit_initial_state(saved_fit)
+```
+
 ### Bivariate Hawkes model
 
 The intensity process of a basic bivariate Hawkes model is defined by
@@ -431,6 +492,23 @@ coef(mle)
 miscTools::stdEr(mle)
 #>        mu1   alpha1.1   alpha1.2    beta1.1 
 #> 0.01638200 0.07430500 0.09575744 0.17202504
+```
+
+The restored matrices retain the shared parameters from this fit. The
+diagonal entries of `alpha` remain equal, as do its off-diagonal
+entries.
+
+``` r
+
+estimated2 <- fitted_hspec(mle)
+estimated2@alpha
+#>           [,1]      [,2]
+#> [1,] 0.4821725 0.9862541
+#> [2,] 0.9862541 0.4821725
+estimated2@beta
+#>          [,1]     [,2]
+#> [1,] 2.079869 2.079869
+#> [2,] 2.079869 2.079869
 ```
 
 Set `reduced = FALSE` to estimate all ten matrix entries separately,

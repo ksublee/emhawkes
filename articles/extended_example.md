@@ -207,6 +207,67 @@ summary(mle)
 #> --------------------------------------------
 ```
 
+Use
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+to reconstruct the model with the estimated parameters. The fit retains
+its original parameter map, including shared parameters and fixed
+constants in component functions.
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+retrieves the initial counts and initial intensity setting.
+
+``` r
+
+estimated <- fitted_hspec(mle)
+initial <- fit_initial_state(mle)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res1$inter_arrival, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(mle)), restored = inferred$loglikelihood)
+#>    fitted  restored 
+#> -213.4658 -213.4658
+head(inferred$lambda)
+#>        lambda1
+#> [1,] 0.8873272
+#> [2,] 0.4606831
+#> [3,] 1.4247076
+#> [4,] 1.9993195
+#> [5,] 2.2929804
+#> [6,] 2.9468134
+head(inferred$res_process1)
+#> [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413
+```
+
+When the initial intensity was omitted, its saved setting remains `NULL`
+and is recalculated using the restored parameters. The restored
+specification also retains the mark and residual generators for
+subsequent simulation.
+
+Pass the restored model and initial-state arguments to
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
+generate a new path. These arguments describe the start of the fitted
+observation window. They do not continue the path after its last event.
+Check the fit’s convergence and the model’s suitability for simulation
+first.
+
+``` r
+
+set.seed(1108)
+simulated <- do.call(hsim, c(list(object = estimated, size = 100), initial))
+head(simulated$arrival)
+#> [1] 0.000000 1.434237 1.782855 3.231614 3.984735 4.465780
+```
+
+The saved fit retains the information needed to reconstruct the model
+later. Keep the observed data separately when re-evaluating the
+likelihood.
+
+``` r
+
+saveRDS(mle, "hawkes-fit.rds")
+saved_fit <- readRDS("hawkes-fit.rds")
+estimated <- fitted_hspec(saved_fit)
+initial <- fit_initial_state(saved_fit)
+```
+
 ### Bivariate Hawkes model
 
 The intensity process of a basic bivariate Hawkes model is defined by
@@ -430,6 +491,23 @@ miscTools::stdEr(mle)
 #> 0.01638200 0.07430500 0.09575744 0.17202504
 ```
 
+The restored matrices retain the shared parameters from this fit. The
+diagonal entries of `alpha` remain equal, as do its off-diagonal
+entries.
+
+``` r
+
+estimated2 <- fitted_hspec(mle)
+estimated2@alpha
+#>           [,1]      [,2]
+#> [1,] 0.4821725 0.9862541
+#> [2,] 0.9862541 0.4821725
+estimated2@beta
+#>          [,1]     [,2]
+#> [1,] 2.079869 2.079869
+#> [2,] 2.079869 2.079869
+```
+
 ### Parameter settings
 
 The initial values in `hspec0` determine which parameters are estimated
@@ -632,6 +710,27 @@ the preceding state; an impact function uses row `n` for the current
 event. Component functions can declare only the arguments they need, and
 use `...` to receive the remaining context.
 
+### Calculation engines
+
+Numeric Hawkes specifications use the Rcpp engine automatically for
+likelihood evaluation and inference. Function components and
+residual-distribution models use the R implementation. Simulation uses
+R. Use the `emhawkes.engine` option to compare the R and automatic
+calculations. This function restores the previous option after each
+call.
+
+``` r
+
+engine_loglik <- function(engine) {
+  previous <- options(emhawkes.engine = engine)
+  on.exit(options(previous))
+  as.numeric(logLik(hspec2, inter_arrival = inter_arrival2, type = type2))
+}
+c(R = engine_loglik("r"), automatic = engine_loglik("auto"))
+#>         R automatic 
+#> -974.2809 -974.2809
+```
+
 ### Residual process
 
 Set `infer = TRUE` in `logLik` to obtain the log-likelihood, intensity
@@ -666,12 +765,13 @@ processes.
 mle_rp <- hfit(new("hspec", mu = 0.2, alpha = 1, beta = 2),
                res_rp$inter_arrival)
 
-# construct hspec from estimation result
-he <- new("hspec", mu = coef(mle_rp)["mu1"], 
-          alpha = coef(mle_rp)["alpha1"], beta = coef(mle_rp)["beta1"])
+# Restore the estimated model and the initial-state arguments.
+he <- fitted_hspec(mle_rp)
+initial_rp <- fit_initial_state(mle_rp)
 
 # infer intensity
-infered_res <- logLik(he, res_rp$inter_arrival, res_rp$type, infer = TRUE)
+infered_res <- do.call(logLik, c(list(object = he,
+  inter_arrival = res_rp$inter_arrival, type = res_rp$type, infer = TRUE), initial_rp))
 
 rpe <- infered_res$res_process1
 
@@ -888,9 +988,8 @@ both simulation and estimation.
 ``` r
 
 set.seed(620)
-res_mk <- hsim(h, size = 3000, 
-               # Initial intensity components for this example.
-               lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)) 
+lambda_component0_mk <- matrix(seq(1, 1.7, 0.1), nrow = 2)
+res_mk <- hsim(h, size = 3000, lambda_component0 = lambda_component0_mk)
 res_mk
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
@@ -968,10 +1067,11 @@ res_mk
 
 ``` r
 
-summary(hfit(h, res_mk$inter_arrival, res_mk$type,
-             lambda_component0 = matrix(seq(1, 1.7, 0.1), nrow = 2)))
+fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
+               lambda_component0 = lambda_component0_mk)
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
+summary(fit_mk)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 77 iterations
@@ -990,6 +1090,34 @@ summary(hfit(h, res_mk$inter_arrival, res_mk$type,
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+```
+
+Reconstruction retains `type_col_map` and the supplied initial intensity
+matrix. Each kernel uses its own decay rate in the likelihood and
+residual integrals. The inferred likelihood agrees with the fitted
+likelihood even though decay rates differ within each row.
+
+``` r
+
+estimated_mk <- fitted_hspec(fit_mk)
+initial_mk <- fit_initial_state(fit_mk)
+estimated_mk@type_col_map
+#> [[1]]
+#> [1] 1 3
+#> 
+#> [[2]]
+#> [1] 2 4
+initial_mk$lambda_component0
+#>      [,1] [,2] [,3] [,4]
+#> [1,]  1.0  1.2  1.4  1.6
+#> [2,]  1.1  1.3  1.5  1.7
+inferred_mk <- do.call(logLik, c(list(object = estimated_mk,
+  inter_arrival = res_mk$inter_arrival, type = res_mk$type, infer = TRUE), initial_mk))
+c(fitted = as.numeric(logLik(fit_mk)), restored = inferred_mk$loglikelihood)
+#>   fitted restored 
+#>  6084.72  6084.72
+all.equal(as.numeric(logLik(fit_mk)), inferred_mk$loglikelihood)
+#> [1] TRUE
 ```
 
 ### Synchronized intensity model
@@ -1054,7 +1182,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x5595c1c76228>
+#> <bytecode: 0x563561bcd088>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1064,7 +1192,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x5595c2072928>
+#> <bytecode: 0x5635653dc190>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1074,7 +1202,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x5595c278b208>
+#> <bytecode: 0x5635638fe680>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1146,6 +1274,18 @@ summary(fit_sy)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+```
+
+The restored component functions use the estimated defaults. Both
+functions retain the same estimated `kappa`.
+
+``` r
+
+estimated_sy <- fitted_hspec(fit_sy)
+c(mu = eval(formals(estimated_sy@mu)$param)[["kappa"]],
+  beta = eval(formals(estimated_sy@beta)$param)[["kappa"]])
+#>        mu      beta 
+#> 0.4099007 0.4099007
 ```
 
 ## Extended models
@@ -1436,6 +1576,21 @@ summary(mle_md)
 #> --------------------------------------------
 ```
 
+The density and generator use the same parameter name, `p`.
+Reconstruction updates `rmark` with the value estimated through `dmark`,
+so new simulations use the fitted mark distribution. Generator
+parameters that do not match estimated coefficient names keep their
+original defaults.
+
+``` r
+
+estimated_md <- fitted_hspec(mle_md)
+c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
+  generator = eval(formals(estimated_md@rmark)$param)[["p"]])
+#>   density generator 
+#>   0.65897   0.65897
+```
+
 ### Hawkes flocking model
 
 The function $`g`$ need not depend on the mark. In the Hawkes flocking
@@ -1529,7 +1684,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x5595c0ddc758>
+#> <bytecode: 0x563568c945c8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1808,7 +1963,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x5595c1d1abb0>
+#> <bytecode: 0x563562939500>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2052,7 +2207,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x5595c6d10eb8>
+#> <environment: 0x5635660da688>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2060,7 +2215,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x5595c6d10eb8>
+#> <environment: 0x5635660da688>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2069,7 +2224,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x5595c6d10eb8>
+#> <environment: 0x5635660da688>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2079,7 +2234,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x5595c6d10eb8>
+#> <environment: 0x5635660da688>
 ```
 
 The following histogram shows inter-arrival times from a model with
@@ -2228,6 +2383,27 @@ These constraints keep the six parameters nonnegative and enforce
 `a <= 3`, the upper limit of the trapezoid-exponential distribution. The
 parameter order is `mu1`, `alpha1.1`, `alpha1.2`, `beta1.1`, `a`, and
 `ell`.
+
+Reconstruction also updates the residual density, distribution,
+quantile, and generator functions with the shared estimates of `a` and
+`ell`. The custom objective and optimization constraints remain part of
+the fitting step;
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+evaluates the restored model’s residual-distribution likelihood.
+
+``` r
+
+estimated_dh <- fitted_hspec(mle_dh)
+initial_dh <- fit_initial_state(mle_dh)
+formals(estimated_dh@rresidual)$param
+#>         a       ell 
+#> 0.7181419 1.6378856
+inferred_dh <- do.call(logLik, c(list(object = estimated_dh,
+  inter_arrival = duh2_real$inter_arrival, type = duh2_real$type, infer = TRUE), initial_dh))
+c(fitted = as.numeric(logLik(mle_dh)), restored = inferred_dh$loglikelihood)
+#>    fitted  restored 
+#> -12407.47 -12407.47
+```
 
 The following example uses a uniform residual distribution on
 $`[0, 2]`$.

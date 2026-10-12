@@ -61,6 +61,26 @@ For more details, refer to the vignettes.</p>
 <p>\(g\) is represented by <code>eta</code> when it is a linear function of \(z\), and by <code>impact</code> for a general function.</p>
 <p><code>mu</code>, <code>alpha</code> and <code>beta</code> are required slots for every exponential Hawkes model.
 <code>rmark</code> and <code>impact</code> are additional slots.</p>
+<p>For <code>D</code> event types and <code>K</code> kernel columns, numeric <code>mu</code> has shape <code>D</code> by 1,
+and <code>alpha</code>, <code>beta</code>, and optional <code>eta</code> have shape <code>D</code> by <code>K</code>.
+Baselines are finite and nonnegative; decay rates are finite and positive.
+Use <code>type_col_map</code> when <code>K</code> differs from <code>D</code>. Its <code>D</code> entries contain nonempty
+vectors of distinct, one-based kernel column indices. Intensity rows identify
+event types; the mapping selects columns updated after each event. Supply
+<code>lambda_component0</code> for simulation and likelihood evaluation when a mapping is set.</p>
+<p>Functions whose sole argument is <code>param</code> can reparameterize numeric components.
+A state-dependent <code>mu</code> or <code>impact</code> function declares the event context it needs.
+For estimation, <code>param</code> has a default finite numeric vector with unique names;
+<code>numeric(0)</code> is allowed for fixed components. <code><a href="hfit.html">hfit()</a></code> shares matching function
+parameter names and, by default, equal values within each numeric matrix.</p>
+<p><code>rmark</code> and <code>rresidual</code> generate simulation draws. Their parameters alone do
+not add coefficients to a fit. Supply <code>dmark</code> or residual likelihood functions
+to estimate distribution parameters. <code><a href="fitted_hspec.html">fitted_hspec()</a></code> retains the generators
+and updates named defaults that match estimated coefficient names.</p>
+<p>Pass <code>stability_check = TRUE</code> to <code>new("hspec", ...)</code> to check the spectral
+radius for constant, nonnegative Hawkes kernels without state-dependent,
+mark-dependent, or residual-distribution effects. For other specifications,
+the constructor reports that this stability check is unavailable.</p>
     </div>
     <div class="section level2">
     <h2 id="slots">Slots<a class="anchor" aria-label="anchor" href="#slots"></a></h2>
@@ -79,7 +99,8 @@ For more details, refer to the vignettes.</p>
 
 
 <dt><code>eta</code></dt>
-<dd><p>A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix, representing the impact of an additional mark.</p></dd>
+<dd><p>An optional numeric value, matrix, or function specifying the linear
+additional effect <code>eta * (mark - 1)</code>. Numeric values are converted to a matrix.</p></dd>
 
 
 <dt><code>impact</code></dt>
@@ -89,7 +110,7 @@ Declare the state arguments needed by the function. For estimation, an optional
 
 
 <dt><code>dimens</code></dt>
-<dd><p>The dimension of the model.</p></dd>
+<dd><p>The number of event types, distinct from the number of kernel columns.</p></dd>
 
 
 <dt><code>rmark</code></dt>
@@ -122,6 +143,10 @@ after an event of type <code>i</code>. Intensity rows identify event types.</p><
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="hfit.html">hfit()</a></code>, <code><a href="hsim.html">hsim()</a></code>, <code><a href="logLik.html">logLik()</a></code>, <code><a href="fitted_hspec.html">fitted_hspec()</a></code>, <code><a href="set_residual.html">set_residual()</a></code></p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

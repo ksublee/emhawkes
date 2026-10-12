@@ -1,8 +1,8 @@
 # Set Residual Distribution Functions for Hawkes Model Specification
 
-Sets residual distribution functions (density, CDF, quantile, and random
-generation) for a Hawkes model specification object with fixed
-parameters.
+Attach residual density, distribution, quantile, and random-generation
+functions to an `hspec` object, with named parameter defaults for
+simulation and estimation.
 
 ## Usage
 
@@ -36,7 +36,10 @@ set_residual(
 
 - param:
 
-  A named numeric vector of parameters for the residual distribution
+  A named numeric vector of residual-distribution parameters. Names
+  match the declared formal arguments of the supplied distribution
+  functions. For estimation, the values supply starting points rather
+  than fixed constants.
 
 - dresidual:
 
@@ -65,20 +68,34 @@ An updated `hspec` object with residual functions set
 
 ## Details
 
-This method allows setting residual distribution functions for a
-flexible model.
+The updated specification represents a model with the supplied residual
+distribution. Functions left `NULL` retain their existing slots. Supply
+consistent density and CDF functions for likelihood evaluation, a
+quantile function for residual inference, and a random generator for
+simulation.
 
 The `param` argument in these functions defaults to the parameters
-provided during setup and is used for estimation. Density wrappers
-accept `log`; CDF and quantile wrappers accept `lower.tail` and `log.p`.
-These options are forwarded when the supplied distribution supports
-them. User-defined distributions should provide log-density and
-upper-tail log-probability options to retain accuracy in extreme tails.
+provided during setup and is used for estimation. Only parameter names
+declared by each supplied distribution function are forwarded. Matching
+names across the wrapped functions share one estimated parameter.
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+updates the residual generator when its named defaults match estimated
+coefficient names. Density wrappers accept `log`; CDF and quantile
+wrappers accept `lower.tail` and `log.p`. These options are forwarded
+when the supplied distribution supports them. User-defined distributions
+should provide log-density and upper-tail log-probability options to
+retain accuracy in extreme tails.
+
+## See also
+
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md),
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md),
+[`dtzexp()`](https://ksublee.github.io/emhawkes/reference/tzexp.md)
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 # Create basic Hawkes specification
 hspec_obj <- new("hspec",
                  mu = matrix(0.1, nrow = 1),
@@ -100,6 +117,21 @@ hspec_obj <- set_residual(
 
 # Check resulting functions
 hspec_obj@dresidual
+#> function (x, param = c(a = 0.5, ell = 1), log = FALSE) 
+#> {
+#>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
+#>         param))
+#> }
+#> <environment: 0x560c1a87a9e0>
 hspec_obj@rresidual
-} # }
+#> function (size, param = c(a = 0.5, ell = 1)) 
+#> {
+#>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
+#>         param)))
+#> }
+#> <environment: 0x560c1a87a9e0>
+hspec_obj@dresidual(c(0.2, 1), log = TRUE)
+#> [1] -0.1932906 -1.0007753
+hspec_obj@presidual(c(0.2, 1), lower.tail = FALSE, log.p = TRUE)
+#> [1] -0.1977121 -1.0007753
 ```

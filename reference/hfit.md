@@ -75,21 +75,25 @@ hfit(
 
 - N:
 
-  A matrix representing counting processes.
+  Optional cumulative event-count matrix, with one row per input row and
+  one column per event type. Each row contains counts after that event.
 
 - Nc:
 
-  A matrix of counting processes weighted by mark sizes.
+  Optional cumulative mark-total matrix with the same shape as `N`.
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. Can be a
-  numeric value or a matrix. Must have the same number of rows and
-  columns as `alpha` or `beta` in `object`.
+  Initial values for the lambda component \\\lambda\_{ij}\\. A finite
+  scalar is expanded to every kernel component. A matrix must match the
+  shape of `alpha` and `beta`. For the built-in likelihood, supply this
+  argument when `type_col_map` is set.
 
 - N0:
 
-  Initial values for the counting processes matrix `N`.
+  Initial event counts: a finite scalar or one value per event type. If
+  omitted, use the first row of supplied `N`, or zero when `N` is
+  absent.
 
 - mylogLik:
 
@@ -105,21 +109,22 @@ hfit(
 
 - grad:
 
-  A gradient matrix for the likelihood function. Refer to
-  [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) for more
-  details.
+  Optional gradient function passed to
+  [`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html). Its
+  first argument is the optimization parameter vector. If `NULL`, use
+  numerical differentiation.
 
 - hess:
 
-  A Hessian matrix for the likelihood function. Refer to
-  [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) for more
-  details.
+  Optional Hessian function passed to
+  [`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html). Its
+  first argument is the optimization parameter vector. If `NULL`, use
+  numerical differentiation.
 
 - constraints:
 
-  constraints matrices. Refer to
-  [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) for more
-  details.
+  `NULL` or a constraint list passed to
+  [`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html).
 
 - method:
 
@@ -139,34 +144,68 @@ hfit(
 
 - Nc0:
 
-  Initial values for the mark-weighted counting processes. This argument
-  must be named.
+  Initial mark totals: a finite scalar or one value per event type. If
+  omitted, use the first row of supplied `Nc`, or zero when `Nc` is
+  absent. This argument must be named.
 
 ## Value
 
-[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object
+A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
+`emhawkes` attribute containing the original specification, parameter
+map, normalized initial-state arguments, and `reduced` setting. Use
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+to restore the estimated specification and
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+to retrieve its initial-state arguments.
 
 ## Details
 
 Observations are checked once before optimization. The first row is the
 initial state, and supplied counting processes contain values after each
-event. Functions with a `param` argument must provide a default named
-numeric vector; `numeric(0)` and functions without `param` are allowed
-for fixed components. A custom `mylogLik` receives its declared
-arguments from `object`, the observation arguments, `lambda_component0`,
-`param`, and `reduced`. Optional defaults are preserved; `...` receives
-the remaining context. Additional inputs should be captured in the
-function's environment or given defaults.
+event. Omit `type` for a univariate model and `mark` for unit marks. The
+observation vectors have the same length. The likelihood ends at the
+last supplied event.
+
+Functions with a `param` argument must provide a default named numeric
+vector; `numeric(0)` and functions without `param` are allowed for fixed
+components. A custom `mylogLik` receives its declared arguments from
+`object`, the observation arguments, `lambda_component0`, `param`, and
+`reduced`. Optional defaults are preserved; `...` receives the remaining
+context. Additional inputs should be captured in the function's
+environment or given defaults.
 
 When equal matrix entries are grouped, a message lists the affected
 components once before optimization. Use `suppressMessages(hfit(...))`
 to hide it. Setting `reduced = FALSE` separates matrix entries; function
 parameters still share values by name. A numeric zero is a starting
 value, not a fixed zero. To fix entries at zero, use a component
-function with constants at those positions.
+function with constants at those positions. To hold optimization
+parameters at their starting values, pass `fixed` through `...` as
+described by
+[`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html). Fixing
+a shared parameter fixes all entries that use it.
+
+The built-in likelihood uses the calculation engine selected by
+`options(emhawkes.engine = "auto")`; see
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
+supported models. Rcpp accelerates likelihood evaluation. Gradient and
+Hessian functions are supplied separately, or computed numerically by
+`maxLik`.
+
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+uses the saved parameter map to restore the estimated model.
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+retrieves the observation window's initial-state arguments. These are
+suitable for re-evaluating the likelihood and starting a new simulation.
+The fit does not store the observations; keep them separately. Save the
+fit with [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) to retain
+its model, parameter map, and initial-state information.
 
 ## See also
 
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md),
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md),
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
 [`hspec-class`](https://ksublee.github.io/emhawkes/reference/hspec-class.md),
 [`hsim,hspec-method`](https://ksublee.github.io/emhawkes/reference/hsim.md)
 
@@ -180,9 +219,10 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
-summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
+summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 29 iterations
@@ -198,6 +238,14 @@ summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
+estimated <- fitted_hspec(fit)
+initial <- fit_initial_state(fit)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
+#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
+#>    fitted  restored 
+#> -245.0405 -245.0405 
 
 
 # example 2
@@ -246,18 +294,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42741   1.620   0.1053    
+#> mu1      0.69221    0.42494   1.629   0.1033    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04931   0.290   0.7719    
-#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
-#> alpha34  0.29568    0.11642   2.540   0.0111 *  
-#> beta1.1  0.10275    0.08867   1.159   0.2465    
-#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
-#> alpha1n  0.03456    0.06732   0.513   0.6077    
-#> alpha1w  0.04976    0.06843   0.727   0.4671    
-#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
-#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
+#> alpha12  0.01429    0.04916   0.291   0.7712    
+#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
+#> alpha34  0.29568    0.11634   2.542   0.0110 *  
+#> beta1.1  0.10275    0.08833   1.163   0.2447    
+#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
+#> alpha1n  0.03456    0.06731   0.513   0.6077    
+#> alpha1w  0.04976    0.06831   0.728   0.4664    
+#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
+#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
