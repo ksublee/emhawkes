@@ -44,7 +44,8 @@ bind_fitted_generator <- function(fun, coefficients) {
 #'
 #' The fit keeps its `maxLik` classes and methods. Its `emhawkes` attribute stores
 #' a versioned list with `specification`, `parameter_map`, `initial_state`,
-#' `reduced`, and `custom_loglik`. Older fits without this metadata cannot be
+#' `reduced`, and `custom_loglik`. New fits also retain `constraints` and final
+#' `diagnostics`, available through [fit_diagnostics()]. Older fits without this metadata cannot be
 #' reconstructed by this function. Function environments remain references to
 #' the original environments; external state is not frozen.
 #' Use `saveRDS()` and `readRDS()` to retain the fit's metadata between sessions.

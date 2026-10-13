@@ -1,5 +1,10 @@
 # 확장 예제의 추정 진단
 
+이 문서는 수정 전 추정 결과의 진단 기록입니다. 이후 Hawkes의 최종 Hessian과
+표준오차를 안정화했습니다. [후속 결과](hawkes-standard-errors.md)를 참고하세요.
+수정 전 계산은 아래 재현 명령 끝에 `maxLik`를 지정하여 확인할 수 있습니다.
+
+
 2026-10-13에 `vignettes_ext/extended_example.Rmd`의 네 예제를 재현했습니다.
 기준 코드는 `45dae49a0a428ee3cd15450294fd4683e87ce61d`이며, 원래 seed,
 관측 자료, 모수 매핑, 초기 상태를 유지했습니다. 환경은 Windows 11,
@@ -154,7 +159,7 @@ Profile 구간, 모수적 bootstrap 또는 score 기반 추론의 이론과 유�
 
 ```sh
 Rscript tools/reproduce-fit-diagnostics.R <output-directory>
-Rscript tools/reproduce-fit-diagnostics.R <output-directory> synchronized,bid_ask
+Rscript tools/reproduce-fit-diagnostics.R <output-directory> synchronized,bid_ask maxLik
 Rscript tools/diagnose-fit.R <fit.rds> <output-directory>
 ```
 

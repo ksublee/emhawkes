@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Stabilize final numerical Hawkes Hessians with scaled central
+  differences, Richardson extrapolation, and checks across steps.
+  Preserve optimizer estimates and likelihoods. Add
+  [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
+  and `final_hessian = "maxLik"`; withhold Wald standard errors when
+  curvature or constraints prevent stable inference.
 - Load `maxLik` methods when loading the package so saved fits can be
   restored in a fresh R session. Add an independent-session regression
   test and development tools for fit diagnostics.

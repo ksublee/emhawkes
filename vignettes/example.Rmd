@@ -136,6 +136,15 @@ summary(mle)
 ```
 
 Use `fitted_hspec()` to reconstruct the model with the estimated parameters.
+Final numerical Hessians for the built-in Hawkes likelihood are checked across
+scaled difference steps without changing the optimizer's estimates.
+`summary()` uses the checked covariance. `NA` standard errors indicate that
+stable Wald inference is unavailable. A stable Hessian does not establish reliable
+confidence intervals; check convergence, score, and multiple starting values.
+
+```{r fit-curvature-diagnostics}
+fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
+```
 The fit retains its original parameter map, including shared parameters and fixed
 constants in component functions. `fit_initial_state()` retrieves the initial
 counts and initial intensity setting.

@@ -23,7 +23,8 @@ hfit(
   method = "BFGS",
   verbose = FALSE,
   ...,
-  Nc0 = NULL
+  Nc0 = NULL,
+  final_hessian = c("auto", "maxLik")
 )
 
 \S4method{hfit}{hspec}(
@@ -43,7 +44,8 @@ hfit(
   method = "BFGS",
   verbose = FALSE,
   ...,
-  Nc0 = NULL
+  Nc0 = NULL,
+  final_hessian = c("auto", "maxLik")
 )
 }
 \arguments{
@@ -92,11 +94,19 @@ argument is the optimization parameter vector. If \code{NULL}, use numerical dif
 \item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
 If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.
 This argument must be named.}
+
+\item{final_hessian}{Named-only choice, \code{"auto"} or \code{"maxLik"}. After the same
+optimization, \code{"auto"} recalculates numerical final curvature for the built-in
+Hawkes likelihood using scaled central differences and Richardson extrapolation.
+\code{"maxLik"} retains the original final Hessian and covariance calculation.
+User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
+and residual-distribution likelihoods retain their calculation choices.}
 }
 \value{
 A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
 containing the original specification, parameter map, normalized initial-state
-arguments, and \code{reduced} setting. Use \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
+arguments, constraints, \code{reduced} setting, and final curvature diagnostics.
+Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the checks and \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
 specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retrieve its initial-state arguments.
 }
 \description{
@@ -128,8 +138,22 @@ entries that use it.
 
 The built-in likelihood uses the calculation engine selected by
 \code{options(emhawkes.engine = "auto")}; see \code{\link[=logLik]{logLik()}} for supported models.
-Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
-supplied separately, or computed numerically by \code{maxLik}.
+Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
+separately or computed numerically by \code{maxLik}. Final numerical curvature is
+checked after optimization without changing coefficients, log-likelihood,
+the stored optimizer gradient, return code, or iteration count.
+
+The automatic calculation compares information, inverse information, and
+standard errors across difference steps. Failed checks, singular or indefinite
+information, and equality or nearby inequality constraints yield \code{NA} covariance
+for free parameters. Fixed parameters retain zero covariance. Supplied Hessians
+are retained and checked for invertible positive information. No ridge or
+eigenvalue clipping is applied. Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the reason.
+A numerically stable Hessian does not establish identifiability, stationarity,
+a global maximum, or correct confidence-interval coverage. Weak excitation,
+nearby kernel decay rates, short samples, boundary estimates, and nonsmooth
+callbacks can make Wald inference unreliable. Consider profile likelihood and
+a bootstrap that preserves the observation design and initial state.
 
 \code{\link[=fitted_hspec]{fitted_hspec()}} uses the saved parameter map to restore the estimated model.
 \code{\link[=fit_initial_state]{fit_initial_state()}} retrieves the observation window's initial-state arguments.
@@ -148,6 +172,7 @@ h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
 fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
 summary(fit)
+fit_diagnostics(fit)$status
 estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
@@ -219,6 +244,6 @@ summary(fit)
 # For more information, please see vignettes.
 }
 \seealso{
-\code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}},
+\code{\link[=fit_diagnostics]{fit_diagnostics()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}},
 \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 }

@@ -67,7 +67,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  method <span class="op">=</span> <span class="st">"BFGS"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"maxLik"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'hspec'</span></span>
@@ -88,7 +89,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  method <span class="op">=</span> <span class="st">"BFGS"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"maxLik"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -175,12 +177,22 @@ argument is the optimization parameter vector. If <code>NULL</code>, use numeric
 If omitted, use the first row of supplied <code>Nc</code>, or zero when <code>Nc</code> is absent.
 This argument must be named.</p></dd>
 
+
+<dt id="arg-final-hessian">final_hessian<a class="anchor" aria-label="anchor" href="#arg-final-hessian"></a></dt>
+<dd><p>Named-only choice, <code>"auto"</code> or <code>"maxLik"</code>. After the same
+optimization, <code>"auto"</code> recalculates numerical final curvature for the built-in
+Hawkes likelihood using scaled central differences and Richardson extrapolation.
+<code>"maxLik"</code> retains the original final Hessian and covariance calculation.
+User-supplied <code>hess</code>, <code>finalHessian = FALSE</code>, BHHH curvature, custom likelihoods,
+and residual-distribution likelihoods retain their calculation choices.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> object with an <code>emhawkes</code> attribute
 containing the original specification, parameter map, normalized initial-state
-arguments, and <code>reduced</code> setting. Use <code><a href="fitted_hspec.html">fitted_hspec()</a></code> to restore the estimated
+arguments, constraints, <code>reduced</code> setting, and final curvature diagnostics.
+Use <code><a href="fit_diagnostics.html">fit_diagnostics()</a></code> to inspect the checks and <code><a href="fitted_hspec.html">fitted_hspec()</a></code> to restore the estimated
 specification and <code><a href="fit_initial_state.html">fit_initial_state()</a></code> to retrieve its initial-state arguments.</p>
     </div>
     <div class="section level2">
@@ -205,8 +217,21 @@ To hold optimization parameters at their starting values, pass <code>fixed</code
 entries that use it.</p>
 <p>The built-in likelihood uses the calculation engine selected by
 <code>options(emhawkes.engine = "auto")</code>; see <code><a href="logLik.html">logLik()</a></code> for supported models.
-Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
-supplied separately, or computed numerically by <code>maxLik</code>.</p>
+Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
+separately or computed numerically by <code>maxLik</code>. Final numerical curvature is
+checked after optimization without changing coefficients, log-likelihood,
+the stored optimizer gradient, return code, or iteration count.</p>
+<p>The automatic calculation compares information, inverse information, and
+standard errors across difference steps. Failed checks, singular or indefinite
+information, and equality or nearby inequality constraints yield <code>NA</code> covariance
+for free parameters. Fixed parameters retain zero covariance. Supplied Hessians
+are retained and checked for invertible positive information. No ridge or
+eigenvalue clipping is applied. Use <code><a href="fit_diagnostics.html">fit_diagnostics()</a></code> to inspect the reason.
+A numerically stable Hessian does not establish identifiability, stationarity,
+a global maximum, or correct confidence-interval coverage. Weak excitation,
+nearby kernel decay rates, short samples, boundary estimates, and nonsmooth
+callbacks can make Wald inference unreliable. Consider profile likelihood and
+a bootstrap that preserves the observation design and initial state.</p>
 <p><code><a href="fitted_hspec.html">fitted_hspec()</a></code> uses the saved parameter map to restore the estimated model.
 <code><a href="fit_initial_state.html">fit_initial_state()</a></code> retrieves the observation window's initial-state arguments.
 These are suitable for re-evaluating the likelihood and starting a new simulation.
@@ -216,7 +241,7 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="fitted_hspec.html">fitted_hspec()</a></code>, <code><a href="fit_initial_state.html">fit_initial_state()</a></code>, <code><a href="logLik.html">logLik()</a></code>,
+    <div class="dont-index"><p><code><a href="fit_diagnostics.html">fit_diagnostics()</a></code>, <code><a href="fitted_hspec.html">fitted_hspec()</a></code>, <code><a href="fit_initial_state.html">fit_initial_state()</a></code>, <code><a href="logLik.html">logLik()</a></code>,
 <code><a href="hspec-class.html">hspec-class</a></code>, <code><a href="hsim.html">hsim,hspec-method</a></code></p></div>
     </div>
 
@@ -241,13 +266,15 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1       0.10357    0.01918   5.400 6.67e-08 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.1  0.21600    0.09858   2.191  0.02845 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.2  0.29650    0.11754   2.523  0.01165 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1   1.11245    0.34199   3.253  0.00114 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1       0.10357    0.01916   5.406 6.46e-08 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.1  0.21600    0.09786   2.207 0.027294 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.2  0.29650    0.11636   2.548 0.010832 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1   1.11245    0.33526   3.318 0.000906 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
+<span class="r-in"><span><span class="fu"><a href="fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">$</span><span class="va">status</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "ok"</span>
 <span class="r-in"><span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">initial</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>,</span></span>
@@ -304,18 +331,18 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69224    0.42677   1.622   0.1048    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.103   0.0354 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12631    0.06528  -1.935   0.0530 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04928   0.290   0.7719    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21444   4.482 7.40e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11618   2.545   0.0109 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10274    0.08867   1.159   0.2466    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22745   5.866 4.48e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69224    0.42664   1.623   0.1047    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.104   0.0354 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12631    0.06533  -1.933   0.0532 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04925   0.290   0.7717    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21471   4.476 7.60e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11635   2.541   0.0110 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10274    0.08850   1.161   0.2457    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06731   0.513   0.6076    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06841   0.727   0.4670    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27532  -8.982  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11327   8.906  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06835   0.728   0.4666    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27558  -8.974  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11324   8.908  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
@@ -354,11 +381,11 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1       0.10755    0.02344   4.589 4.46e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.1  0.62799    0.25102   2.502  0.01236 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.2  0.55832    0.21978   2.540  0.01107 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1   2.11657    0.73318   2.887  0.00389 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> eta1      0.10179    0.27560   0.369  0.71187    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1       0.10755    0.02325   4.626 3.72e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.1  0.62799    0.24353   2.579  0.00992 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1.2  0.55832    0.21573   2.588  0.00965 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1   2.11657    0.70263   3.012  0.00259 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> eta1      0.10179    0.27587   0.369  0.71213    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>

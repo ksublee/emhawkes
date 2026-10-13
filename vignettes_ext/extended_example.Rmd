@@ -129,6 +129,15 @@ summary(mle)
 ```
 
 Use `fitted_hspec()` to reconstruct the model with the estimated parameters.
+Final numerical Hessians for the built-in Hawkes likelihood are checked across
+scaled difference steps without changing the optimizer's estimates.
+`summary()` uses the checked covariance. `NA` standard errors indicate that
+stable Wald inference is unavailable. A stable Hessian does not establish reliable
+confidence intervals; check convergence, score, and multiple starting values.
+
+```{r fit-curvature-diagnostics}
+fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
+```
 The fit retains its original parameter map, including shared parameters and fixed
 constants in component functions. `fit_initial_state()` retrieves the initial
 counts and initial intensity setting.
@@ -596,6 +605,15 @@ res_mk
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
                lambda_component0 = lambda_component0_mk)
 summary(fit_mk)
+```
+
+The standard errors use the checked final Hessian. The original estimate is
+retained, but its score calls for tighter optimization and multiple starting
+values. Kernel starting order and the fixed initial state can affect the selected
+local solution.
+
+```{r multi-kernel-curvature}
+fit_diagnostics(fit_mk)[c("status", "newton_decrement", "warnings")]
 ```
 
 Reconstruction retains `type_col_map` and the supplied initial intensity matrix.
@@ -1253,6 +1271,12 @@ mle_dh <- hfit(hspec2_du,
                constraints = constraints)
 summary(mle_dh)
 ```
+
+Hawkes curvature stabilization does not change this custom FRPP objective.
+The moving transition point of `tzexp` can make numerical Hessians step dependent.
+A successful optimizer return code does not validate the reported Wald standard
+errors. See the [fit diagnostic report](https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md)
+for the one-sided derivative and profile checks.
 
 These constraints keep the six parameters nonnegative and enforce `a <= 3`, the upper limit of the trapezoid-exponential distribution.
 The parameter order is `mu1`, `alpha1.1`, `alpha1.2`, `beta1.1`, `a`, and `ell`.

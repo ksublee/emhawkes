@@ -1,4 +1,4 @@
-#' @include hspec.R hmoment.R hllf.R utilities.R hinterface.R
+#' @include hspec.R hmoment.R hllf.R utilities.R hinterface.R huncertainty.R
 NULL
 
 #' Perform Maximum Likelihood Estimation
@@ -34,12 +34,19 @@ NULL
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
+#' @param final_hessian Named-only choice, `"auto"` or `"maxLik"`. After the same
+#' optimization, `"auto"` recalculates numerical final curvature for the built-in
+#' Hawkes likelihood using scaled central differences and Richardson extrapolation.
+#' `"maxLik"` retains the original final Hessian and covariance calculation.
+#' User-supplied `hess`, `finalHessian = FALSE`, BHHH curvature, custom likelihoods,
+#' and residual-distribution likelihoods retain their calculation choices.
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
 #' @return A \code{\link[maxLik]{maxLik}} object with an `emhawkes` attribute
 #' containing the original specification, parameter map, normalized initial-state
-#' arguments, and `reduced` setting. Use [fitted_hspec()] to restore the estimated
+#' arguments, constraints, `reduced` setting, and final curvature diagnostics.
+#' Use [fit_diagnostics()] to inspect the checks and [fitted_hspec()] to restore the estimated
 #' specification and [fit_initial_state()] to retrieve its initial-state arguments.
 #'
 #' @details
@@ -66,8 +73,22 @@ NULL
 #'
 #' The built-in likelihood uses the calculation engine selected by
 #' `options(emhawkes.engine = "auto")`; see [logLik()] for supported models.
-#' Rcpp accelerates likelihood evaluation. Gradient and Hessian functions are
-#' supplied separately, or computed numerically by `maxLik`.
+#' Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
+#' separately or computed numerically by `maxLik`. Final numerical curvature is
+#' checked after optimization without changing coefficients, log-likelihood,
+#' the stored optimizer gradient, return code, or iteration count.
+#'
+#' The automatic calculation compares information, inverse information, and
+#' standard errors across difference steps. Failed checks, singular or indefinite
+#' information, and equality or nearby inequality constraints yield `NA` covariance
+#' for free parameters. Fixed parameters retain zero covariance. Supplied Hessians
+#' are retained and checked for invertible positive information. No ridge or
+#' eigenvalue clipping is applied. Use [fit_diagnostics()] to inspect the reason.
+#' A numerically stable Hessian does not establish identifiability, stationarity,
+#' a global maximum, or correct confidence-interval coverage. Weak excitation,
+#' nearby kernel decay rates, short samples, boundary estimates, and nonsmooth
+#' callbacks can make Wald inference unreliable. Consider profile likelihood and
+#' a bootstrap that preserves the observation design and initial state.
 #'
 #' [fitted_hspec()] uses the saved parameter map to restore the estimated model.
 #' [fit_initial_state()] retrieves the observation window's initial-state arguments.
@@ -81,7 +102,7 @@ NULL
 #' @importFrom maxLik maxLik
 #' @export
 #'
-#' @seealso [fitted_hspec()], [fit_initial_state()], [logLik()],
+#' @seealso [fit_diagnostics()], [fitted_hspec()], [fit_initial_state()], [logLik()],
 #' \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 #'
 #' @examples
@@ -94,6 +115,7 @@ NULL
 #' res <- hsim(h, size=100)
 #' fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
 #' summary(fit)
+#' fit_diagnostics(fit)$status
 #' estimated <- fitted_hspec(fit)
 #' initial <- fit_initial_state(fit)
 #' inferred <- do.call(logLik, c(list(object = estimated,
@@ -170,7 +192,8 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
-                            verbose = FALSE, ..., Nc0 = NULL) standardGeneric("hfit"))
+                            verbose = FALSE, ..., Nc0 = NULL,
+                            final_hessian = c("auto", "maxLik")) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -183,8 +206,10 @@ setMethod(
            mylogLik = NULL,
            reduced = TRUE,
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
-           verbose = FALSE, ..., Nc0 = NULL){
+           verbose = FALSE, ..., Nc0 = NULL,
+           final_hessian = c("auto", "maxLik")){
 
+    final_hessian <- match.arg(final_hessian)
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
@@ -311,6 +336,13 @@ setMethod(
     message_parameter_sharing(parameter_map)
     fit <- do.call(maxLik::maxLik, ml_args)
     if (!is.null(fit)) {
+      final <- if (is.null(mylogLik)) {
+        finalize_hawkes_fit(fit, object, constraints, hess, additional_argument,
+                           method, final_hessian)
+      } else {
+        list(fit = fit, diagnostics = list(status = "not_checked", reason = "custom_likelihood"))
+      }
+      fit <- final$fit
       attr(fit, "emhawkes") <- list(
         version = 1L,
         specification = object,
@@ -318,7 +350,9 @@ setMethod(
         initial_state = list(lambda_component0 = lambda_component0,
                              N0 = observation$N0, Nc0 = observation$Nc0),
         reduced = reduced,
-        custom_loglik = !is.null(mylogLik)
+        custom_loglik = !is.null(mylogLik),
+        constraints = constraints,
+        diagnostics = final$diagnostics
       )
     }
     fit

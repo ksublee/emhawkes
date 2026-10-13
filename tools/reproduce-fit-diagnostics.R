@@ -1,15 +1,16 @@
 # Run only the assignments needed to reproduce the four affected example fits.
-# Rscript tools/reproduce-fit-diagnostics.R <output-directory> [multi_kernel,synchronized,bid_ask,frpp]
+# Rscript tools/reproduce-fit-diagnostics.R <output-directory> [cases] [auto|maxLik]
 suppressPackageStartupMessages(library(emhawkes))
 args <- commandArgs(trailingOnly = TRUE)
-if (!length(args) || length(args) > 2L) stop("Supply an output directory and optional comma-separated cases.")
+if (!length(args) || length(args) > 3L) stop("Supply an output directory, optional cases, and optional final-Hessian choice.")
 cases <- list(
   multi_kernel = list(heading = "### Multi-kernel model", fit = "fit_mk"),
   synchronized = list(heading = "### Synchronized intensity model", fit = "fit_sy"),
   bid_ask = list(heading = "### Bid-ask price model", fit = "mle_ba"),
   frpp = list(heading = "### Two-dimensional model", fit = "mle_dh"))
-selected <- if (length(args) == 2L) strsplit(args[2L], ",", fixed = TRUE)[[1L]] else names(cases)
+selected <- if (length(args) >= 2L) strsplit(args[2L], ",", fixed = TRUE)[[1L]] else names(cases)
 if (!length(selected) || any(!selected %in% names(cases))) stop("Unknown diagnostic case.")
+final_hessian <- if (length(args) == 3L) match.arg(args[3L], c("auto", "maxLik")) else "auto"
 source("tools/diagnose-fit.R")
 lines <- readLines("vignettes_ext/extended_example.Rmd", warn = FALSE)
 headings <- grep("^#{2,3} ", lines)
@@ -22,6 +23,11 @@ for (name in selected) {
   following <- headings[headings > first]
   last <- if (length(following)) following[1L] else length(lines) + 1L
   environment <- new.env(parent = globalenv())
+  environment$hfit <- function(...) {
+    arguments <- list(...)
+    arguments$final_hessian <- final_hessian
+    do.call(emhawkes::hfit, arguments)
+  }
   cat("Reproducing", name, "\n")
   for (opening in chunks[chunks > first & chunks < last]) {
     closing <- opening + which(lines[(opening + 1L):length(lines)] == "```")[1L]

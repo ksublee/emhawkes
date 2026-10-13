@@ -25,6 +25,7 @@ Collate:
     'hmoment.R'
     'hengine.R'
     'hllf.R'
+    'huncertainty.R'
     'hfit.R'
     'hfitted.R'
     'hgfit.R'

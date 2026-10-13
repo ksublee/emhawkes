@@ -1,0 +1,4 @@
+"step","minimum_scaled_information_eigenvalue","scaled_condition","positive_definite"
+0.004,0.655635545891861,3797.09150979715,TRUE
+0.002,0.656768884875505,3790.49308430574,TRUE
+0.001,0.657078972441927,3788.69282061736,TRUE

@@ -43,11 +43,21 @@ to `hsim()` to start a new path from the estimated model. Continuing after the
 last observed event requires that event's state. Fits created without the new
 metadata need to be refitted before using the reconstruction helpers.
 
-A successful optimizer return code does not establish reliable standard errors.
-Check the score, curvature, numerical difference steps, and multiple starting
-values. The [fit diagnostic report](https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md)
-reproduces the `NaN` standard errors in the extended examples and separates
-Hessian cancellation from the nonsmooth `tzexp` likelihood.
+For the built-in Hawkes likelihood, `hfit()` checks final numerical curvature
+using scaled central differences and Richardson extrapolation. It preserves the
+optimizer's coefficients and log-likelihood. `summary()` and `vcov()` use the
+checked covariance; free-parameter standard errors are `NA` when stable inversion
+is unavailable. Inspect `fit_diagnostics(fit)` for step checks, score, and reasons.
+Use `final_hessian = "maxLik"` to retain the earlier calculation. Supplied
+Hessians, disabled final curvature, BHHH, custom objectives, and residual models
+retain their calculation choices.
+
+A stable Hessian does not guarantee reliable Wald intervals. Nearby kernel decay
+rates, weak excitation, boundaries, short samples, and nonsmooth callbacks can
+still make inference unreliable. The [Hawkes standard-error report](https://github.com/ksublee/emhawkes/blob/main/tools/hawkes-standard-errors.md)
+compares unchanged estimates and corrected standard errors, and discusses profile
+likelihood and bootstrap. The [earlier diagnostic report](https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md)
+records the original Hawkes and FRPP issues.
 
 By default, `reduced = TRUE` treats equal starting values **within each parameter matrix** as one parameter. This example estimates four parameters: one for `mu`, two for `alpha`, and one for `beta`. `hfit()` explains this rule once before optimization.
 

@@ -6,6 +6,8 @@
   : Expected Inter-Arrival Time
 - [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
   : Restore an Estimated Hawkes Specification
+- [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
+  : Inspect Final Curvature Diagnostics
 - [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
   : Retrieve Initial-State Arguments from a Hawkes Fit
 - [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) :
