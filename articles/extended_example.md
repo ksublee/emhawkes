@@ -212,7 +212,7 @@ Use
 to reconstruct the model with the estimated parameters. By default,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 the final Hessian and standard errors from `maxLik`. Additional
-stabilization is optional. Request `final_hessian = "auto"` to check
+stabilization is optional. Request `final_hessian = "stable"` to check
 numerical Hawkes curvature across scaled difference steps without
 changing the optimizer’s estimates. For this requested calculation,
 [`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
@@ -221,7 +221,7 @@ covariance and `NA` standard errors indicate failed checks.
 ``` r
 
 mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
-                    final_hessian = "auto")
+                    final_hessian = "stable")
 fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
 #> $status
 #> [1] "ok"
@@ -680,7 +680,7 @@ including entries with equal initial values.
 ``` r
 
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
-#> hfit: some standard errors are NaN. Try final_hessian = "auto" for Hawkes Hessian stabilization.
+#> hfit: some standard errors are NaN. Try final_hessian = "stable" for Hawkes Hessian stabilization.
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 51 iterations
@@ -1095,7 +1095,7 @@ res_mk
 
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
                lambda_component0 = lambda_component0_mk,
-               final_hessian = "auto")
+               final_hessian = "stable")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_mk)
@@ -1227,7 +1227,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x559f3ac03e40>
+#> <bytecode: 0x55735c901868>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1237,7 +1237,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x559f3b1a6ad0>
+#> <bytecode: 0x55735cf1b7a8>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1247,7 +1247,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x559f3b7e6930>
+#> <bytecode: 0x55735d514770>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1301,7 +1301,7 @@ only one `kappa` is estimated.
 fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
                type=res_sy$type,
                lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
-               final_hessian = "auto")
+               final_hessian = "stable")
 summary(fit_sy)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -1730,7 +1730,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x559f3f6b8920>
+#> <bytecode: 0x557361877a70>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2009,7 +2009,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x559f39a7fdb0>
+#> <bytecode: 0x55735de84a50>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2111,7 +2111,7 @@ logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                mark = hr_ba$mark,
                lambda_component0 = matrix(rep(1, 16), 4),
-               final_hessian = "auto")
+               final_hessian = "stable")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle_ba)
@@ -2254,7 +2254,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x559f3a87d2d8>
+#> <environment: 0x55735f0456c0>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2262,7 +2262,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x559f3a87d2d8>
+#> <environment: 0x55735f0456c0>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2271,7 +2271,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x559f3a87d2d8>
+#> <environment: 0x55735f0456c0>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2281,7 +2281,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x559f3a87d2d8>
+#> <environment: 0x55735f0456c0>
 ```
 
 The following histogram shows inter-arrival times from a model with

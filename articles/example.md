@@ -212,7 +212,7 @@ Use
 to reconstruct the model with the estimated parameters. By default,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 the final Hessian and standard errors from `maxLik`. Additional
-stabilization is optional. Request `final_hessian = "auto"` to check
+stabilization is optional. Request `final_hessian = "stable"` to check
 numerical Hawkes curvature across scaled difference steps without
 changing the optimizer’s estimates. For this requested calculation,
 [`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
@@ -221,7 +221,7 @@ covariance and `NA` standard errors indicate failed checks.
 ``` r
 
 mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
-                    final_hessian = "auto")
+                    final_hessian = "stable")
 fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
 #> $status
 #> [1] "ok"

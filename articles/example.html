@@ -253,14 +253,14 @@ BFGS.</p>
 <p>Use <code><a href="../reference/fitted_hspec.html">fitted_hspec()</a></code> to reconstruct the model with the
 estimated parameters. By default, <code><a href="../reference/hfit.html">hfit()</a></code> uses the final
 Hessian and standard errors from <code>maxLik</code>. Additional
-stabilization is optional. Request <code>final_hessian = "auto"</code>
+stabilization is optional. Request <code>final_hessian = "stable"</code>
 to check numerical Hawkes curvature across scaled difference steps
 without changing the optimizer’s estimates. For this requested
 calculation, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> uses the checked covariance and
 <code>NA</code> standard errors indicate failed checks.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mle_checked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
-<span>                    final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>                    final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">mle_checked</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $status</span></span>
 <span><span class="co">#&gt; [1] "ok"</span></span>
