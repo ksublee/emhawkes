@@ -244,18 +244,35 @@ BFGS.</p>
 <span><span class="co">#&gt; 3  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.33641    0.03486   9.651  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1  1.16654    0.09480  12.305  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1   1.52270    0.12323  12.357  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1     0.33641    0.03485   9.652  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1  1.16654    0.10067  11.588  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1   1.52270    0.13098  11.625  &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>Use <code><a href="../reference/fitted_hspec.html">fitted_hspec()</a></code> to reconstruct the model with the
-estimated parameters. The fit retains its original parameter map,
-including shared parameters and fixed constants in component functions.
+estimated parameters. Final numerical Hessians for the built-in Hawkes
+likelihood are checked across scaled difference steps without changing
+the optimizer’s estimates. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> uses the checked
+covariance. <code>NA</code> standard errors indicate that stable Wald
+inference is unavailable. A stable Hessian does not establish reliable
+confidence intervals; check convergence, score, and multiple starting
+values.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $status</span></span>
+<span><span class="co">#&gt; [1] "ok"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $scaled_condition</span></span>
+<span><span class="co">#&gt; [1] 20.3342</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $newton_decrement</span></span>
+<span><span class="co">#&gt; [1] 0.001305333</span></span></code></pre></div>
+<p>The fit retains its original parameter map, including shared
+parameters and fixed constants in component functions.
 <code><a href="../reference/fit_initial_state.html">fit_initial_state()</a></code> retrieves the initial counts and
 initial intensity setting.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="va">initial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>,</span>
@@ -282,7 +299,7 @@ subsequent simulation.</p>
 start of the fitted observation window. They do not continue the path
 after its last event. Check the fit’s convergence and the model’s
 suitability for simulation first.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1108</span><span class="op">)</span></span>
 <span><span class="va">simulated</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hsim</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>, size <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>, <span class="va">initial</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">simulated</span><span class="op">$</span><span class="va">arrival</span><span class="op">)</span></span>
@@ -290,7 +307,7 @@ suitability for simulation first.</p>
 <p>The saved fit retains the information needed to reconstruct the model
 later. Keep the observed data separately when re-evaluating the
 likelihood.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">mle</span>, <span class="st">"hawkes-fit.rds"</span><span class="op">)</span></span>
 <span><span class="va">saved_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"hawkes-fit.rds"</span><span class="op">)</span></span>
 <span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">saved_fit</span><span class="op">)</span></span>
@@ -329,7 +346,7 @@ specifies their initial values
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\lambda_{ij}(0)</annotation></semantics></math>.
 If <code>lambda_component0</code> is omitted, the function determines
 these values internally.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">beta2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -352,7 +369,7 @@ these values internally.</p>
 <span><span class="co">#&gt; [1,] 2.25 2.25</span></span>
 <span><span class="co">#&gt; [2,] 2.25 2.25</span></span></code></pre></div>
 <p>Use <code>hsim</code> to simulate the model.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2</span>,  size<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span></span>
@@ -384,13 +401,13 @@ these values internally.</p>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
 <p>In multivariate models, <code>type</code> identifies the counting
 process associated with each event.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A bivariate model has two event types: 1 and 2.</span></span>
 <span><span class="va">res2</span><span class="op">$</span><span class="va">type</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">]</span></span>
 <span><span class="co">#&gt;  [1] 0 1 2 2 2 1 1 1 2 2</span></span></code></pre></div>
 <p>In multivariate models, the column names of <code>N</code> are
 <code>N1</code>, <code>N2</code>, <code>N3</code>, and so on.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res2</span><span class="op">$</span><span class="va">N</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;      N1 N2</span></span>
 <span><span class="co">#&gt; [1,]  0  0</span></span>
@@ -399,7 +416,7 @@ process associated with each event.</p>
 <p>Similarly, the column names of <code>lambda</code> are
 <code>lambda1</code>, <code>lambda2</code>, <code>lambda3</code>, and so
 on.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res2</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;        lambda1   lambda2</span></span>
 <span><span class="co">#&gt; [1,] 0.5294118 0.5294118</span></span>
@@ -408,14 +425,14 @@ on.</p>
 <p>In this bivariate model, the columns of <code>lambda_component</code>
 are <code>lambda11</code>, <code>lambda12</code>, <code>lambda21</code>,
 and <code>lambda22</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res2</span><span class="op">$</span><span class="va">lambda_component</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;        lambda11    lambda12   lambda21    lambda22</span></span>
 <span><span class="co">#&gt; [1,] 0.11764706 0.211764706 0.21176471 0.117647059</span></span>
 <span><span class="co">#&gt; [2,] 0.03260813 0.058694641 0.05869464 0.032608134</span></span>
 <span><span class="co">#&gt; [3,] 0.04569443 0.005035631 0.08224997 0.002797573</span></span></code></pre></div>
 <p>By definition, the following two expressions are equivalent:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu2</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">res2</span><span class="op">$</span><span class="va">lambda_component</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda11"</span>, <span class="st">"lambda12"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889</span></span>
 <span><span class="va">res2</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="st">"lambda1"</span><span class="op">]</span></span>
@@ -423,11 +440,11 @@ and <code>lambda22</code>.</p>
 <p>Extract the observed <code>inter_arrival</code> and <code>type</code>
 vectors from the simulation result. Both are required to fit a bivariate
 model.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">inter_arrival2</span> <span class="op">&lt;-</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span></span>
 <span><span class="va">type2</span> <span class="op">&lt;-</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span></span></code></pre></div>
 <p>Use <code>logLik</code> to evaluate the log-likelihood.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival2</span>, type <span class="op">=</span> <span class="va">type2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; The initial values for intensity processes are not provided. Internally determined initial values are used.</span></span>
 <span><span class="co">#&gt; loglikelihood </span></span>
@@ -443,7 +460,7 @@ values because the true parameters are unknown.</p>
 estimates four parameters here: one for <code>mu</code>, two for
 <code>alpha</code>, and one for <code>beta</code>. <code>hfit</code>
 explains this rule once before optimization.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="va">hspec2</span></span>
 <span><span class="va">mle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival2</span>, type <span class="op">=</span> <span class="va">type2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
@@ -457,25 +474,25 @@ explains this rule once before optimization.</p>
 <span><span class="co">#&gt; 4  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.19095    0.01638  11.656  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.48217    0.07430   6.489 8.64e-11 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.98625    0.09576  10.300  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.07987    0.17203  12.091  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1       0.19095    0.01638   11.66  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.48217    0.07350    6.56 5.38e-11 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.98625    0.09408   10.48  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.07987    0.16785   12.39  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       mu1  alpha1.1  alpha1.2   beta1.1 </span></span>
 <span><span class="co">#&gt; 0.1909541 0.4821725 0.9862541 2.0798690</span></span></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">miscTools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/miscTools/man/stdEr.html" class="external-link">stdEr</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
-<span><span class="co">#&gt; 0.01638200 0.07430500 0.09575744 0.17202504</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.01637611 0.07350285 0.09407739 0.16784948</span></span></code></pre></div>
 <p>The restored matrices retain the shared parameters from this fit. The
 diagonal entries of <code>alpha</code> remain equal, as do its
 off-diagonal entries.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="va">estimated2</span><span class="op">@</span><span class="va">alpha</span></span>
 <span><span class="co">#&gt;           [,1]      [,2]</span></span>
@@ -504,7 +521,7 @@ treats them as a single parameter.</p>
 <p>The previous example uses a symmetric Hawkes model:
 <code>alpha</code> is symmetric, and all entries of <code>beta</code>
 are equal.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">hspec2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; An object of class "hspec" of 2-dimensional Hawkes process</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -522,7 +539,7 @@ are equal.</p>
 <span><span class="co">#&gt;      [,1] [,2]</span></span>
 <span><span class="co">#&gt; [1,] 2.25 2.25</span></span>
 <span><span class="co">#&gt; [2,] 2.25 2.25</span></span></code></pre></div>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
 <p>In the first example, all entries of <code>alpha0</code> are set to
@@ -530,7 +547,7 @@ are equal.</p>
 <code>alpha21</code>, and <code>alpha22</code> to share one estimated
 value, even though their simulation values differ. The same rule applies
 within <code>mu0</code> and <code>beta0</code>.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.15</span>, <span class="fl">0.15</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">beta0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
@@ -547,9 +564,9 @@ within <code>mu0</code> and <code>beta0</code>.</p>
 <span><span class="co">#&gt; 3  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.19125    0.01633   11.71  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.73981    0.05783   12.79  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.09707    0.15936   13.16  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1       0.19125    0.01640   11.66  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.73981    0.06123   12.08  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.09707    0.17076   12.28  &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -560,7 +577,7 @@ respectively.</p>
 the simulation model. Its diagonal entries are equal, and its
 off-diagonal entries share a different value. The model therefore has
 two excitation parameters to estimate.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.15</span>, <span class="fl">0.15</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.75</span>, <span class="fl">0.751</span>, <span class="fl">0.751</span>, <span class="fl">0.75</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">beta0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
@@ -577,16 +594,16 @@ two excitation parameters to estimate.</p>
 <span><span class="co">#&gt; 4  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.19095    0.01639  11.647  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.48226    0.07292   6.614 3.74e-11 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.98626    0.09287  10.620  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.08008    0.16593  12.536  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1       0.19095    0.01638   11.66  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.48226    0.07351    6.56 5.37e-11 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.98626    0.09408   10.48  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.08008    0.16788   12.39  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>The third example allows <code>mu1</code> and <code>mu2</code> to
 differ, even though they are equal in the simulation model.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.15</span>, <span class="fl">0.14</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.75</span>, <span class="fl">0.751</span>, <span class="fl">0.751</span>, <span class="fl">0.75</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">beta0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
@@ -602,18 +619,18 @@ differ, even though they are equal in the simulation model.</p>
 <span><span class="co">#&gt; Log-Likelihood: -969.9914 </span></span>
 <span><span class="co">#&gt; 5  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.18300    0.02157   8.484  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; mu2       0.19872    0.02206   9.006  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.48149    0.07569   6.361   2e-10 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.98720    0.09852  10.020  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.07973    0.17931  11.598  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span><span class="co">#&gt; mu1       0.18300    0.02154   8.497  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; mu2       0.19872    0.02203   9.022  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.48149    0.07347   6.553 5.63e-11 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.98720    0.09403  10.498  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.07973    0.16748  12.417  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>Set <code>reduced = FALSE</code> to estimate each matrix entry
 separately, including entries with equal initial values.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec2</span>, inter_arrival <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span>, reduced<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
@@ -623,16 +640,16 @@ separately, including entries with equal initial values.</p>
 <span><span class="co">#&gt; 10  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.17997    0.02231   8.066 7.24e-16 ***</span></span>
-<span><span class="co">#&gt; mu2       0.20060    0.02335   8.590  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.44726    0.10661   4.195 2.73e-05 ***</span></span>
-<span><span class="co">#&gt; alpha2.1  1.17743        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; alpha1.2  0.97048    0.10742   9.035  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha2.2  0.48979        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; beta1.1   2.52210        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; beta2.1   3.15498        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; beta1.2   1.80167    0.07600  23.705  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta2.2   1.51338        NaN     NaN      NaN    </span></span>
+<span><span class="co">#&gt; mu1       0.17997    0.02238   8.040 9.00e-16 ***</span></span>
+<span><span class="co">#&gt; mu2       0.20060    0.02404   8.345  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.44726    0.12882   3.472 0.000516 ***</span></span>
+<span><span class="co">#&gt; alpha2.1  1.17743    0.22361   5.265 1.40e-07 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.97048    0.12716   7.632 2.32e-14 ***</span></span>
+<span><span class="co">#&gt; alpha2.2  0.48979    0.10929   4.482 7.40e-06 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.52210    0.72363   3.485 0.000492 ***</span></span>
+<span><span class="co">#&gt; beta2.1   3.15498    0.72539   4.349 1.37e-05 ***</span></span>
+<span><span class="co">#&gt; beta1.2   1.80167    0.22978   7.841 4.48e-15 ***</span></span>
+<span><span class="co">#&gt; beta2.2   1.51338    0.34708   4.360 1.30e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -678,7 +695,7 @@ residual-distribution models use the R implementation. Simulation uses
 R. Use the <code>emhawkes.engine</code> option to compare the R and
 automatic calculations. This function restores the previous option after
 each call.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">engine_loglik</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">engine</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">previous</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>emhawkes.engine <span class="op">=</span> <span class="va">engine</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span><span class="va">previous</span><span class="op">)</span><span class="op">)</span></span>
@@ -696,7 +713,7 @@ log-likelihood, intensity paths, and residual processes. These are
 computed using the parameters in the supplied <code>hspec</code> object.
 For a univariate model, <code>res_process1</code> contains the residual
 inter-arrival times.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hrp</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">0.3</span>, alpha <span class="op">=</span> <span class="fl">1.2</span>, beta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span>
 <span><span class="va">res_rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hrp</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
@@ -711,7 +728,7 @@ inter-arrival times.</p>
 <p><img src="extended_example_files/figure-html/unnamed-chunk-27-1.png" class="r-plt" alt="" width="432"></p>
 <p>For observed data, estimate the parameters before computing the
 residual processes.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># estimation</span></span>
 <span><span class="va">mle_rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">0.2</span>, alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
@@ -738,7 +755,7 @@ model, <code>logLik</code> returns one residual process for each event
 type. In the following bivariate example, these are
 <code>infer_res2$res_process1</code> and
 <code>infer_res2$res_process2</code>.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hrp2</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">2</span><span class="op">)</span>, </span>
 <span>           alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.2</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span>, </span>
 <span>           beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
@@ -751,7 +768,7 @@ type. In the following bivariate example, these are
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">qexp</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>, <span class="va">q</span>, xlab<span class="op">=</span><span class="st">"Theoretical Quantiles"</span>,ylab<span class="op">=</span><span class="st">"Sample Quantiles"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/qqnorm.html" class="external-link">qqline</a></span><span class="op">(</span><span class="va">q</span>, distribution<span class="op">=</span><span class="va">qexp</span>,col<span class="op">=</span><span class="st">"blue"</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="extended_example_files/figure-html/unnamed-chunk-29-1.png" class="r-plt" alt="" width="432"></p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot the pooled residuals for both event types.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
@@ -829,7 +846,7 @@ processes are</p>
 <p>The mapping must specify which columns correspond to each counting
 process
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>i</mi></msub><annotation encoding="application/x-tex">N_i</annotation></semantics></math>.</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.02</span>, <span class="fl">0.02</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
 <span>      </span>
 <span><span class="va">beta_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span> </span>
@@ -853,7 +870,7 @@ correspond to
 and the second and fourth columns correspond to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mn>2</mn></msub><annotation encoding="application/x-tex">N_2</annotation></semantics></math>.
 Thus, define <code>type_col_map</code> as follows:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">type_col_map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span>,  <span class="co"># columns for dN1</span></span>
 <span>                     <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span>  <span class="co"># columns for dN2</span></span>
 <span><span class="va">type_col_map</span></span>
@@ -867,7 +884,7 @@ with event type <code>i</code>. Rows of the intensity matrix identify
 event types. After a type <code>i</code> event,
 <code>type_col_map[[i]]</code> selects the kernel columns to update. Use
 this mapping to extract the corresponding parameters:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Part of alpha associated with N1: \n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Part of alpha associated with N1:</span></span>
 <span><span class="va">alpha</span><span class="op">[</span>, <span class="va">type_col_map</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">]</span>  <span class="co"># associated with N1</span></span>
@@ -893,7 +910,7 @@ this mapping to extract the corresponding parameters:</p>
 <span><span class="co">#&gt;      [,1] [,2]</span></span>
 <span><span class="co">#&gt; [1,]   10    1</span></span>
 <span><span class="co">#&gt; [2,]   10    1</span></span></code></pre></div>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha</span>, beta<span class="op">=</span><span class="va">beta</span>, type_col_map <span class="op">=</span> <span class="va">type_col_map</span><span class="op">)</span></span>
 <span><span class="va">h</span></span>
 <span><span class="co">#&gt; An object of class "hspec" of 2-dimensional Hawkes process</span></span>
@@ -921,7 +938,7 @@ this mapping to extract the corresponding parameters:</p>
 <span><span class="co">#&gt; [1] 2 4</span></span></code></pre></div>
 <p>For this multi-kernel model, <code>lambda_component0</code> must be
 supplied for both simulation and estimation.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">620</span><span class="op">)</span></span>
 <span><span class="va">lambda_component0_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.7</span>, <span class="fl">0.1</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">res_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size <span class="op">=</span> <span class="fl">3000</span>, lambda_component0 <span class="op">=</span> <span class="va">lambda_component0_mk</span><span class="op">)</span></span>
@@ -998,7 +1015,7 @@ supplied for both simulation and estimation.</p>
 <span><span class="co">#&gt; [20,] 0.0294468 1.947e+00   0.4514   1.0569</span></span>
 <span><span class="co">#&gt; ... with 2980 more rows </span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="va">lambda_component0_mk</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
@@ -1012,22 +1029,36 @@ supplied for both simulation and estimation.</p>
 <span><span class="co">#&gt; 7  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1      0.011162   0.007563   1.476    0.140    </span></span>
-<span><span class="co">#&gt; alpha1.1 2.474140        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; alpha1.2 1.380734        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; alpha1.3 0.044026   0.072601   0.606    0.544    </span></span>
-<span><span class="co">#&gt; alpha1.4 0.231206        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; beta1.1  6.202808   0.404706  15.327  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.3  0.700741   0.123492   5.674 1.39e-08 ***</span></span>
+<span><span class="co">#&gt; mu1      0.011162   0.007743   1.442   0.1494    </span></span>
+<span><span class="co">#&gt; alpha1.1 2.474140   0.350307   7.063 1.63e-12 ***</span></span>
+<span><span class="co">#&gt; alpha1.2 1.380734   0.298056   4.632 3.61e-06 ***</span></span>
+<span><span class="co">#&gt; alpha1.3 0.044026   0.097974   0.449   0.6532    </span></span>
+<span><span class="co">#&gt; alpha1.4 0.231206   0.127204   1.818   0.0691 .  </span></span>
+<span><span class="co">#&gt; beta1.1  6.202808   1.480600   4.189 2.80e-05 ***</span></span>
+<span><span class="co">#&gt; beta1.3  0.700741   0.277816   2.522   0.0117 *  </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
+<p>The standard errors use the checked final Hessian. The original
+estimate is retained, but its score calls for tighter optimization and
+multiple starting values. Kernel starting order and the fixed initial
+state can affect the selected local solution.</p>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">fit_mk</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"newton_decrement"</span>, <span class="st">"warnings"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $status</span></span>
+<span><span class="co">#&gt; [1] "ok"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $newton_decrement</span></span>
+<span><span class="co">#&gt; [1] 0.0003105941</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $warnings</span></span>
+<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
 <p>Reconstruction retains <code>type_col_map</code> and the supplied
 initial intensity matrix. Each kernel uses its own decay rate in the
 likelihood and residual integrals. The inferred likelihood agrees with
 the fitted likelihood even though decay rates differ within each
 row.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">fit_mk</span><span class="op">)</span></span>
 <span><span class="va">initial_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">fit_mk</span><span class="op">)</span></span>
 <span><span class="va">estimated_mk</span><span class="op">@</span><span class="va">type_col_map</span></span>
@@ -1069,7 +1100,7 @@ row.</p>
 <code>alpha</code>, and <code>beta</code> as functions. Each function
 takes a named parameter vector, <code>param</code>, as its first
 argument.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>theta_p <span class="op">=</span> <span class="fl">0.15</span>, theta_n <span class="op">=</span> <span class="fl">0.21</span>, kappa <span class="op">=</span> <span class="fl">0.12</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="va">theta</span>    <span class="op">&lt;-</span> <span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="st">"theta_n"</span><span class="op">]</span> <span class="op">+</span> <span class="va">param</span><span class="op">[</span><span class="st">"theta_p"</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span></span>
 <span>  <span class="va">theta_tl</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="st">"theta_n"</span><span class="op">]</span> <span class="op">-</span> <span class="va">param</span><span class="op">[</span><span class="st">"theta_p"</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span></span>
@@ -1106,7 +1137,7 @@ argument.</p>
 <span><span class="co">#&gt;         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), </span></span>
 <span><span class="co">#&gt;         nrow = 2)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x564f6248e710&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x55588e7a9cd8&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot alpha: </span></span>
 <span><span class="co">#&gt; function (param = c(eta = 5, nu = 3)) </span></span>
@@ -1116,7 +1147,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, </span></span>
 <span><span class="co">#&gt;         zeta_tl), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x564f62d14ec0&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x55588d599260&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt; function (param = c(beta = 12, kappa = 0.12)) </span></span>
@@ -1126,7 +1157,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, </span></span>
 <span><span class="co">#&gt;         beta2), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x564f64041790&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x55588f1d7350&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot type_col_map: </span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -1134,7 +1165,7 @@ argument.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; [1] 3 4</span></span></code></pre></div>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="co"># run simulation</span></span>
 <span><span class="va">res_sy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h_sy</span>, size <span class="op">=</span> <span class="fl">2000</span>, lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span> <span class="op">*</span> <span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
@@ -1170,7 +1201,7 @@ the default <code>param</code> vectors. Parameters with the same name
 are shared across functions. For example, <code>kappa</code> appears in
 both <code>mu</code> and <code>beta</code>, but only one
 <code>kappa</code> is estimated.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_sy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_sy</span>, inter_arrival<span class="op">=</span><span class="va">res_sy</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>
 <span>               type<span class="op">=</span><span class="va">res_sy</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span> <span class="op">*</span> <span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
@@ -1182,19 +1213,19 @@ both <code>mu</code> and <code>beta</code>, but only one
 <span><span class="co">#&gt; Log-Likelihood: -260.6273 </span></span>
 <span><span class="co">#&gt; 6  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;         Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; theta_p  0.08291    0.01589   5.219 1.8e-07 ***</span></span>
-<span><span class="co">#&gt; theta_n  0.16264    0.01691   9.618 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; kappa    0.40990    0.02367  17.319 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; eta      5.23254    0.28410  18.418 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; nu       2.89428        NaN     NaN     NaN    </span></span>
-<span><span class="co">#&gt; beta    18.01832        NaN     NaN     NaN    </span></span>
+<span><span class="co">#&gt;         Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span><span class="co">#&gt; theta_p  0.08291    0.03956   2.096 0.036106 *  </span></span>
+<span><span class="co">#&gt; theta_n  0.16264    0.03221   5.050 4.42e-07 ***</span></span>
+<span><span class="co">#&gt; kappa    0.40990    0.15487   2.647 0.008127 ** </span></span>
+<span><span class="co">#&gt; eta      5.23254    0.44037  11.882  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; nu       2.89428    0.39985   7.238 4.54e-13 ***</span></span>
+<span><span class="co">#&gt; beta    18.01832    4.73854   3.803 0.000143 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>The restored component functions use the estimated defaults. Both
 functions retain the same estimated <code>kappa</code>.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated_sy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">fit_sy</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mu <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_sy</span><span class="op">@</span><span class="va">mu</span><span class="op">)</span><span class="op">$</span><span class="va">param</span><span class="op">)</span><span class="op">[[</span><span class="st">"kappa"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_sy</span><span class="op">@</span><span class="va">beta</span><span class="op">)</span><span class="op">$</span><span class="va">param</span><span class="op">)</span><span class="op">[[</span><span class="st">"kappa"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
@@ -1248,7 +1279,7 @@ parameters. Additional arguments, such as <code>n</code> and
 Include <code>...</code> to accept other arguments supplied by the
 package. The <code>rmark</code> function generates marks during
 simulation.</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.15</span>, <span class="fl">0.15</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.75</span>, <span class="fl">0.6</span>, <span class="fl">0.6</span>, <span class="fl">0.75</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
@@ -1294,7 +1325,7 @@ simulation.</p>
 <span><span class="co">#&gt; {</span></span>
 <span><span class="co">#&gt;     rgeom(1, p = param[1]) + 1</span></span>
 <span><span class="co">#&gt; }</span></span></code></pre></div>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res_impact</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hi</span>, size<span class="op">=</span><span class="fl">1000</span>, lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res_impact</span><span class="op">)</span></span>
@@ -1324,7 +1355,7 @@ simulation.</p>
 <span><span class="co">#&gt; [20,]  5.8857 14  5    1 1.08385 1.02887</span></span>
 <span><span class="co">#&gt; ... with 980 more rows </span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hi</span>, </span>
 <span>            inter_arrival <span class="op">=</span> <span class="va">res_impact</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
 <span>            type <span class="op">=</span> <span class="va">res_impact</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -1341,12 +1372,12 @@ simulation.</p>
 <span><span class="co">#&gt; Log-Likelihood: -1525.501 </span></span>
 <span><span class="co">#&gt; 5  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1      0.131904   0.008914  14.798  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1 0.676090   0.080586   8.390  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.2 0.603453   0.075153   8.030 9.77e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1  2.221258   0.173268  12.820  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; eta1     0.116345   0.055318   2.103   0.0354 *  </span></span>
+<span><span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span></span>
+<span><span class="co">#&gt; mu1      0.131904   0.008911  14.803  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1 0.676090   0.079336   8.522  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.2 0.603453   0.073111   8.254  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1  2.221258   0.169804  13.081  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; eta1     0.116345   0.055311   2.103  0.0354 *  </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -1355,7 +1386,7 @@ The resulting intensity process is</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>μ</mi><mo>+</mo><msub><mo>∫</mo><mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mi>∞</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>×</mo><mi>E</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>+</mo><mi>η</mi><mo stretchy="false" form="prefix">(</mo><mi>z</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>β</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>−</mo><mi>u</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup><mi>M</mi><mo stretchy="false" form="prefix">(</mo><mi>d</mi><mi>u</mi><mo>×</mo><mi>d</mi><mi>z</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
  \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(du \times dz).
 </annotation></semantics></math></p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">rmark</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>p<span class="op">=</span><span class="fl">0.65</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/Geometric.html" class="external-link">rgeom</a></span><span class="op">(</span><span class="fl">1</span>, p<span class="op">=</span><span class="va">param</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span></span>
@@ -1387,7 +1418,7 @@ The resulting intensity process is</p>
 <span><span class="co">#&gt; {</span></span>
 <span><span class="co">#&gt;     rgeom(1, p = param[1]) + 1</span></span>
 <span><span class="co">#&gt; }</span></span></code></pre></div>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
@@ -1417,7 +1448,7 @@ The resulting intensity process is</p>
 <span><span class="co">#&gt; [20,] 48.7910 19    2 1.24194</span></span>
 <span><span class="co">#&gt; ... with 980 more rows </span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, </span>
 <span>            inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
 <span>            type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -1430,18 +1461,18 @@ The resulting intensity process is</p>
 <span><span class="co">#&gt; Log-Likelihood: -1684.238 </span></span>
 <span><span class="co">#&gt; 4  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.14557    0.00846  17.207 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1  0.63917    0.06978   9.159 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1   1.48983    0.12334  12.079 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; eta1    0.33626    0.07713   4.360 1.3e-05 ***</span></span>
+<span><span class="co">#&gt;        Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span><span class="co">#&gt; mu1    0.145573   0.008444  17.240  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1 0.639166   0.068913   9.275  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1  1.489826   0.120674  12.346  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; eta1   0.336264   0.076555   4.392 1.12e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>To estimate the parameters of the mark distribution as well, supply
 its density or probability mass function in the <code>dmark</code>
 slot.</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">h_md</span> <span class="op">&lt;-</span> <span class="va">h</span></span>
 <span></span>
 <span><span class="va">h_md</span><span class="op">@</span><span class="va">dmark</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>p <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>, <span class="va">n</span><span class="op">=</span><span class="va">n</span>, <span class="va">mark</span><span class="op">=</span><span class="va">mark</span>, <span class="va">...</span><span class="op">)</span><span class="op">{</span></span>
@@ -1458,12 +1489,12 @@ slot.</p>
 <span><span class="co">#&gt; Log-Likelihood: -2657.079 </span></span>
 <span><span class="co">#&gt; 5  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1    0.145574   0.008468  17.191 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1 0.639168   0.069878   9.147 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1  1.489843   0.126225  11.803 &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; eta1   0.336259   0.076805   4.378 1.2e-05 ***</span></span>
-<span><span class="co">#&gt; p      0.658970   0.012235  53.859 &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt;        Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span><span class="co">#&gt; mu1    0.145574   0.008444  17.240  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1 0.639168   0.068913   9.275  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1  1.489843   0.120677  12.346  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; eta1   0.336259   0.076555   4.392 1.12e-05 ***</span></span>
+<span><span class="co">#&gt; p      0.658970   0.012175  54.123  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -1472,7 +1503,7 @@ slot.</p>
 estimated through <code>dmark</code>, so new simulations use the fitted
 mark distribution. Generator parameters that do not match estimated
 coefficient names keep their original defaults.</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated_md</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle_md</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>density <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_md</span><span class="op">@</span><span class="va">dmark</span><span class="op">)</span><span class="op">$</span><span class="va">param</span><span class="op">)</span><span class="op">[[</span><span class="st">"p"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  generator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_md</span><span class="op">@</span><span class="va">rmark</span><span class="op">)</span><span class="op">$</span><span class="va">param</span><span class="op">)</span><span class="op">[[</span><span class="st">"p"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
@@ -1506,7 +1537,7 @@ matrix. In the following example, the function returns a
 matrix with some entries fixed at zero. Only the parameters in
 <code>param</code> are estimated. For simulation, a fixed matrix and a
 function returning the same matrix give the same model.</p>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.02</span>, <span class="fl">0.02</span>, <span class="fl">0.04</span>, <span class="fl">0.04</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
 <span></span>
@@ -1524,7 +1555,7 @@ definition. Its <code>N</code> argument contains the counting process
 values, and <code>n</code> identifies the current event index. Include
 both arguments because the function uses them, along with
 <code>...</code> to accept other arguments supplied by the package.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">impact</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>alpha1n<span class="op">=</span><span class="fl">0.25</span>, alpha1w<span class="op">=</span><span class="fl">0.1</span>, alpha2n<span class="op">=</span><span class="fl">0.1</span>, alpha2w<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span>,</span>
 <span>                   <span class="va">N</span><span class="op">=</span><span class="va">N</span>, <span class="va">n</span><span class="op">=</span><span class="va">n</span>, <span class="va">...</span><span class="op">)</span><span class="op">{</span></span>
 <span>  </span>
@@ -1564,7 +1595,7 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt;         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, </span></span>
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x564f61bea0d0&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x55588b4b0a70&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1587,7 +1618,7 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt;     km * Psi</span></span>
 <span><span class="co">#&gt; }</span></span></code></pre></div>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">hr_fl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec_fl</span>, size<span class="op">=</span><span class="fl">2000</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hr_fl</span><span class="op">)</span></span>
@@ -1617,7 +1648,7 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt; [20,] 40.15404 10  5  2  2    1 0.163160 0.238789 0.203723 0.153817</span></span>
 <span><span class="co">#&gt; ... with 1980 more rows </span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_fl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec_fl</span>, <span class="va">hr_fl</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">hr_fl</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
@@ -1630,18 +1661,18 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt; 12  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;         Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.028055   0.004303   6.520 7.05e-11 ***</span></span>
-<span><span class="co">#&gt; mu3     0.033179   0.004269   7.772 7.72e-15 ***</span></span>
-<span><span class="co">#&gt; alpha11 0.199720   0.029033   6.879 6.02e-12 ***</span></span>
-<span><span class="co">#&gt; alpha12 0.312236   0.030478  10.245  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha33 0.283861   0.037351   7.600 2.97e-14 ***</span></span>
-<span><span class="co">#&gt; alpha34 0.341250   0.040022   8.526  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1 0.734703   0.053393  13.760  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta3.1 0.899924   0.078003  11.537  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1n 0.250338   0.044940   5.571 2.54e-08 ***</span></span>
-<span><span class="co">#&gt; alpha1w 0.107483   0.029917   3.593 0.000327 ***</span></span>
-<span><span class="co">#&gt; alpha2n 0.083683   0.037982   2.203 0.027580 *  </span></span>
-<span><span class="co">#&gt; alpha2w 0.172788   0.034472   5.012 5.37e-07 ***</span></span>
+<span><span class="co">#&gt; mu1     0.028055   0.004301   6.523 6.91e-11 ***</span></span>
+<span><span class="co">#&gt; mu3     0.033179   0.004256   7.796 6.40e-15 ***</span></span>
+<span><span class="co">#&gt; alpha11 0.199720   0.028746   6.948 3.71e-12 ***</span></span>
+<span><span class="co">#&gt; alpha12 0.312236   0.030257  10.320  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha33 0.283861   0.036399   7.799 6.26e-15 ***</span></span>
+<span><span class="co">#&gt; alpha34 0.341250   0.038737   8.809  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1 0.734703   0.052236  14.065  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta3.1 0.899924   0.073073  12.315  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1n 0.250338   0.044048   5.683 1.32e-08 ***</span></span>
+<span><span class="co">#&gt; alpha1w 0.107483   0.029891   3.596 0.000323 ***</span></span>
+<span><span class="co">#&gt; alpha2n 0.083683   0.037729   2.218 0.026557 *  </span></span>
+<span><span class="co">#&gt; alpha2w 0.172788   0.033838   5.106 3.28e-07 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -1681,7 +1712,7 @@ empirical applications for high-frequency stock market data</a>.</p>
 <p>In the <code>mu</code> function below, <code>n</code> identifies the
 current event index, and <code>Nc</code> is used to calculate the spread
 level and midprice.</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># presumed initial bid and ask prices</span></span>
 <span><span class="va">initial_ask_price</span> <span class="op">&lt;-</span> <span class="fl">1250</span> <span class="co">#cents</span></span>
 <span><span class="va">initial_bid_price</span> <span class="op">&lt;-</span> <span class="fl">1150</span> <span class="co">#cents</span></span>
@@ -1740,7 +1771,7 @@ the values of
 Individual components can be negative after a reset. The equal decay
 rates used here allow simulation as long as the sum of the components in
 each row remains nonnegative.</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>alpha_s1<span class="op">=</span><span class="fl">4</span>, alpha_m<span class="op">=</span><span class="fl">26</span>, alpha_s2<span class="op">=</span><span class="fl">5</span>,</span>
 <span>                            alpha_w1<span class="op">=</span><span class="fl">11</span>, alpha_w2<span class="op">=</span><span class="fl">7</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
@@ -1828,7 +1859,7 @@ each row remains nonnegative.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], </span></span>
 <span><span class="co">#&gt;         param["alpha_s1"]), nrow = 4, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x564f639fe3d0&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x55588ad19de8&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1878,7 +1909,7 @@ each row remains nonnegative.</p>
 <span><span class="co">#&gt;         rgeom(1, p = 0.65) + 1</span></span>
 <span><span class="co">#&gt;     }</span></span>
 <span><span class="co">#&gt; }</span></span></code></pre></div>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">hr_ba</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h_ba</span>, size<span class="op">=</span><span class="fl">1000</span>, lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">16</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hr_ba</span><span class="op">)</span></span>
@@ -1910,13 +1941,13 @@ each row remains nonnegative.</p>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
 <p>The following likelihood calculation and fit do not estimate the mark
 distribution because no <code>dmark</code> function is supplied.</p>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">h_ba</span>, inter_arrival <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>       mark <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">mark</span>, Nc <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">Nc</span>,</span>
 <span>       lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">16</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; loglikelihood </span></span>
 <span><span class="co">#&gt;     -1817.794</span></span></code></pre></div>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mle_ba</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_ba</span>, inter_arrival <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               mark <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">mark</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">16</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
@@ -1931,15 +1962,15 @@ distribution because no <code>dmark</code> function is supplied.</p>
 <span><span class="co">#&gt; 9  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;           Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.069541   0.003565  19.505  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; zeta1     0.101083   0.007944  12.724  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha_s1  4.656214   0.886332   5.253 1.49e-07 ***</span></span>
-<span><span class="co">#&gt; alpha_m  23.561095   1.714956  13.739  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha_s2  5.850205   1.171918   4.992 5.98e-07 ***</span></span>
-<span><span class="co">#&gt; alpha_w1 10.286378   0.771129  13.339  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha_w2  7.403771   0.941129   7.867 3.64e-15 ***</span></span>
-<span><span class="co">#&gt; beta1.1  51.872684        NaN     NaN      NaN    </span></span>
-<span><span class="co">#&gt; xi        1.764779        NaN     NaN      NaN    </span></span>
+<span><span class="co">#&gt; mu1       0.069541   0.003566  19.501  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; zeta1     0.101083   0.007967  12.687  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha_s1  4.656214   0.789575   5.897 3.70e-09 ***</span></span>
+<span><span class="co">#&gt; alpha_m  23.561095   2.345578  10.045  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha_s2  5.850205   1.063972   5.498 3.83e-08 ***</span></span>
+<span><span class="co">#&gt; alpha_w1 10.286378   1.135937   9.055  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha_w2  7.403771   0.945758   7.828 4.94e-15 ***</span></span>
+<span><span class="co">#&gt; beta1.1  51.872684   2.874442  18.046  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; xi        1.764779   0.838421   2.105   0.0353 *  </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -1962,7 +1993,7 @@ through the <code>param</code> vector. The ordinary Hawkes model is the
 special case with an exponential residual distribution of rate 1. Use
 <code>set_residual</code> to wrap the distribution functions with
 log-density and tail-probability support.</p>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu1_d</span> <span class="op">&lt;-</span> <span class="fl">0.5</span>; <span class="va">alpha1_d</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">beta1_d</span> <span class="op">&lt;-</span> <span class="fl">1.2</span>; <span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">0.7</span>; <span class="va">ell</span> <span class="op">&lt;-</span> <span class="fl">1.6</span></span>
 <span><span class="va">hspec1_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_residual.html">set_residual</a></span><span class="op">(</span></span>
 <span>  <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu1_d</span>, alpha <span class="op">=</span> <span class="va">alpha1_d</span>, beta <span class="op">=</span> <span class="va">beta1_d</span><span class="op">)</span>,</span>
@@ -1970,7 +2001,7 @@ log-density and tail-probability support.</p>
 <span>  dresidual <span class="op">=</span> <span class="va">dtzexp</span>, presidual <span class="op">=</span> <span class="va">ptzexp</span>,</span>
 <span>  qresidual <span class="op">=</span> <span class="va">qtzexp</span>, rresidual <span class="op">=</span> <span class="va">rtzexp</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dh1_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec1_d</span>, size <span class="op">=</span> <span class="fl">3000</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
 <span>  <span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">[</span><span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span> <span class="op">&lt;</span> <span class="fl">3</span><span class="op">]</span>,</span>
@@ -1984,7 +2015,7 @@ log-density and tail-probability support.</p>
 under <code>hspec1_d</code>. Setting <code>infer = TRUE</code> also
 returns the intensity and residual processes in
 <code>infer_res_dh1</code>.</p>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Infer the residual process using the log-likelihood method</span></span>
 <span><span class="co"># 'infer_res_dh1' contains the inferred process data based on the inter-arrival times</span></span>
 <span><span class="va">infer_res_dh1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec1_d</span>, inter_arrival <span class="op">=</span> <span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -2017,7 +2048,7 @@ returns the intensity and residual processes in
 </h3>
 <p>The same approach extends to multiple dimensions, using parameter
 matrices as in a multivariate Hawkes model.</p>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mu2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">alpha2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.8</span>, <span class="fl">0.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">beta2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -2053,7 +2084,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     do.call(rresidual, c(list(size), distribution_parameters(rresidual, </span></span>
 <span><span class="co">#&gt;         param)))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f69c5b500&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55588ad88798&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot dresidual: </span></span>
 <span><span class="co">#&gt; function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) </span></span>
@@ -2061,7 +2092,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, </span></span>
 <span><span class="co">#&gt;         param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f69c5b500&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55588ad88798&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot presidual: </span></span>
 <span><span class="co">#&gt; function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -2070,7 +2101,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, </span></span>
 <span><span class="co">#&gt;         params = distribution_parameters(presidual, param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f69c5b500&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55588ad88798&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot qresidual: </span></span>
 <span><span class="co">#&gt; function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -2080,10 +2111,10 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;         log.p = log.p, params = distribution_parameters(qresidual, </span></span>
 <span><span class="co">#&gt;             param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f69c5b500&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x55588ad88798&gt;</span></span></code></pre></div>
 <p>The following histogram shows inter-arrival times from a model with
 <code>tzexp</code> residuals.</p>
-<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">duh2_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2_du</span>, size <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span>
 <span><span class="co"># Plot a histogram of the inter-arrival times less than 5</span></span>
@@ -2097,13 +2128,13 @@ matrices as in a multivariate Hawkes model.</p>
 <p><img src="extended_example_files/figure-html/unnamed-chunk-60-1.png" class="r-plt" alt="" width="576"></p>
 <p>Use <code>logLik</code> with <code>infer = TRUE</code> to recover the
 intensity and residual processes.</p>
-<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">infer_res_dh2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2_du</span>, </span>
 <span>                        inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>
 <span>                        type <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Under a correctly specified model, the inferred residuals follow the
 specified residual distribution.</p>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot a histogram of the inferred residual process</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
 <span>  <span class="va">infer_res_dh2</span><span class="op">$</span><span class="va">res_process2</span>,</span>
@@ -2131,7 +2162,7 @@ specified residual distribution.</p>
 <p>The transformed residuals in <code>eres_process1</code> follow an
 exponential distribution with rate 1 under a correctly specified
 model.</p>
-<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
 <span>  <span class="va">infer_res_dh2</span><span class="op">$</span><span class="va">eres_process1</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -2161,7 +2192,7 @@ distribution requires <code>0 &lt; a &lt;= 3</code>,
 is nonlinear, so the custom objective below checks each candidate with
 <code>dtzexp</code> and returns <code>-Inf</code> when the distribution
 is invalid.</p>
-<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">residual_loglik</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">object</span>, <span class="va">inter_arrival</span>, <span class="va">type</span>, <span class="va">param</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">valid</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="fu"><a href="../reference/tzexp.html">dtzexp</a></span><span class="op">(</span><span class="fl">1</span>, a <span class="op">=</span> <span class="va">param</span><span class="op">[</span><span class="st">"a"</span><span class="op">]</span>, ell <span class="op">=</span> <span class="va">param</span><span class="op">[</span><span class="st">"ell"</span><span class="op">]</span><span class="op">)</span></span>
@@ -2203,6 +2234,12 @@ is invalid.</p>
 <span><span class="co">#&gt; Constrained optimization based on constrOptim </span></span>
 <span><span class="co">#&gt; 1  outer iterations, barrier value -0.0002565707 </span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
+<p>Hawkes curvature stabilization does not change this custom FRPP
+objective. The moving transition point of <code>tzexp</code> can make
+numerical Hessians step dependent. A successful optimizer return code
+does not validate the reported Wald standard errors. See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md" class="external-link">fit
+diagnostic report</a> for the one-sided derivative and profile
+checks.</p>
 <p>These constraints keep the six parameters nonnegative and enforce
 <code>a &lt;= 3</code>, the upper limit of the trapezoid-exponential
 distribution. The parameter order is <code>mu1</code>,
@@ -2214,7 +2251,7 @@ quantile, and generator functions with the shared estimates of
 optimization constraints remain part of the fitting step;
 <code><a href="../reference/logLik.html">logLik()</a></code> evaluates the restored model’s
 residual-distribution likelihood.</p>
-<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span></span>
 <span><span class="va">initial_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_dh</span><span class="op">@</span><span class="va">rresidual</span><span class="op">)</span><span class="op">$</span><span class="va">param</span></span>
@@ -2227,7 +2264,7 @@ residual-distribution likelihood.</p>
 <span><span class="co">#&gt; -12407.47 -12407.47</span></span></code></pre></div>
 <p>The following example uses a uniform residual distribution on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, 2]</annotation></semantics></math>.</p>
-<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">#set.seed(117)</span></span>
 <span><span class="va">mu2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
@@ -2245,7 +2282,7 @@ residual-distribution likelihood.</p>
 <span></span>
 <span><span class="va">duh2_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2_du</span>, size <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span></code></pre></div>
 <p>Plot a histogram of the inferred residuals:</p>
-<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">infer_res_duh2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2_du</span>, </span>
 <span>                         inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>

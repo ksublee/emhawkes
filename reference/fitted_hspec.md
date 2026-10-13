@@ -34,10 +34,13 @@ parameters keep their original defaults.
 
 The fit keeps its `maxLik` classes and methods. Its `emhawkes` attribute
 stores a versioned list with `specification`, `parameter_map`,
-`initial_state`, `reduced`, and `custom_loglik`. Older fits without this
-metadata cannot be reconstructed by this function. Function environments
-remain references to the original environments; external state is not
-frozen. Use [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and
+`initial_state`, `reduced`, and `custom_loglik`. New fits also retain
+`constraints` and final `diagnostics`, available through
+[`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md).
+Older fits without this metadata cannot be reconstructed by this
+function. Function environments remain references to the original
+environments; external state is not frozen. Use
+[`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and
 [`readRDS()`](https://rdrr.io/r/base/readRDS.html) to retain the fit's
 metadata between sessions. Supply observations again to
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and

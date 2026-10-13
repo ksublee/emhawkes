@@ -26,7 +26,8 @@ hfit(
   method = "BFGS",
   verbose = FALSE,
   ...,
-  Nc0 = NULL
+  Nc0 = NULL,
+  final_hessian = c("auto", "maxLik")
 )
 
 # S4 method for class 'hspec'
@@ -47,7 +48,8 @@ hfit(
   method = "BFGS",
   verbose = FALSE,
   ...,
-  Nc0 = NULL
+  Nc0 = NULL,
+  final_hessian = c("auto", "maxLik")
 )
 ```
 
@@ -148,11 +150,24 @@ hfit(
   omitted, use the first row of supplied `Nc`, or zero when `Nc` is
   absent. This argument must be named.
 
+- final_hessian:
+
+  Named-only choice, `"auto"` or `"maxLik"`. After the same
+  optimization, `"auto"` recalculates numerical final curvature for the
+  built-in Hawkes likelihood using scaled central differences and
+  Richardson extrapolation. `"maxLik"` retains the original final
+  Hessian and covariance calculation. User-supplied `hess`,
+  `finalHessian = FALSE`, BHHH curvature, custom likelihoods, and
+  residual-distribution likelihoods retain their calculation choices.
+
 ## Value
 
 A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
 `emhawkes` attribute containing the original specification, parameter
-map, normalized initial-state arguments, and `reduced` setting. Use
+map, normalized initial-state arguments, constraints, `reduced` setting,
+and final curvature diagnostics. Use
+[`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
+to inspect the checks and
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
 to restore the estimated specification and
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
@@ -188,9 +203,25 @@ a shared parameter fixes all entries that use it.
 The built-in likelihood uses the calculation engine selected by
 `options(emhawkes.engine = "auto")`; see
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
-supported models. Rcpp accelerates likelihood evaluation. Gradient and
-Hessian functions are supplied separately, or computed numerically by
-`maxLik`.
+supported models. Rcpp accelerates likelihood evaluation. Optimizer
+derivatives are supplied separately or computed numerically by `maxLik`.
+Final numerical curvature is checked after optimization without changing
+coefficients, log-likelihood, the stored optimizer gradient, return
+code, or iteration count.
+
+The automatic calculation compares information, inverse information, and
+standard errors across difference steps. Failed checks, singular or
+indefinite information, and equality or nearby inequality constraints
+yield `NA` covariance for free parameters. Fixed parameters retain zero
+covariance. Supplied Hessians are retained and checked for invertible
+positive information. No ridge or eigenvalue clipping is applied. Use
+[`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
+to inspect the reason. A numerically stable Hessian does not establish
+identifiability, stationarity, a global maximum, or correct
+confidence-interval coverage. Weak excitation, nearby kernel decay
+rates, short samples, boundary estimates, and nonsmooth callbacks can
+make Wald inference unreliable. Consider profile likelihood and a
+bootstrap that preserves the observation design and initial state.
 
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
 uses the saved parameter map to restore the estimated model.
@@ -205,6 +236,7 @@ parameter map, and initial-state information.
 
 ## See also
 
+[`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md),
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md),
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md),
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
@@ -233,13 +265,15 @@ summary(fit)
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.10357    0.01918   5.400 6.67e-08 ***
-#> alpha1.1  0.21600    0.09858   2.191  0.02845 *  
-#> alpha1.2  0.29650    0.11754   2.523  0.01165 *  
-#> beta1.1   1.11245    0.34199   3.253  0.00114 ** 
+#> mu1       0.10357    0.01916   5.406 6.46e-08 ***
+#> alpha1.1  0.21600    0.09786   2.207 0.027294 *  
+#> alpha1.2  0.29650    0.11636   2.548 0.010832 *  
+#> beta1.1   1.11245    0.33526   3.318 0.000906 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
+fit_diagnostics(fit)$status
+#> [1] "ok"
 estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
@@ -296,18 +330,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42494   1.629   0.1033    
+#> mu1      0.69221    0.42666   1.622   0.1047    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
-#> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04916   0.291   0.7712    
-#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
-#> alpha34  0.29568    0.11634   2.542   0.0110 *  
-#> beta1.1  0.10275    0.08833   1.163   0.2447    
+#> alpha11 -0.12632    0.06533  -1.933   0.0532 .  
+#> alpha12  0.01429    0.04926   0.290   0.7717    
+#> alpha33  0.96110    0.21471   4.476 7.60e-06 ***
+#> alpha34  0.29568    0.11635   2.541   0.0110 *  
+#> beta1.1  0.10275    0.08852   1.161   0.2457    
 #> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
-#> alpha1n  0.03456    0.06731   0.513   0.6077    
-#> alpha1w  0.04976    0.06831   0.728   0.4664    
-#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
-#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
+#> alpha1n  0.03456    0.06731   0.513   0.6076    
+#> alpha1w  0.04976    0.06835   0.728   0.4666    
+#> alpha2n -2.47298    0.27558  -8.974  < 2e-16 ***
+#> alpha2w  1.00872    0.11324   8.908  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
@@ -346,11 +380,11 @@ summary(fit)
 #> 5  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.10755    0.02308   4.659 3.17e-06 ***
-#> alpha1.1  0.62799    0.23802   2.638  0.00833 ** 
-#> alpha1.2  0.55832    0.21164   2.638  0.00834 ** 
-#> beta1.1   2.11657    0.67686   3.127  0.00177 ** 
-#> eta1      0.10179    0.27794   0.366  0.71418    
+#> mu1       0.10755    0.02325   4.626 3.72e-06 ***
+#> alpha1.1  0.62799    0.24353   2.579  0.00992 ** 
+#> alpha1.2  0.55832    0.21573   2.588  0.00965 ** 
+#> beta1.1   2.11657    0.70263   3.012  0.00259 ** 
+#> eta1      0.10179    0.27587   0.369  0.71213    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------

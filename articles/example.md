@@ -199,9 +199,9 @@ summary(mle)
 #> 3  free parameters
 #> Estimates:
 #>        Estimate Std. error t value Pr(> t)    
-#> mu1     0.33641    0.03486   9.651  <2e-16 ***
-#> alpha1  1.16654    0.09480  12.305  <2e-16 ***
-#> beta1   1.52270    0.12323  12.357  <2e-16 ***
+#> mu1     0.33641    0.03485   9.652  <2e-16 ***
+#> alpha1  1.16654    0.10067  11.588  <2e-16 ***
+#> beta1   1.52270    0.13098  11.625  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -209,9 +209,29 @@ summary(mle)
 
 Use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
-to reconstruct the model with the estimated parameters. The fit retains
-its original parameter map, including shared parameters and fixed
-constants in component functions.
+to reconstruct the model with the estimated parameters. Final numerical
+Hessians for the built-in Hawkes likelihood are checked across scaled
+difference steps without changing the optimizer’s estimates.
+[`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
+covariance. `NA` standard errors indicate that stable Wald inference is
+unavailable. A stable Hessian does not establish reliable confidence
+intervals; check convergence, score, and multiple starting values.
+
+``` r
+
+fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
+#> $status
+#> [1] "ok"
+#> 
+#> $scaled_condition
+#> [1] 20.3342
+#> 
+#> $newton_decrement
+#> [1] 0.001305333
+```
+
+The fit retains its original parameter map, including shared parameters
+and fixed constants in component functions.
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 retrieves the initial counts and initial intensity setting.
 
@@ -471,10 +491,10 @@ summary(mle)
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.19095    0.01638  11.656  < 2e-16 ***
-#> alpha1.1  0.48217    0.07430   6.489 8.64e-11 ***
-#> alpha1.2  0.98625    0.09576  10.300  < 2e-16 ***
-#> beta1.1   2.07987    0.17203  12.091  < 2e-16 ***
+#> mu1       0.19095    0.01638   11.66  < 2e-16 ***
+#> alpha1.1  0.48217    0.07350    6.56 5.38e-11 ***
+#> alpha1.2  0.98625    0.09408   10.48  < 2e-16 ***
+#> beta1.1   2.07987    0.16785   12.39  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -491,7 +511,7 @@ coef(mle)
 
 miscTools::stdEr(mle)
 #>        mu1   alpha1.1   alpha1.2    beta1.1 
-#> 0.01638200 0.07430500 0.09575744 0.17202504
+#> 0.01637611 0.07350285 0.09407739 0.16784948
 ```
 
 The restored matrices retain the shared parameters from this fit. The
