@@ -143,6 +143,9 @@ separately or computed numerically by \code{maxLik}. The default does not run
 additional curvature checks. With \code{final_hessian = "auto"}, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
 the stored optimizer gradient, return code, or iteration count.
+Here, \code{"auto"} selects difference steps for the requested stabilization;
+it does not automatically retry the default calculation. If default numerical
+Hawkes standard errors contain \code{NaN}, a short message suggests this option.
 
 The requested stabilization compares information, inverse information, and
 standard errors across difference steps. Failed checks, singular or indefinite

@@ -160,7 +160,21 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   unchecked <- function(reason) {
     list(fit = fit, diagnostics = list(status = "not_checked", reason = reason))
   }
-  if (final_hessian == "maxLik") return(unchecked("maxLik_requested"))
+  if (final_hessian == "maxLik") {
+    # Inspect the stored curvature without re-evaluating the likelihood.
+    final <- additional[["finalHessian"]]
+    bhhh <- (is.character(final) && length(final) == 1L && tolower(final) == "bhhh") ||
+      identical(additional[["bhhhHessian"]], TRUE) || identical(toupper(method), "BHHH")
+    if (is.null(object@dresidual) && is.null(hess) && !bhhh) {
+      standard_errors <- tryCatch(suppressWarnings(sqrt(diag(stats::vcov(fit)))),
+                                  error = function(e) numeric(0))
+      if (any(is.nan(standard_errors))) {
+        message('hfit: some standard errors are NaN. Try final_hessian = "auto" ',
+                'for Hawkes Hessian stabilization.')
+      }
+    }
+    return(unchecked("maxLik_requested"))
+  }
   if (!is.null(object@dresidual)) return(unchecked("residual_likelihood"))
   final <- additional[["finalHessian"]]
   if (!is.null(final) && length(final) == 1L && !is.na(final) &&

@@ -78,6 +78,9 @@ NULL
 #' additional curvature checks. With `final_hessian = "auto"`, final curvature is
 #' checked after optimization without changing coefficients, log-likelihood,
 #' the stored optimizer gradient, return code, or iteration count.
+#' Here, `"auto"` selects difference steps for the requested stabilization;
+#' it does not automatically retry the default calculation. If default numerical
+#' Hawkes standard errors contain `NaN`, a short message suggests this option.
 #'
 #' The requested stabilization compares information, inverse information, and
 #' standard errors across difference steps. Failed checks, singular or indefinite

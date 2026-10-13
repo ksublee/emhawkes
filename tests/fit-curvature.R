@@ -62,8 +62,12 @@ close(maxLik::hessian(analytic), hessian(coef(analytic)))
 stopifnot(identical(fit_diagnostics(analytic)$method, "supplied"))
 for (flag in list(FALSE, 0)) {
   disabled <- quiet_fit(h, dt, lambda_component0 = 0, fixed = fixed, finalHessian = flag)
-  stopifnot(is.null(maxLik::hessian(disabled)), is.null(vcov(disabled)),
+  original <- quiet_fit(h, dt, lambda_component0 = 0, fixed = fixed,
+                        finalHessian = flag, final_hessian = "maxLik")
+  stopifnot(is.null(maxLik::hessian(disabled)), is.null(disabled$varcovar),
             identical(fit_diagnostics(disabled)$reason, "finalHessian_false"))
+  # maxLik versions return either NULL or an NA matrix when curvature is disabled.
+  close(vcov(disabled), vcov(original), tolerance = 0)
 }
 for (flag in c("BHHH", "bhhh", "Bhhh")) {
   bhhh <- suppressWarnings(quiet_fit(h, dt, lambda_component0 = 0, fixed = fixed,
