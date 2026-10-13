@@ -2,6 +2,10 @@
 
 ## emhawkes 0.9.9
 
+- Suggest optional `final_hessian = "auto"` when default numerical
+  Hawkes standard errors contain `NaN`. Preserve the fit and respect
+  disabled, supplied, and BHHH curvature. Make the disabled-Hessian test
+  compatible with both NULL and NA-matrix covariance returns in maxLik.
 - Keep the original `maxLik` Hessian and standard-error calculation as
   the default. Run additional Hawkes stabilization and diagnostics only
   when `final_hessian = "auto"` is requested.

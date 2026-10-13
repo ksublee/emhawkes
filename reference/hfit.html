@@ -221,7 +221,10 @@ Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
 separately or computed numerically by <code>maxLik</code>. The default does not run
 additional curvature checks. With <code>final_hessian = "auto"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
-the stored optimizer gradient, return code, or iteration count.</p>
+the stored optimizer gradient, return code, or iteration count.
+Here, <code>"auto"</code> selects difference steps for the requested stabilization;
+it does not automatically retry the default calculation. If default numerical
+Hawkes standard errors contain <code>NaN</code>, a short message suggests this option.</p>
 <p>The requested stabilization compares information, inverse information, and
 standard errors across difference steps. Failed checks, singular or indefinite
 information, and equality or nearby inequality constraints yield <code>NA</code> covariance

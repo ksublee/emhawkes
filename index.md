@@ -54,11 +54,15 @@ metadata need to be refitted before using the reconstruction helpers.
 By default,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 the final Hessian and standard errors from `maxLik`. It does not run the
-additional stabilization checks. Request `final_hessian = "auto"` to
-check numerical Hawkes curvature with scaled central differences and
-Richardson extrapolation. This preserves the optimizer’s coefficients
-and log-likelihood. [`summary()`](https://rdrr.io/r/base/summary.html)
-and [`vcov()`](https://rdrr.io/r/stats/vcov.html) then use the checked
+additional stabilization checks. If numerical Hawkes standard errors
+contain `NaN`, a short message suggests trying `final_hessian = "auto"`.
+This option selects difference steps for stabilization when requested.
+It does not automatically retry the default calculation. Request
+`final_hessian = "auto"` to check numerical Hawkes curvature with scaled
+central differences and Richardson extrapolation. This preserves the
+optimizer’s coefficients and log-likelihood.
+[`summary()`](https://rdrr.io/r/base/summary.html) and
+[`vcov()`](https://rdrr.io/r/stats/vcov.html) then use the checked
 covariance; free-parameter standard errors are `NA` when stable
 inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
 requested checks. Supplied Hessians, disabled final curvature, BHHH,
