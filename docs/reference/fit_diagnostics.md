@@ -1,6 +1,6 @@
 # Inspect Final Curvature Diagnostics
 
-Return the final Hessian checks stored by
+Return the final Hessian checks requested through
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md).
 
 ## Usage
@@ -33,8 +33,11 @@ score warning. Its square divided by two estimates the local quadratic
 improvement in log-likelihood. An information condition number above
 `1e8` triggers a weak-curvature warning; eigenvalues at or below `1e-10`
 times the largest absolute eigenvalue do not support numerical
-inversion. These thresholds are numerical diagnostics. For earlier fits
-without these checks, the status is `"not_checked"`.
+inversion. These thresholds are numerical diagnostics. With the default
+`final_hessian = "maxLik"`, these additional checks are not performed
+and the status is `"not_checked"`. Request `final_hessian = "auto"` to
+run them. Earlier fits without these checks also have status
+`"not_checked"`.
 
 ## See also
 
@@ -46,7 +49,7 @@ without these checks, the status is `"not_checked"`.
 ``` r
 h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
-            fixed = c(FALSE, TRUE, TRUE))
+            fixed = c(FALSE, TRUE, TRUE), final_hessian = "auto")
 fit_diagnostics(fit)$status
 #> [1] "ok"
 ```

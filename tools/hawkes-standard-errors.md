@@ -1,6 +1,6 @@
 # Hawkes 모형의 최종 Hessian과 표준오차
 
-2026-10-13에 수정 전 결과와 새 기본 계산을 비교했습니다.
+2026-10-13에 기존 계산과 선택적인 안정화 계산을 비교했습니다.
 Windows 11, R 4.6.0, maxLik 1.5-2.2 환경이며, 원래 예제의 seed,
 관측 자료, 모수 공유, 초기 상태, 최적화 설정을 유지했습니다.
 
@@ -10,7 +10,8 @@ Windows 11, R 4.6.0, maxLik 1.5-2.2 환경이며, 원래 예제의 seed,
 공분산을 다시 계산합니다. `coef()`, 로그우도, 저장된 optimizer gradient,
 반환 코드, 반복 횟수는 변경하지 않습니다.
 
-새 기본값 `final_hessian = "auto"`는 built-in Hawkes 우도에 적용됩니다.
+기본값 `final_hessian = "maxLik"`는 기존 최종 Hessian과 표준오차 계산을 유지합니다.
+`final_hessian = "auto"`를 명시했을 때만 built-in Hawkes 우도에 안정화를 적용합니다.
 사용자 Hessian은 보존하고 정보행렬의 역산 가능 여부를 확인합니다.
 `finalHessian = FALSE`, BHHH, 사용자 정의 `mylogLik`, FRPP 등 residual 우도의
 계산 선택은 유지합니다. `final_hessian = "maxLik"`는 이전 계산을 재현합니다.
@@ -42,7 +43,7 @@ Windows 11, R 4.6.0, maxLik 1.5-2.2 환경이며, 원래 예제의 seed,
 
 세 예제 모두 실제 `hfit()`을 다시 실행했습니다. 모든 계수, 로그우도,
 optimizer gradient, 반환 코드, 반복 횟수의 차이가 **0**입니다.
-이전 `maxLik` 계산과 새 기본값을 각각 실행하여 비교했습니다.
+기본 `maxLik` 계산과 명시적으로 요청한 안정화 계산을 각각 실행하여 비교했습니다.
 
 | 예제 | 유지된 로그우도 | 반복 횟수 | 유지된 반환 코드 |
 | --- | ---: | ---: | ---: |
@@ -62,7 +63,7 @@ optimizer gradient, 반환 코드, 반복 횟수의 차이가 **0**입니다.
 | Bid-ask `beta1.1` | 0.35535 | 2.87451121 |
 
 모든 새 표준오차는 유한합니다. 원래 fit에 후처리만 적용한 Hessian과
-공분산은 새 `hfit()` 결과와 `identical()`까지 일치했습니다.
+공분산은 안정화를 요청한 `hfit()` 결과와 `identical()`까지 일치했습니다.
 별도로 계산한 중앙 차분 또는 이전 진단의 Richardson 결과와 비교한
 최대 표준오차 상대 차이는 multi-kernel `2.96e-5`, synchronized `1.46e-6`,
 bid-ask `4.63e-6`입니다. 이것은 수치 계산의 일치 검증이며,
@@ -100,11 +101,12 @@ FRPP는 변경하지 않았습니다. 기존 fit을 후처리에 전달해도 �
 ## 사용 방법과 재현
 
 ```r
-fit <- hfit(h, inter_arrival, type, lambda_component0 = initial)
+fit <- hfit(h, inter_arrival, type, lambda_component0 = initial,
+            final_hessian = "auto")
 summary(fit)
 fit_diagnostics(fit)[c("status", "scaled_condition", "newton_decrement", "warnings")]
 
-# 수정 전 최종 Hessian과 표준오차 계산
+# 기본 최종 Hessian과 표준오차 계산
 legacy <- hfit(h, inter_arrival, type, lambda_component0 = initial,
                final_hessian = "maxLik")
 ```

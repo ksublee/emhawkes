@@ -244,22 +244,24 @@ BFGS.</p>
 <span><span class="co">#&gt; 3  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.33641    0.03485   9.652  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1  1.16654    0.10067  11.588  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1   1.52270    0.13098  11.625  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1     0.33641    0.03505   9.597  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1  1.16654    0.10400  11.217  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1   1.52270    0.13615  11.184  &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>Use <code><a href="../reference/fitted_hspec.html">fitted_hspec()</a></code> to reconstruct the model with the
-estimated parameters. Final numerical Hessians for the built-in Hawkes
-likelihood are checked across scaled difference steps without changing
-the optimizer’s estimates. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> uses the checked
-covariance. <code>NA</code> standard errors indicate that stable Wald
-inference is unavailable. A stable Hessian does not establish reliable
-confidence intervals; check convergence, score, and multiple starting
-values.</p>
+estimated parameters. By default, <code><a href="../reference/hfit.html">hfit()</a></code> uses the final
+Hessian and standard errors from <code>maxLik</code>. Additional
+stabilization is optional. Request <code>final_hessian = "auto"</code>
+to check numerical Hawkes curvature across scaled difference steps
+without changing the optimizer’s estimates. For this requested
+calculation, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> uses the checked covariance and
+<code>NA</code> standard errors indicate failed checks.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">mle_checked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
+<span>                    final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">mle_checked</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $status</span></span>
 <span><span class="co">#&gt; [1] "ok"</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -268,10 +270,11 @@ values.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $newton_decrement</span></span>
 <span><span class="co">#&gt; [1] 0.00130504</span></span></code></pre></div>
-<p>The fit retains its original parameter map, including shared
-parameters and fixed constants in component functions.
-<code><a href="../reference/fit_initial_state.html">fit_initial_state()</a></code> retrieves the initial counts and
-initial intensity setting.</p>
+<p>A stable Hessian does not establish reliable confidence intervals.
+Check convergence, score, and multiple starting values. The fit retains
+its original parameter map, including shared parameters and fixed
+constants in component functions. <code><a href="../reference/fit_initial_state.html">fit_initial_state()</a></code>
+retrieves the initial counts and initial intensity setting.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="va">initial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
@@ -477,10 +480,10 @@ optimization.</p>
 <span><span class="co">#&gt; 4  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.19095    0.01638   11.66  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.48217    0.07350    6.56 5.38e-11 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.98625    0.09408   10.48  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.07987    0.16785   12.39  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1       0.19095    0.01635   11.68  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.48217    0.07373    6.54 6.15e-11 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.98625    0.09484   10.40  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.07987    0.16728   12.43  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -491,7 +494,7 @@ optimization.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">miscTools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/miscTools/man/stdEr.html" class="external-link">stdEr</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
-<span><span class="co">#&gt; 0.01637611 0.07350285 0.09407740 0.16784948</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.01635080 0.07372719 0.09484410 0.16727659</span></span></code></pre></div>
 <p>The restored matrices retain the shared parameters from this fit. The
 diagonal entries of <code>alpha</code> remain equal, as do its
 off-diagonal entries.</p>

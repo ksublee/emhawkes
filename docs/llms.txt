@@ -31,16 +31,17 @@ start a new path from the estimated model. Continuing after the last
 observed event requires that event’s state. Fits created without the new
 metadata need to be refitted before using the reconstruction helpers.
 
-For the built-in Hawkes likelihood,
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) checks
-final numerical curvature using scaled central differences and
-Richardson extrapolation. It preserves the optimizer’s coefficients and
-log-likelihood. [`summary()`](https://rdrr.io/r/base/summary.html) and
-[`vcov()`](https://rdrr.io/r/stats/vcov.html) use the checked
+By default,
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
+the final Hessian and standard errors from `maxLik`. It does not run the
+additional stabilization checks. Request `final_hessian = "auto"` to
+check numerical Hawkes curvature with scaled central differences and
+Richardson extrapolation. This preserves the optimizer’s coefficients
+and log-likelihood. [`summary()`](https://rdrr.io/r/base/summary.html)
+and [`vcov()`](https://rdrr.io/r/stats/vcov.html) then use the checked
 covariance; free-parameter standard errors are `NA` when stable
-inversion is unavailable. Inspect `fit_diagnostics(fit)` for step
-checks, score, and reasons. Use `final_hessian = "maxLik"` to retain the
-earlier calculation. Supplied Hessians, disabled final curvature, BHHH,
+inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
+requested checks. Supplied Hessians, disabled final curvature, BHHH,
 custom objectives, and residual models retain their calculation choices.
 
 A stable Hessian does not guarantee reliable Wald intervals. Nearby

@@ -1,6 +1,8 @@
 library(emhawkes)
 
-quiet_fit <- function(...) suppressMessages(hfit(...))
+quiet_fit <- function(..., final_hessian = "auto") {
+  suppressMessages(hfit(..., final_hessian = final_hessian))
+}
 close <- function(x, y, tolerance = 1e-7) {
   stopifnot(isTRUE(all.equal(x, y, tolerance = tolerance, check.attributes = FALSE)))
 }
@@ -11,6 +13,22 @@ dt <- c(0, .5, 1.5, .25)
 fixed <- c(FALSE, TRUE, TRUE)
 legacy <- quiet_fit(h, dt, lambda_component0 = 0, fixed = fixed,
                     final_hessian = "maxLik")
+# The default is exactly the maxLik path, without stabilization or its warnings.
+warning_messages <- character(0)
+default <- withCallingHandlers(suppressMessages(hfit(h, dt,
+  lambda_component0 = 0, fixed = fixed)), warning = function(w) {
+    warning_messages <<- c(warning_messages, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+for (field in c("estimate", "maximum", "gradient", "hessian", "varcovar", "code", "iterations")) {
+  stopifnot(identical(default[[field]], legacy[[field]]))
+}
+stopifnot(length(warning_messages) == 0L, is.null(default$varcovar),
+          identical(fit_diagnostics(default)$status, "not_checked"),
+          is.null(fit_diagnostics(default)$checks))
+close(vcov(default), vcov(legacy), tolerance = 0)
+
+# Explicitly request stabilization for the checks below.
 fit <- quiet_fit(h, dt, lambda_component0 = 0, fixed = fixed)
 for (field in c("estimate", "maximum", "gradient", "code", "iterations")) {
   stopifnot(identical(fit[[field]], legacy[[field]]))
@@ -118,3 +136,28 @@ result <- curvature(kink)
 stopifnot(identical(result$status, "unavailable"),
           identical(result$reason, "step_sensitive"),
           all(result$checks$positive_definite))
+
+# A deterministic callback counts actual evaluations: requesting auto adds work,
+# while the default and explicit maxLik paths make exactly the same calls.
+evaluations <- 0L
+count_impact <- function(param = numeric(0), n) {
+  evaluations <<- evaluations + 1L
+  matrix(0)
+}
+counted <- new("hspec", mu = 1, alpha = 0, beta = 1, impact = count_impact)
+run_counted <- function(mode = NULL) {
+  evaluations <<- 0L
+  arguments <- list(object = counted, inter_arrival = dt,
+                    lambda_component0 = 0, fixed = fixed)
+  if (!is.null(mode)) arguments$final_hessian <- mode
+  result <- suppressMessages(do.call(hfit, arguments))
+  list(fit = result, evaluations = evaluations)
+}
+plain <- run_counted()
+legacy_counted <- run_counted("maxLik")
+requested <- run_counted("auto")
+stopifnot(plain$evaluations == legacy_counted$evaluations,
+          requested$evaluations > plain$evaluations,
+          identical(plain$fit$estimate, requested$fit$estimate),
+          identical(plain$fit$maximum, requested$fit$maximum),
+          identical(fit_diagnostics(requested$fit)$status, "ok"))

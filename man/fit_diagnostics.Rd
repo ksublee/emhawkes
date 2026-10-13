@@ -15,7 +15,7 @@ scale, and, when available, difference-step checks, curvature changes,
 recalculated score, scaled condition number, and Newton decrement.
 }
 \description{
-Return the final Hessian checks stored by \code{\link[=hfit]{hfit()}}.
+Return the final Hessian checks requested through \code{\link[=hfit]{hfit()}}.
 }
 \details{
 \code{status = "ok"} means the numerical curvature checks passed, not that the
@@ -27,12 +27,14 @@ two estimates the local quadratic improvement in log-likelihood.
 An information condition number above \code{1e8} triggers a weak-curvature warning;
 eigenvalues at or below \code{1e-10} times the largest absolute eigenvalue do not
 support numerical inversion. These thresholds are numerical diagnostics.
-For earlier fits without these checks, the status is \code{"not_checked"}.
+With the default \code{final_hessian = "maxLik"}, these additional checks are not
+performed and the status is \code{"not_checked"}. Request \code{final_hessian = "auto"}
+to run them. Earlier fits without these checks also have status \code{"not_checked"}.
 }
 \examples{
 h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
-            fixed = c(FALSE, TRUE, TRUE))
+            fixed = c(FALSE, TRUE, TRUE), final_hessian = "auto")
 fit_diagnostics(fit)$status
 }
 \seealso{

@@ -27,7 +27,7 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("auto", "maxLik")
+  final_hessian = c("maxLik", "auto")
 )
 
 # S4 method for class 'hspec'
@@ -49,7 +49,7 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("auto", "maxLik")
+  final_hessian = c("maxLik", "auto")
 )
 ```
 
@@ -152,11 +152,11 @@ hfit(
 
 - final_hessian:
 
-  Named-only choice, `"auto"` or `"maxLik"`. After the same
-  optimization, `"auto"` recalculates numerical final curvature for the
+  Named-only choice, `"maxLik"` (default) or `"auto"`. The default
+  retains the final Hessian and covariance calculation from `maxLik`.
+  Request `"auto"` to recalculate numerical final curvature for the
   built-in Hawkes likelihood using scaled central differences and
-  Richardson extrapolation. `"maxLik"` retains the original final
-  Hessian and covariance calculation. User-supplied `hess`,
+  Richardson extrapolation. User-supplied `hess`,
   `finalHessian = FALSE`, BHHH curvature, custom likelihoods, and
   residual-distribution likelihoods retain their calculation choices.
 
@@ -205,12 +205,13 @@ The built-in likelihood uses the calculation engine selected by
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
 supported models. Rcpp accelerates likelihood evaluation. Optimizer
 derivatives are supplied separately or computed numerically by `maxLik`.
-Final numerical curvature is checked after optimization without changing
-coefficients, log-likelihood, the stored optimizer gradient, return
-code, or iteration count.
+The default does not run additional curvature checks. With
+`final_hessian = "auto"`, final curvature is checked after optimization
+without changing coefficients, log-likelihood, the stored optimizer
+gradient, return code, or iteration count.
 
-The automatic calculation compares information, inverse information, and
-standard errors across difference steps. Failed checks, singular or
+The requested stabilization compares information, inverse information,
+and standard errors across difference steps. Failed checks, singular or
 indefinite information, and equality or nearby inequality constraints
 yield `NA` covariance for free parameters. Fixed parameters retain zero
 covariance. Supplied Hessians are retained and checked for invertible
@@ -265,15 +266,15 @@ summary(fit)
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)
-#> mu1       0.10357    0.01916   5.406 6.46e-08 ***
-#> alpha1.1  0.21600    0.09786   2.207 0.027294 *
-#> alpha1.2  0.29650    0.11636   2.548 0.010832 *
-#> beta1.1   1.11245    0.33526   3.318 0.000906 ***
+#> mu1       0.10357    0.01918   5.400 6.67e-08 ***
+#> alpha1.1  0.21600    0.09858   2.191  0.02845 *
+#> alpha1.2  0.29650    0.11754   2.523  0.01165 *
+#> beta1.1   1.11245    0.34199   3.253  0.00114 **
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
 fit_diagnostics(fit)$status
-#> [1] "ok"
+#> [1] "not_checked"
 estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
@@ -330,18 +331,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)
-#> mu1      0.69224    0.42664   1.623   0.1047
-#> mu3      0.07379    0.03508   2.104   0.0354 *
-#> alpha11 -0.12631    0.06533  -1.933   0.0532 .
-#> alpha12  0.01429    0.04925   0.290   0.7717
-#> alpha33  0.96110    0.21471   4.476 7.60e-06 ***
-#> alpha34  0.29568    0.11635   2.541   0.0110 *
-#> beta1.1  0.10274    0.08850   1.161   0.2457
-#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
+#> mu1      0.69224    0.42677   1.622   0.1048
+#> mu3      0.07379    0.03508   2.103   0.0354 *
+#> alpha11 -0.12631    0.06528  -1.935   0.0530 .
+#> alpha12  0.01429    0.04928   0.290   0.7719
+#> alpha33  0.96110    0.21444   4.482 7.40e-06 ***
+#> alpha34  0.29568    0.11618   2.545   0.0109 *
+#> beta1.1  0.10274    0.08867   1.159   0.2466
+#> beta3.1  1.33410    0.22745   5.866 4.48e-09 ***
 #> alpha1n  0.03456    0.06731   0.513   0.6076
-#> alpha1w  0.04976    0.06835   0.728   0.4666
-#> alpha2n -2.47298    0.27558  -8.974  < 2e-16 ***
-#> alpha2w  1.00872    0.11324   8.908  < 2e-16 ***
+#> alpha1w  0.04976    0.06841   0.727   0.4670
+#> alpha2n -2.47298    0.27532  -8.982  < 2e-16 ***
+#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -380,11 +381,11 @@ summary(fit)
 #> 5  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)
-#> mu1       0.10755    0.02325   4.626 3.72e-06 ***
-#> alpha1.1  0.62799    0.24353   2.579  0.00992 **
-#> alpha1.2  0.55832    0.21573   2.588  0.00965 **
-#> beta1.1   2.11657    0.70263   3.012  0.00259 **
-#> eta1      0.10179    0.27587   0.369  0.71213
+#> mu1       0.10755    0.02344   4.589 4.46e-06 ***
+#> alpha1.1  0.62799    0.25102   2.502  0.01236 *
+#> alpha1.2  0.55832    0.21978   2.540  0.01107 *
+#> beta1.1   2.11657    0.73318   2.887  0.00389 **
+#> eta1      0.10179    0.27560   0.369  0.71187
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------

@@ -98,22 +98,25 @@ the initial intensity component is known, pass it as
 `lambda_component0`; otherwise, the function determines it internally.
 The default optimization method is BFGS.
 
-`# Initial parameter values for numerical optimization.`` ``mu0`` ``<-`` ``0.5``; ``alpha0`` ``<-`` ``1.0``; ``beta0`` ``<-`` ``1.8`` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu0``, alpha ``=`` ``alpha0``, beta ``=`` ``beta0``)`` ``# Supply the initial values through hspec0.`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 24 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -213.4658 `` ``#> 3 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.33641 0.03485 9.652 <2e-16 ***`` ``#> alpha1 1.16654 0.10067 11.588 <2e-16 ***`` ``#> beta1 1.52270 0.13098 11.625 <2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
+`# Initial parameter values for numerical optimization.`` ``mu0`` ``<-`` ``0.5``; ``alpha0`` ``<-`` ``1.0``; ``beta0`` ``<-`` ``1.8`` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu0``, alpha ``=`` ``alpha0``, beta ``=`` ``beta0``)`` ``# Supply the initial values through hspec0.`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 24 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -213.4658 `` ``#> 3 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.33641 0.03505 9.597 <2e-16 ***`` ``#> alpha1 1.16654 0.10400 11.217 <2e-16 ***`` ``#> beta1 1.52270 0.13615 11.184 <2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
 
 Use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
-to reconstruct the model with the estimated parameters. Final numerical
-Hessians for the built-in Hawkes likelihood are checked across scaled
-difference steps without changing the optimizer’s estimates.
+to reconstruct the model with the estimated parameters. By default,
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
+the final Hessian and standard errors from `maxLik`. Additional
+stabilization is optional. Request `final_hessian = "auto"` to check
+numerical Hawkes curvature across scaled difference steps without
+changing the optimizer’s estimates. For this requested calculation,
 [`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
-covariance. `NA` standard errors indicate that stable Wald inference is
-unavailable. A stable Hessian does not establish reliable confidence
-intervals; check convergence, score, and multiple starting values.
+covariance and `NA` standard errors indicate failed checks.
 
-[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle``)``[`[`c`](https://rdrr.io/r/base/c.html)`(``"status"``, ``"scaled_condition"``, ``"newton_decrement"``)``]`` ``#> $status`` ``#> [1] "ok"`` ``#> `` ``#> $scaled_condition`` ``#> [1] 20.3342`` ``#> `` ``#> $newton_decrement`` ``#> [1] 0.00130504`
+`mle_checked`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``,`` `` final_hessian ``=`` ``"auto"``)`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle_checked``)``[`[`c`](https://rdrr.io/r/base/c.html)`(``"status"``, ``"scaled_condition"``, ``"newton_decrement"``)``]`` ``#> $status`` ``#> [1] "ok"`` ``#> `` ``#> $scaled_condition`` ``#> [1] 20.3342`` ``#> `` ``#> $newton_decrement`` ``#> [1] 0.00130504`
 
-The fit retains its original parameter map, including shared parameters
-and fixed constants in component functions.
+A stable Hessian does not establish reliable confidence intervals. Check
+convergence, score, and multiple starting values. The fit retains its
+original parameter map, including shared parameters and fixed constants
+in component functions.
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 retrieves the initial counts and initial intensity setting.
 
@@ -231,11 +234,11 @@ all entries of `beta` share one parameter. The fit therefore estimates
 four parameters. `hfit` prints a short explanation once before
 optimization.
 
-`hspec0`` ``<-`` ``hspec2`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``inter_arrival2``, type ``=`` ``type2``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 35 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -970.1408 `` ``#> 4 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.19095 0.01638 11.66 < 2e-16 ***`` ``#> alpha1.1 0.48217 0.07350 6.56 5.38e-11 ***`` ``#> alpha1.2 0.98625 0.09408 10.48 < 2e-16 ***`` ``#> beta1.1 2.07987 0.16785 12.39 < 2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
+`hspec0`` ``<-`` ``hspec2`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``inter_arrival2``, type ``=`` ``type2``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 35 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -970.1408 `` ``#> 4 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.19095 0.01635 11.68 < 2e-16 ***`` ``#> alpha1.1 0.48217 0.07373 6.54 6.15e-11 ***`` ``#> alpha1.2 0.98625 0.09484 10.40 < 2e-16 ***`` ``#> beta1.1 2.07987 0.16728 12.43 < 2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
 
 [`coef`](https://rdrr.io/r/stats/coef.html)`(``mle``)`` ``#> mu1 alpha1.1 alpha1.2 beta1.1 `` ``#> 0.1909541 0.4821725 0.9862542 2.0798690`
 
-`miscTools``::`[`stdEr`](https://rdrr.io/pkg/miscTools/man/stdEr.html)`(``mle``)`` ``#> mu1 alpha1.1 alpha1.2 beta1.1 `` ``#> 0.01637611 0.07350285 0.09407740 0.16784948`
+`miscTools``::`[`stdEr`](https://rdrr.io/pkg/miscTools/man/stdEr.html)`(``mle``)`` ``#> mu1 alpha1.1 alpha1.2 beta1.1 `` ``#> 0.01635080 0.07372719 0.09484410 0.16727659`
 
 The restored matrices retain the shared parameters from this fit. The
 diagonal entries of `alpha` remain equal, as do its off-diagonal

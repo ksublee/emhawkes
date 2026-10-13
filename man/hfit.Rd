@@ -24,7 +24,7 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("auto", "maxLik")
+  final_hessian = c("maxLik", "auto")
 )
 
 \S4method{hfit}{hspec}(
@@ -45,7 +45,7 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("auto", "maxLik")
+  final_hessian = c("maxLik", "auto")
 )
 }
 \arguments{
@@ -95,10 +95,10 @@ argument is the optimization parameter vector. If \code{NULL}, use numerical dif
 If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.
 This argument must be named.}
 
-\item{final_hessian}{Named-only choice, \code{"auto"} or \code{"maxLik"}. After the same
-optimization, \code{"auto"} recalculates numerical final curvature for the built-in
+\item{final_hessian}{Named-only choice, \code{"maxLik"} (default) or \code{"auto"}.
+The default retains the final Hessian and covariance calculation from \code{maxLik}.
+Request \code{"auto"} to recalculate numerical final curvature for the built-in
 Hawkes likelihood using scaled central differences and Richardson extrapolation.
-\code{"maxLik"} retains the original final Hessian and covariance calculation.
 User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
 and residual-distribution likelihoods retain their calculation choices.}
 }
@@ -139,11 +139,12 @@ entries that use it.
 The built-in likelihood uses the calculation engine selected by
 \code{options(emhawkes.engine = "auto")}; see \code{\link[=logLik]{logLik()}} for supported models.
 Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
-separately or computed numerically by \code{maxLik}. Final numerical curvature is
+separately or computed numerically by \code{maxLik}. The default does not run
+additional curvature checks. With \code{final_hessian = "auto"}, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
 the stored optimizer gradient, return code, or iteration count.
 
-The automatic calculation compares information, inverse information, and
+The requested stabilization compares information, inverse information, and
 standard errors across difference steps. Failed checks, singular or indefinite
 information, and equality or nearby inequality constraints yield \code{NA} covariance
 for free parameters. Fixed parameters retain zero covariance. Supplied Hessians

@@ -129,15 +129,20 @@ summary(mle)
 ```
 
 Use `fitted_hspec()` to reconstruct the model with the estimated parameters.
-Final numerical Hessians for the built-in Hawkes likelihood are checked across
-scaled difference steps without changing the optimizer's estimates.
-`summary()` uses the checked covariance. `NA` standard errors indicate that
-stable Wald inference is unavailable. A stable Hessian does not establish reliable
-confidence intervals; check convergence, score, and multiple starting values.
+By default, `hfit()` uses the final Hessian and standard errors from `maxLik`.
+Additional stabilization is optional. Request `final_hessian = "auto"` to check
+numerical Hawkes curvature across scaled difference steps without changing the
+optimizer's estimates. For this requested calculation, `summary()` uses the
+checked covariance and `NA` standard errors indicate failed checks.
 
 ```{r fit-curvature-diagnostics}
-fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
+mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
+                    final_hessian = "auto")
+fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
 ```
+
+A stable Hessian does not establish reliable confidence intervals.
+Check convergence, score, and multiple starting values.
 The fit retains its original parameter map, including shared parameters and fixed
 constants in component functions. `fit_initial_state()` retrieves the initial
 counts and initial intensity setting.
@@ -603,11 +608,12 @@ res_mk
 
 ```{r, warning=FALSE}
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
-               lambda_component0 = lambda_component0_mk)
+               lambda_component0 = lambda_component0_mk,
+               final_hessian = "auto")
 summary(fit_mk)
 ```
 
-The standard errors use the checked final Hessian. The original estimate is
+This example explicitly requests the checked final Hessian. The original estimate is
 retained, but its score calls for tighter optimization and multiple starting
 values. Kernel starting order and the fixed initial state can affect the selected
 local solution.
@@ -696,9 +702,10 @@ Parameters with the same name are shared across functions.
 For example, `kappa` appears in both `mu` and `beta`, but only one `kappa` is estimated.
 
 ```{r, warning=FALSE}
-fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival, 
+fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
                type=res_sy$type,
-               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
+               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
+               final_hessian = "auto")
 summary(fit_sy)
 ```
 
@@ -1078,7 +1085,8 @@ logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
 ```{r, warning=FALSE}
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                mark = hr_ba$mark,
-               lambda_component0 = matrix(rep(1, 16), 4))
+               lambda_component0 = matrix(rep(1, 16), 4),
+               final_hessian = "auto")
 summary(mle_ba)
 ```
 

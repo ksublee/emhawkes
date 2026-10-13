@@ -10,7 +10,7 @@ cases <- list(
   frpp = list(heading = "### Two-dimensional model", fit = "mle_dh"))
 selected <- if (length(args) >= 2L) strsplit(args[2L], ",", fixed = TRUE)[[1L]] else names(cases)
 if (!length(selected) || any(!selected %in% names(cases))) stop("Unknown diagnostic case.")
-final_hessian <- if (length(args) == 3L) match.arg(args[3L], c("auto", "maxLik")) else "auto"
+final_hessian <- if (length(args) == 3L) match.arg(args[3L], c("maxLik", "auto")) else "maxLik"
 source("tools/diagnose-fit.R")
 lines <- readLines("vignettes_ext/extended_example.Rmd", warn = FALSE)
 headings <- grep("^#{2,3} ", lines)
