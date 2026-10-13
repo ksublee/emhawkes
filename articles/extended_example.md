@@ -199,9 +199,9 @@ summary(mle)
 #> 3  free parameters
 #> Estimates:
 #>        Estimate Std. error t value Pr(> t)    
-#> mu1     0.33641    0.03485   9.652  <2e-16 ***
-#> alpha1  1.16654    0.10067  11.588  <2e-16 ***
-#> beta1   1.52270    0.13098  11.625  <2e-16 ***
+#> mu1     0.33641    0.03486   9.651  <2e-16 ***
+#> alpha1  1.16654    0.09480  12.305  <2e-16 ***
+#> beta1   1.52270    0.12323  12.357  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -209,17 +209,20 @@ summary(mle)
 
 Use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
-to reconstruct the model with the estimated parameters. Final numerical
-Hessians for the built-in Hawkes likelihood are checked across scaled
-difference steps without changing the optimizer’s estimates.
+to reconstruct the model with the estimated parameters. By default,
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
+the final Hessian and standard errors from `maxLik`. Additional
+stabilization is optional. Request `final_hessian = "auto"` to check
+numerical Hawkes curvature across scaled difference steps without
+changing the optimizer’s estimates. For this requested calculation,
 [`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
-covariance. `NA` standard errors indicate that stable Wald inference is
-unavailable. A stable Hessian does not establish reliable confidence
-intervals; check convergence, score, and multiple starting values.
+covariance and `NA` standard errors indicate failed checks.
 
 ``` r
 
-fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
+mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
+                    final_hessian = "auto")
+fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
 #> $status
 #> [1] "ok"
 #> 
@@ -230,8 +233,10 @@ fit_diagnostics(mle)[c("status", "scaled_condition", "newton_decrement")]
 #> [1] 0.001305333
 ```
 
-The fit retains its original parameter map, including shared parameters
-and fixed constants in component functions.
+A stable Hessian does not establish reliable confidence intervals. Check
+convergence, score, and multiple starting values. The fit retains its
+original parameter map, including shared parameters and fixed constants
+in component functions.
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 retrieves the initial counts and initial intensity setting.
 
@@ -488,10 +493,10 @@ summary(mle)
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.19095    0.01638   11.66  < 2e-16 ***
-#> alpha1.1  0.48217    0.07350    6.56 5.38e-11 ***
-#> alpha1.2  0.98625    0.09408   10.48  < 2e-16 ***
-#> beta1.1   2.07987    0.16785   12.39  < 2e-16 ***
+#> mu1       0.19095    0.01638  11.656  < 2e-16 ***
+#> alpha1.1  0.48217    0.07430   6.489 8.64e-11 ***
+#> alpha1.2  0.98625    0.09576  10.300  < 2e-16 ***
+#> beta1.1   2.07987    0.17203  12.091  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -508,7 +513,7 @@ coef(mle)
 
 miscTools::stdEr(mle)
 #>        mu1   alpha1.1   alpha1.2    beta1.1 
-#> 0.01637611 0.07350285 0.09407739 0.16784948
+#> 0.01638200 0.07430500 0.09575744 0.17202504
 ```
 
 The restored matrices retain the shared parameters from this fit. The
@@ -594,9 +599,9 @@ summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 #> 3  free parameters
 #> Estimates:
 #>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.19125    0.01640   11.66  <2e-16 ***
-#> alpha1.1  0.73981    0.06123   12.08  <2e-16 ***
-#> beta1.1   2.09707    0.17076   12.28  <2e-16 ***
+#> mu1       0.19125    0.01633   11.71  <2e-16 ***
+#> alpha1.1  0.73981    0.05783   12.79  <2e-16 ***
+#> beta1.1   2.09707    0.15936   13.16  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -629,10 +634,10 @@ summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 #> 4  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.19095    0.01638   11.66  < 2e-16 ***
-#> alpha1.1  0.48226    0.07351    6.56 5.37e-11 ***
-#> alpha1.2  0.98626    0.09408   10.48  < 2e-16 ***
-#> beta1.1   2.08008    0.16788   12.39  < 2e-16 ***
+#> mu1       0.19095    0.01639  11.647  < 2e-16 ***
+#> alpha1.1  0.48226    0.07292   6.614 3.74e-11 ***
+#> alpha1.2  0.98626    0.09287  10.620  < 2e-16 ***
+#> beta1.1   2.08008    0.16593  12.536  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -658,12 +663,12 @@ summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
 #> Log-Likelihood: -969.9914 
 #> 5  free parameters
 #> Estimates:
-#>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.18300    0.02154   8.497  < 2e-16 ***
-#> mu2       0.19872    0.02203   9.022  < 2e-16 ***
-#> alpha1.1  0.48149    0.07347   6.553 5.63e-11 ***
-#> alpha1.2  0.98720    0.09403  10.498  < 2e-16 ***
-#> beta1.1   2.07973    0.16748  12.417  < 2e-16 ***
+#>          Estimate Std. error t value Pr(> t)    
+#> mu1       0.18300    0.02157   8.484  <2e-16 ***
+#> mu2       0.19872    0.02206   9.006  <2e-16 ***
+#> alpha1.1  0.48149    0.07569   6.361   2e-10 ***
+#> alpha1.2  0.98720    0.09852  10.020  <2e-16 ***
+#> beta1.1   2.07973    0.17931  11.598  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -683,16 +688,16 @@ summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduc
 #> 10  free parameters
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
-#> mu1       0.17997    0.02238   8.040 9.00e-16 ***
-#> mu2       0.20060    0.02404   8.345  < 2e-16 ***
-#> alpha1.1  0.44726    0.12882   3.472 0.000516 ***
-#> alpha2.1  1.17743    0.22361   5.265 1.40e-07 ***
-#> alpha1.2  0.97048    0.12716   7.632 2.32e-14 ***
-#> alpha2.2  0.48979    0.10929   4.482 7.40e-06 ***
-#> beta1.1   2.52210    0.72363   3.485 0.000492 ***
-#> beta2.1   3.15498    0.72539   4.349 1.37e-05 ***
-#> beta1.2   1.80167    0.22978   7.841 4.48e-15 ***
-#> beta2.2   1.51338    0.34708   4.360 1.30e-05 ***
+#> mu1       0.17997    0.02231   8.066 7.24e-16 ***
+#> mu2       0.20060    0.02335   8.590  < 2e-16 ***
+#> alpha1.1  0.44726    0.10661   4.195 2.73e-05 ***
+#> alpha2.1  1.17743        NaN     NaN      NaN    
+#> alpha1.2  0.97048    0.10742   9.035  < 2e-16 ***
+#> alpha2.2  0.48979        NaN     NaN      NaN    
+#> beta1.1   2.52210        NaN     NaN      NaN    
+#> beta2.1   3.15498        NaN     NaN      NaN    
+#> beta1.2   1.80167    0.07600  23.705  < 2e-16 ***
+#> beta2.2   1.51338        NaN     NaN      NaN    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1088,7 +1093,8 @@ res_mk
 ``` r
 
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
-               lambda_component0 = lambda_component0_mk)
+               lambda_component0 = lambda_component0_mk,
+               final_hessian = "auto")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_mk)
@@ -1112,10 +1118,10 @@ summary(fit_mk)
 #> --------------------------------------------
 ```
 
-The standard errors use the checked final Hessian. The original estimate
-is retained, but its score calls for tighter optimization and multiple
-starting values. Kernel starting order and the fixed initial state can
-affect the selected local solution.
+This example explicitly requests the checked final Hessian. The original
+estimate is retained, but its score calls for tighter optimization and
+multiple starting values. Kernel starting order and the fixed initial
+state can affect the selected local solution.
 
 ``` r
 
@@ -1220,7 +1226,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55588e7a9cd8>
+#> <bytecode: 0x55d2b42bfe68>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1230,7 +1236,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55588d599260>
+#> <bytecode: 0x55d2b4757d20>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1240,7 +1246,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55588f1d7350>
+#> <bytecode: 0x55d2b4e8d148>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1291,9 +1297,10 @@ only one `kappa` is estimated.
 
 ``` r
 
-fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival, 
+fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
                type=res_sy$type,
-               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
+               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
+               final_hessian = "auto")
 summary(fit_sy)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -1472,12 +1479,12 @@ summary(fit)
 #> Log-Likelihood: -1525.501 
 #> 5  free parameters
 #> Estimates:
-#>          Estimate Std. error t value Pr(> t)    
-#> mu1      0.131904   0.008911  14.803  <2e-16 ***
-#> alpha1.1 0.676090   0.079336   8.522  <2e-16 ***
-#> alpha1.2 0.603453   0.073111   8.254  <2e-16 ***
-#> beta1.1  2.221258   0.169804  13.081  <2e-16 ***
-#> eta1     0.116345   0.055311   2.103  0.0354 *  
+#>          Estimate Std. error t value  Pr(> t)    
+#> mu1      0.131904   0.008914  14.798  < 2e-16 ***
+#> alpha1.1 0.676090   0.080586   8.390  < 2e-16 ***
+#> alpha1.2 0.603453   0.075153   8.030 9.77e-16 ***
+#> beta1.1  2.221258   0.173268  12.820  < 2e-16 ***
+#> eta1     0.116345   0.055318   2.103   0.0354 *  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1572,11 +1579,11 @@ summary(fit)
 #> Log-Likelihood: -1684.238 
 #> 4  free parameters
 #> Estimates:
-#>        Estimate Std. error t value  Pr(> t)    
-#> mu1    0.145573   0.008444  17.240  < 2e-16 ***
-#> alpha1 0.639166   0.068913   9.275  < 2e-16 ***
-#> beta1  1.489826   0.120674  12.346  < 2e-16 ***
-#> eta1   0.336264   0.076555   4.392 1.12e-05 ***
+#>        Estimate Std. error t value Pr(> t)    
+#> mu1     0.14557    0.00846  17.207 < 2e-16 ***
+#> alpha1  0.63917    0.06978   9.159 < 2e-16 ***
+#> beta1   1.48983    0.12334  12.079 < 2e-16 ***
+#> eta1    0.33626    0.07713   4.360 1.3e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1603,12 +1610,12 @@ summary(mle_md)
 #> Log-Likelihood: -2657.079 
 #> 5  free parameters
 #> Estimates:
-#>        Estimate Std. error t value  Pr(> t)    
-#> mu1    0.145574   0.008444  17.240  < 2e-16 ***
-#> alpha1 0.639168   0.068913   9.275  < 2e-16 ***
-#> beta1  1.489843   0.120677  12.346  < 2e-16 ***
-#> eta1   0.336259   0.076555   4.392 1.12e-05 ***
-#> p      0.658970   0.012175  54.123  < 2e-16 ***
+#>        Estimate Std. error t value Pr(> t)    
+#> mu1    0.145574   0.008468  17.191 < 2e-16 ***
+#> alpha1 0.639168   0.069878   9.147 < 2e-16 ***
+#> beta1  1.489843   0.126225  11.803 < 2e-16 ***
+#> eta1   0.336259   0.076805   4.378 1.2e-05 ***
+#> p      0.658970   0.012235  53.859 < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1722,7 +1729,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55588b4b0a70>
+#> <bytecode: 0x55d2b92eba90>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1794,18 +1801,18 @@ summary(fit_fl)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1     0.028055   0.004301   6.523 6.91e-11 ***
-#> mu3     0.033179   0.004256   7.796 6.40e-15 ***
-#> alpha11 0.199720   0.028746   6.948 3.71e-12 ***
-#> alpha12 0.312236   0.030257  10.320  < 2e-16 ***
-#> alpha33 0.283861   0.036399   7.799 6.26e-15 ***
-#> alpha34 0.341250   0.038737   8.809  < 2e-16 ***
-#> beta1.1 0.734703   0.052236  14.065  < 2e-16 ***
-#> beta3.1 0.899924   0.073073  12.315  < 2e-16 ***
-#> alpha1n 0.250338   0.044048   5.683 1.32e-08 ***
-#> alpha1w 0.107483   0.029891   3.596 0.000323 ***
-#> alpha2n 0.083683   0.037729   2.218 0.026557 *  
-#> alpha2w 0.172788   0.033838   5.106 3.28e-07 ***
+#> mu1     0.028055   0.004303   6.520 7.05e-11 ***
+#> mu3     0.033179   0.004269   7.772 7.72e-15 ***
+#> alpha11 0.199720   0.029033   6.879 6.02e-12 ***
+#> alpha12 0.312236   0.030478  10.245  < 2e-16 ***
+#> alpha33 0.283861   0.037351   7.600 2.97e-14 ***
+#> alpha34 0.341250   0.040022   8.526  < 2e-16 ***
+#> beta1.1 0.734703   0.053393  13.760  < 2e-16 ***
+#> beta3.1 0.899924   0.078003  11.537  < 2e-16 ***
+#> alpha1n 0.250338   0.044940   5.571 2.54e-08 ***
+#> alpha1w 0.107483   0.029917   3.593 0.000327 ***
+#> alpha2n 0.083683   0.037982   2.203 0.027580 *  
+#> alpha2w 0.172788   0.034472   5.012 5.37e-07 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -2001,7 +2008,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55588ad19de8>
+#> <bytecode: 0x55d2b5814c38>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2102,7 +2109,8 @@ logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
 
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                mark = hr_ba$mark,
-               lambda_component0 = matrix(rep(1, 16), 4))
+               lambda_component0 = matrix(rep(1, 16), 4),
+               final_hessian = "auto")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle_ba)
@@ -2245,7 +2253,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55588ad88798>
+#> <environment: 0x55d2b126f910>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2253,7 +2261,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55588ad88798>
+#> <environment: 0x55d2b126f910>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2262,7 +2270,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55588ad88798>
+#> <environment: 0x55d2b126f910>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2272,7 +2280,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55588ad88798>
+#> <environment: 0x55d2b126f910>
 ```
 
 The following histogram shows inter-arrival times from a model with
