@@ -197,9 +197,11 @@ uses the saved parameter map to restore the estimated model.
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 retrieves the observation window's initial-state arguments. These are
 suitable for re-evaluating the likelihood and starting a new simulation.
-The fit does not store the observations; keep them separately. Save the
-fit with [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) to retain
-its model, parameter map, and initial-state information.
+Keep observations separately and supply them again for inference. The
+stored optimization objective can retain data in its function
+environment. Save the fit with
+[`saveRDS()`](https://rdrr.io/r/base/readRDS.html) to retain its model,
+parameter map, and initial-state information.
 
 ## See also
 

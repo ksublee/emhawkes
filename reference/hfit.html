@@ -210,8 +210,9 @@ supplied separately, or computed numerically by <code>maxLik</code>.</p>
 <p><code><a href="fitted_hspec.html">fitted_hspec()</a></code> uses the saved parameter map to restore the estimated model.
 <code><a href="fit_initial_state.html">fit_initial_state()</a></code> retrieves the observation window's initial-state arguments.
 These are suitable for re-evaluating the likelihood and starting a new simulation.
-The fit does not store the observations; keep them separately. Save the fit
-with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> to retain its model, parameter map, and initial-state information.</p>
+Keep observations separately and supply them again for inference. The stored
+optimization objective can retain data in its function environment.
+Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> to retain its model, parameter map, and initial-state information.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

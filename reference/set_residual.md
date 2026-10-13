@@ -122,14 +122,14 @@ hspec_obj@dresidual
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x562421e37a08>
+#> <environment: 0x562ddfdfae78>
 hspec_obj@rresidual
 #> function (size, param = c(a = 0.5, ell = 1)) 
 #> {
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x562421e37a08>
+#> <environment: 0x562ddfdfae78>
 hspec_obj@dresidual(c(0.2, 1), log = TRUE)
 #> [1] -0.1932906 -1.0007753
 hspec_obj@presidual(c(0.2, 1), lower.tail = FALSE, log.p = TRUE)

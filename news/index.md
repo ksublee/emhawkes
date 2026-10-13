@@ -2,6 +2,9 @@
 
 ## emhawkes 0.9.9
 
+- Load `maxLik` methods when loading the package so saved fits can be
+  restored in a fresh R session. Add an independent-session regression
+  test and development tools for fit diagnostics.
 - Preserve the original model, parameter map, and initial-state
   arguments in
   [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md)
