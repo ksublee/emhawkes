@@ -76,7 +76,8 @@ a versioned list with <code>specification</code>, <code>parameter_map</code>, <c
 reconstructed by this function. Function environments remain references to
 the original environments; external state is not frozen.
 Use <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> and <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> to retain the fit's metadata between sessions.
-Observations are not stored in the fit and must be supplied again to <code><a href="logLik.html">logLik()</a></code>.</p>
+Supply observations again to <code><a href="logLik.html">logLik()</a></code> and keep them separately. The stored
+optimization objective can retain data in its function environment.</p>
 <p>Restoration does not assert convergence or stationarity. Check the fit's
 convergence information and whether the model is suitable for simulation.
 A custom <code>mylogLik</code> is not part of the restored <code>hspec</code>.</p>

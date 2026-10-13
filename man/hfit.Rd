@@ -134,8 +134,9 @@ supplied separately, or computed numerically by \code{maxLik}.
 \code{\link[=fitted_hspec]{fitted_hspec()}} uses the saved parameter map to restore the estimated model.
 \code{\link[=fit_initial_state]{fit_initial_state()}} retrieves the observation window's initial-state arguments.
 These are suitable for re-evaluating the likelihood and starting a new simulation.
-The fit does not store the observations; keep them separately. Save the fit
-with \code{saveRDS()} to retain its model, parameter map, and initial-state information.
+Keep observations separately and supply them again for inference. The stored
+optimization objective can retain data in its function environment.
+Save the fit with \code{saveRDS()} to retain its model, parameter map, and initial-state information.
 }
 \examples{
 

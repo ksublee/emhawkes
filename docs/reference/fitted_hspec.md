@@ -39,9 +39,10 @@ metadata cannot be reconstructed by this function. Function environments
 remain references to the original environments; external state is not
 frozen. Use [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and
 [`readRDS()`](https://rdrr.io/r/base/readRDS.html) to retain the fit's
-metadata between sessions. Observations are not stored in the fit and
-must be supplied again to
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md).
+metadata between sessions. Supply observations again to
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
+keep them separately. The stored optimization objective can retain data
+in its function environment.
 
 Restoration does not assert convergence or stationarity. Check the fit's
 convergence information and whether the model is suitable for

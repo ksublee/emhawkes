@@ -23,12 +23,20 @@ custom objective is not incorporated into the restored model.
 
 Save the fit with [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) to
 retain this information between sessions. Keep the observed data
-separately; the fit does not store them. The saved initial state
-describes the start of the observation window. Pass it to
+separately and supply them again for inference. The stored optimization
+objective can retain data in its function environment. The saved initial
+state describes the start of the observation window. Pass it to
 [`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
 start a new path from the estimated model. Continuing after the last
 observed event requires that event’s state. Fits created without the new
 metadata need to be refitted before using the reconstruction helpers.
+
+A successful optimizer return code does not establish reliable standard
+errors. Check the score, curvature, numerical difference steps, and
+multiple starting values. The [fit diagnostic
+report](https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md)
+reproduces the `NaN` standard errors in the extended examples and
+separates Hessian cancellation from the nonsmooth `tzexp` likelihood.
 
 By default, `reduced = TRUE` treats equal starting values **within each
 parameter matrix** as one parameter. This example estimates four

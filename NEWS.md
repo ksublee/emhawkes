@@ -1,5 +1,6 @@
 # emhawkes 0.9.9
 
+* Load `maxLik` methods when loading the package so saved fits can be restored in a fresh R session. Add an independent-session regression test and development tools for fit diagnostics.
 * Preserve the original model, parameter map, and initial-state arguments in `hfit()` results. Add `fitted_hspec()` and `fit_initial_state()` to reuse fitted models with the existing `maxLik` interface.
 * Add a registered Rcpp engine for numeric Hawkes likelihoods and inference, including unequal decay rates, multi-kernel mappings, signed components, and numeric mark effects. Retain the R engine for callbacks and residual-distribution models. The `emhawkes.engine` option selects automatic, R, or forced C++ evaluation.
 * Explain shared matrix parameters once at the start of a reduced fit. Update examples and the documentation build to use the current interfaces.
