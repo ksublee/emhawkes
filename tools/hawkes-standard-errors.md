@@ -11,7 +11,7 @@ Windows 11, R 4.6.0, maxLik 1.5-2.2 환경이며, 원래 예제의 seed,
 반환 코드, 반복 횟수는 변경하지 않습니다.
 
 기본값 `final_hessian = "maxLik"`는 기존 최종 Hessian과 표준오차 계산을 유지합니다.
-`final_hessian = "auto"`를 명시했을 때만 built-in Hawkes 우도에 안정화를 적용합니다.
+`final_hessian = "stable"`를 명시했을 때만 built-in Hawkes 우도에 안정화를 적용합니다.
 사용자 Hessian은 보존하고 정보행렬의 역산 가능 여부를 확인합니다.
 `finalHessian = FALSE`, BHHH, 사용자 정의 `mylogLik`, FRPP 등 residual 우도의
 계산 선택은 유지합니다. `final_hessian = "maxLik"`는 이전 계산을 재현합니다.
@@ -102,7 +102,7 @@ FRPP는 변경하지 않았습니다. 기존 fit을 후처리에 전달해도 �
 
 ```r
 fit <- hfit(h, inter_arrival, type, lambda_component0 = initial,
-            final_hessian = "auto")
+            final_hessian = "stable")
 summary(fit)
 fit_diagnostics(fit)[c("status", "scaled_condition", "newton_decrement", "warnings")]
 
@@ -116,7 +116,7 @@ legacy <- hfit(h, inter_arrival, type, lambda_component0 = initial,
 
 ```sh
 Rscript tools/reproduce-fit-diagnostics.R <output>/legacy multi_kernel,synchronized,bid_ask maxLik
-Rscript tools/reproduce-fit-diagnostics.R <output>/auto multi_kernel,synchronized,bid_ask auto
+Rscript tools/reproduce-fit-diagnostics.R <output>/stable multi_kernel,synchronized,bid_ask stable
 Rscript tools/check-hawkes-standard-errors.R <output>
 ```
 

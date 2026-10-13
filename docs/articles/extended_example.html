@@ -253,14 +253,14 @@ BFGS.</p>
 <p>Use <code><a href="../reference/fitted_hspec.html">fitted_hspec()</a></code> to reconstruct the model with the
 estimated parameters. By default, <code><a href="../reference/hfit.html">hfit()</a></code> uses the final
 Hessian and standard errors from <code>maxLik</code>. Additional
-stabilization is optional. Request <code>final_hessian = "auto"</code>
+stabilization is optional. Request <code>final_hessian = "stable"</code>
 to check numerical Hawkes curvature across scaled difference steps
 without changing the optimizer’s estimates. For this requested
 calculation, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> uses the checked covariance and
 <code>NA</code> standard errors indicate failed checks.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mle_checked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
-<span>                    final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>                    final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">mle_checked</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $status</span></span>
 <span><span class="co">#&gt; [1] "ok"</span></span>
@@ -1021,7 +1021,7 @@ supplied for both simulation and estimation.</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="va">lambda_component0_mk</span>,</span>
-<span>               final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>               final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_mk</span><span class="op">)</span></span>
@@ -1210,7 +1210,7 @@ both <code>mu</code> and <code>beta</code>, but only one
 <code class="sourceCode R"><span><span class="va">fit_sy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_sy</span>, inter_arrival<span class="op">=</span><span class="va">res_sy</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
 <span>               type<span class="op">=</span><span class="va">res_sy</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span> <span class="op">*</span> <span class="fl">4</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,</span>
-<span>               final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>               final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_sy</span><span class="op">)</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
@@ -1964,7 +1964,7 @@ distribution because no <code>dmark</code> function is supplied.</p>
 <code class="sourceCode R"><span><span class="va">mle_ba</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_ba</span>, inter_arrival <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               mark <span class="op">=</span> <span class="va">hr_ba</span><span class="op">$</span><span class="va">mark</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">16</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
-<span>               final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>               final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle_ba</span><span class="op">)</span></span>

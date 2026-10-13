@@ -28,13 +28,13 @@ An information condition number above \code{1e8} triggers a weak-curvature warni
 eigenvalues at or below \code{1e-10} times the largest absolute eigenvalue do not
 support numerical inversion. These thresholds are numerical diagnostics.
 With the default \code{final_hessian = "maxLik"}, these additional checks are not
-performed and the status is \code{"not_checked"}. Request \code{final_hessian = "auto"}
+performed and the status is \code{"not_checked"}. Request \code{final_hessian = "stable"}
 to run them. Earlier fits without these checks also have status \code{"not_checked"}.
 }
 \examples{
 h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
-            fixed = c(FALSE, TRUE, TRUE), final_hessian = "auto")
+            fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")
 fit_diagnostics(fit)$status
 }
 \seealso{

@@ -69,7 +69,7 @@ check_message <- function(fit = failed, object = poisson, hess = NULL,
 }
 out <- check_message()
 stopifnot(length(out$messages) == 1L,
-          grepl('final_hessian = "auto"', out$messages, fixed = TRUE),
+          grepl('final_hessian = "stable"', out$messages, fixed = TRUE),
           identical(out$value$fit, failed),
           identical(out$value$diagnostics$status, "not_checked"))
 out <- capture_messages(suppressMessages(check_message()))

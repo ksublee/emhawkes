@@ -105,13 +105,13 @@ Use
 to reconstruct the model with the estimated parameters. By default,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 the final Hessian and standard errors from `maxLik`. Additional
-stabilization is optional. Request `final_hessian = "auto"` to check
+stabilization is optional. Request `final_hessian = "stable"` to check
 numerical Hawkes curvature across scaled difference steps without
 changing the optimizer’s estimates. For this requested calculation,
 [`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
 covariance and `NA` standard errors indicate failed checks.
 
-`mle_checked`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``,`` `` final_hessian ``=`` ``"auto"``)`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle_checked``)``[`[`c`](https://rdrr.io/r/base/c.html)`(``"status"``, ``"scaled_condition"``, ``"newton_decrement"``)``]`` ``#> $status`` ``#> [1] "ok"`` ``#> `` ``#> $scaled_condition`` ``#> [1] 20.3342`` ``#> `` ``#> $newton_decrement`` ``#> [1] 0.00130504`
+`mle_checked`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``,`` `` final_hessian ``=`` ``"stable"``)`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle_checked``)``[`[`c`](https://rdrr.io/r/base/c.html)`(``"status"``, ``"scaled_condition"``, ``"newton_decrement"``)``]`` ``#> $status`` ``#> [1] "ok"`` ``#> `` ``#> $scaled_condition`` ``#> [1] 20.3342`` ``#> `` ``#> $newton_decrement`` ``#> [1] 0.00130504`
 
 A stable Hessian does not establish reliable confidence intervals. Check
 convergence, score, and multiple starting values. The fit retains its

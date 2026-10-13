@@ -203,14 +203,14 @@ summary(mle)
 Use `fitted_hspec()` to reconstruct the model with the estimated
 parameters. By default, `hfit()` uses the final Hessian and standard
 errors from `maxLik`. Additional stabilization is optional. Request
-`final_hessian = "auto"` to check numerical Hawkes curvature across
+`final_hessian = "stable"` to check numerical Hawkes curvature across
 scaled difference steps without changing the optimizer’s estimates. For
 this requested calculation, `summary()` uses the checked covariance and
 `NA` standard errors indicate failed checks.
 
 ``` r
 mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
-                    final_hessian = "auto")
+                    final_hessian = "stable")
 fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
 #> $status
 #> [1] "ok"
@@ -1044,7 +1044,7 @@ res_mk
 ``` r
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
                lambda_component0 = lambda_component0_mk,
-               final_hessian = "auto")
+               final_hessian = "stable")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_mk)
@@ -1246,7 +1246,7 @@ only one `kappa` is estimated.
 fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival, 
                type=res_sy$type,
                lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
-               final_hessian = "auto")
+               final_hessian = "stable")
 summary(fit_sy)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -2035,7 +2035,7 @@ logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
 mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                mark = hr_ba$mark,
                lambda_component0 = matrix(rep(1, 16), 4),
-               final_hessian = "auto")
+               final_hessian = "stable")
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle_ba)

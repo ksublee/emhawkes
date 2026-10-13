@@ -1,6 +1,6 @@
 library(emhawkes)
 
-quiet_fit <- function(..., final_hessian = "auto") {
+quiet_fit <- function(..., final_hessian = "stable") {
   suppressMessages(hfit(..., final_hessian = final_hessian))
 }
 close <- function(x, y, tolerance = 1e-7) {
@@ -141,7 +141,7 @@ stopifnot(identical(result$status, "unavailable"),
           identical(result$reason, "step_sensitive"),
           all(result$checks$positive_definite))
 
-# A deterministic callback counts actual evaluations: requesting auto adds work,
+# A deterministic callback counts actual evaluations: requesting stable adds work,
 # while the default and explicit maxLik paths make exactly the same calls.
 evaluations <- 0L
 count_impact <- function(param = numeric(0), n) {
@@ -159,7 +159,7 @@ run_counted <- function(mode = NULL) {
 }
 plain <- run_counted()
 legacy_counted <- run_counted("maxLik")
-requested <- run_counted("auto")
+requested <- run_counted("stable")
 stopifnot(plain$evaluations == legacy_counted$evaluations,
           requested$evaluations > plain$evaluations,
           identical(plain$fit$estimate, requested$fit$estimate),

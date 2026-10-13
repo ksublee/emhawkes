@@ -34,9 +34,9 @@ NULL
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
-#' @param final_hessian Named-only choice, `"maxLik"` (default) or `"auto"`.
+#' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
 #' The default retains the final Hessian and covariance calculation from `maxLik`.
-#' Request `"auto"` to recalculate numerical final curvature for the built-in
+#' Request `"stable"` to recalculate numerical final curvature for the built-in
 #' Hawkes likelihood using scaled central differences and Richardson extrapolation.
 #' User-supplied `hess`, `finalHessian = FALSE`, BHHH curvature, custom likelihoods,
 #' and residual-distribution likelihoods retain their calculation choices.
@@ -75,12 +75,12 @@ NULL
 #' `options(emhawkes.engine = "auto")`; see [logLik()] for supported models.
 #' Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
 #' separately or computed numerically by `maxLik`. The default does not run
-#' additional curvature checks. With `final_hessian = "auto"`, final curvature is
+#' additional curvature checks. With `final_hessian = "stable"`, final curvature is
 #' checked after optimization without changing coefficients, log-likelihood,
 #' the stored optimizer gradient, return code, or iteration count.
-#' Here, `"auto"` selects difference steps for the requested stabilization;
-#' it does not automatically retry the default calculation. If default numerical
-#' Hawkes standard errors contain `NaN`, a short message suggests this option.
+#' The stabilization selects difference steps and checks their consistency.
+#' If default numerical Hawkes standard errors contain `NaN`, a short message
+#' suggests this option.
 #'
 #' The requested stabilization compares information, inverse information, and
 #' standard errors across difference steps. Failed checks, singular or indefinite
@@ -197,7 +197,7 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
                             verbose = FALSE, ..., Nc0 = NULL,
-                            final_hessian = c("maxLik", "auto")) standardGeneric("hfit"))
+                            final_hessian = c("maxLik", "stable")) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -211,7 +211,7 @@ setMethod(
            reduced = TRUE,
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
            verbose = FALSE, ..., Nc0 = NULL,
-           final_hessian = c("maxLik", "auto")){
+           final_hessian = c("maxLik", "stable")){
 
     final_hessian <- match.arg(final_hessian)
     additional_argument <- list(...)

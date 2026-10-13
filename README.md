@@ -46,10 +46,9 @@ metadata need to be refitted before using the reconstruction helpers.
 By default, `hfit()` uses the final Hessian and standard errors from `maxLik`.
 It does not run the additional stabilization checks. If numerical Hawkes
 standard errors contain `NaN`, a short message suggests trying
-`final_hessian = "auto"`. This option selects difference steps for stabilization
-when requested. It does not automatically retry the default calculation.
-Request `final_hessian = "auto"` to check numerical Hawkes curvature with scaled central
-differences and Richardson extrapolation. This preserves the optimizer's
+`final_hessian = "stable"`. Request this option to check numerical Hawkes
+curvature with scaled central differences and Richardson extrapolation.
+This preserves the optimizer's
 coefficients and log-likelihood. `summary()` and `vcov()` then use the checked
 covariance; free-parameter standard errors are `NA` when stable inversion is
 unavailable. Inspect `fit_diagnostics(fit)` for the requested checks.

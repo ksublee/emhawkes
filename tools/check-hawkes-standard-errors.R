@@ -1,13 +1,13 @@
-# Compare saved runs from reproduce-fit-diagnostics.R in legacy/ and auto/.
+# Compare saved runs from reproduce-fit-diagnostics.R in legacy/ and stable/.
 # Rscript tools/check-hawkes-standard-errors.R <output-directory>
 suppressPackageStartupMessages(library(emhawkes))
 args <- commandArgs(TRUE)
-if (length(args) != 1L) stop("Supply the directory containing legacy/ and auto/ runs.")
+if (length(args) != 1L) stop("Supply the directory containing legacy/ and stable/ runs.")
 source("tools/diagnose-fit.R")
 rows <- list()
 for (name in c("multi_kernel", "synchronized", "bid_ask")) {
   legacy <- readRDS(file.path(args[1L], "legacy", name, "fit.rds"))
-  fit <- readRDS(file.path(args[1L], "auto", name, "fit.rds"))
+  fit <- readRDS(file.path(args[1L], "stable", name, "fit.rds"))
   for (field in c("estimate", "maximum", "gradient", "code", "iterations")) {
     if (!identical(fit[[field]], legacy[[field]])) stop(name, ": changed optimizer field ", field)
   }

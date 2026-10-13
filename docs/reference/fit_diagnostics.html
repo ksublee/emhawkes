@@ -73,7 +73,7 @@ An information condition number above <code>1e8</code> triggers a weak-curvature
 eigenvalues at or below <code>1e-10</code> times the largest absolute eigenvalue do not
 support numerical inversion. These thresholds are numerical diagnostics.
 With the default <code>final_hessian = "maxLik"</code>, these additional checks are not
-performed and the status is <code>"not_checked"</code>. Request <code>final_hessian = "auto"</code>
+performed and the status is <code>"not_checked"</code>. Request <code>final_hessian = "stable"</code>
 to run them. Earlier fits without these checks also have status <code>"not_checked"</code>.</p>
     </div>
     <div class="section level2">
@@ -85,7 +85,7 @@ to run them. Earlier fits without these checks also have status <code>"not_check
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">.3</span>, alpha <span class="op">=</span> <span class="fl">0</span>, beta <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">.2</span>, <span class="fl">.3</span>, <span class="fl">.5</span>, <span class="fl">1</span><span class="op">)</span>, lambda_component0 <span class="op">=</span> <span class="fl">0</span>,</span></span>
-<span class="r-in"><span>            fixed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">FALSE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span>, final_hessian <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>            fixed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">FALSE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span>, final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">fit_diagnostics</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">$</span><span class="va">status</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "ok"</span>
 </code></pre></div>
