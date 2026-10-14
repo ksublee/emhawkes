@@ -97,6 +97,17 @@ call_component <- function(FUN, plan, context) {
   do.call(FUN, context[plan])
 }
 
+# Prepare named argument selection once for repeated calls in the R likelihood.
+# forceAndCall snapshots supplied values before invoking the callback; omitted
+# optional arguments retain their own defaults and remain unevaluated.
+prepare_component_call <- function(plan) {
+  invoke <- function(FUN, n, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta) NULL
+  arguments <- stats::setNames(lapply(plan, as.name), plan)
+  body(invoke) <- as.call(c(list(quote(base::forceAndCall), length(plan), quote(FUN)), arguments))
+  invoke
+}
+
 required_count_paths <- function(object, extra = NULL) {
   callbacks <- c(list(object@mu, object@impact, object@dmark), list(extra))
   unique(unlist(lapply(callbacks, function(fun) {

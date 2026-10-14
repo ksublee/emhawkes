@@ -124,9 +124,9 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
     Nc <- observation$Nc
     size <- length(inter_arrival)
     lambda <- lambda_component <- lambda_component_n <- NULL
-    context_at <- function(n) list(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                   lambda_component_n = lambda_component_n, mu = mu, alpha = alpha, beta = beta)
+    mu_call <- prepare_component_call(callbacks$mu)
+    impact_call <- prepare_component_call(callbacks$impact)
+    dmark_call <- prepare_component_call(callbacks$dmark)
 
     # check the argument lists in mu and impact
     mu_args <- impct_args <- c()
@@ -134,11 +134,13 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
     if(!is.null(object@impact)) impct_args <- methods::formalArgs(object@impact)
     mark_args <- if (is.function(object@dmark)) methods::formalArgs(object@dmark) else character(0)
     history_args <- c(impct_args, mu_args, mark_args)
+    impact_has_dots <- "..." %in% impct_args
 
 
     if (is.function(mu)){
 
-      mu0 <- call_component(mu, callbacks$mu, context_at(1))
+      mu0 <- mu_call(mu, 1, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
 
 
     } else{
@@ -234,7 +236,8 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
 
     # ---- Evaluate piecewise constant mu (only supported form) ----
     rmu_n <- if (is.function(mu) && size > 1L) {
-      call_component(mu, callbacks$mu, context_at(2))
+      mu_call(mu, 2, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
     } else {
       mu0
     }
@@ -247,8 +250,17 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
 
     rambda_component_n <- lambda_component0
 
-
-
+    # Decay and integration weights depend only on beta and observed intervals.
+    # Bound the temporary tables; custom numeric classes keep their own operators.
+    cache_kernels <- !is.object(beta) && !is.object(inter_arrival) &&
+      length(beta) <= 8192L && size >= 32L
+    cache_end <- 1L
+    if (cache_kernels) {
+      kernel_attributes <- attributes(beta)
+      scalar_kernel <- length(beta) == 1L && identical(names(kernel_attributes), "dim")
+      rates <- as.vector(beta)
+      block_size <- max(1L, 65536L %/% length(rates))
+    }
 
     ## main loop
     for (n in seq_len(size - 1L) + 1L) {
@@ -257,13 +269,33 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
 
       type_n <- type[n]
 
-      decayed <- exp(-beta * inter_arrival[n])
-
-
-      # lambda decayed due to time, impact due to mark is not added yet
-      lambda_component_n <- rambda_component_n_minus_1 * decayed
-      integrated_component <- integrate_exp_kernel(rambda_component_n_minus_1,
-                                                    beta, inter_arrival[n])
+      if (cache_kernels) {
+        if (n > cache_end) {
+          cache_start <- n - 1L
+          cache_end <- n + min(block_size - 1, size - n)
+          block_dt <- inter_arrival[seq.int(n, cache_end)]
+          scaled_time <- outer(rates, block_dt)
+          cached_decay <- exp(-scaled_time)
+          cached_weight <- -expm1(-scaled_time) / rates
+          zero <- which(scaled_time == 0)
+          cached_weight[zero] <- block_dt[(zero - 1L) %/% length(rates) + 1L]
+        }
+        index <- n - cache_start
+        decayed <- cached_decay[, index]
+        weight <- cached_weight[, index]
+        if (!scalar_kernel) {
+          attributes(decayed) <- kernel_attributes
+          attributes(weight) <- kernel_attributes
+        }
+        lambda_component_n <- rambda_component_n_minus_1 * decayed
+        integrated_component <- rambda_component_n_minus_1 * weight
+        integrated_component[rambda_component_n_minus_1 == 0] <- 0
+      } else {
+        decayed <- exp(-beta * inter_arrival[n])
+        lambda_component_n <- rambda_component_n_minus_1 * decayed
+        integrated_component <- integrate_exp_kernel(rambda_component_n_minus_1,
+                                                      beta, inter_arrival[n])
+      }
 
       # integrate mu over inter_arrival w.r.t. time
       if ((is.matrix(mu_n) && nrow(mu_n) == object@dimens && ncol(mu_n) == 1) ||
@@ -341,8 +373,13 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
       # Calculate sum of log lambda when a jump occurs
       lambda_at_event <- mu_n[type_n] + sum(lambda_component_n[type_n, ])
 
-      # Update the sum of log lambda with a warning suppression for log calculation
-      sum_log_lambda <- sum_log_lambda + suppressWarnings(log(lambda_at_event))
+      # Nonnegative ordinary intensities cannot produce a log-domain warning.
+      # Retain warning suppression for invalid proposals and custom Math methods.
+      log_lambda <- if (!is.object(lambda_at_event) && is.double(lambda_at_event) &&
+                        isTRUE(lambda_at_event >= 0)) {
+        log(lambda_at_event)
+      } else suppressWarnings(log(lambda_at_event))
+      sum_log_lambda <- sum_log_lambda + log_lambda
 
 
       if(is_lambda_component_necessary) lambda_component[n, ] <- t(lambda_component_n)
@@ -351,7 +388,8 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
       ## 3. sum of log mark p.d.f. when jump occurs
       if(!is.null(object@dmark)){
         sum_log_dmark <- sum_log_dmark +
-          log(call_component(object@dmark, callbacks$dmark, context_at(n)))
+          log(dmark_call(object@dmark, n, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta))
 
       }
 
@@ -391,7 +429,13 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
       if(!is.null(object@impact)){
 
         impact_mark <- zero_mat_for_impact
-        impact_res <- call_component(object@impact, callbacks$impact, context_at(n))
+        impact_res <- if (impact_has_dots) {
+          forceAndCall(12L, object@impact, n = n, mark = mark, type = type,
+                       inter_arrival = inter_arrival, N = N, Nc = Nc, lambda = lambda,
+                       lambda_component = lambda_component, lambda_component_n = lambda_component_n,
+                       mu = mu, alpha = alpha, beta = beta)
+        } else impact_call(object@impact, n, mark, type, inter_arrival, N, Nc, lambda,
+                           lambda_component, lambda_component_n, mu, alpha, beta)
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -403,7 +447,8 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
         # mu is represented by a function
-        rmu_n <- call_component(mu, callbacks$mu, context_at(n + 1))
+        rmu_n <- mu_call(mu, n + 1, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
       } else{
         # mu is a matrix
         rmu_n <- mu
