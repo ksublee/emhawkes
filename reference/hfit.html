@@ -69,7 +69,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  <span class="va">...</span>,</span>
 <span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span>,</span>
-<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span></span>
+<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span>,</span>
+<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'hspec'</span></span>
@@ -92,7 +93,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  <span class="va">...</span>,</span>
 <span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span>,</span>
-<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span></span>
+<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span>,</span>
+<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -191,17 +193,29 @@ and residual-distribution likelihoods retain their calculation choices.</p></dd>
 
 <dt id="arg-gradient">gradient<a class="anchor" aria-label="anchor" href="#arg-gradient"></a></dt>
 <dd><p>Named-only choice, <code>"numeric"</code> (default) or <code>"analytic"</code>.
-Request <code>"analytic"</code> for the Rcpp score of a numeric Hawkes specification.
+Request <code>"analytic"</code> for the Rcpp score of a Hawkes specification.
+Parameter-only functions require component derivatives through <code>jacobian</code>.
 Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
 and explicit or differentiable automatic initial states. Requires the <code>"auto"</code>
 or <code>"cpp"</code> engine. Unsupported specifications produce an error.</p></dd>
+
+
+<dt id="arg-jacobian">jacobian<a class="anchor" aria-label="anchor" href="#arg-jacobian"></a></dt>
+<dd><p>Named-only list of derivatives for parameter-only <code>mu</code>, <code>alpha</code>,
+<code>beta</code>, and <code>eta</code> functions when <code>gradient = "analytic"</code>. Each entry is a numeric
+matrix or a function with the single argument <code>param</code> returning that matrix.
+Rows follow <code><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector()</a></code> of the component matrix (column-major order); columns
+are named with the component's local <code>param</code> names. Column order is arbitrary.
+Required for each function with nonempty <code>param</code>; unused with a supplied <code>grad</code>
+or numerical differentiation.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code> object with an <code>emhawkes</code> attribute
 containing the original specification, parameter map, normalized initial-state
-arguments, constraints, <code>reduced</code> setting, and final curvature diagnostics.
+arguments, constraints, <code>reduced</code> setting, supplied analytic Jacobians, and final
+curvature diagnostics.
 Use <code><a href="fit_diagnostics.html">fit_diagnostics()</a></code> to inspect the checks and <code><a href="fitted_hspec.html">fitted_hspec()</a></code> to restore the estimated
 specification and <code><a href="fit_initial_state.html">fit_initial_state()</a></code> to retrieve its initial-state arguments.</p>
     </div>
@@ -231,13 +245,23 @@ With <code>gradient = "analytic"</code>, Rcpp computes the likelihood and its gr
 together and reuses the result at the same parameter vector. Matrix scores are
 summed according to the saved parameter map. Automatic initial states include
 their parameter derivatives; a singular automatic initialization requires an
-explicit <code>lambda_component0</code>. Function components, state-dependent callbacks,
+explicit <code>lambda_component0</code>. State-dependent callbacks,
 mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
 BHHH requires event scores and cannot use this total score.
 A supplied <code>grad</code> takes precedence. A supplied <code>hess</code> is retained; otherwise
 <code>maxLik</code> can calculate curvature by differentiating the analytic gradient.
 Optimization paths and last digits can differ from numerical differentiation.</p>
+<p>Analytic function components must have the single argument <code>param</code> and return
+plain numeric matrices with constant dimensions. Their values and Jacobians
+must be deterministic, differentiable functions of <code>param</code>; captured constants
+must remain fixed. Supply exact derivatives in <code>jacobian</code>; the package does not
+automatically differentiate function bodies or verify the supplied formulas.
+Fixed entries have zero derivative. Components with <code>param = numeric(0)</code> need
+no Jacobian. Contributions for shared parameter names are added across components.
+Missing or malformed Jacobians produce an error. For these functions, the
+analytic option evaluates their matrices in R and the likelihood and component
+scores in Rcpp. Default fitting and standalone <code><a href="logLik.html">logLik()</a></code> still use the R path.</p>
 <p>The default uses numerical differentiation and does not run
 additional curvature checks. With <code>final_hessian = "stable"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
@@ -311,6 +335,15 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> -245.0405 -245.0405 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A parameter-only function can keep selected entries fixed at zero.</span></span></span>
+<span class="r-in"><span><span class="va">alpha_fun</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0.2</span>, b <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="st">"a"</span><span class="op">]</span>, <span class="fl">0</span>, <span class="va">param</span><span class="op">[</span><span class="st">"b"</span><span class="op">]</span>, <span class="va">param</span><span class="op">[</span><span class="st">"a"</span><span class="op">]</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="va">alpha_jac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">h_fun</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha_fun</span>, beta <span class="op">=</span> <span class="va">beta</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",</span></span></span>
+<span class="r-in"><span><span class="co">#      jacobian = list(alpha = alpha_jac))</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># example 2</span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">mu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.08</span>, <span class="fl">0.08</span>, <span class="fl">0.05</span>, <span class="fl">0.05</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
@@ -357,18 +390,18 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42741   1.620   0.1053    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42494   1.629   0.1033    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.104   0.0354 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12632    0.06533  -1.934   0.0532 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04931   0.290   0.7719    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21342   4.503 6.69e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11642   2.540   0.0111 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08867   1.159   0.2465    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06732   0.513   0.6077    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06843   0.727   0.4671    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27378  -9.033  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11319   8.911  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04916   0.291   0.7712    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21477   4.475 7.64e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11634   2.542   0.0110 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08833   1.163   0.2447    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06731   0.513   0.6077    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06831   0.728   0.4664    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27579  -8.967  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11327   8.906  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
