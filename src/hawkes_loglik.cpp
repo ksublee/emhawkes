@@ -4,12 +4,14 @@
 #include <vector>
 #include "exp_kernel.h"
 
-// Numeric Hawkes only: no R callbacks, shared mutable state, or RNG calls.
+// Numeric Hawkes kernel with optional precomputed observed-state impacts.
+// No R callbacks, shared mutable state, or RNG calls.
 // [[Rcpp::export(rng = false)]]
 Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha,
     Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta,
-    Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false) {
+    Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false,
+    Rcpp::Nullable<Rcpp::NumericMatrix> impact = R_NilValue) {
 
     const int dimensions = beta.nrow(), kernels = beta.ncol();
     if (dimensions < 1 || kernels < 1 || dt.size() < 1 || dt.size() > INT_MAX ||
@@ -25,6 +27,17 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         mark_effect = Rcpp::NumericMatrix(eta.get());
         if (mark_effect.nrow() != dimensions || mark_effect.ncol() != kernels)
             Rcpp::stop("Native eta dimensions do not match beta.");
+    }
+    Rcpp::NumericMatrix event_impact;
+    const bool has_impact = impact.isNotNull();
+    if (has_impact) {
+        event_impact = Rcpp::NumericMatrix(impact.get());
+        if (event_impact.nrow() != components || event_impact.ncol() != size)
+            Rcpp::stop("Native impact dimensions must be components by observations.");
+        for (R_xlen_t k = 0; k < event_impact.size(); ++k) {
+            if ((k & 65535) == 0) Rcpp::checkUserInterrupt();
+            if (!R_FINITE(event_impact[k])) Rcpp::stop("Invalid native impact value.");
+        }
     }
     for (int n = 0; n < size; ++n) {
         if ((n & 65535) == 0) Rcpp::checkUserInterrupt();
@@ -91,6 +104,8 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             lambda(0, i) = rambda(0, i) = mu[i] + static_cast<double>(total);
         }
     }
+    std::vector<double> event_intensity;
+    if (has_impact && gradient) event_intensity.resize(size);
     double event_log = 0.0, integrated_log = 0.0;
     for (int n = 1; n < size; ++n) {
         if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
@@ -128,6 +143,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         if (gradient) {
             const double intensity = mu[event_type] + static_cast<double>(row_totals[event_type]);
             const double denominator = intensity > 0.0 ? intensity : R_NaN;
+            if (has_impact) event_intensity[n] = denominator;
             gm[event_type] += 1.0 / denominator;
             for (int j = 0; j < kernels; ++j) {
                 const int index = event_type + dimensions * j;
@@ -163,6 +179,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                 const int index = i + dimensions * selected[j];
                 state[index] += alpha[index];
                 if (has_eta) state[index] += mark_effect[index] * (mark[n] - 1.0);
+                if (has_impact) state[index] += event_impact(index, n);
                 if (gradient) {
                     da[index] += 1.0;
                     if (has_eta) de[index] += mark[n] - 1.0;
@@ -197,6 +214,36 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         result["score"] = Rcpp::List::create(Rcpp::Named("mu") = score_mu,
             Rcpp::Named("alpha") = score_alpha, Rcpp::Named("beta") = score_beta,
             Rcpp::Named("eta") = score_eta, Rcpp::Named("initial") = score_initial);
+    }
+    if (has_impact && gradient) {
+        // Reverse sensitivity to each post-event jump. No events-by-parameters
+        // tensor is needed; R contracts these scores with callback Jacobians.
+        Rcpp::NumericMatrix score_impact(components, size);
+        const bool valid = R_FINITE(event_log + integrated_log);
+        if (!valid) std::fill(score_impact.begin(), score_impact.end(), R_NaN);
+        else {
+            std::vector<long double> adjoint(components, 0.0L);
+            for (int n = size - 1; n >= 1; --n) {
+                if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
+                const int event_type = type[n] - 1;
+                const std::vector<int>& selected = columns[event_type];
+                for (std::size_t j = 0; j < selected.size(); ++j)
+                    for (int i = 0; i < dimensions; ++i) {
+                        const int index = i + dimensions * selected[j];
+                        score_impact(index, n) = static_cast<double>(adjoint[index]);
+                    }
+                for (int j = 0; j < kernels; ++j)
+                    for (int i = 0; i < dimensions; ++i) {
+                        const int index = i + dimensions * j;
+                        const double x = beta[index] * dt[n];
+                        const double decay = std::exp(-x);
+                        const long double weight = x == 0.0 ? dt[n] : -std::expm1(-x) / beta[index];
+                        adjoint[index] = adjoint[index] * decay - weight;
+                        if (i == event_type) adjoint[index] += decay / event_intensity[n];
+                    }
+            }
+        }
+        result["impact_score"] = score_impact;
     }
     if (!infer) return result;
     Rcpp::List residual_output(dimensions);

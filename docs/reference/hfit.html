@@ -206,8 +206,9 @@ or <code>"cpp"</code> engine. Unsupported specifications produce an error.</p></
 matrix or a function with the single argument <code>param</code> returning that matrix.
 Rows follow <code><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector()</a></code> of the component matrix (column-major order); columns
 are named with the component's local <code>param</code> names. Column order is arbitrary.
-Required for each function with nonempty <code>param</code>; unused with a supplied <code>grad</code>
-or numerical differentiation.</p></dd>
+Required for each function with nonempty <code>param</code>. For an observed-state <code>impact</code>,
+also supply <code>jacobian$impact</code>; see Details for its full-parameter convention.
+Unused with a supplied <code>grad</code> or numerical differentiation.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -245,8 +246,8 @@ With <code>gradient = "analytic"</code>, Rcpp computes the likelihood and its gr
 together and reuses the result at the same parameter vector. Matrix scores are
 summed according to the saved parameter map. Automatic initial states include
 their parameter derivatives; a singular automatic initialization requires an
-explicit <code>lambda_component0</code>. State-dependent callbacks,
-mark densities, residual distributions, and custom likelihoods are not supported
+explicit <code>lambda_component0</code>. State-dependent baselines, impacts that depend on
+latent intensities, mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
 BHHH requires event scores and cannot use this total score.
 A supplied <code>grad</code> takes precedence. A supplied <code>hess</code> is retained; otherwise
@@ -262,6 +263,33 @@ no Jacobian. Contributions for shared parameter names are added across component
 Missing or malformed Jacobians produce an error. For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
 scores in Rcpp. Default fitting and standalone <code><a href="logLik.html">logLik()</a></code> still use the R path.</p>
+<p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,
+<code>inter_arrival</code>, and the resolved <code>mu</code>, <code>alpha</code>, and <code>beta</code> matrices.
+They return a finite, plain numeric matrix with the kernel dimensions. As in the R
+likelihood, <code>N[n, ]</code> and <code>Nc[n, ]</code> include the current event; use row <code>n - 1</code>
+for counts before it. The impact is added after evaluating that event's intensity,
+only in columns selected by its type. The last event ends the likelihood window.
+Automatic initialization uses the existing <code>mu</code>/<code>alpha</code>/<code>beta</code> rule; the
+additional impact does not enter that rule.</p>
+<p><code>jacobian$impact</code> is a matrix or a function with the same observed context.
+Its <code>param</code> argument receives the full named optimization vector, whereas
+the impact function itself receives its local <code>param</code> vector as before.
+Rows follow <code>as.vector(impact(...))</code>; columns must include every fitted parameter
+name, with zeros for no effect. Return the total derivative of the impact matrix,
+including any dependence through <code>mu</code>, <code>alpha</code>, or <code>beta</code>. Contributions for
+shared names belong in the same column. This convention differs from the local
+Jacobians for parameter-only components. A Jacobian is required even when the
+impact has no local parameters; a parameter-independent impact has a zero matrix.</p>
+<p>Declare needed <code>N</code> and <code>Nc</code> arguments explicitly in the impact function, or
+supply these paths. Captured inputs must be fixed, and callbacks must be
+deterministic. Ignored <code>...</code> is allowed; reading <code>lambda</code>, <code>lambda_component</code>,
+or <code>lambda_component_n</code>, including through <code>...</code>, is unsupported. A callback
+that forces all of <code>...</code> also forces these unavailable states and produces an
+error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
+component scores, and reverse sensitivities to event impacts. Temporary storage
+grows with observations times kernel components, without an additional
+observations-by-components-by-parameters array. Standalone <code><a href="logLik.html">logLik()</a></code> and
+default fitting retain the R path for these models.</p>
 <p>The default uses numerical differentiation and does not run
 additional curvature checks. With <code>final_hessian = "stable"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
@@ -343,6 +371,21 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-in"><span><span class="va">h_fun</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha_fun</span>, beta <span class="op">=</span> <span class="va">beta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",</span></span></span>
 <span class="r-in"><span><span class="co">#      jacobian = list(alpha = alpha_jac))</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Observed counts can change the excitation after an event.</span></span></span>
+<span class="r-in"><span><span class="va">count_impact</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>, <span class="va">n</span>, <span class="va">N</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="st">"a"</span><span class="op">]</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="op">(</span><span class="va">N</span><span class="op">[</span><span class="va">n</span>, <span class="fl">1</span><span class="op">]</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%%</a></span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="va">count_jac</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span>, <span class="va">n</span>, <span class="va">N</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">param</span><span class="op">)</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">param</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">out</span><span class="op">[</span>, <span class="st">"a"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="op">(</span><span class="va">N</span><span class="op">[</span><span class="va">n</span>, <span class="fl">1</span><span class="op">]</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%%</a></span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">out</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="va">h_count</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, beta <span class="op">=</span> <span class="fl">1.2</span>,</span></span>
+<span class="r-in"><span>  impact <span class="op">=</span> <span class="va">count_impact</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># hfit(h_count, inter_arrival, gradient = "analytic",</span></span></span>
+<span class="r-in"><span><span class="co">#      jacobian = list(impact = count_jac))</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># example 2</span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>

@@ -166,7 +166,7 @@ The native loop returns partial scores for `mu`, `alpha`, `beta`, `eta`, and ini
 
 The Jacobian adapter now supports parameter-only functions through `hfit(jacobian = ...)`. Users supply exact component derivatives as constant matrices or `function(param)` callbacks. Shared names accumulate contributions; fixed entries have zero derivative. See the [function-gradient report](function-gradient-results.md).
 
-State-dependent callbacks remain a separate extension. Observed `N` and `Nc` paths remain fixed when differentiating state-dependent callbacks. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
+Observed-state impacts now use `jacobian$impact` with the full fitted parameter vector. The native engine returns reverse sensitivities to event jumps; R contracts them with the supplied total impact derivatives. Observed `N`, `Nc`, marks, types, and times remain fixed. See the [observed-impact report](observed-impact-results.md). State-dependent baselines remain a separate extension. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
 
 Keep these extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 

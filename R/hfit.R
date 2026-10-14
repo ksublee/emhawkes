@@ -43,8 +43,9 @@ NULL
 #' matrix or a function with the single argument `param` returning that matrix.
 #' Rows follow `as.vector()` of the component matrix (column-major order); columns
 #' are named with the component's local `param` names. Column order is arbitrary.
-#' Required for each function with nonempty `param`; unused with a supplied `grad`
-#' or numerical differentiation.
+#' Required for each function with nonempty `param`. For an observed-state `impact`,
+#' also supply `jacobian$impact`; see Details for its full-parameter convention.
+#' Unused with a supplied `grad` or numerical differentiation.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
@@ -91,8 +92,8 @@ NULL
 #' together and reuses the result at the same parameter vector. Matrix scores are
 #' summed according to the saved parameter map. Automatic initial states include
 #' their parameter derivatives; a singular automatic initialization requires an
-#' explicit `lambda_component0`. State-dependent callbacks,
-#' mark densities, residual distributions, and custom likelihoods are not supported
+#' explicit `lambda_component0`. State-dependent baselines, impacts that depend on
+#' latent intensities, mark densities, residual distributions, and custom likelihoods are not supported
 #' by this option. Equality-constrained optimization is also excluded.
 #' BHHH requires event scores and cannot use this total score.
 #' A supplied `grad` takes precedence. A supplied `hess` is retained; otherwise
@@ -109,6 +110,36 @@ NULL
 #' Missing or malformed Jacobians produce an error. For these functions, the
 #' analytic option evaluates their matrices in R and the likelihood and component
 #' scores in Rcpp. Default fitting and standalone `logLik()` still use the R path.
+#'
+#' Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`, `type`,
+#' `inter_arrival`, and the resolved `mu`, `alpha`, and `beta` matrices.
+#' They return a finite, plain numeric matrix with the kernel dimensions. As in the R
+#' likelihood, `N[n, ]` and `Nc[n, ]` include the current event; use row `n - 1`
+#' for counts before it. The impact is added after evaluating that event's intensity,
+#' only in columns selected by its type. The last event ends the likelihood window.
+#' Automatic initialization uses the existing `mu`/`alpha`/`beta` rule; the
+#' additional impact does not enter that rule.
+#'
+#' `jacobian$impact` is a matrix or a function with the same observed context.
+#' Its `param` argument receives the full named optimization vector, whereas
+#' the impact function itself receives its local `param` vector as before.
+#' Rows follow `as.vector(impact(...))`; columns must include every fitted parameter
+#' name, with zeros for no effect. Return the total derivative of the impact matrix,
+#' including any dependence through `mu`, `alpha`, or `beta`. Contributions for
+#' shared names belong in the same column. This convention differs from the local
+#' Jacobians for parameter-only components. A Jacobian is required even when the
+#' impact has no local parameters; a parameter-independent impact has a zero matrix.
+#'
+#' Declare needed `N` and `Nc` arguments explicitly in the impact function, or
+#' supply these paths. Captured inputs must be fixed, and callbacks must be
+#' deterministic. Ignored `...` is allowed; reading `lambda`, `lambda_component`,
+#' or `lambda_component_n`, including through `...`, is unsupported. A callback
+#' that forces all of `...` also forces these unavailable states and produces an
+#' error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
+#' component scores, and reverse sensitivities to event impacts. Temporary storage
+#' grows with observations times kernel components, without an additional
+#' observations-by-components-by-parameters array. Standalone `logLik()` and
+#' default fitting retain the R path for these models.
 #'
 #' The default uses numerical differentiation and does not run
 #' additional curvature checks. With `final_hessian = "stable"`, final curvature is
@@ -173,6 +204,21 @@ NULL
 #' h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
 #' # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #' #      jacobian = list(alpha = alpha_jac))
+#'
+#' # Observed counts can change the excitation after an event.
+#' count_impact <- function(param = c(a = 0.2), n, N, ...) {
+#'   matrix(param["a"] * (1 + 0.2 * (N[n, 1] %% 2)))
+#' }
+#' count_jac <- function(param, n, N, ...) {
+#'   out <- matrix(0, 1, length(param), dimnames = list(NULL, names(param)))
+#'   out[, "a"] <- 1 + 0.2 * (N[n, 1] %% 2)
+#'   out
+#' }
+#' h_count <- new("hspec", mu = 0.3,
+#'   alpha = function(param = numeric(0)) matrix(0), beta = 1.2,
+#'   impact = count_impact)
+#' # hfit(h_count, inter_arrival, gradient = "analytic",
+#' #      jacobian = list(impact = count_jac))
 #'
 #' # example 2
 #' \donttest{

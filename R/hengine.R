@@ -4,9 +4,10 @@ NULL
 
 # Inspect capabilities without evaluating a user function.
 native_hawkes_reason <- function(object, observation,
-    values = list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)) {
+    values = list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta),
+    allow_impact = FALSE) {
   if (any(vapply(values, is.function, logical(1)))) return("function-valued parameters")
-  if (!is.null(object@impact)) return("a user-defined impact function")
+  if (!is.null(object@impact) && !allow_impact) return("a user-defined impact function")
   if (!is.null(object@dmark)) return("a mark density function")
   if (!is.null(object@dresidual)) return("a residual distribution")
   # Custom numeric classes can override R arithmetic or subsetting.
@@ -80,7 +81,7 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
 
 # Prepare the chain-rule adapter once. Component/Jacobian functions must be
 # deterministic functions of their named local parameter vector.
-hawkes_component_plan <- function(object, observation, parameter_map, jacobian) {
+hawkes_component_plan <- function(object, observation, parameter_map, jacobian, derivatives = TRUE) {
   component_names <- c("mu", "alpha", "beta", "eta")
   components <- parameter_map$components[component_names]
   functions <- names(components)[vapply(components, function(x) x$kind == "function", logical(1))]
@@ -90,10 +91,11 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian) 
     }
   }
   if (is.null(jacobian)) jacobian <- list()
+  allowed <- c(functions, if (!is.null(object@impact)) "impact")
   if (!is.list(jacobian) || (length(jacobian) &&
       (is.null(names(jacobian)) || anyNA(names(jacobian)) || any(names(jacobian) == "") ||
-       anyDuplicated(names(jacobian)) || any(!names(jacobian) %in% functions)))) {
-    stop("jacobian must be a uniquely named list for function components mu, alpha, beta, or eta.", call. = FALSE)
+       anyDuplicated(names(jacobian)) || any(!names(jacobian) %in% allowed)))) {
+    stop("jacobian must be a uniquely named list for function components mu, alpha, beta, eta, or impact.", call. = FALSE)
   }
   local_param <- function(name, param) {
     x <- components[[name]]
@@ -117,7 +119,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian) 
     values
   }
   start_values <- validate_values(start_values)
-  reason <- native_hawkes_reason(object, observation, start_values)
+  reason <- native_hawkes_reason(object, observation, start_values, allow_impact = TRUE)
   if (!is.null(reason)) stop("Analytic gradient does not support ", reason, ".", call. = FALSE)
   validate_jacobian <- function(value, name) {
     param_names <- names(components[[name]]$param)
@@ -133,7 +135,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian) 
     if (p) value <- value[, param_names, drop = FALSE]
     value
   }
-  for (name in functions) {
+  if (derivatives) for (name in functions) {
     if (is.null(jacobian[[name]])) {
       if (length(components[[name]]$param)) {
         stop("Analytic gradient requires jacobian$", name, " for this function component.", call. = FALSE)
@@ -159,8 +161,10 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian) 
 # Hawkes objective: one native pass supplies both value and component scores.
 # The one-point cache is local to a fit and is invalidated by any parameter change.
 make_hawkes_objective <- function(object, observation, lambda_component0,
-                                 parameter_map, verbose = FALSE, jacobian = NULL) {
-  plan <- hawkes_component_plan(object, observation, parameter_map, jacobian)
+                                 parameter_map, verbose = FALSE, jacobian = NULL, derivatives = TRUE) {
+  plan <- hawkes_component_plan(object, observation, parameter_map, jacobian, derivatives)
+  impact_plan <- hawkes_impact_plan(object, observation, parameter_map, jacobian$impact,
+                                    dim(plan$start$beta), derivatives)
   dimensions <- object@dimens
   kernels <- ncol(plan$start$beta)
   initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
@@ -205,11 +209,18 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     }
     # Finite component values can still overflow the automatic initializer.
     if (any(!is.finite(current_initial))) return(invalid)
+    impacts <- if (!is.null(impact_plan)) impact_plan$values(param, values) else NULL
+    if (!is.null(impact_plan) && is.null(impacts)) return(invalid)
     result <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
       as.numeric(values$mu), values$alpha, values$beta, values$eta,
-      current_initial, mapping, infer = FALSE, gradient = TRUE)
+      current_initial, mapping, infer = FALSE, gradient = derivatives, impact = impacts)
     if (!is.finite(result$loglikelihood)) {
       return(list(loglikelihood = result$loglikelihood, gradient = invalid$gradient))
+    }
+    if (!derivatives) {
+      cached_param <<- param
+      cached_result <<- list(loglikelihood = result$loglikelihood)
+      return(cached_result)
     }
     score <- result$score
     if (is.null(initial) && is.finite(result$loglikelihood)) {
@@ -248,6 +259,11 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     }
     cached_param <<- param
     cached_result <<- list(loglikelihood = result$loglikelihood, gradient = gradient)
+    if (!is.null(impact_plan)) {
+      # Line searches often ask only for a value. Retain native jump scores but
+      # defer the expensive R Jacobian callbacks until a gradient is requested.
+      cached_result$impact <<- list(values = values, score = result$impact_score)
+    }
     cached_result
   }
   list(loglik = function(param) {
@@ -257,5 +273,14 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
       cat("Log likelihood : ", value, "\n")
     }
     c(loglikelihood = value)
-  }, gradient = function(param) evaluate(param)$gradient)
+  }, gradient = if (derivatives) function(param) {
+    result <- evaluate(param)
+    if (!is.null(result$impact)) {
+      result$gradient <- result$gradient + impact_plan$gradient(
+        cached_param, result$impact$values, result$impact$score)
+      result$impact <- NULL
+      cached_result <<- result
+    }
+    result$gradient
+  } else NULL)
 }

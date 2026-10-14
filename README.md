@@ -88,7 +88,7 @@ fit <- hfit(h, path$inter_arrival, path$type, gradient = "analytic")
 
 This option supports shared and fixed parameters, multi-kernel mappings, numeric
 mark effects, and derivatives of automatic initial states. It computes the
-likelihood and score together. State-dependent callbacks,
+likelihood and score together. State-dependent baselines and impacts that use latent intensities,
 custom likelihoods, mark densities, residual distributions, equality constraints,
 and BHHH are not yet supported. Singular automatic initialization requires explicit
 `lambda_component0`. A supplied `grad` takes precedence. A supplied `hess` is
@@ -120,6 +120,19 @@ not derive or verify the formulas automatically. A component with
 all component contributions. Missing or malformed Jacobians produce an error.
 The analytic fit evaluates component functions in R and the likelihood and scores
 in Rcpp. Default fits and standalone `logLik()` retain the R implementation.
+
+Observed-state `impact` functions can use the analytic option with
+`jacobian = list(impact = impact_jac)`. They may depend on observed `N`, `Nc`,
+marks, types, and times, and on the resolved `mu`, `alpha`, and `beta` matrices.
+Counts at row `n` include that event. The event's impact affects subsequent
+intensities in the kernel columns selected by its type.
+
+For `jacobian$impact`, `param` is the **full named optimization vector**. Return a
+matrix with one row per impact entry in column-major order and one named column
+per fitted parameter, including zero columns. Include derivatives through any
+core matrices used by the impact. The impact function keeps receiving its local
+parameters. See `?hfit` for an example and the callback contract. Callbacks that
+read latent intensities remain unsupported. Default fits retain the R path.
 
 For comparison or troubleshooting, set `options(emhawkes.engine = "r")` to use the R calculation, or `"auto"` to restore automatic selection. The development setting `"cpp"` reports unsupported features instead of falling back to R. Parameter-only functions use C++ through the analytic adapter described above. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.
 

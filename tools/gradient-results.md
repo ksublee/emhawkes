@@ -10,7 +10,7 @@ fit <- hfit(h, inter_arrival, type, mark,
 
 Numeric `mu`, `alpha`, `beta`, and optional `eta` are supported, including shared parameters, `reduced = FALSE`, fixed parameters, unequal decay rates, signed components, and multi-kernel mappings. Explicit initial components are held fixed. Automatic initial components include their parameter derivatives. Singular automatic initialization requires explicit `lambda_component0`.
 
-This report covers numeric components. Parameter-only functions are now supported through supplied Jacobians; see the [function-gradient report](function-gradient-results.md). State-dependent callbacks, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH remain excluded. Unsupported requests fail explicitly. The analytic option requires the `auto` or `cpp` engine.
+This report covers numeric components. Parameter-only functions are now supported through supplied Jacobians; see the [function-gradient report](function-gradient-results.md). Observed-state impacts are covered by the [observed-impact report](observed-impact-results.md). State-dependent baselines, impacts that depend on latent intensities, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH remain excluded. Unsupported requests fail explicitly. The analytic option requires the `auto` or `cpp` engine.
 
 ## Calculation
 

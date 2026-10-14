@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Support analytic gradients for observed-state `impact` functions with
+  `jacobian$impact`. Preserve event timing, count paths, kernel
+  mappings, and parameter sharing. Use reverse event-impact scores in
+  Rcpp and reject latent-intensity dependencies explicitly. Keep default
+  fitting unchanged.
 - Extend the analytic gradient to parameter-only `mu`, `alpha`, `beta`,
   and `eta` functions through `hfit(jacobian = ...)`. Accept constant or
   parameter-dependent Jacobians, preserve fixed entries and shared

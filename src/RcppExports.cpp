@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // hawkes_loglik_cpp
-Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient);
-RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP) {
+Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient, Rcpp::Nullable<Rcpp::NumericMatrix> impact);
+RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP, SEXP impactSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type dt(dtSEXP);
@@ -26,13 +26,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List >::type mapping(mappingSEXP);
     Rcpp::traits::input_parameter< bool >::type infer(inferSEXP);
     Rcpp::traits::input_parameter< bool >::type gradient(gradientSEXP);
-    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type impact(impactSEXP);
+    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 11},
+    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 12},
     {NULL, NULL, 0}
 };
 
