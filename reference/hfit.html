@@ -68,7 +68,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span></span>
+<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span>,</span>
+<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'hspec'</span></span>
@@ -90,7 +91,8 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  Nc0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span></span>
+<span>  final_hessian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"maxLik"</span>, <span class="st">"stable"</span><span class="op">)</span>,</span>
+<span>  gradient <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="st">"analytic"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -148,7 +150,7 @@ a shared name produce a warning; the first value is used.</p></dd>
 
 <dt id="arg-grad">grad<a class="anchor" aria-label="anchor" href="#arg-grad"></a></dt>
 <dd><p>Optional gradient function passed to <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik::maxLik()</a></code>. Its first
-argument is the optimization parameter vector. If <code>NULL</code>, use numerical differentiation.</p></dd>
+argument is the optimization parameter vector. Takes precedence over <code>gradient</code>.</p></dd>
 
 
 <dt id="arg-hess">hess<a class="anchor" aria-label="anchor" href="#arg-hess"></a></dt>
@@ -186,6 +188,14 @@ Hawkes likelihood using scaled central differences and Richardson extrapolation.
 User-supplied <code>hess</code>, <code>finalHessian = FALSE</code>, BHHH curvature, custom likelihoods,
 and residual-distribution likelihoods retain their calculation choices.</p></dd>
 
+
+<dt id="arg-gradient">gradient<a class="anchor" aria-label="anchor" href="#arg-gradient"></a></dt>
+<dd><p>Named-only choice, <code>"numeric"</code> (default) or <code>"analytic"</code>.
+Request <code>"analytic"</code> for the Rcpp score of a numeric Hawkes specification.
+Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
+and explicit or differentiable automatic initial states. Requires the <code>"auto"</code>
+or <code>"cpp"</code> engine. Unsupported specifications produce an error.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -217,8 +227,18 @@ To hold optimization parameters at their starting values, pass <code>fixed</code
 entries that use it.</p>
 <p>The built-in likelihood uses the calculation engine selected by
 <code>options(emhawkes.engine = "auto")</code>; see <code><a href="logLik.html">logLik()</a></code> for supported models.
-Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
-separately or computed numerically by <code>maxLik</code>. The default does not run
+With <code>gradient = "analytic"</code>, Rcpp computes the likelihood and its gradient
+together and reuses the result at the same parameter vector. Matrix scores are
+summed according to the saved parameter map. Automatic initial states include
+their parameter derivatives; a singular automatic initialization requires an
+explicit <code>lambda_component0</code>. Function components, state-dependent callbacks,
+mark densities, residual distributions, and custom likelihoods are not supported
+by this option. Equality-constrained optimization is also excluded.
+BHHH requires event scores and cannot use this total score.
+A supplied <code>grad</code> takes precedence. A supplied <code>hess</code> is retained; otherwise
+<code>maxLik</code> can calculate curvature by differentiating the analytic gradient.
+Optimization paths and last digits can differ from numerical differentiation.</p>
+<p>The default uses numerical differentiation and does not run
 additional curvature checks. With <code>final_hessian = "stable"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
 the stored optimizer gradient, return code, or iteration count.
@@ -277,6 +297,8 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
+<span class="r-in"><span><span class="co"># Optional Rcpp gradient for this numeric specification:</span></span></span>
+<span class="r-in"><span><span class="co"># hfit(h, res$inter_arrival, res$type, gradient = "analytic")</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">$</span><span class="va">status</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "not_checked"</span>
 <span class="r-in"><span><span class="va">estimated</span> <span class="op">&lt;-</span> <span class="fu"><a href="fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
