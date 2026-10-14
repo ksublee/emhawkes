@@ -39,7 +39,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
-<ul><li>Add optional <code>hfit(gradient = "analytic")</code> for numeric Hawkes models. Compute likelihood and score together in Rcpp, preserve parameter sharing and fixed parameters, and differentiate automatic initial states. Keep numerical differentiation as the default and retain supplied derivatives.</li>
+<ul><li>Extend the analytic gradient to parameter-only <code>mu</code>, <code>alpha</code>, <code>beta</code>, and <code>eta</code> functions through <code>hfit(jacobian = ...)</code>. Accept constant or parameter-dependent Jacobians, preserve fixed entries and shared names, and validate dimensions and parameter names. Default fitting remains unchanged.</li>
+<li>Add optional <code>hfit(gradient = "analytic")</code> for numeric Hawkes models. Compute likelihood and score together in Rcpp, preserve parameter sharing and fixed parameters, and differentiate automatic initial states. Keep numerical differentiation as the default and retain supplied derivatives.</li>
 <li>Name the optional final-Hessian stabilization <code>final_hessian = "stable"</code>. Keep <code>"maxLik"</code> as the default.</li>
 <li>Suggest optional <code>final_hessian = "stable"</code> when default numerical Hawkes standard errors contain <code>NaN</code>. Preserve the fit and respect disabled, supplied, and BHHH curvature. Make the disabled-Hessian test compatible with both NULL and NA-matrix covariance returns in maxLik.</li>
 <li>Keep the original <code>maxLik</code> Hessian and standard-error calculation as the default. Run additional Hawkes stabilization and diagnostics only when <code>final_hessian = "stable"</code> is requested.</li>

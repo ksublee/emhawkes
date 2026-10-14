@@ -1,5 +1,6 @@
 # emhawkes 0.9.9
 
+* Extend the analytic gradient to parameter-only `mu`, `alpha`, `beta`, and `eta` functions through `hfit(jacobian = ...)`. Accept constant or parameter-dependent Jacobians, preserve fixed entries and shared names, and validate dimensions and parameter names. Default fitting remains unchanged.
 * Add optional `hfit(gradient = "analytic")` for numeric Hawkes models. Compute likelihood and score together in Rcpp, preserve parameter sharing and fixed parameters, and differentiate automatic initial states. Keep numerical differentiation as the default and retain supplied derivatives.
 * Name the optional final-Hessian stabilization `final_hessian = "stable"`. Keep `"maxLik"` as the default.
 * Suggest optional `final_hessian = "stable"` when default numerical Hawkes standard errors contain `NaN`. Preserve the fit and respect disabled, supplied, and BHHH curvature. Make the disabled-Hessian test compatible with both NULL and NA-matrix covariance returns in maxLik.

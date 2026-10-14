@@ -103,23 +103,42 @@ analytic gradient:
 
 This option supports shared and fixed parameters, multi-kernel mappings,
 numeric mark effects, and derivatives of automatic initial states. It
-computes the likelihood and score together. Function components,
-state-dependent callbacks, custom likelihoods, mark densities, residual
-distributions, equality constraints, and BHHH are not yet supported.
-Singular automatic initialization requires explicit `lambda_component0`.
-A supplied `grad` takes precedence. A supplied `hess` is retained;
-otherwise `maxLik` can differentiate the analytic gradient for
-curvature. The optimizer’s path and last digits may differ from
-numerical differentiation. The [gradient
+computes the likelihood and score together. State-dependent callbacks,
+custom likelihoods, mark densities, residual distributions, equality
+constraints, and BHHH are not yet supported. Singular automatic
+initialization requires explicit `lambda_component0`. A supplied `grad`
+takes precedence. A supplied `hess` is retained; otherwise `maxLik` can
+differentiate the analytic gradient for curvature. The optimizer’s path
+and last digits may differ from numerical differentiation. The [gradient
 report](https://github.com/ksublee/emhawkes/blob/main/tools/gradient-results.md)
 describes accuracy, full-fit timings, and the state-dependent extension.
 
+Parameter-only `mu`, `alpha`, `beta`, and `eta` functions can also use
+the analytic option when supplied with their exact Jacobians. For
+example, this function fixes one excitation entry at zero:
+
+`alpha_fun`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``a ``=`` ``0.2``, b ``=`` ``0.1``)``)`` ``{`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``param``[``"a"``]``, ``0``, ``param``[``"b"``]``, ``param``[``"a"``]``)``, ``2``)`` ``}`` ``alpha_jac`` ``<-`` `[`cbind`](https://rdrr.io/r/base/cbind.html)`(``a ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``1``, ``0``, ``0``, ``1``)``, b ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``1``, ``0``)``)`` ``h_fun`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``h``@``mu``, alpha ``=`` ``alpha_fun``, beta ``=`` ``h``@``beta``)`` ``fit_fun`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h_fun``, ``path``$``inter_arrival``, ``path``$``type``,`` `` gradient ``=`` ``"analytic"``, jacobian ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``alpha ``=`` ``alpha_jac``)``)`
+
+Jacobian rows follow [`as.vector()`](https://rdrr.io/r/base/vector.html)
+of the returned matrix; columns are named with its `param` names. For
+nonlinear transformations, supply a `function(param)` that returns the
+Jacobian at that parameter vector. Components and Jacobians must be
+deterministic functions of `param` with fixed matrix dimensions. The
+package does not derive or verify the formulas automatically. A
+component with `param = numeric(0)` needs no Jacobian. Shared parameter
+names receive the sum of all component contributions. Missing or
+malformed Jacobians produce an error. The analytic fit evaluates
+component functions in R and the likelihood and scores in Rcpp. Default
+fits and standalone
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+retain the R implementation.
+
 For comparison or troubleshooting, set `options(emhawkes.engine = "r")`
 to use the R calculation, or `"auto"` to restore automatic selection.
-The development setting `"cpp"` requires a supported numeric
-specification and reports unsupported features. Installing from source
-requires a C++ compiler and Rcpp; Windows source installations require
-Rtools.
+The development setting `"cpp"` reports unsupported features instead of
+falling back to R. Parameter-only functions use C++ through the analytic
+adapter described above. Installing from source requires a C++ compiler
+and Rcpp; Windows source installations require Rtools.
 
 See the [basic
 vignette](https://ksublee.github.io/emhawkes/articles/example.html) and

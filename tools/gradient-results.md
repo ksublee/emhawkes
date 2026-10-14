@@ -10,7 +10,7 @@ fit <- hfit(h, inter_arrival, type, mark,
 
 Numeric `mu`, `alpha`, `beta`, and optional `eta` are supported, including shared parameters, `reduced = FALSE`, fixed parameters, unequal decay rates, signed components, and multi-kernel mappings. Explicit initial components are held fixed. Automatic initial components include their parameter derivatives. Singular automatic initialization requires explicit `lambda_component0`.
 
-Function components, state-dependent callbacks, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH are excluded. Unsupported requests fail explicitly. The analytic option requires the `auto` or `cpp` engine.
+This report covers numeric components. Parameter-only functions are now supported through supplied Jacobians; see the [function-gradient report](function-gradient-results.md). State-dependent callbacks, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH remain excluded. Unsupported requests fail explicitly. The analytic option requires the `auto` or `cpp` engine.
 
 ## Calculation
 
@@ -56,7 +56,7 @@ These checks establish numerical consistency for the measured examples. They do 
 
 ## State-dependent extension
 
-The next adapter should accept Jacobians for parameter-only functions and map their component scores to optimization parameters. For callbacks that depend only on observed `N`, `Nc`, or marks, hold those paths fixed when differentiating.
+The parameter-only Jacobian adapter is implemented separately. For callbacks that depend only on observed `N`, `Nc`, or marks, hold those paths fixed when differentiating.
 
 Callbacks that depend on `lambda_component` need a further step. If an event update is `s_next = F(s, theta)`, propagate `d s_next / d theta = F_s * d s / d theta + F_theta`. A reset such as `-l2 + xi * level/mid` must include the derivative of `l2`. The current independent-component score cannot represent such cross-component feedback by itself. Add state and parameter Jacobian contracts, then verify the resulting recursion against the existing R callback path. Parameter-dependent branch thresholds need separate differentiability checks.
 

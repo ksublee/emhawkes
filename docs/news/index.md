@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Extend the analytic gradient to parameter-only `mu`, `alpha`, `beta`,
+  and `eta` functions through `hfit(jacobian = ...)`. Accept constant or
+  parameter-dependent Jacobians, preserve fixed entries and shared
+  names, and validate dimensions and parameter names. Default fitting
+  remains unchanged.
 - Add optional `hfit(gradient = "analytic")` for numeric Hawkes models.
   Compute likelihood and score together in Rcpp, preserve parameter
   sharing and fixed parameters, and differentiate automatic initial

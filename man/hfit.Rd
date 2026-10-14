@@ -25,7 +25,8 @@ hfit(
   ...,
   Nc0 = NULL,
   final_hessian = c("maxLik", "stable"),
-  gradient = c("numeric", "analytic")
+  gradient = c("numeric", "analytic"),
+  jacobian = NULL
 )
 
 \S4method{hfit}{hspec}(
@@ -47,7 +48,8 @@ hfit(
   ...,
   Nc0 = NULL,
   final_hessian = c("maxLik", "stable"),
-  gradient = c("numeric", "analytic")
+  gradient = c("numeric", "analytic"),
+  jacobian = NULL
 )
 }
 \arguments{
@@ -105,15 +107,25 @@ User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom l
 and residual-distribution likelihoods retain their calculation choices.}
 
 \item{gradient}{Named-only choice, \code{"numeric"} (default) or \code{"analytic"}.
-Request \code{"analytic"} for the Rcpp score of a numeric Hawkes specification.
+Request \code{"analytic"} for the Rcpp score of a Hawkes specification.
+Parameter-only functions require component derivatives through \code{jacobian}.
 Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
 and explicit or differentiable automatic initial states. Requires the \code{"auto"}
 or \code{"cpp"} engine. Unsupported specifications produce an error.}
+
+\item{jacobian}{Named-only list of derivatives for parameter-only \code{mu}, \code{alpha},
+\code{beta}, and \code{eta} functions when \code{gradient = "analytic"}. Each entry is a numeric
+matrix or a function with the single argument \code{param} returning that matrix.
+Rows follow \code{as.vector()} of the component matrix (column-major order); columns
+are named with the component's local \code{param} names. Column order is arbitrary.
+Required for each function with nonempty \code{param}; unused with a supplied \code{grad}
+or numerical differentiation.}
 }
 \value{
 A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
 containing the original specification, parameter map, normalized initial-state
-arguments, constraints, \code{reduced} setting, and final curvature diagnostics.
+arguments, constraints, \code{reduced} setting, supplied analytic Jacobians, and final
+curvature diagnostics.
 Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the checks and \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
 specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retrieve its initial-state arguments.
 }
@@ -150,13 +162,24 @@ With \code{gradient = "analytic"}, Rcpp computes the likelihood and its gradient
 together and reuses the result at the same parameter vector. Matrix scores are
 summed according to the saved parameter map. Automatic initial states include
 their parameter derivatives; a singular automatic initialization requires an
-explicit \code{lambda_component0}. Function components, state-dependent callbacks,
+explicit \code{lambda_component0}. State-dependent callbacks,
 mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
 BHHH requires event scores and cannot use this total score.
 A supplied \code{grad} takes precedence. A supplied \code{hess} is retained; otherwise
 \code{maxLik} can calculate curvature by differentiating the analytic gradient.
 Optimization paths and last digits can differ from numerical differentiation.
+
+Analytic function components must have the single argument \code{param} and return
+plain numeric matrices with constant dimensions. Their values and Jacobians
+must be deterministic, differentiable functions of \code{param}; captured constants
+must remain fixed. Supply exact derivatives in \code{jacobian}; the package does not
+automatically differentiate function bodies or verify the supplied formulas.
+Fixed entries have zero derivative. Components with \code{param = numeric(0)} need
+no Jacobian. Contributions for shared parameter names are added across components.
+Missing or malformed Jacobians produce an error. For these functions, the
+analytic option evaluates their matrices in R and the likelihood and component
+scores in Rcpp. Default fitting and standalone \code{logLik()} still use the R path.
 
 The default uses numerical differentiation and does not run
 additional curvature checks. With \code{final_hessian = "stable"}, final curvature is
@@ -204,6 +227,15 @@ inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
 c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 
+
+# A parameter-only function can keep selected entries fixed at zero.
+alpha_fun <- function(param = c(a = 0.2, b = 0.1)) {
+  matrix(c(param["a"], 0, param["b"], param["a"]), 2)
+}
+alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
+h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
+# hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
+#      jacobian = list(alpha = alpha_jac))
 
 # example 2
 \donttest{

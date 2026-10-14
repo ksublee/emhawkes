@@ -164,7 +164,9 @@ C++ 루프에서 사건마다 `Rcpp::Function`으로 R callback을 호출하는 
 
 The native loop returns partial scores for `mu`, `alpha`, `beta`, `eta`, and initial components. R sums matrix entries through the parameter map and applies the initial-state chain rule. Likelihood and score share one event loop and one cached result at the current parameter vector. Supplied `grad` and `hess` take precedence. BHHH requires event scores, so the aggregate score is not used for it.
 
-The next extension is a Jacobian adapter for parameter-only functions. Observed `N` and `Nc` paths remain fixed when differentiating state-dependent callbacks. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
+The Jacobian adapter now supports parameter-only functions through `hfit(jacobian = ...)`. Users supply exact component derivatives as constant matrices or `function(param)` callbacks. Shared names accumulate contributions; fixed entries have zero derivative. See the [function-gradient report](function-gradient-results.md).
+
+State-dependent callbacks remain a separate extension. Observed `N` and `Nc` paths remain fixed when differentiating state-dependent callbacks. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
 
 Keep these extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 

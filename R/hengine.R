@@ -3,8 +3,8 @@
 NULL
 
 # Inspect capabilities without evaluating a user function.
-native_hawkes_reason <- function(object, observation) {
-  values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
+native_hawkes_reason <- function(object, observation,
+    values = list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)) {
   if (any(vapply(values, is.function, logical(1)))) return("function-valued parameters")
   if (!is.null(object@impact)) return("a user-defined impact function")
   if (!is.null(object@dmark)) return("a mark density function")
@@ -19,18 +19,18 @@ native_hawkes_reason <- function(object, observation) {
     return("classed observation vectors")
   }
   dimensions <- object@dimens
-  shape <- dim(object@beta)
+  shape <- dim(values$beta)
   if (length(dimensions) != 1L || !is.finite(dimensions) || dimensions < 1 ||
       dimensions != floor(dimensions) || length(shape) != 2L ||
       shape[1] != dimensions || shape[2] < 1L ||
-      !((is.matrix(object@mu) && identical(dim(object@mu), c(as.integer(dimensions), 1L))) ||
-        (dimensions == 1 && is.numeric(object@mu) && is.null(dim(object@mu)) && length(object@mu) == 1L)) ||
-      !identical(dim(object@alpha), shape) ||
-      (!is.null(object@eta) && !identical(dim(object@eta), shape))) {
+      !((is.matrix(values$mu) && identical(dim(values$mu), c(as.integer(dimensions), 1L))) ||
+        (dimensions == 1 && is.numeric(values$mu) && is.null(dim(values$mu)) && length(values$mu) == 1L)) ||
+      !identical(dim(values$alpha), shape) ||
+      (!is.null(values$eta) && !identical(dim(values$eta), shape))) {
     return("inconsistent numeric parameter dimensions")
   }
   if (any(vapply(values, function(value) any(!is.finite(value)), logical(1))) ||
-      any(object@beta <= 0) || any(object@mu < 0)) return("invalid numeric parameters")
+      any(values$beta <= 0) || any(values$mu < 0)) return("invalid numeric parameters")
   if (is.null(object@type_col_map)) {
     if (shape[2] != dimensions) return("a missing kernel column mapping")
   } else {
@@ -78,14 +78,91 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
   c(result, residuals)
 }
 
-# Numeric Hawkes objective: one native pass supplies both value and score.
+# Prepare the chain-rule adapter once. Component/Jacobian functions must be
+# deterministic functions of their named local parameter vector.
+hawkes_component_plan <- function(object, observation, parameter_map, jacobian) {
+  component_names <- c("mu", "alpha", "beta", "eta")
+  components <- parameter_map$components[component_names]
+  functions <- names(components)[vapply(components, function(x) x$kind == "function", logical(1))]
+  for (name in functions) {
+    if (!identical(names(formals(components[[name]]$value)), "param")) {
+      stop("Analytic gradient requires ", name, " to have only the 'param' argument.", call. = FALSE)
+    }
+  }
+  if (is.null(jacobian)) jacobian <- list()
+  if (!is.list(jacobian) || (length(jacobian) &&
+      (is.null(names(jacobian)) || anyNA(names(jacobian)) || any(names(jacobian) == "") ||
+       anyDuplicated(names(jacobian)) || any(!names(jacobian) %in% functions)))) {
+    stop("jacobian must be a uniquely named list for function components mu, alpha, beta, or eta.", call. = FALSE)
+  }
+  local_param <- function(name, param) {
+    x <- components[[name]]
+    stats::setNames(param[x$index], names(x$param))
+  }
+  values_at <- function(param) {
+    values <- restore_parameters(parameter_map, param)
+    for (name in functions) values[[name]] <- components[[name]]$value(param = local_param(name, param))
+    values[component_names]
+  }
+  start_values <- values_at(parameter_map$start)
+  shapes <- lapply(start_values, dim)
+  validate_values <- function(values) {
+    for (name in functions) {
+      value <- values[[name]]
+      if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
+          !identical(dim(value), shapes[[name]])) {
+        stop(name, " must return a plain numeric matrix of constant dimensions for the analytic gradient.", call. = FALSE)
+      }
+    }
+    values
+  }
+  start_values <- validate_values(start_values)
+  reason <- native_hawkes_reason(object, observation, start_values)
+  if (!is.null(reason)) stop("Analytic gradient does not support ", reason, ".", call. = FALSE)
+  validate_jacobian <- function(value, name) {
+    param_names <- names(components[[name]]$param)
+    p <- length(param_names)
+    if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
+        !identical(dim(value), c(length(start_values[[name]]), p)) || any(!is.finite(value))) {
+      stop("jacobian$", name, " must be a finite numeric matrix with one row per component entry and one column per local parameter.", call. = FALSE)
+    }
+    if (p && (is.null(colnames(value)) || anyNA(colnames(value)) ||
+        anyDuplicated(colnames(value)) || !setequal(colnames(value), param_names))) {
+      stop("jacobian$", name, " column names must match the component's param names.", call. = FALSE)
+    }
+    if (p) value <- value[, param_names, drop = FALSE]
+    value
+  }
+  for (name in functions) {
+    if (is.null(jacobian[[name]])) {
+      if (length(components[[name]]$param)) {
+        stop("Analytic gradient requires jacobian$", name, " for this function component.", call. = FALSE)
+      }
+      jacobian[[name]] <- matrix(numeric(0), length(start_values[[name]]), 0L)
+    }
+    if (is.function(jacobian[[name]])) {
+      if (!identical(names(formals(jacobian[[name]])), "param")) {
+        stop("jacobian$", name, " must have only the 'param' argument.", call. = FALSE)
+      }
+      validate_jacobian(jacobian[[name]](param = local_param(name, parameter_map$start)), name)
+    } else jacobian[[name]] <- validate_jacobian(jacobian[[name]], name)
+  }
+  list(start = start_values, functions = functions,
+    values = function(param) validate_values(values_at(param)),
+    jacobian = function(name, param) {
+      value <- jacobian[[name]]
+      if (is.function(value)) value <- validate_jacobian(value(param = local_param(name, param)), name)
+      value
+    })
+}
+
+# Hawkes objective: one native pass supplies both value and component scores.
 # The one-point cache is local to a fit and is invalidated by any parameter change.
 make_hawkes_objective <- function(object, observation, lambda_component0,
-                                 parameter_map, verbose = FALSE) {
-  reason <- native_hawkes_reason(object, observation)
-  if (!is.null(reason)) stop("Analytic gradient does not support ", reason, ".", call. = FALSE)
+                                 parameter_map, verbose = FALSE, jacobian = NULL) {
+  plan <- hawkes_component_plan(object, observation, parameter_map, jacobian)
   dimensions <- object@dimens
-  kernels <- ncol(object@beta)
+  kernels <- ncol(plan$start$beta)
   initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
   if (is.null(initial) && length(object@type_col_map)) {
     stop("Analytic gradient requires lambda_component0 for a multi-kernel mapping.")
@@ -103,9 +180,11 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     if (length(param) != length(parameter_names)) stop("Parameter vector does not match the model.")
     param <- unname(param)
     if (identical(param, cached_param)) return(cached_result)
-    values <- restore_parameters(parameter_map, param)
     invalid <- list(loglikelihood = -Inf, gradient = stats::setNames(rep(NA_real_, length(param)), parameter_names))
-    if (any(!is.finite(param)) || any(values$beta <= 0) || any(values$mu < 0)) return(invalid)
+    if (any(!is.finite(param))) return(invalid)
+    values <- plan$values(param)
+    if (any(!is.finite(unlist(values, use.names = FALSE))) ||
+        any(values$beta <= 0) || any(values$mu < 0)) return(invalid)
     current_initial <- initial
     if (is.null(current_initial)) {
       if (dimensions == 1L) {
@@ -124,9 +203,14 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
         current_initial <- matrix(rep(stationary, dimensions), nrow = dimensions, byrow = TRUE) * values$alpha / values$beta
       }
     }
+    # Finite component values can still overflow the automatic initializer.
+    if (any(!is.finite(current_initial))) return(invalid)
     result <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
       as.numeric(values$mu), values$alpha, values$beta, values$eta,
       current_initial, mapping, infer = FALSE, gradient = TRUE)
+    if (!is.finite(result$loglikelihood)) {
+      return(list(loglikelihood = result$loglikelihood, gradient = invalid$gradient))
+    }
     score <- result$score
     if (is.null(initial) && is.finite(result$loglikelihood)) {
       if (dimensions == 1L) {
@@ -147,7 +231,16 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     gradient <- stats::setNames(numeric(length(param)), parameter_names)
     for (name in c("mu", "alpha", "beta", "eta")) {
       indices <- parameter_map$components[[name]]$index
-      if (length(indices)) {
+      if (length(indices) && name %in% plan$functions) {
+        jac <- plan$jacobian(name, param)
+        partial <- as.vector(score[[name]])
+        contribution <- if (all(is.finite(partial))) as.vector(crossprod(jac, partial)) else {
+          weighted <- jac * partial
+          weighted[jac == 0] <- 0
+          colSums(weighted)
+        }
+        gradient[indices] <- gradient[indices] + contribution
+      } else if (length(indices)) {
         sums <- rowsum(as.vector(score[[name]]), indices, reorder = FALSE)
         positions <- as.integer(rownames(sums))
         gradient[positions] <- gradient[positions] + sums[, 1]

@@ -33,10 +33,18 @@ NULL
 #' @param grad Optional gradient function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. Takes precedence over `gradient`.
 #' @param gradient Named-only choice, `"numeric"` (default) or `"analytic"`.
-#' Request `"analytic"` for the Rcpp score of a numeric Hawkes specification.
+#' Request `"analytic"` for the Rcpp score of a Hawkes specification.
+#' Parameter-only functions require component derivatives through `jacobian`.
 #' Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
 #' and explicit or differentiable automatic initial states. Requires the `"auto"`
 #' or `"cpp"` engine. Unsupported specifications produce an error.
+#' @param jacobian Named-only list of derivatives for parameter-only `mu`, `alpha`,
+#' `beta`, and `eta` functions when `gradient = "analytic"`. Each entry is a numeric
+#' matrix or a function with the single argument `param` returning that matrix.
+#' Rows follow `as.vector()` of the component matrix (column-major order); columns
+#' are named with the component's local `param` names. Column order is arbitrary.
+#' Required for each function with nonempty `param`; unused with a supplied `grad`
+#' or numerical differentiation.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
@@ -50,7 +58,8 @@ NULL
 #'
 #' @return A \code{\link[maxLik]{maxLik}} object with an `emhawkes` attribute
 #' containing the original specification, parameter map, normalized initial-state
-#' arguments, constraints, `reduced` setting, and final curvature diagnostics.
+#' arguments, constraints, `reduced` setting, supplied analytic Jacobians, and final
+#' curvature diagnostics.
 #' Use [fit_diagnostics()] to inspect the checks and [fitted_hspec()] to restore the estimated
 #' specification and [fit_initial_state()] to retrieve its initial-state arguments.
 #'
@@ -82,13 +91,24 @@ NULL
 #' together and reuses the result at the same parameter vector. Matrix scores are
 #' summed according to the saved parameter map. Automatic initial states include
 #' their parameter derivatives; a singular automatic initialization requires an
-#' explicit `lambda_component0`. Function components, state-dependent callbacks,
+#' explicit `lambda_component0`. State-dependent callbacks,
 #' mark densities, residual distributions, and custom likelihoods are not supported
 #' by this option. Equality-constrained optimization is also excluded.
 #' BHHH requires event scores and cannot use this total score.
 #' A supplied `grad` takes precedence. A supplied `hess` is retained; otherwise
 #' `maxLik` can calculate curvature by differentiating the analytic gradient.
 #' Optimization paths and last digits can differ from numerical differentiation.
+#'
+#' Analytic function components must have the single argument `param` and return
+#' plain numeric matrices with constant dimensions. Their values and Jacobians
+#' must be deterministic, differentiable functions of `param`; captured constants
+#' must remain fixed. Supply exact derivatives in `jacobian`; the package does not
+#' automatically differentiate function bodies or verify the supplied formulas.
+#' Fixed entries have zero derivative. Components with `param = numeric(0)` need
+#' no Jacobian. Contributions for shared parameter names are added across components.
+#' Missing or malformed Jacobians produce an error. For these functions, the
+#' analytic option evaluates their matrices in R and the likelihood and component
+#' scores in Rcpp. Default fitting and standalone `logLik()` still use the R path.
 #'
 #' The default uses numerical differentiation and does not run
 #' additional curvature checks. With `final_hessian = "stable"`, final curvature is
@@ -144,6 +164,15 @@ NULL
 #'   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
 #' c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 #'
+#'
+#' # A parameter-only function can keep selected entries fixed at zero.
+#' alpha_fun <- function(param = c(a = 0.2, b = 0.1)) {
+#'   matrix(c(param["a"], 0, param["b"], param["a"]), 2)
+#' }
+#' alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
+#' h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
+#' # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
+#' #      jacobian = list(alpha = alpha_jac))
 #'
 #' # example 2
 #' \donttest{
@@ -216,7 +245,7 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
                             verbose = FALSE, ..., Nc0 = NULL,
                             final_hessian = c("maxLik", "stable"),
-                            gradient = c("numeric", "analytic")) standardGeneric("hfit"))
+                            gradient = c("numeric", "analytic"), jacobian = NULL) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -231,7 +260,7 @@ setMethod(
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
            verbose = FALSE, ..., Nc0 = NULL,
            final_hessian = c("maxLik", "stable"),
-           gradient = c("numeric", "analytic")){
+           gradient = c("numeric", "analytic"), jacobian = NULL){
 
     final_hessian <- match.arg(final_hessian)
     gradient <- match.arg(gradient)
@@ -245,7 +274,7 @@ setMethod(
 
     }
 
-    # legacy argument 처리
+    # legacy argument 泥섎━
     if ("constraint" %in% names(additional_argument)) {
 
       if (!is.null(constraints)) {
@@ -354,7 +383,7 @@ setMethod(
           identical(toupper(as.character(additional_argument$finalHessian)), "BHHH")) {
         stop("Analytic gradient supplies a total score, not the event scores required by BHHH.")
       }
-      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose)
+      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian)
       llh_function <- objective$loglik
       grad <- objective$gradient
     }
@@ -393,6 +422,7 @@ setMethod(
                              N0 = observation$N0, Nc0 = observation$Nc0),
         reduced = reduced,
         gradient = gradient_used,
+        jacobian = if (gradient_used == "analytic") jacobian else NULL,
         custom_loglik = !is.null(mylogLik),
         constraints = constraints,
         diagnostics = final$diagnostics
