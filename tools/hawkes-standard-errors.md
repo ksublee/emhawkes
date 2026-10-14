@@ -173,4 +173,6 @@ Portable 비교 도구는 저장된 세 예제에서 추정값 불변과 독립 
 [Self와 Liang, 1987](https://pages.stat.wisc.edu/~larget/Stat998/Fall2015/Self-Liang-1987.pdf)
 
 현재 수정은 수치 Hessian 문제를 줄이고 불안정한 추론을 드러내는 단계입니다.
-Profile 구간, bootstrap 구간, Monte Carlo 포함률은 아직 구현·검증하지 않았습니다.
+기본 단변량·고정 사건 수 설계의 [Monte Carlo 포함률 검증](hawkes-monte-carlo.md)을 추가했습니다.
+안정화 곡률을 통과해도 약한 excitation과 짧은 근임계 표본에서 Wald 포함률이 낮았습니다.
+Profile 구간과 bootstrap 구간은 아직 구현·검증하지 않았습니다.

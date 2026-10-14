@@ -1,0 +1,5 @@
+seed 20261014
+replications 200
+workers 4
+package 0.9.9
+git ff33fe7a87534cd2f9d5fd767e02997387d998e9
