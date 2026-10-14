@@ -31,7 +31,12 @@ NULL
 #' @param constraints `NULL` or a constraint list passed to [maxLik::maxLik()].
 #' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #' @param grad Optional gradient function passed to [maxLik::maxLik()]. Its first
-#' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
+#' argument is the optimization parameter vector. Takes precedence over `gradient`.
+#' @param gradient Named-only choice, `"numeric"` (default) or `"analytic"`.
+#' Request `"analytic"` for the Rcpp score of a numeric Hawkes specification.
+#' Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
+#' and explicit or differentiable automatic initial states. Requires the `"auto"`
+#' or `"cpp"` engine. Unsupported specifications produce an error.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
@@ -73,8 +78,19 @@ NULL
 #'
 #' The built-in likelihood uses the calculation engine selected by
 #' `options(emhawkes.engine = "auto")`; see [logLik()] for supported models.
-#' Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
-#' separately or computed numerically by `maxLik`. The default does not run
+#' With `gradient = "analytic"`, Rcpp computes the likelihood and its gradient
+#' together and reuses the result at the same parameter vector. Matrix scores are
+#' summed according to the saved parameter map. Automatic initial states include
+#' their parameter derivatives; a singular automatic initialization requires an
+#' explicit `lambda_component0`. Function components, state-dependent callbacks,
+#' mark densities, residual distributions, and custom likelihoods are not supported
+#' by this option. Equality-constrained optimization is also excluded.
+#' BHHH requires event scores and cannot use this total score.
+#' A supplied `grad` takes precedence. A supplied `hess` is retained; otherwise
+#' `maxLik` can calculate curvature by differentiating the analytic gradient.
+#' Optimization paths and last digits can differ from numerical differentiation.
+#'
+#' The default uses numerical differentiation and does not run
 #' additional curvature checks. With `final_hessian = "stable"`, final curvature is
 #' checked after optimization without changing coefficients, log-likelihood,
 #' the stored optimizer gradient, return code, or iteration count.
@@ -119,6 +135,8 @@ NULL
 #' res <- hsim(h, size=100)
 #' fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
 #' summary(fit)
+#' # Optional Rcpp gradient for this numeric specification:
+#' # hfit(h, res$inter_arrival, res$type, gradient = "analytic")
 #' fit_diagnostics(fit)$status
 #' estimated <- fitted_hspec(fit)
 #' initial <- fit_initial_state(fit)
@@ -197,7 +215,8 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
                             verbose = FALSE, ..., Nc0 = NULL,
-                            final_hessian = c("maxLik", "stable")) standardGeneric("hfit"))
+                            final_hessian = c("maxLik", "stable"),
+                            gradient = c("numeric", "analytic")) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -211,9 +230,11 @@ setMethod(
            reduced = TRUE,
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
            verbose = FALSE, ..., Nc0 = NULL,
-           final_hessian = c("maxLik", "stable")){
+           final_hessian = c("maxLik", "stable"),
+           gradient = c("numeric", "analytic")){
 
     final_hessian <- match.arg(final_hessian)
+    gradient <- match.arg(gradient)
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
@@ -321,6 +342,23 @@ setMethod(
     }
 
 
+    gradient_used <- if (!is.null(grad)) "user" else gradient
+    if (identical(gradient_used, "analytic")) {
+      if (!is.null(mylogLik)) stop("Analytic gradient does not support a custom likelihood.")
+      if (!is.null(constraints$eqA) || !is.null(constraints$eqB)) {
+        stop('Analytic gradient does not support equality constraints; use gradient = "numeric".')
+      }
+      engine <- match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
+      if (engine == "r") stop('Analytic gradient requires the C++ engine; use emhawkes.engine = "auto" or "cpp".')
+      if (identical(toupper(method), "BHHH") || isTRUE(additional_argument$bhhhHessian) ||
+          identical(toupper(as.character(additional_argument$finalHessian)), "BHHH")) {
+        stop("Analytic gradient supplies a total score, not the event scores required by BHHH.")
+      }
+      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose)
+      llh_function <- objective$loglik
+      grad <- objective$gradient
+    }
+
     #llh_function(starting_point)
     #maxLik::maxLik(logLik=llh_function,
     #               start=starting_point, grad, hess, method = method, constraints = constraints, ...)
@@ -354,6 +392,7 @@ setMethod(
         initial_state = list(lambda_component0 = lambda_component0,
                              N0 = observation$N0, Nc0 = observation$Nc0),
         reduced = reduced,
+        gradient = gradient_used,
         custom_loglik = !is.null(mylogLik),
         constraints = constraints,
         diagnostics = final$diagnostics

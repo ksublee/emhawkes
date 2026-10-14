@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // hawkes_loglik_cpp
-Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer);
-RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP) {
+Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient);
+RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type dt(dtSEXP);
@@ -25,13 +25,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type initial(initialSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type mapping(mappingSEXP);
     Rcpp::traits::input_parameter< bool >::type infer(inferSEXP);
-    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer));
+    Rcpp::traits::input_parameter< bool >::type gradient(gradientSEXP);
+    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 10},
+    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 11},
     {NULL, NULL, 0}
 };
 

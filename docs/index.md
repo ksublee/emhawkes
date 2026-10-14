@@ -95,10 +95,24 @@ numeric inputs with custom classes use the R implementation. Simulation
 continues to use R.
 
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
-this engine for its built-in likelihood. Gradient and Hessian
-calculations remain numerical unless functions are supplied through
-`grad` and `hess`. The Rcpp engine does not change the parameter-sharing
-rules.
+this engine for its built-in likelihood. Numerical differentiation
+remains the default. For numeric Hawkes models, request the Rcpp
+analytic gradient:
+
+`fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, ``path``$``inter_arrival``, ``path``$``type``, gradient ``=`` ``"analytic"``)`
+
+This option supports shared and fixed parameters, multi-kernel mappings,
+numeric mark effects, and derivatives of automatic initial states. It
+computes the likelihood and score together. Function components,
+state-dependent callbacks, custom likelihoods, mark densities, residual
+distributions, equality constraints, and BHHH are not yet supported.
+Singular automatic initialization requires explicit `lambda_component0`.
+A supplied `grad` takes precedence. A supplied `hess` is retained;
+otherwise `maxLik` can differentiate the analytic gradient for
+curvature. The optimizer’s path and last digits may differ from
+numerical differentiation. The [gradient
+report](https://github.com/ksublee/emhawkes/blob/main/tools/gradient-results.md)
+describes accuracy, full-fit timings, and the state-dependent extension.
 
 For comparison or troubleshooting, set `options(emhawkes.engine = "r")`
 to use the R calculation, or `"auto"` to restore automatic selection.

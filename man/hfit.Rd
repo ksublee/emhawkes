@@ -24,7 +24,8 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable")
+  final_hessian = c("maxLik", "stable"),
+  gradient = c("numeric", "analytic")
 )
 
 \S4method{hfit}{hspec}(
@@ -45,7 +46,8 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable")
+  final_hessian = c("maxLik", "stable"),
+  gradient = c("numeric", "analytic")
 )
 }
 \arguments{
@@ -78,7 +80,7 @@ Function components share parameters by name. Conflicting starting values for
 a shared name produce a warning; the first value is used.}
 
 \item{grad}{Optional gradient function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
-argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
+argument is the optimization parameter vector. Takes precedence over \code{gradient}.}
 
 \item{hess}{Optional Hessian function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
 argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
@@ -101,6 +103,12 @@ Request \code{"stable"} to recalculate numerical final curvature for the built-i
 Hawkes likelihood using scaled central differences and Richardson extrapolation.
 User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
 and residual-distribution likelihoods retain their calculation choices.}
+
+\item{gradient}{Named-only choice, \code{"numeric"} (default) or \code{"analytic"}.
+Request \code{"analytic"} for the Rcpp score of a numeric Hawkes specification.
+Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
+and explicit or differentiable automatic initial states. Requires the \code{"auto"}
+or \code{"cpp"} engine. Unsupported specifications produce an error.}
 }
 \value{
 A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
@@ -138,8 +146,19 @@ entries that use it.
 
 The built-in likelihood uses the calculation engine selected by
 \code{options(emhawkes.engine = "auto")}; see \code{\link[=logLik]{logLik()}} for supported models.
-Rcpp accelerates likelihood evaluation. Optimizer derivatives are supplied
-separately or computed numerically by \code{maxLik}. The default does not run
+With \code{gradient = "analytic"}, Rcpp computes the likelihood and its gradient
+together and reuses the result at the same parameter vector. Matrix scores are
+summed according to the saved parameter map. Automatic initial states include
+their parameter derivatives; a singular automatic initialization requires an
+explicit \code{lambda_component0}. Function components, state-dependent callbacks,
+mark densities, residual distributions, and custom likelihoods are not supported
+by this option. Equality-constrained optimization is also excluded.
+BHHH requires event scores and cannot use this total score.
+A supplied \code{grad} takes precedence. A supplied \code{hess} is retained; otherwise
+\code{maxLik} can calculate curvature by differentiating the analytic gradient.
+Optimization paths and last digits can differ from numerical differentiation.
+
+The default uses numerical differentiation and does not run
 additional curvature checks. With \code{final_hessian = "stable"}, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
 the stored optimizer gradient, return code, or iteration count.
@@ -176,6 +195,8 @@ h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
 fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
 summary(fit)
+# Optional Rcpp gradient for this numeric specification:
+# hfit(h, res$inter_arrival, res$type, gradient = "analytic")
 fit_diagnostics(fit)$status
 estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)

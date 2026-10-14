@@ -27,7 +27,8 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable")
+  final_hessian = c("maxLik", "stable"),
+  gradient = c("numeric", "analytic")
 )
 
 # S4 method for class 'hspec'
@@ -49,7 +50,8 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable")
+  final_hessian = c("maxLik", "stable"),
+  gradient = c("numeric", "analytic")
 )
 ```
 
@@ -113,8 +115,8 @@ hfit(
 
   Optional gradient function passed to
   [`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html). Its
-  first argument is the optimization parameter vector. If `NULL`, use
-  numerical differentiation.
+  first argument is the optimization parameter vector. Takes precedence
+  over `gradient`.
 
 - hess:
 
@@ -160,6 +162,15 @@ hfit(
   `finalHessian = FALSE`, BHHH curvature, custom likelihoods, and
   residual-distribution likelihoods retain their calculation choices.
 
+- gradient:
+
+  Named-only choice, `"numeric"` (default) or `"analytic"`. Request
+  `"analytic"` for the Rcpp score of a numeric Hawkes specification.
+  Supports shared and fixed parameters, numeric mark effects,
+  multi-kernel mappings, and explicit or differentiable automatic
+  initial states. Requires the `"auto"` or `"cpp"` engine. Unsupported
+  specifications produce an error.
+
 ## Value
 
 A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
@@ -203,15 +214,27 @@ a shared parameter fixes all entries that use it.
 The built-in likelihood uses the calculation engine selected by
 `options(emhawkes.engine = "auto")`; see
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
-supported models. Rcpp accelerates likelihood evaluation. Optimizer
-derivatives are supplied separately or computed numerically by `maxLik`.
-The default does not run additional curvature checks. With
-`final_hessian = "stable"`, final curvature is checked after
-optimization without changing coefficients, log-likelihood, the stored
-optimizer gradient, return code, or iteration count. The stabilization
-selects difference steps and checks their consistency. If default
-numerical Hawkes standard errors contain `NaN`, a short message suggests
-this option.
+supported models. With `gradient = "analytic"`, Rcpp computes the
+likelihood and its gradient together and reuses the result at the same
+parameter vector. Matrix scores are summed according to the saved
+parameter map. Automatic initial states include their parameter
+derivatives; a singular automatic initialization requires an explicit
+`lambda_component0`. Function components, state-dependent callbacks,
+mark densities, residual distributions, and custom likelihoods are not
+supported by this option. Equality-constrained optimization is also
+excluded. BHHH requires event scores and cannot use this total score. A
+supplied `grad` takes precedence. A supplied `hess` is retained;
+otherwise `maxLik` can calculate curvature by differentiating the
+analytic gradient. Optimization paths and last digits can differ from
+numerical differentiation.
+
+The default uses numerical differentiation and does not run additional
+curvature checks. With `final_hessian = "stable"`, final curvature is
+checked after optimization without changing coefficients,
+log-likelihood, the stored optimizer gradient, return code, or iteration
+count. The stabilization selects difference steps and checks their
+consistency. If default numerical Hawkes standard errors contain `NaN`,
+a short message suggests this option.
 
 The requested stabilization compares information, inverse information,
 and standard errors across difference steps. Failed checks, singular or
@@ -276,6 +299,8 @@ summary(fit)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+# Optional Rcpp gradient for this numeric specification:
+# hfit(h, res$inter_arrival, res$type, gradient = "analytic")
 fit_diagnostics(fit)$status
 #> [1] "not_checked"
 estimated <- fitted_hspec(fit)

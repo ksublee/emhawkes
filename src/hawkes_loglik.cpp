@@ -9,7 +9,7 @@
 Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha,
     Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta,
-    Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer) {
+    Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false) {
 
     const int dimensions = beta.nrow(), kernels = beta.ncol();
     if (dimensions < 1 || kernels < 1 || dt.size() < 1 || dt.size() > INT_MAX ||
@@ -58,6 +58,17 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
 
     // R inputs are read only. Recursive state owns its storage.
     std::vector<double> state(initial.begin(), initial.end());
+    // Local sensitivities keep score work O(events * components). R handles
+    // parameter sharing and the chain rule for a parameter-dependent initial state.
+    std::vector<double> da, db, de, dc;
+    std::vector<long double> ga, gb, ge, gc, gm;
+    if (gradient) {
+        da.assign(components, 0.0); db.assign(components, 0.0);
+        de.assign(components, 0.0); dc.assign(components, 1.0);
+        ga.assign(components, 0.0L); gb.assign(components, 0.0L);
+        ge.assign(components, 0.0L); gc.assign(components, 0.0L);
+        gm.assign(dimensions, 0.0L);
+    }
     std::vector<long double> row_integrals(dimensions), row_totals(dimensions);
     std::vector<long double> residual_integrals(dimensions, 0.0L);
     std::vector<bool> observed(dimensions, false);
@@ -93,15 +104,42 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                 const double integral = emhawkes::integrated_component(state[index], beta[index], dt[n], scaled_time);
                 row_integrals[i] += integral;
                 total_integral += integral;
-                state[index] *= std::exp(-scaled_time);
+                const double decay = std::exp(-scaled_time);
+                if (gradient) {
+                    const long double weight = scaled_time == 0.0 ? dt[n] :
+                        -std::expm1(-scaled_time) / beta[index];
+                    ga[index] -= da[index] * weight;
+                    gb[index] -= db[index] * weight +
+                        emhawkes::integrated_component_beta(state[index], beta[index], dt[n], decay, integral);
+                    if (has_eta) ge[index] -= de[index] * weight;
+                    gc[index] -= dc[index] * weight;
+                    da[index] *= decay;
+                    db[index] = db[index] * decay - dt[n] * (state[index] * decay);
+                    if (has_eta) de[index] *= decay;
+                    dc[index] *= decay;
+                }
+                state[index] *= decay;
                 row_totals[i] += state[index];
                 if (infer) lambda_component(n, i * kernels + j) = state[index];
             }
         }
         const int event_type = type[n] - 1;
         event_log += std::log(mu[event_type] + static_cast<double>(row_totals[event_type]));
+        if (gradient) {
+            const double intensity = mu[event_type] + static_cast<double>(row_totals[event_type]);
+            const double denominator = intensity > 0.0 ? intensity : R_NaN;
+            gm[event_type] += 1.0 / denominator;
+            for (int j = 0; j < kernels; ++j) {
+                const int index = event_type + dimensions * j;
+                ga[index] += da[index] / denominator;
+                gb[index] += db[index] / denominator;
+                if (has_eta) ge[index] += de[index] / denominator;
+                gc[index] += dc[index] / denominator;
+            }
+        }
         for (int i = 0; i < dimensions; ++i) {
             const double baseline = mu[i] * dt[n];
+            if (gradient) gm[i] -= dt[n];
             baseline_integral += baseline;
             if (infer) {
                 const double phi = static_cast<double>(row_integrals[i]) + baseline;
@@ -125,6 +163,10 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                 const int index = i + dimensions * selected[j];
                 state[index] += alpha[index];
                 if (has_eta) state[index] += mark_effect[index] * (mark[n] - 1.0);
+                if (gradient) {
+                    da[index] += 1.0;
+                    if (has_eta) de[index] += mark[n] - 1.0;
+                }
             }
         }
         if (infer) {
@@ -139,11 +181,30 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             }
         }
     }
-    if (!infer) return Rcpp::List::create(Rcpp::Named("loglikelihood") = event_log + integrated_log);
+    Rcpp::List result = Rcpp::List::create(Rcpp::Named("loglikelihood") = event_log + integrated_log);
+    if (gradient) {
+        Rcpp::NumericVector score_mu(dimensions);
+        Rcpp::NumericMatrix score_alpha(dimensions, kernels), score_beta(dimensions, kernels),
+            score_eta(dimensions, kernels), score_initial(dimensions, kernels);
+        const bool valid = R_FINITE(event_log + integrated_log);
+        for (int i = 0; i < dimensions; ++i) score_mu[i] = valid ? static_cast<double>(gm[i]) : R_NaN;
+        for (int j = 0; j < components; ++j) {
+            score_alpha[j] = valid ? static_cast<double>(ga[j]) : R_NaN;
+            score_beta[j] = valid ? static_cast<double>(gb[j]) : R_NaN;
+            score_eta[j] = valid ? static_cast<double>(ge[j]) : R_NaN;
+            score_initial[j] = valid ? static_cast<double>(gc[j]) : R_NaN;
+        }
+        result["score"] = Rcpp::List::create(Rcpp::Named("mu") = score_mu,
+            Rcpp::Named("alpha") = score_alpha, Rcpp::Named("beta") = score_beta,
+            Rcpp::Named("eta") = score_eta, Rcpp::Named("initial") = score_initial);
+    }
+    if (!infer) return result;
     Rcpp::List residual_output(dimensions);
     for (int i = 0; i < dimensions; ++i) residual_output[i] = Rcpp::wrap(residuals[i]);
-    return Rcpp::List::create(Rcpp::Named("loglikelihood") = event_log + integrated_log,
-        Rcpp::Named("lambda") = lambda, Rcpp::Named("lambda_component") = lambda_component,
-        Rcpp::Named("rambda") = rambda, Rcpp::Named("rambda_component") = rambda_component,
-        Rcpp::Named("residuals") = residual_output);
+    result["lambda"] = lambda;
+    result["lambda_component"] = lambda_component;
+    result["rambda"] = rambda;
+    result["rambda_component"] = rambda_component;
+    result["residuals"] = residual_output;
+    return result;
 }

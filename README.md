@@ -79,9 +79,23 @@ and `residual_process()` helpers. Simulation returns an `hreal` object.
 
 Numeric Hawkes specifications use a compiled Rcpp engine for likelihood evaluation and inference, including multi-kernel models, unequal decay rates, and numeric mark effects. Function-valued parameters, user-defined impact or mark densities, residual-distribution models, and numeric inputs with custom classes use the R implementation. Simulation continues to use R.
 
-`hfit()` uses this engine for its built-in likelihood. Gradient and Hessian
-calculations remain numerical unless functions are supplied through `grad` and
-`hess`. The Rcpp engine does not change the parameter-sharing rules.
+`hfit()` uses this engine for its built-in likelihood. Numerical differentiation
+remains the default. For numeric Hawkes models, request the Rcpp analytic gradient:
+
+```r
+fit <- hfit(h, path$inter_arrival, path$type, gradient = "analytic")
+```
+
+This option supports shared and fixed parameters, multi-kernel mappings, numeric
+mark effects, and derivatives of automatic initial states. It computes the
+likelihood and score together. Function components, state-dependent callbacks,
+custom likelihoods, mark densities, residual distributions, equality constraints,
+and BHHH are not yet supported. Singular automatic initialization requires explicit
+`lambda_component0`. A supplied `grad` takes precedence. A supplied `hess` is
+retained; otherwise `maxLik` can differentiate the analytic gradient for curvature.
+The optimizer's path and last digits may differ from numerical differentiation.
+The [gradient report](https://github.com/ksublee/emhawkes/blob/main/tools/gradient-results.md)
+describes accuracy, full-fit timings, and the state-dependent extension.
 
 For comparison or troubleshooting, set `options(emhawkes.engine = "r")` to use the R calculation, or `"auto"` to restore automatic selection. The development setting `"cpp"` requires a supported numeric specification and reports unsupported features. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.
 

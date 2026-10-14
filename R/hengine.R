@@ -77,3 +77,92 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
   names(residuals) <- paste0("res_process", seq_len(dimensions))
   c(result, residuals)
 }
+
+# Numeric Hawkes objective: one native pass supplies both value and score.
+# The one-point cache is local to a fit and is invalidated by any parameter change.
+make_hawkes_objective <- function(object, observation, lambda_component0,
+                                 parameter_map, verbose = FALSE) {
+  reason <- native_hawkes_reason(object, observation)
+  if (!is.null(reason)) stop("Analytic gradient does not support ", reason, ".", call. = FALSE)
+  dimensions <- object@dimens
+  kernels <- ncol(object@beta)
+  initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
+  if (is.null(initial) && length(object@type_col_map)) {
+    stop("Analytic gradient requires lambda_component0 for a multi-kernel mapping.")
+  }
+  mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
+  mapping <- lapply(mapping, function(x) as.integer(x) - 1L)
+  types <- observation$type
+  types[1] <- 0L
+  types <- as.integer(types)
+  parameter_names <- names(parameter_map$start)
+  cached_param <- cached_result <- NULL
+
+  evaluate <- function(param) {
+    if (!is.null(names(param))) param <- param[parameter_names]
+    if (length(param) != length(parameter_names)) stop("Parameter vector does not match the model.")
+    param <- unname(param)
+    if (identical(param, cached_param)) return(cached_result)
+    values <- restore_parameters(parameter_map, param)
+    invalid <- list(loglikelihood = -Inf, gradient = stats::setNames(rep(NA_real_, length(param)), parameter_names))
+    if (any(!is.finite(param)) || any(values$beta <= 0) || any(values$mu < 0)) return(invalid)
+    current_initial <- initial
+    if (is.null(current_initial)) {
+      if (dimensions == 1L) {
+        gap <- values$beta[1] - values$alpha[1]
+        current_initial <- matrix((values$mu[1] * values$beta[1] / gap - values$mu[1]) / 2)
+        if (!all(is.finite(current_initial))) {
+          stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
+        }
+      } else {
+        branching <- values$alpha / values$beta
+        inverse <- tryCatch(solve(diag(dimensions) - branching), error = function(e) NULL)
+        if (is.null(inverse)) {
+          stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
+        }
+        stationary <- inverse %*% values$mu
+        current_initial <- matrix(rep(stationary, dimensions), nrow = dimensions, byrow = TRUE) * values$alpha / values$beta
+      }
+    }
+    result <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
+      as.numeric(values$mu), values$alpha, values$beta, values$eta,
+      current_initial, mapping, infer = FALSE, gradient = TRUE)
+    score <- result$score
+    if (is.null(initial) && is.finite(result$loglikelihood)) {
+      if (dimensions == 1L) {
+        q <- score$initial[1]
+        score$mu <- score$mu + q * values$alpha[1] / (2 * gap)
+        score$alpha <- score$alpha + q * values$mu[1] * values$beta[1] / (2 * gap^2)
+        score$beta <- score$beta - q * values$mu[1] * values$alpha[1] / (2 * gap^2)
+      } else {
+        # C_ij = (alpha_ij / beta_ij) * stationary_j. This adjoint applies
+        # the initial-state chain rule without a components-by-parameters array.
+        w <- as.vector(crossprod(inverse, colSums(score$initial * branching)))
+        g_branching <- sweep(score$initial + w, 2, as.vector(stationary), "*")
+        score$mu <- score$mu + w
+        score$alpha <- score$alpha + g_branching / values$beta
+        score$beta <- score$beta - g_branching * branching / values$beta
+      }
+    }
+    gradient <- stats::setNames(numeric(length(param)), parameter_names)
+    for (name in c("mu", "alpha", "beta", "eta")) {
+      indices <- parameter_map$components[[name]]$index
+      if (length(indices)) {
+        sums <- rowsum(as.vector(score[[name]]), indices, reorder = FALSE)
+        positions <- as.integer(rownames(sums))
+        gradient[positions] <- gradient[positions] + sums[, 1]
+      }
+    }
+    cached_param <<- param
+    cached_result <<- list(loglikelihood = result$loglikelihood, gradient = gradient)
+    cached_result
+  }
+  list(loglik = function(param) {
+    value <- evaluate(param)$loglikelihood
+    if (verbose) {
+      cat("Parameters : ", param, "\n")
+      cat("Log likelihood : ", value, "\n")
+    }
+    c(loglikelihood = value)
+  }, gradient = function(param) evaluate(param)$gradient)
+}

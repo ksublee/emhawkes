@@ -160,11 +160,13 @@ C++ 루프에서 사건마다 `Rcpp::Function`으로 R callback을 호출하는 
 
 ### Gradient
 
-첫 해석적 gradient는 숫자 모수, 일반 Hawkes, 명시적으로 주어진 고정 초기 성분부터 검토한다. `maxLik`의 기존 수치 미분을 Rcpp 도입과 동시에 없애지 않는다.
+`hfit(gradient = "analytic")` now provides the Rcpp score for numeric Hawkes models. Numerical differentiation remains the default. It supports explicit initial components and includes the derivatives of automatic initial states. See the [accuracy and timing report](gradient-results.md).
 
-전체 행렬 원소에 대한 미분을 현재 공유 인덱스로 합쳐 자유모수의 gradient를 만든다. 함수형 재매개화의 Jacobian, `beta`에 대한 안정적인 적분 미분, `eta * (mark - 1)`을 별도로 검증한다. 초기 성분이 모수에 따라 정해지면 그 초기화의 미분도 포함해야 한다. 이 조건을 충족하지 못한 모형에는 해석적 gradient를 제공하지 않는다.
+The native loop returns partial scores for `mu`, `alpha`, `beta`, `eta`, and initial components. R sums matrix entries through the parameter map and applies the initial-state chain rule. Likelihood and score share one event loop and one cached result at the current parameter vector. Supplied `grad` and `hess` take precedence. BHHH requires event scores, so the aggregate score is not used for it.
 
-수치 미분의 여러 step과 방향 미분으로 확인한다. 우도가 가까워도 Hessian과 표준오차는 더 민감할 수 있다. 기존 확장 예제의 `NaN` 표준오차를 계산 속도 개선만으로 해결했다고 판단하지 않는다. 사용자 `grad`와 `hess`를 자동 gradient로 덮어쓰지 않는다.
+The next extension is a Jacobian adapter for parameter-only functions. Observed `N` and `Nc` paths remain fixed when differentiating state-dependent callbacks. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
+
+Keep these extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 
 ### 시뮬레이션
 

@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Add optional `hfit(gradient = "analytic")` for numeric Hawkes models.
+  Compute likelihood and score together in Rcpp, preserve parameter
+  sharing and fixed parameters, and differentiate automatic initial
+  states. Keep numerical differentiation as the default and retain
+  supplied derivatives.
 - Name the optional final-Hessian stabilization
   `final_hessian = "stable"`. Keep `"maxLik"` as the default.
 - Suggest optional `final_hessian = "stable"` when default numerical
