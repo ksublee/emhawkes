@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Reduce observed-baseline dispatch overhead in numerical fitting and
+  standalone likelihood/inference. Evaluate the unchanged R callback
+  from a native loop, preserving default parameters, event indices,
+  terminal calls and capability fallback.
+
 - Extend standalone C++ likelihood and intensity/residual inference to
   observed baselines and sequential state-dependent impacts, including
   Bid-ask models. Preserve terminal baseline evaluation, component
