@@ -110,9 +110,11 @@ helpers. Simulation returns an `hreal` object.
 With automatic engine selection, numeric Hawkes specifications use a
 compiled Rcpp engine for likelihood evaluation and inference, including
 multi-kernel models, unequal decay rates, and numeric mark effects.
-Function-valued parameters, user-defined impact or mark densities,
+Standalone likelihood evaluation retains the R implementation for
+function-valued parameters and impacts. Mark densities,
 residual-distribution models, and numeric inputs with custom classes use
-the R implementation. Simulation continues to use R.
+R. Simulation continues to use R. The fitting adapters below also select
+C++ automatically for supported callback models.
 
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 this engine for its built-in likelihood. Numerical differentiation
@@ -162,15 +164,12 @@ component with `param = numeric(0)` needs no Jacobian. Shared parameter
 names receive the sum of all component contributions. Missing or
 malformed Jacobians produce an error. The analytic fit evaluates
 component functions in R and the likelihood and scores in Rcpp. With the
-default `"auto"` engine, function-valued models retain the R likelihood.
-Parameter-only functions can also use C++ with the default numerical
-differentiation, without Jacobians:
+default `"auto"` engine, supported function-valued models also use C++
+with numerical differentiation, without Jacobians:
 
 ``` r
 
-previous_engine <- options(emhawkes.engine = "cpp")
 fit_numeric <- hfit(h_fun, path$inter_arrival, path$type)
-options(previous_engine)
 ```
 
 The functions must return plain numeric matrices of constant dimensions
@@ -180,7 +179,11 @@ mark-dependent impacts and the Hawkes flocking example. Numerical C++
 fitting also supports observed baselines and sequential impacts that
 explicitly request current or historical intensity states, including the
 bid-ask example. Mark densities and residual distributions remain
-unsupported. Supplied `grad` and `hess` are retained. Standalone
+unsupported. Supplied `grad` and `hess` are retained. Automatic
+selection uses R for unsupported specifications; forcing `"cpp"` reports
+unsupported features. Callback errors propagate. Callbacks must be
+deterministic with fixed captures; detecting an unsupported state read
+through `...` can require a retry in R. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
 keeps its numeric-only C++ contract; select the R engine when evaluating
 a restored function-valued model.

@@ -694,11 +694,13 @@ Component functions can declare only the arguments they need, and use
 <h3 id="calculation-engines">Calculation engines<a class="anchor" aria-label="anchor" href="#calculation-engines"></a>
 </h3>
 <p>Numeric Hawkes specifications use the Rcpp engine automatically for
-likelihood evaluation and inference. Function components and
-residual-distribution models use the R implementation. Simulation uses
-R. Use the <code>emhawkes.engine</code> option to compare the R and
-automatic calculations. This function restores the previous option after
-each call.</p>
+likelihood evaluation and inference. During fitting, supported function
+components and impacts also use C++ automatically. Unsupported
+specifications and residual distributions use R. Standalone likelihood
+evaluation of function-valued models and simulation use R. Use the
+<code>emhawkes.engine</code> option to compare the R and automatic
+calculations. This function restores the previous option after each
+call.</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">engine_loglik</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">engine</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">previous</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>emhawkes.engine <span class="op">=</span> <span class="va">engine</span><span class="op">)</span></span>
@@ -1142,7 +1144,7 @@ argument.</p>
 <span><span class="co">#&gt;         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), </span></span>
 <span><span class="co">#&gt;         nrow = 2)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5634eacaebb8&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x564c0c2a1a78&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot alpha: </span></span>
 <span><span class="co">#&gt; function (param = c(eta = 5, nu = 3)) </span></span>
@@ -1152,7 +1154,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, </span></span>
 <span><span class="co">#&gt;         zeta_tl), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5634e74bd538&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x564c0a9bb9b0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt; function (param = c(beta = 12, kappa = 0.12)) </span></span>
@@ -1162,7 +1164,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, </span></span>
 <span><span class="co">#&gt;         beta2), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5634ec780840&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x564c0ae92080&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot type_col_map: </span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -1601,7 +1603,7 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt;         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, </span></span>
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5634eccea028&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x564c0deacd18&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1682,9 +1684,9 @@ both arguments because the function uses them, along with
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
-<p>This impact depends on observed event counts, so the C++ likelihood
-can be used with numerical differentiation. No Jacobian is needed; R
-still evaluates the impact.</p>
+<p>This impact depends on observed event counts, so automatic selection
+uses the C++ likelihood with numerical differentiation. No Jacobian is
+needed; R still evaluates the impact.</p>
 <div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">previous_engine</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>emhawkes.engine <span class="op">=</span> <span class="st">"cpp"</span><span class="op">)</span></span>
 <span><span class="va">fit_fl_cpp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec_fl</span>, <span class="va">hr_fl</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">hr_fl</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span>
@@ -1873,7 +1875,7 @@ sum of the components in each row remains nonnegative.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], </span></span>
 <span><span class="co">#&gt;         param["alpha_s1"]), nrow = 4, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5634ec72c710&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x564c0c24f5b0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1988,9 +1990,11 @@ distribution because no <code>dmark</code> function is supplied.</p>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
-<p>The C++ likelihood supports this observed baseline and sequential
-impact with numerical differentiation. The impact reads the current
-state before its jump. No Jacobian is required.</p>
+<p>Automatic selection uses the C++ likelihood for this observed
+baseline and sequential impact with numerical differentiation. The
+impact reads the current state before its jump. No Jacobian is required.
+The explicit engine setting below can be used to require C++
+support.</p>
 <div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">previous_engine</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>emhawkes.engine <span class="op">=</span> <span class="st">"cpp"</span><span class="op">)</span></span>
 <span><span class="va">mle_ba_cpp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_ba</span>, <span class="va">hr_ba</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">hr_ba</span><span class="op">$</span><span class="va">type</span>, <span class="va">hr_ba</span><span class="op">$</span><span class="va">mark</span>,</span>
@@ -2107,7 +2111,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     do.call(rresidual, c(list(size), distribution_parameters(rresidual, </span></span>
 <span><span class="co">#&gt;         param)))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5634f01b1be0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x564c0b42c460&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot dresidual: </span></span>
 <span><span class="co">#&gt; function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) </span></span>
@@ -2115,7 +2119,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, </span></span>
 <span><span class="co">#&gt;         param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5634f01b1be0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x564c0b42c460&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot presidual: </span></span>
 <span><span class="co">#&gt; function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -2124,7 +2128,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, </span></span>
 <span><span class="co">#&gt;         params = distribution_parameters(presidual, param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5634f01b1be0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x564c0b42c460&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot qresidual: </span></span>
 <span><span class="co">#&gt; function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -2134,7 +2138,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;         log.p = log.p, params = distribution_parameters(qresidual, </span></span>
 <span><span class="co">#&gt;             param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5634f01b1be0&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x564c0b42c460&gt;</span></span></code></pre></div>
 <p>The following histogram shows inter-arrival times from a model with
 <code>tzexp</code> residuals.</p>
 <div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">

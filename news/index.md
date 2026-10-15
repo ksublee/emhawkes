@@ -2,6 +2,14 @@
 
 ## emhawkes 0.9.9
 
+- Extend automatic engine selection in
+  [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) to
+  supported parameter-only functions, observed baselines, and observed
+  or sequential state-dependent impacts. Keep numerical differentiation
+  and Hessian defaults. Unsupported specifications use R; forced C++ and
+  user callback errors remain explicit. Standalone likelihood evaluation
+  and simulation are unchanged.
+
 - Support numerical C++ fitting for observed baselines and sequential
   state-dependent impacts, including the bid-ask price model. Preserve
   pre-jump state timing and history layout, protect retained callback

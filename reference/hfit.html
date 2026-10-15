@@ -262,9 +262,10 @@ Fixed entries have zero derivative. Components with <code>param = numeric(0)</co
 no Jacobian. Contributions for shared parameter names are added across components.
 Missing or malformed Jacobians produce an error. For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
-scores in Rcpp. With the default <code>emhawkes.engine = "auto"</code>, these functions
-still use the R likelihood. To use C++ with numerical differentiation, set
-<code>options(emhawkes.engine = "cpp")</code> before <code>hfit()</code>. No Jacobian is required.
+scores in Rcpp. The default <code>emhawkes.engine = "auto"</code> also selects C++ for
+supported function-valued models with numerical differentiation. No Jacobian
+is required. Unsupported specifications use R; <code>"cpp"</code> requires C++ support,
+and <code>"r"</code> selects the R likelihood. User callback errors propagate.
 This option supports parameter-only <code>mu</code>, <code>alpha</code>, <code>beta</code>, and <code>eta</code> functions
 returning plain numeric matrices with constant dimensions. They must be
 deterministic functions of <code>param</code>, with captured values held fixed.
@@ -272,7 +273,9 @@ Observed-state <code>impact</code> functions are also supported without Jacobian
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
 Supplied <code>grad</code> and <code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> keeps its numeric-only C++ contract;
-use the R engine to evaluate a restored function-valued model.</p>
+use the R engine to evaluate a restored function-valued model. Automatic
+fallback through <code>...</code> assumes deterministic callbacks with fixed captures;
+it may evaluate a callback again when an unsupported state read is detected.</p>
 <p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,
 <code>inter_arrival</code>, and the resolved <code>mu</code>, <code>alpha</code>, and <code>beta</code> matrices.
 They return a finite, plain numeric matrix with the kernel dimensions. As in the R
@@ -474,18 +477,18 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42494   1.629   0.1033    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42741   1.620   0.1053    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.104   0.0354 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12632    0.06533  -1.934   0.0532 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04916   0.291   0.7712    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21477   4.475 7.64e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11634   2.542   0.0110 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08833   1.163   0.2447    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06731   0.513   0.6077    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06831   0.728   0.4664    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27579  -8.967  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11327   8.906  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04931   0.290   0.7719    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21342   4.503 6.69e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11642   2.540   0.0111 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08867   1.159   0.2465    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06732   0.513   0.6077    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06843   0.727   0.4671    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27378  -9.033  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11319   8.911  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
