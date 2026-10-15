@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // hawkes_loglik_cpp
-Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient, Rcpp::Nullable<Rcpp::NumericMatrix> impact);
-RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP, SEXP impactSEXP) {
+Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient, Rcpp::Nullable<Rcpp::NumericMatrix> impact, Rcpp::Nullable<Rcpp::Function> impact_callback, bool keep_lambda, bool keep_components, Rcpp::Nullable<Rcpp::NumericMatrix> baseline, Rcpp::Nullable<Rcpp::List> impact_arguments);
+RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP, SEXP impactSEXP, SEXP impact_callbackSEXP, SEXP keep_lambdaSEXP, SEXP keep_componentsSEXP, SEXP baselineSEXP, SEXP impact_argumentsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type dt(dtSEXP);
@@ -27,13 +27,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type infer(inferSEXP);
     Rcpp::traits::input_parameter< bool >::type gradient(gradientSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type impact(impactSEXP);
-    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::Function> >::type impact_callback(impact_callbackSEXP);
+    Rcpp::traits::input_parameter< bool >::type keep_lambda(keep_lambdaSEXP);
+    Rcpp::traits::input_parameter< bool >::type keep_components(keep_componentsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type baseline(baselineSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type impact_arguments(impact_argumentsSEXP);
+    rcpp_result_gen = Rcpp::wrap(hawkes_loglik_cpp(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact, impact_callback, keep_lambda, keep_components, baseline, impact_arguments));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 12},
+    {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 17},
     {NULL, NULL, 0}
 };
 

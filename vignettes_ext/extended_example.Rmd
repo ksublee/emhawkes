@@ -1020,7 +1020,8 @@ Here, $\xi \geq 0$ is a constant, and $\lambda_{ij}$ is a component of $\lambda_
 $$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
 
 The following code places the constant part of $h$ in `alpha` and the state-dependent part in `impact`.
-The `lambda_component` argument supplies the values of $\lambda_{ij}$.
+The `lambda_component_n` argument supplies the current pre-jump matrix of $\lambda_{ij}$ values.
+This avoids allocating a full intensity history when only the current state is needed.
 Individual components can be negative after a reset.
 The equal decay rates used here allow simulation as long as the sum of the components in each row remains nonnegative.
 
@@ -1034,7 +1035,7 @@ alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 }
 
-impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
   if(n == 1){
     level <-  initial_level
     # mid <- initial_mid_price
@@ -1045,7 +1046,7 @@ impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_co
     mid <- (ask + bid)/2
   }
   
-  lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
+  lambda_component_matrix <- lambda_component_n
 
   l2 <- sum(lambda_component_matrix[2,]) # sum of second row
   l3 <- sum(lambda_component_matrix[3,]) # sum of third row
@@ -1097,6 +1098,18 @@ mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
                lambda_component0 = matrix(rep(1, 16), 4),
                final_hessian = "stable")
 summary(mle_ba)
+```
+
+The C++ likelihood supports this observed baseline and sequential impact with
+numerical differentiation. The impact reads the current state before its jump.
+No Jacobian is required.
+
+```{r bid-ask-cpp-numeric, eval=FALSE}
+previous_engine <- options(emhawkes.engine = "cpp")
+mle_ba_cpp <- hfit(h_ba, hr_ba$inter_arrival, hr_ba$type, hr_ba$mark,
+                   lambda_component0 = matrix(1, 4, 4),
+                   final_hessian = "stable")
+options(previous_engine)
 ```
 
 ## Point processes with flexible residuals

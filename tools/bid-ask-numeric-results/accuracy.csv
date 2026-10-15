@@ -1,0 +1,3 @@
+"case","previous_default_identical","cpp_six_fields_identical","cran_estimate_max_abs_difference","cran_maximum_abs_difference","cran_iterations","cpp_iterations","cran_code","cpp_code"
+"bid_ask",TRUE,TRUE,1.09751496850663e-05,9.25456333789043e-09,40,41,0,0
+"bid_ask_current",TRUE,TRUE,1.09751496850663e-05,9.25456333789043e-09,40,41,0,0

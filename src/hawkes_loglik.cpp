@@ -1,17 +1,31 @@
 #include <Rcpp.h>
 #include <algorithm>
 #include <climits>
+#include <string>
 #include <vector>
 #include "exp_kernel.h"
 
 // Numeric Hawkes kernel with optional precomputed observed-state impacts.
-// No R callbacks, shared mutable state, or RNG calls.
+// Optional sequential R impacts are restricted to numerical fitting.
+// Recursive storage is private; this kernel never draws random numbers.
 // [[Rcpp::export(rng = false)]]
 Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha,
     Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta,
     Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false,
-    Rcpp::Nullable<Rcpp::NumericMatrix> impact = R_NilValue) {
+    Rcpp::Nullable<Rcpp::NumericMatrix> impact = R_NilValue,
+    Rcpp::Nullable<Rcpp::Function> impact_callback = R_NilValue,
+    bool keep_lambda = false, bool keep_components = false,
+    Rcpp::Nullable<Rcpp::NumericMatrix> baseline = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> impact_arguments = R_NilValue) {
+
+    const bool has_callback = impact_callback.isNotNull();
+    if (has_callback != impact_arguments.isNotNull())
+        Rcpp::stop("Sequential impacts require a callback and named arguments together.");
+    if (has_callback && (gradient || infer || impact.isNotNull()))
+        Rcpp::stop("Sequential impacts support numerical fitting only, without precomputed impacts.");
+    if (!has_callback && (keep_lambda || keep_components))
+        Rcpp::stop("State histories require a sequential impact callback.");
 
     const int dimensions = beta.nrow(), kernels = beta.ncol();
     if (dimensions < 1 || kernels < 1 || dt.size() < 1 || dt.size() > INT_MAX ||
@@ -21,6 +35,19 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         alpha.nrow() != dimensions || alpha.ncol() != kernels ||
         initial.nrow() != dimensions || initial.ncol() != kernels ||
         mapping.size() != dimensions) Rcpp::stop("Native Hawkes inputs have inconsistent dimensions.");
+    const bool has_baseline = baseline.isNotNull();
+    Rcpp::NumericMatrix baseline_values;
+    if (has_baseline) {
+        if (gradient || infer) Rcpp::stop("Observed baseline paths support numerical fitting only.");
+        baseline_values = Rcpp::NumericMatrix(baseline.get());
+        if (baseline_values.nrow() != dimensions || baseline_values.ncol() != size)
+            Rcpp::stop("Native baseline dimensions must be dimensions by observations.");
+        for (R_xlen_t k = 0; k < baseline_values.size(); ++k) {
+            if ((k & 65535) == 0) Rcpp::checkUserInterrupt();
+            if (!R_FINITE(baseline_values[k]) || baseline_values[k] < 0)
+                Rcpp::stop("Invalid native observed baseline.");
+        }
+    }
     Rcpp::NumericMatrix mark_effect;
     const bool has_eta = eta.isNotNull();
     if (has_eta) {
@@ -104,11 +131,66 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             lambda(0, i) = rambda(0, i) = mu[i] + static_cast<double>(total);
         }
     }
+    if (has_callback) {
+        if (keep_lambda) {
+            lambda = Rcpp::NumericMatrix(size, dimensions);
+            Rcpp::CharacterVector names(dimensions);
+            for (int i = 0; i < dimensions; ++i) {
+                long double total = 0.0L;
+                for (int j = 0; j < kernels; ++j) total += state[i + dimensions * j];
+                lambda(0, i) = mu[i] + static_cast<double>(total);
+                names[i] = "lambda" + std::to_string(i + 1);
+            }
+            Rcpp::colnames(lambda) = names;
+        }
+        if (keep_components) {
+            lambda_component = Rcpp::NumericMatrix(size, components);
+            Rcpp::CharacterVector names(components);
+            for (int i = 0; i < dimensions; ++i)
+                for (int j = 0; j < kernels; ++j) {
+                    const int column = i * kernels + j;
+                    lambda_component(0, column) = state[i + dimensions * j];
+                    names[column] = "lambda" + std::to_string(i + 1) + std::to_string(j + 1);
+                }
+            Rcpp::colnames(lambda_component) = names;
+        }
+    }
     std::vector<double> event_intensity;
     if (has_impact && gradient) event_intensity.resize(size);
+    // Build one named R call per proposal. Updating only the event/state nodes
+    // avoids an R wrapper and do.call in every event. The call owns all nodes.
+    Rcpp::RObject callback_call;
+    SEXP n_node = R_NilValue, current_node = R_NilValue;
+    SEXP lambda_node = R_NilValue, components_node = R_NilValue;
+    if (has_callback) {
+        Rcpp::List arguments(impact_arguments.get());
+        if (Rf_isNull(arguments.names())) Rcpp::stop("Sequential impact arguments must be named.");
+        Rcpp::CharacterVector names = arguments.names();
+        if (names.size() != arguments.size()) Rcpp::stop("Invalid sequential impact argument names.");
+        Rcpp::Pairlist cells = Rf_allocList(arguments.size());
+        callback_call = Rf_lcons(impact_callback.get(), cells);
+        SEXP node = CDR(callback_call);
+        for (int k = 0; k < arguments.size(); ++k, node = CDR(node)) {
+            if (names[k] == NA_STRING) Rcpp::stop("Invalid sequential impact argument name.");
+            const std::string name = Rcpp::as<std::string>(names[k]);
+            if (name.empty()) Rcpp::stop("Invalid sequential impact argument name.");
+            SET_TAG(node, Rf_install(name.c_str()));
+            SETCAR(node, arguments[k]);
+            if (name == "n") n_node = node;
+            else if (name == "lambda_component_n") current_node = node;
+            else if (name == "lambda") lambda_node = node;
+            else if (name == "lambda_component") components_node = node;
+        }
+    }
+    Rcpp::NumericMatrix callback_impact;
     double event_log = 0.0, integrated_log = 0.0;
     for (int n = 1; n < size; ++n) {
         if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
+        // R callbacks may retain histories. Copy before later writes, as R's
+        // own indexed assignment would, so retained snapshots do not change.
+        if (has_callback && keep_lambda && MAYBE_SHARED(lambda)) lambda = Rcpp::clone(lambda);
+        if (has_callback && keep_components && MAYBE_SHARED(lambda_component))
+            lambda_component = Rcpp::clone(lambda_component);
         std::fill(row_integrals.begin(), row_integrals.end(), 0.0L);
         std::fill(row_totals.begin(), row_totals.end(), 0.0L);
         long double total_integral = 0.0L, baseline_integral = 0.0L;
@@ -135,11 +217,12 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                 }
                 state[index] *= decay;
                 row_totals[i] += state[index];
-                if (infer) lambda_component(n, i * kernels + j) = state[index];
+                if (infer || keep_components) lambda_component(n, i * kernels + j) = state[index];
             }
         }
         const int event_type = type[n] - 1;
-        event_log += std::log(mu[event_type] + static_cast<double>(row_totals[event_type]));
+        event_log += std::log((has_baseline ? baseline_values(event_type, n) : mu[event_type]) +
+                              static_cast<double>(row_totals[event_type]));
         if (gradient) {
             const double intensity = mu[event_type] + static_cast<double>(row_totals[event_type]);
             const double denominator = intensity > 0.0 ? intensity : R_NaN;
@@ -154,15 +237,16 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             }
         }
         for (int i = 0; i < dimensions; ++i) {
-            const double baseline = mu[i] * dt[n];
+            const double mu_at_event = has_baseline ? baseline_values(i, n) : mu[i];
+            const double baseline = mu_at_event * dt[n];
             if (gradient) gm[i] -= dt[n];
             baseline_integral += baseline;
             if (infer) {
                 const double phi = static_cast<double>(row_integrals[i]) + baseline;
                 integrated_log -= phi;
                 residual_integrals[i] += phi;
-                lambda(n, i) = mu[i] + static_cast<double>(row_totals[i]);
             }
+            if (infer || keep_lambda) lambda(n, i) = mu_at_event + static_cast<double>(row_totals[i]);
         }
         if (!infer) {
             // Preserve R's separate sums and per-event accumulation order.
@@ -173,6 +257,33 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             observed[event_type] = true;
             residual_integrals[event_type] = 0.0L;
         }
+        if (has_callback) {
+            if (n_node != R_NilValue) SETCAR(n_node, Rf_ScalarInteger(n + 1));
+            if (current_node != R_NilValue) {
+                Rcpp::NumericMatrix current(dimensions, kernels);
+                std::copy(state.begin(), state.end(), current.begin());
+                SETCAR(current_node, current);
+            }
+            if (lambda_node != R_NilValue)
+                SETCAR(lambda_node, keep_lambda ? static_cast<SEXP>(lambda) : R_NilValue);
+            if (components_node != R_NilValue)
+                SETCAR(components_node, keep_components ? static_cast<SEXP>(lambda_component) : R_NilValue);
+            Rcpp::RObject value = Rcpp::Rcpp_fast_eval(callback_call, R_GlobalEnv);
+            // Release our references before the next copy-on-write check.
+            if (n_node != R_NilValue) SETCAR(n_node, R_NilValue);
+            if (current_node != R_NilValue) SETCAR(current_node, R_NilValue);
+            if (lambda_node != R_NilValue) SETCAR(lambda_node, R_NilValue);
+            if (components_node != R_NilValue) SETCAR(components_node, R_NilValue);
+            if ((TYPEOF(value) != REALSXP && TYPEOF(value) != INTSXP) ||
+                !Rf_isMatrix(value) || Rf_isObject(value))
+                Rcpp::stop("impact must return a plain numeric matrix matching the kernel dimensions.");
+            callback_impact = Rcpp::as<Rcpp::NumericMatrix>(value);
+            if (callback_impact.nrow() != dimensions || callback_impact.ncol() != kernels)
+                Rcpp::stop("impact must return a plain numeric matrix matching the kernel dimensions.");
+            for (int k = 0; k < components; ++k)
+                if (!R_FINITE(callback_impact[k]))
+                    return Rcpp::List::create(Rcpp::Named("loglikelihood") = R_NegInf);
+        }
         const std::vector<int>& selected = columns[event_type];
         for (std::size_t j = 0; j < selected.size(); ++j) {
             for (int i = 0; i < dimensions; ++i) {
@@ -180,6 +291,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                 state[index] += alpha[index];
                 if (has_eta) state[index] += mark_effect[index] * (mark[n] - 1.0);
                 if (has_impact) state[index] += event_impact(index, n);
+                if (has_callback) state[index] += callback_impact[index];
                 if (gradient) {
                     da[index] += 1.0;
                     if (has_eta) de[index] += mark[n] - 1.0;

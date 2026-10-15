@@ -86,7 +86,38 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
   component_names <- c("mu", "alpha", "beta", "eta")
   components <- parameter_map$components[component_names]
   functions <- names(components)[vapply(components, function(x) x$kind == "function", logical(1))]
-  for (name in functions) {
+  observed_mu <- !derivatives && "mu" %in% functions &&
+    !identical(names(formals(components$mu$value)), "param")
+  mu_args <- NULL
+  mu_context <- function(param, values) {
+    context <- c(list(n = 1L), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
+                 values[c("mu", "alpha", "beta")])
+    if (components$mu$has_param) context$param <- local_param("mu", param)
+    for (name in c("lambda", "lambda_component", "lambda_component_n")) {
+      context[[name]] <- quote(stop("Observed baselines cannot read latent intensity states.", call. = FALSE))
+    }
+    context
+  }
+  if (observed_mu) {
+    fmls <- names(formals(components$mu$value))
+    if (any(fmls %in% c("lambda", "lambda_component", "lambda_component_n")))
+      stop("C++ observed baselines cannot depend on latent intensity states.", call. = FALSE)
+    mu_args <- callback_plan(components$mu$value,
+      c("param", "n", "mark", "type", "inter_arrival", "N", "Nc", "lambda",
+        "lambda_component", "lambda_component_n", "mu", "alpha", "beta"), "mu")
+    if (!components$mu$has_param) mu_args <- setdiff(mu_args, "param")
+    mu_invoke <- prepare_component_call(setdiff(mu_args, "param"))
+    call <- body(mu_invoke)
+    state_positions <- which(names(call)[-(1:3)] %in% c("lambda", "lambda_component", "lambda_component_n"))
+    if (length(state_positions)) {
+      # Force the observed prefix, leaving unavailable states lazy inside ... .
+      call[[2L]] <- as.integer(min(state_positions) - 1L)
+      for (index in state_positions + 3L) call[[index]] <- quote(stop(
+        "Observed baselines cannot read latent intensity states.", call. = FALSE))
+      body(mu_invoke) <- call
+    }
+  }
+  for (name in setdiff(functions, if (observed_mu) "mu")) {
     if (!identical(names(formals(components[[name]]$value)), "param")) {
       stop(label, " requires ", name, " to have only the 'param' argument.", call. = FALSE)
     }
@@ -104,7 +135,9 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
   }
   values_at <- function(param) {
     values <- restore_parameters(parameter_map, param)
-    for (name in functions) values[[name]] <- components[[name]]$value(param = local_param(name, param))
+    for (name in setdiff(functions, if (observed_mu) "mu"))
+      values[[name]] <- components[[name]]$value(param = local_param(name, param))
+    if (observed_mu) values$mu <- call_component(components$mu$value, mu_args, mu_context(param, values))
     values[component_names]
   }
   start_values <- values_at(parameter_map$start)
@@ -152,6 +185,23 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
     } else jacobian[[name]] <- validate_jacobian(jacobian[[name]], name)
   }
   list(start = start_values, functions = functions,
+    baseline = if (observed_mu) function(param, values) {
+      values$mu <- restore_parameters(parameter_map, param)$mu
+      size <- length(observation$inter_arrival)
+      path <- matrix(0, object@dimens, size)
+      for (n in seq_len(size + as.integer(size > 1L))) {
+        value <- mu_invoke(values$mu, n, observation$mark, observation$type,
+          observation$inter_arrival, observation$N, observation$Nc, NULL, NULL,
+          NULL, values$mu, values$alpha, values$beta)
+        if (n > size) next # The R likelihood also calls the terminal next baseline.
+        if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
+            !identical(dim(value), c(as.integer(object@dimens), 1L)))
+          stop("Observed mu must return a plain numeric dimensions-by-one matrix.", call. = FALSE)
+        if (any(!is.finite(value)) || any(value < 0)) return(NULL)
+        path[, n] <- value
+      }
+      path
+    } else NULL,
     values = function(param) validate_values(values_at(param)),
     jacobian = function(name, param) {
       value <- jacobian[[name]]
@@ -219,11 +269,19 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     }
     # Finite component values can still overflow the automatic initializer.
     if (any(!is.finite(current_initial))) return(invalid)
-    impacts <- if (!is.null(impact_plan)) impact_plan$values(param, values) else NULL
-    if (!is.null(impact_plan) && is.null(impacts)) return(invalid)
+    baseline <- if (!is.null(plan$baseline)) plan$baseline(param, values) else NULL
+    if (!is.null(plan$baseline) && is.null(baseline)) return(invalid)
+    sequential <- !is.null(impact_plan$callback)
+    impacts <- if (!is.null(impact_plan) && !sequential) impact_plan$values(param, values) else NULL
+    if (!is.null(impact_plan) && !sequential && is.null(impacts)) return(invalid)
+    runtime <- if (sequential) impact_plan$callback(param, values) else NULL
     result <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
       as.numeric(values$mu), values$alpha, values$beta, values$eta,
-      current_initial, mapping, infer = FALSE, gradient = derivatives, impact = impacts)
+      current_initial, mapping, infer = FALSE, gradient = derivatives, impact = impacts,
+      impact_callback = runtime$fun,
+      keep_lambda = sequential && impact_plan$history[["lambda"]],
+      keep_components = sequential && impact_plan$history[["lambda_component"]],
+      baseline = baseline, impact_arguments = runtime$args)
     if (!is.finite(result$loglikelihood)) {
       return(list(loglikelihood = result$loglikelihood, gradient = invalid$gradient))
     }

@@ -176,6 +176,12 @@ Keep these extensions opt-in until their derivatives, likelihoods, fits, and tim
 
 기본 `"auto"` 선택은 바꾸지 않는다. 강도 이력에 의존하는 impact, 상태 의존 baseline, mark 밀도와 잔차분포는 이 경로에서 지원하지 않는다. `...`를 통한 강도 이력 접근도 명시적으로 거부한다. 정확성과 CRAN 비교 결과는 [수치미분 impact 보고서](impact-numeric-results.md)에 기록한다.
 
+### Bid-ask의 순차 impact와 관측 baseline
+
+수치미분 경로에서 관측 자료에 의존하는 `mu`와 강도 상태에 의존하는 impact를 지원한다. `mu`는 구간별로 일정한 차원 × 1 행렬을 반환한다. C++ 사건 루프에서 사건 직전 상태를 계산한 뒤 R impact를 호출하고, 해당 유형의 커널 열에 갱신량을 더한다. 해석적 gradient와 기본 `"auto"` 선택은 유지한다.
+
+현재 성분만 필요하면 `lambda_component_n`을 사용한다. 전체 이력은 명시적으로 요청할 때만 할당하고, callback이 보관한 행렬은 이후 사건에서 변하지 않도록 복사한다. baseline의 강도 이력 의존성과 구간 내부 변화는 지원하지 않는다. [Bid-ask 검증과 속도 결과](bid-ask-numeric-results.md)를 참고한다.
+
 ### 시뮬레이션
 
 현재 같은 행의 감쇠율이 같으면 후보 대기시간을 직접 생성하고, 하나라도 다른 행이 있으면 thinning 경로를 사용한다. baseline이 0인 경우에는 유한 총 hazard와 소멸을 처리한다. 이 분기들을 한 번에 바꾸지 않는다.

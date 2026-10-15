@@ -17,7 +17,7 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
   available <- c("param", observed, latent, "mu", "alpha", "beta")
   mode <- if (derivatives) "the analytic gradient" else "the C++ likelihood"
   check_callback <- function(fun, label) {
-    if (any(names(formals(fun)) %in% latent)) {
+    if (derivatives && any(names(formals(fun)) %in% latent)) {
       stop(label, " cannot depend on latent intensity states for ", mode, ".", call. = FALSE)
     }
     callback_plan(fun, available, label)
@@ -46,6 +46,8 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
   context_at <- function(param, values, full = FALSE) {
     context <- c(list(n = 1L), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
                  values[c("mu", "alpha", "beta")])
+    if (is.function(object@mu) && !identical(names(formals(object@mu)), "param"))
+      context$mu <- restore_parameters(parameter_map, param)$mu
     # do.call supplies these as promises. Ignored ... remains compatible; reading
     # an unavailable intensity through ... fails instead of silently using NULL.
     for (name in latent) context[[name]] <- substitute(stop(
@@ -55,6 +57,19 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
       context$param <- stats::setNames(param[component$index], names(component$param))
     }
     context
+  }
+  # A named state formal opts numerical fitting into the sequential callback.
+  # Keep observed-only impacts on their existing precomputation path.
+  state_args <- intersect(names(formals(component$value)), latent)
+  if (!derivatives && length(state_args)) {
+    return(list(history = c(lambda = "lambda" %in% state_args,
+                           lambda_component = "lambda_component" %in% state_args),
+      callback = function(param, values) {
+        context <- context_at(param, values)
+        fun <- restore_parameters(parameter_map, param)$impact
+        for (name in latent) context[name] <- list(NULL)
+        list(fun = fun, args = context[setdiff(value_args, "param")])
+      }))
   }
   list(values = function(param, values) {
     context <- context_at(param, values)

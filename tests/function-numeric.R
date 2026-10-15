@@ -153,10 +153,10 @@ stopifnot(is.finite(unary_explicit$loglik(unary_point)))
 # Unsupported state callbacks, latent impacts, distributions, classes and shape changes
 # are rejected before they can silently enter the native loop.
 bad <- poisson
-bad@mu <- function(param = c(log_rate = 0), n = 1) matrix(exp(param))
-fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "only.*param")
+bad@mu <- function(param = c(log_rate = 0), lambda) matrix(exp(param))
+fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "latent intensity")
 bad <- poisson
-bad@impact <- function(lambda, ...) matrix(0)
+bad@impact <- function(n, ...) matrix(..6)
 fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "latent intensity")
 bad <- poisson
 bad@dmark <- function(...) 1

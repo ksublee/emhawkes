@@ -1,0 +1,3 @@
+"case","events","cran_seconds","r_seconds","cpp_seconds","cran_speedup"
+"bid_ask",999,22.46,24.65,17.36,1.29377880184332
+"bid_ask_current",999,19.16,21.58,16.62,1.15282791817088

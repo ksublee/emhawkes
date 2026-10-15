@@ -187,9 +187,9 @@ This option supports parameter-only \code{mu}, \code{alpha}, \code{beta}, and \c
 returning plain numeric matrices with constant dimensions. They must be
 deterministic functions of \code{param}, with captured values held fixed.
 Observed-state \code{impact} functions are also supported without Jacobians.
-State-dependent baselines, latent-intensity impacts, mark densities and residual
-distributions are excluded from this numerical C++ path. Supplied \code{grad} and
-\code{hess} are retained. Standalone \code{logLik()} keeps its numeric-only C++ contract;
+Observed baselines and sequential state-dependent impacts are also supported
+as described below. Mark densities and residual distributions are excluded.
+Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} keeps its numeric-only C++ contract;
 use the R engine to evaluate a restored function-valued model.
 
 Observed-state \code{impact} functions may use \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type},
@@ -215,13 +215,36 @@ impact has no local parameters; a parameter-independent impact has a zero matrix
 Declare needed \code{N} and \code{Nc} arguments explicitly in the impact function, or
 supply these paths. Captured inputs must be fixed, and callbacks must be
 deterministic. Ignored \code{...} is allowed; reading \code{lambda}, \code{lambda_component},
-or \code{lambda_component_n}, including through \code{...}, is unsupported. A callback
+or \code{lambda_component_n}, including through \code{...}, is unsupported by the
+analytic option and observed-only precomputation. A callback
 that forces all of \code{...} also forces these unavailable states and produces an
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
 grows with observations times kernel components, without an additional
 observations-by-components-by-parameters array. Standalone \code{logLik()} and
 default fitting retain the R path for these models.
+
+With numerical differentiation and the C++ engine, \code{mu} may depend on observed
+\code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type}, and \code{inter_arrival}. Return a plain numeric
+dimensions-by-one matrix, constant over each inter-event interval. The call
+at index \code{n} supplies the baseline for the interval ending at event \code{n} and
+that event's intensity; use counts at \code{n - 1} for its predictable baseline.
+Initial values use \code{mu(n = 1)}. Latent-intensity dependencies and within-interval
+changes are unsupported for these baselines. Ignored \code{...} is allowed.
+
+Numerical C++ fitting also supports an \code{impact} that explicitly declares
+\code{lambda_component_n}, \code{lambda}, or \code{lambda_component}. Rcpp calls it after
+computing the current event's intensity and before applying its jumps.
+\code{lambda_component_n} is the dimensions-by-kernels matrix just before the jump.
+\code{lambda} and \code{lambda_component} are allocated only when explicitly declared;
+they contain the initial and current pre-jump rows, with future rows zero.
+Component histories use the R engine's row-major column order and names.
+Retained callback arguments are snapshots. Prefer \code{lambda_component_n} when
+only the current state is needed; full histories can require substantial copies.
+Undeclared latent access through \code{...} does not select this sequential path.
+When \code{mu} is an observed-baseline function, the impact's \code{mu} argument is the
+parameter-bound function, as in the R engine. Callbacks must be deterministic
+and keep captured inputs fixed. Analytic gradients do not support this feedback.
 
 The default uses numerical differentiation and does not run
 additional curvature checks. With \code{final_hessian = "stable"}, final curvature is

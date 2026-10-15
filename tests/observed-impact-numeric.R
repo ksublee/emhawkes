@@ -138,12 +138,14 @@ stopifnot(identical(seen, 2:length(dt)))
 empty <- objective(fixed, normalize(fixed, 0), 0, map, derivatives = FALSE)
 close(empty$loglik(map$start), 0, 0)
 
-# All latent access must fail, including lazy reads and positional access via ... .
+# Analytic scores still reject feedback. Numerical observed-only callbacks
+# must declare their state needs rather than implicitly reading them via ... .
 for (name in c("lambda", "lambda_component", "lambda_component_n")) {
   bad <- h
   bad@impact <- function(...) matrix(0)
   formals(bad@impact) <- c(setNames(alist(x = ), name), alist(... = ))
-  fails(fit_engine("cpp", bad, dt, lambda_component0 = .1), "latent intensity.*C[+][+]")
+  fails(fit_engine("cpp", bad, dt, lambda_component0 = .1, gradient = "analytic"),
+    "latent intensity.*analytic")
 }
 for (callback in list(function(n, ...) matrix(list(...)$lambda_component_n),
                       function(n, ...) matrix(..6),
