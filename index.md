@@ -66,6 +66,22 @@ inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
 requested checks. Supplied Hessians, disabled final curvature, BHHH,
 custom objectives, and residual models retain their calculation choices.
 
+The fit also records its calculation methods:
+
+``` r
+
+calculation <- fit_diagnostics(fit)$computation
+calculation$engine   # Requested engine, actual engines and auto fallback reason.
+calculation$gradient # Numeric, analytic or user-supplied score.
+calculation$hessian # Requested and applied final-Hessian methods.
+```
+
+An auto fit can record both `"cpp"` and `"r"` if it switches during
+estimation. The record includes final curvature evaluations and survives
+[`saveRDS()`](https://rdrr.io/r/base/readRDS.html). Older fits without
+this record return `recorded = FALSE` and `NA` for unrecorded methods.
+The existing curvature checks remain available at the top level.
+
 A stable Hessian does not guarantee reliable Wald intervals. Nearby
 kernel decay rates, weak excitation, boundaries, short samples, and
 nonsmooth callbacks can still make inference unreliable. The [Hawkes

@@ -73,7 +73,9 @@ other generator parameters keep their original defaults.</p>
 <p>The fit keeps its <code>maxLik</code> classes and methods. Its <code>emhawkes</code> attribute stores
 a versioned list with <code>specification</code>, <code>parameter_map</code>, <code>initial_state</code>,
 <code>reduced</code>, and <code>custom_loglik</code>. New fits also retain <code>constraints</code> and final
-<code>diagnostics</code>, available through <code><a href="fit_diagnostics.html">fit_diagnostics()</a></code>. Older fits without this metadata cannot be
+<code>diagnostics</code>, available through <code><a href="fit_diagnostics.html">fit_diagnostics()</a></code>. New calculation records
+are in <code>fit_diagnostics(fit)$computation</code>. Fits without the original model
+metadata cannot be
 reconstructed by this function. Function environments remain references to
 the original environments; external state is not frozen.
 Use <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> and <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> to retain the fit's metadata between sessions.

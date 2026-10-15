@@ -193,9 +193,10 @@ hfit(
 A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
 `emhawkes` attribute containing the original specification, parameter
 map, normalized initial-state arguments, constraints, `reduced` setting,
-supplied analytic Jacobians, and final curvature diagnostics. Use
+supplied analytic Jacobians, and final curvature diagnostics and
+recorded calculation methods. Use
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
-to inspect the checks and
+to inspect the methods and checks and
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
 to restore the estimated specification and
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)

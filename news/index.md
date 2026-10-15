@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Record actual likelihood engines, auto fallback reasons, optimizer
+  gradient sources and final-Hessian methods in
+  `fit_diagnostics(fit)$computation`. Preserve the curvature diagnostics
+  and saved-fit compatibility; report unrecorded methods without
+  inferring them from current options.
+
 - Extend automatic engine selection in
   [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) to
   supported parameter-only functions, observed baselines, and observed

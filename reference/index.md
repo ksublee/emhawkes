@@ -5,7 +5,7 @@
 - [`expected_tau()`](https://ksublee.github.io/emhawkes/reference/expected_tau.md)
   : Expected Inter-Arrival Time
 - [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
-  : Inspect Final Curvature Diagnostics
+  : Inspect Fit Computation and Curvature Diagnostics
 - [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
   : Retrieve Initial-State Arguments from a Hawkes Fit
 - [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)

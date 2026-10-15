@@ -1,6 +1,6 @@
-# Inspect Final Curvature Diagnostics
+# Inspect Fit Computation and Curvature Diagnostics
 
-Return the final Hessian checks requested through
+Return the recorded calculation methods and final Hessian checks from
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md).
 
 ## Usage
@@ -18,11 +18,38 @@ fit_diagnostics(fit)
 
 ## Value
 
-A list describing the calculation status, reason, free parameters,
-scale, and, when available, difference-step checks, curvature changes,
-recalculated score, scaled condition number, and Newton decrement.
+A list with recorded methods in `computation`, calculation status,
+reason, free parameters, scale, and, when available, difference-step
+checks, curvature changes, recalculated score, scaled condition number,
+and Newton decrement.
 
 ## Details
+
+`computation` records the engine, optimizer gradient source and stored
+final Hessian source without re-evaluating the model. Its `engine` list
+contains `requested`, `used` and `fallback_reason`. `used` lists engines
+actually invoked in first-use order, including any partial C++ pass
+before fallback. It can contain both `"cpp"` and `"r"`. A custom
+likelihood uses `"custom"` and has no requested built-in engine.
+Recording includes final curvature evaluations.
+
+`computation$gradient$used` is `"numeric"`, `"analytic"`, `"user"` or
+`"attribute"`. It describes the returned optimizer score, separately
+from a recalculated score in stable curvature checks.
+`computation$hessian$used` is `"maxLik_numeric"`,
+`"scaled_central_Richardson"`, `"user"`, `"attribute"`, `"BHHH"`,
+`"disabled"` or `"unavailable"`. The Hessian list also retains the
+requested `final_hessian` choice and any `finalHessian` override. Its
+`reason` explains a skipped stabilization or unavailable result. If both
+a derivative function and likelihood derivative attributes were
+supplied, the source is `NA` with a reason because precedence depends on
+maxLik.
+
+The saved record is a snapshot; later objective evaluations or option
+changes do not update it. Older fits with model metadata but no
+computation record return `recorded = FALSE` and `NA` for unrecorded
+methods. Any previously saved gradient selection is retained. Their
+engine is not inferred from current options.
 
 `status = "ok"` means the numerical curvature checks passed, not that
 the optimizer found a global maximum or that Wald intervals have correct
@@ -52,4 +79,44 @@ fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
             fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")
 fit_diagnostics(fit)$status
 #> [1] "ok"
+fit_diagnostics(fit)$computation
+#> $recorded
+#> [1] TRUE
+#> 
+#> $engine
+#> $engine$requested
+#> [1] "auto"
+#> 
+#> $engine$used
+#> [1] "cpp"
+#> 
+#> $engine$fallback_reason
+#> NULL
+#> 
+#> 
+#> $gradient
+#> $gradient$requested
+#> [1] "numeric"
+#> 
+#> $gradient$used
+#> [1] "numeric"
+#> 
+#> $gradient$reason
+#> NULL
+#> 
+#> 
+#> $hessian
+#> $hessian$requested
+#> [1] "stable"
+#> 
+#> $hessian$finalHessian
+#> NULL
+#> 
+#> $hessian$used
+#> [1] "scaled_central_Richardson"
+#> 
+#> $hessian$reason
+#> NULL
+#> 
+#> 
 ```
