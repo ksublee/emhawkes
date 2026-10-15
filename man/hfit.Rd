@@ -230,8 +230,9 @@ that forces all of \code{...} also forces these unavailable states and produces 
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
 grows with observations times kernel components, without an additional
-observations-by-components-by-parameters array. Standalone \code{logLik()} and
-default fitting retain the R path for these models.
+observations-by-components-by-parameters array. Standalone \code{logLik()} uses R
+for these callbacks. Default fitting uses C++ for supported callbacks with
+numerical differentiation and requires no Jacobian.
 
 With numerical differentiation and the C++ engine, \code{mu} may depend on observed
 \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type}, and \code{inter_arrival}. Return a plain numeric
@@ -249,7 +250,12 @@ computing the current event's intensity and before applying its jumps.
 they contain the initial and current pre-jump rows, with future rows zero.
 Component histories use the R engine's row-major column order and names.
 Retained callback arguments are snapshots. Prefer \code{lambda_component_n} when
-only the current state is needed; full histories can require substantial copies.
+only the current state is needed. A full component history has storage
+proportional to events times dimensions times kernels. If callbacks retain
+history arguments, snapshot-preserving copies can make cumulative allocations
+grow quadratically with event count;
+this is separate from peak live memory. Current-state callbacks avoid this
+history cost. Numerical differentiation repeats it at each likelihood evaluation.
 Undeclared latent access through \code{...} does not select this sequential path.
 When \code{mu} is an observed-baseline function, the impact's \code{mu} argument is the
 parameter-bound function, as in the R engine. Callbacks must be deterministic

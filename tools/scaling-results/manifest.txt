@@ -1,0 +1,8 @@
+source_commit 1e9b01b54cf8d8fc89a0915ee68c931f9d20d39d
+R 4.6.0
+maxLik 1.5-2.2
+Rcpp 1.1.2
+affinity_mask 4
+timing_rounds 3
+memory_rounds 1
+retention_cases measured in a follow-up pass

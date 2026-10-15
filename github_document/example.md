@@ -1767,6 +1767,13 @@ summary(fit_fl)
 
 ### Bid-ask price model
 
+This example needs only the current pre-jump component matrix, so the impact
+uses `lambda_component_n`. A full `lambda_component` history requires additional
+storage. Retaining history arguments can also require repeated copies to preserve
+those snapshots. See the
+[scaling measurements](https://github.com/ksublee/emhawkes/blob/main/tools/scaling-results.md)
+for the difference between cumulative allocation and peak memory.
+
 This model describes bid and ask prices using a system of counting
 processes and their conditional intensities:
 
@@ -1869,7 +1876,7 @@ alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 }
 
-impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
   if(n == 1){
     level <-  initial_level
     # mid <- initial_mid_price
@@ -1880,7 +1887,7 @@ impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_co
     mid <- (ask + bid)/2
   }
   
-  lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
+  lambda_component_matrix <- lambda_component_n
 
   l2 <- sum(lambda_component_matrix[2,]) # sum of second row
   l3 <- sum(lambda_component_matrix[3,]) # sum of third row
@@ -1958,7 +1965,7 @@ h_ba
 #> [4,]   50   50   50   50
 #> 
 #> Slot impact: 
-#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component = lambda_component, 
+#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component_n = lambda_component_n,
 #>     ...) 
 #> {
 #>     if (n == 1) {
@@ -1971,8 +1978,7 @@ h_ba
 #>         bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])
 #>         mid <- (ask + bid)/2
 #>     }
-#>     lambda_component_matrix <- matrix(lambda_component[n, ], 
-#>         nrow = 4, byrow = TRUE)
+#>     lambda_component_matrix <- lambda_component_n
 #>     l2 <- sum(lambda_component_matrix[2, ])
 #>     l3 <- sum(lambda_component_matrix[3, ])
 #>     im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, 

@@ -1,0 +1,7 @@
+"events","engine","current_history_exact","retained_exact","max_abs_difference"
+1000,"r",TRUE,TRUE,0
+1000,"auto",TRUE,TRUE,0
+5000,"r",TRUE,TRUE,0
+5000,"auto",TRUE,TRUE,0
+10000,"r",TRUE,TRUE,0
+10000,"auto",TRUE,TRUE,0

@@ -1125,6 +1125,14 @@ sequential impact with numerical differentiation. The impact reads the current
 state before its jump. No Jacobian is required. Inspect the saved engine record
 to confirm which calculation was used and whether automatic selection fell back to R.
 
+This example needs only the current component matrix, so it uses
+`lambda_component_n`. Requesting `lambda_component` also stores the full history.
+If a callback retains histories beyond its call, preserving those snapshots can
+copy the history repeatedly. Cumulative allocation can then grow quadratically
+with event count. This cost is
+repeated for each likelihood evaluation during numerical optimization. Peak live
+memory can be much smaller because old copies are reclaimed.
+
 ```{r bid-ask-engine}
 fit_diagnostics(mle_ba)$computation$engine
 ```

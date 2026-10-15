@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Add event/dimension/kernel scaling and allocation benchmarks. Use current components in the GitHub Bid-ask example and explain full-history copying costs; preserve likelihood and optimizer behavior.
+
 * Align engine documentation and examples: `auto` accelerates supported fits by default, `r` forces the reference likelihood, and `cpp` requires native support. Distinguish standalone likelihood support and explicit analytic gradients.
 
 * Record actual likelihood engines, auto fallback reasons, optimizer gradient sources and final-Hessian methods in `fit_diagnostics(fit)$computation`. Preserve the curvature diagnostics and saved-fit compatibility; report unrecorded methods without inferring them from current options.

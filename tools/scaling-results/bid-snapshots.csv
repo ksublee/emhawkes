@@ -1,0 +1,4 @@
+"events","snapshots","matrices_exact","tolerance_1e_12","future_rows_zero","loglik_exact","loglik_max_abs_difference"
+1000,10,TRUE,TRUE,TRUE,TRUE,0
+5000,50,TRUE,TRUE,TRUE,TRUE,0
+10000,100,TRUE,TRUE,TRUE,TRUE,0
