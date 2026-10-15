@@ -176,10 +176,11 @@ options(previous_engine)
 The functions must return plain numeric matrices of constant dimensions
 and be deterministic in `param`. Observed-state `impact` functions also
 use this numerical path without Jacobians, including count- and
-mark-dependent impacts and the Hawkes flocking example. State-dependent
-baselines, latent-intensity impacts, mark densities and residual
-distributions remain unsupported. Supplied `grad` and `hess` are
-retained. Standalone
+mark-dependent impacts and the Hawkes flocking example. Numerical C++
+fitting also supports observed baselines and sequential impacts that
+explicitly request current or historical intensity states, including the
+bid-ask example. Mark densities and residual distributions remain
+unsupported. Supplied `grad` and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
 keeps its numeric-only C++ contract; select the R engine when evaluating
 a restored function-valued model.
@@ -198,7 +199,15 @@ Include derivatives through any core matrices used by the impact. The
 impact function keeps receiving its local parameters. See
 [`?hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md) for an
 example and the callback contract. Callbacks that read latent
-intensities remain unsupported. Default fits retain the R path.
+intensities remain unsupported by the analytic option. Default fits
+retain the R path. For numerical C++ fitting, declare
+`lambda_component_n` to receive the current pre-jump component matrix.
+Declare `lambda` or `lambda_component` only when full pre-jump histories
+are needed. Observed baselines may use counts and marks, return a
+dimensions-by-one matrix, and remain constant between events. They
+cannot depend on latent intensities. See the [bid-ask
+benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md)
+for the state convention, compatibility checks and timings.
 
 See the [count, mark and flocking
 benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)

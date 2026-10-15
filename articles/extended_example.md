@@ -1227,7 +1227,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55be2b242480>
+#> <bytecode: 0x559ffa396aa8>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1237,7 +1237,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55be2b895d68>
+#> <bytecode: 0x559ffb104128>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1247,7 +1247,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55be2bea5870>
+#> <bytecode: 0x559fface1118>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1730,7 +1730,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55be30fd0790>
+#> <bytecode: 0x559ffaac1018>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1926,10 +1926,12 @@ of $`\lambda_i`$, defined by
 ```
 
 The following code places the constant part of $`h`$ in `alpha` and the
-state-dependent part in `impact`. The `lambda_component` argument
-supplies the values of $`\lambda_{ij}`$. Individual components can be
-negative after a reset. The equal decay rates used here allow simulation
-as long as the sum of the components in each row remains nonnegative.
+state-dependent part in `impact`. The `lambda_component_n` argument
+supplies the current pre-jump matrix of $`\lambda_{ij}`$ values. This
+avoids allocating a full intensity history when only the current state
+is needed. Individual components can be negative after a reset. The
+equal decay rates used here allow simulation as long as the sum of the
+components in each row remains nonnegative.
 
 ``` r
 
@@ -1942,7 +1944,7 @@ alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
            0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
 }
 
-impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_component, ... ){
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
   if(n == 1){
     level <-  initial_level
     # mid <- initial_mid_price
@@ -1953,7 +1955,7 @@ impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component = lambda_co
     mid <- (ask + bid)/2
   }
   
-  lambda_component_matrix <- matrix(lambda_component[n, ], nrow=4, byrow=TRUE)
+  lambda_component_matrix <- lambda_component_n
 
   l2 <- sum(lambda_component_matrix[2,]) # sum of second row
   l3 <- sum(lambda_component_matrix[3,]) # sum of third row
@@ -2020,7 +2022,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55be2c923df8>
+#> <bytecode: 0x559ffac09850>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2030,7 +2032,7 @@ h_ba
 #> [4,]   50   50   50   50
 #> 
 #> Slot impact: 
-#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component = lambda_component, 
+#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component_n = lambda_component_n, 
 #>     ...) 
 #> {
 #>     if (n == 1) {
@@ -2043,8 +2045,7 @@ h_ba
 #>         bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])
 #>         mid <- (ask + bid)/2
 #>     }
-#>     lambda_component_matrix <- matrix(lambda_component[n, ], 
-#>         nrow = 4, byrow = TRUE)
+#>     lambda_component_matrix <- lambda_component_n
 #>     l2 <- sum(lambda_component_matrix[2, ])
 #>     l3 <- sum(lambda_component_matrix[3, ])
 #>     im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, 
@@ -2146,6 +2147,19 @@ summary(mle_ba)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+```
+
+The C++ likelihood supports this observed baseline and sequential impact
+with numerical differentiation. The impact reads the current state
+before its jump. No Jacobian is required.
+
+``` r
+
+previous_engine <- options(emhawkes.engine = "cpp")
+mle_ba_cpp <- hfit(h_ba, hr_ba$inter_arrival, hr_ba$type, hr_ba$mark,
+                   lambda_component0 = matrix(1, 4, 4),
+                   final_hessian = "stable")
+options(previous_engine)
 ```
 
 ## Point processes with flexible residuals
@@ -2265,7 +2279,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55be2e3dc470>
+#> <environment: 0x559ffdc74708>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2273,7 +2287,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55be2e3dc470>
+#> <environment: 0x559ffdc74708>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2282,7 +2296,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55be2e3dc470>
+#> <environment: 0x559ffdc74708>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2292,7 +2306,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55be2e3dc470>
+#> <environment: 0x559ffdc74708>
 ```
 
 The following histogram shows inter-arrival times from a model with

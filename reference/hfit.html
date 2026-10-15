@@ -269,9 +269,9 @@ This option supports parameter-only <code>mu</code>, <code>alpha</code>, <code>b
 returning plain numeric matrices with constant dimensions. They must be
 deterministic functions of <code>param</code>, with captured values held fixed.
 Observed-state <code>impact</code> functions are also supported without Jacobians.
-State-dependent baselines, latent-intensity impacts, mark densities and residual
-distributions are excluded from this numerical C++ path. Supplied <code>grad</code> and
-<code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> keeps its numeric-only C++ contract;
+Observed baselines and sequential state-dependent impacts are also supported
+as described below. Mark densities and residual distributions are excluded.
+Supplied <code>grad</code> and <code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> keeps its numeric-only C++ contract;
 use the R engine to evaluate a restored function-valued model.</p>
 <p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,
 <code>inter_arrival</code>, and the resolved <code>mu</code>, <code>alpha</code>, and <code>beta</code> matrices.
@@ -294,13 +294,34 @@ impact has no local parameters; a parameter-independent impact has a zero matrix
 <p>Declare needed <code>N</code> and <code>Nc</code> arguments explicitly in the impact function, or
 supply these paths. Captured inputs must be fixed, and callbacks must be
 deterministic. Ignored <code>...</code> is allowed; reading <code>lambda</code>, <code>lambda_component</code>,
-or <code>lambda_component_n</code>, including through <code>...</code>, is unsupported. A callback
+or <code>lambda_component_n</code>, including through <code>...</code>, is unsupported by the
+analytic option and observed-only precomputation. A callback
 that forces all of <code>...</code> also forces these unavailable states and produces an
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
 grows with observations times kernel components, without an additional
 observations-by-components-by-parameters array. Standalone <code><a href="logLik.html">logLik()</a></code> and
 default fitting retain the R path for these models.</p>
+<p>With numerical differentiation and the C++ engine, <code>mu</code> may depend on observed
+<code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>, and <code>inter_arrival</code>. Return a plain numeric
+dimensions-by-one matrix, constant over each inter-event interval. The call
+at index <code>n</code> supplies the baseline for the interval ending at event <code>n</code> and
+that event's intensity; use counts at <code>n - 1</code> for its predictable baseline.
+Initial values use <code>mu(n = 1)</code>. Latent-intensity dependencies and within-interval
+changes are unsupported for these baselines. Ignored <code>...</code> is allowed.</p>
+<p>Numerical C++ fitting also supports an <code>impact</code> that explicitly declares
+<code>lambda_component_n</code>, <code>lambda</code>, or <code>lambda_component</code>. Rcpp calls it after
+computing the current event's intensity and before applying its jumps.
+<code>lambda_component_n</code> is the dimensions-by-kernels matrix just before the jump.
+<code>lambda</code> and <code>lambda_component</code> are allocated only when explicitly declared;
+they contain the initial and current pre-jump rows, with future rows zero.
+Component histories use the R engine's row-major column order and names.
+Retained callback arguments are snapshots. Prefer <code>lambda_component_n</code> when
+only the current state is needed; full histories can require substantial copies.
+Undeclared latent access through <code>...</code> does not select this sequential path.
+When <code>mu</code> is an observed-baseline function, the impact's <code>mu</code> argument is the
+parameter-bound function, as in the R engine. Callbacks must be deterministic
+and keep captured inputs fixed. Analytic gradients do not support this feedback.</p>
 <p>The default uses numerical differentiation and does not run
 additional curvature checks. With <code>final_hessian = "stable"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
