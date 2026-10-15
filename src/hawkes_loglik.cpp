@@ -276,10 +276,12 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             if (components_node != R_NilValue) SETCAR(components_node, R_NilValue);
             if ((TYPEOF(value) != REALSXP && TYPEOF(value) != INTSXP) ||
                 !Rf_isMatrix(value) || Rf_isObject(value))
-                Rcpp::stop("impact must return a plain numeric matrix matching the kernel dimensions.");
+                return Rcpp::List::create(Rcpp::Named("unsupported") =
+                    "impact must return a plain numeric matrix matching the kernel dimensions.");
             callback_impact = Rcpp::as<Rcpp::NumericMatrix>(value);
             if (callback_impact.nrow() != dimensions || callback_impact.ncol() != kernels)
-                Rcpp::stop("impact must return a plain numeric matrix matching the kernel dimensions.");
+                return Rcpp::List::create(Rcpp::Named("unsupported") =
+                    "impact must return a plain numeric matrix matching the kernel dimensions.");
             for (int k = 0; k < components; ++k)
                 if (!R_FINITE(callback_impact[k]))
                     return Rcpp::List::create(Rcpp::Named("loglikelihood") = R_NegInf);

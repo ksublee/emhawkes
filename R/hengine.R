@@ -2,6 +2,30 @@
 #' @importFrom Rcpp evalCpp
 NULL
 
+# Only capability failures permit automatic fallback. User callback errors propagate.
+stop_cpp_unsupported <- function(message) {
+  stop(structure(list(message = message, call = NULL),
+    class = c("emhawkes_cpp_unsupported", "error", "condition")))
+}
+
+# Reject declared unsupported features before evaluating any user callback.
+auto_hawkes_fit_supported <- function(object, observation) {
+  if (!is.null(object@dmark) || !is.null(object@dresidual)) return(FALSE)
+  values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
+  if (is.object(object@dimens) || is.object(object@type_col_map) ||
+      any(vapply(object@type_col_map, is.object, logical(1))) ||
+      any(vapply(values, is.object, logical(1))) ||
+      any(vapply(observation[c("inter_arrival", "type", "mark")], is.object, logical(1)))) return(FALSE)
+  for (name in names(values)) {
+    fun <- values[[name]]
+    if (!is.function(fun)) next
+    args <- names(formals(fun))
+    if (name != "mu" && !identical(args, "param")) return(FALSE)
+    if (name == "mu" && any(args %in% c("lambda", "lambda_component", "lambda_component_n"))) return(FALSE)
+  }
+  TRUE
+}
+
 # Inspect capabilities without evaluating a user function.
 native_hawkes_reason <- function(object, observation,
     values = list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta),
@@ -94,7 +118,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
                  values[c("mu", "alpha", "beta")])
     if (components$mu$has_param) context$param <- local_param("mu", param)
     for (name in c("lambda", "lambda_component", "lambda_component_n")) {
-      context[[name]] <- quote(stop("Observed baselines cannot read latent intensity states.", call. = FALSE))
+      context[[name]] <- quote(stop_cpp_unsupported("Observed baselines cannot read latent intensity states."))
     }
     context
   }
@@ -112,8 +136,8 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
     if (length(state_positions)) {
       # Force the observed prefix, leaving unavailable states lazy inside ... .
       call[[2L]] <- as.integer(min(state_positions) - 1L)
-      for (index in state_positions + 3L) call[[index]] <- quote(stop(
-        "Observed baselines cannot read latent intensity states.", call. = FALSE))
+      for (index in state_positions + 3L) call[[index]] <- quote(stop_cpp_unsupported(
+        "Observed baselines cannot read latent intensity states."))
       body(mu_invoke) <- call
     }
   }
@@ -153,9 +177,10 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
     }
     values
   }
-  start_values <- validate_values(start_values)
+  start_values <- tryCatch(validate_values(start_values),
+    error = function(e) stop_cpp_unsupported(conditionMessage(e)))
   reason <- native_hawkes_reason(object, observation, start_values, allow_impact = TRUE)
-  if (!is.null(reason)) stop(label, " does not support ", reason, ".", call. = FALSE)
+  if (!is.null(reason)) stop_cpp_unsupported(paste0(label, " does not support ", reason, "."))
   validate_jacobian <- function(value, name) {
     param_names <- names(components[[name]]$param)
     p <- length(param_names)
@@ -196,7 +221,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
         if (n > size) next # The R likelihood also calls the terminal next baseline.
         if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
             !identical(dim(value), c(as.integer(object@dimens), 1L)))
-          stop("Observed mu must return a plain numeric dimensions-by-one matrix.", call. = FALSE)
+          stop_cpp_unsupported("Observed mu must return a plain numeric dimensions-by-one matrix.")
         if (any(!is.finite(value)) || any(value < 0)) return(NULL)
         path[, n] <- value
       }
@@ -282,6 +307,7 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
       keep_lambda = sequential && impact_plan$history[["lambda"]],
       keep_components = sequential && impact_plan$history[["lambda_component"]],
       baseline = baseline, impact_arguments = runtime$args)
+    if (!is.null(result$unsupported)) stop_cpp_unsupported(result$unsupported)
     if (!is.finite(result$loglikelihood)) {
       return(list(loglikelihood = result$loglikelihood, gradient = invalid$gradient))
     }

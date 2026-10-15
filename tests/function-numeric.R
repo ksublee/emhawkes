@@ -33,7 +33,8 @@ check_route <- function() {
   }, "emhawkes")
   on.exit(assignInNamespace("hawkes_loglik_cpp", native, "emhawkes"))
   auto <- fit_poisson("auto")
-  stopifnot(calls == 0L)
+  stopifnot(calls > 0L)
+  calls <- 0L
   compiled <- fit_poisson("cpp", jacobian = stop("numeric fitting must not force jacobian"))
   stopifnot(calls > 0L, attr(compiled, "emhawkes")$gradient == "numeric",
             is.null(attr(compiled, "emhawkes")$jacobian))

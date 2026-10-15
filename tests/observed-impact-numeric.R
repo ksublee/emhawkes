@@ -39,7 +39,8 @@ check_route <- function() {
   }, "emhawkes")
   on.exit(assignInNamespace("hawkes_loglik_cpp", native, "emhawkes"))
   auto <- do.call(fit_engine, c(list(engine = "auto"), arguments))
-  stopifnot(calls == 0L)
+  stopifnot(calls > 0L)
+  calls <- 0L
   cpp <- do.call(fit_engine, c(list(engine = "cpp", jacobian = quote(stop("unused Jacobian"))), arguments))
   stopifnot(calls > 0L, attr(cpp, "emhawkes")$gradient == "numeric",
             is.null(attr(cpp, "emhawkes")$jacobian))

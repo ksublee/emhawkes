@@ -401,8 +401,10 @@ Component functions can declare only the arguments they need, and use `...` to r
 ### Calculation engines
 
 Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
-evaluation and inference. Function components and residual-distribution models
-use the R implementation. Simulation uses R.
+evaluation and inference. During fitting, supported function components and
+impacts also use C++ automatically. Unsupported specifications and residual
+distributions use R. Standalone likelihood evaluation of function-valued models
+and simulation use R.
 Use the `emhawkes.engine` option to compare the R and automatic calculations.
 This function restores the previous option after each call.
 
@@ -931,8 +933,9 @@ fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
 summary(fit_fl)
 ```
 
-This impact depends on observed event counts, so the C++ likelihood can be used
-with numerical differentiation. No Jacobian is needed; R still evaluates the impact.
+This impact depends on observed event counts, so automatic selection uses the
+C++ likelihood with numerical differentiation. No Jacobian is needed; R still
+evaluates the impact.
 
 ```{r flocking-cpp-numeric, eval=FALSE}
 previous_engine <- options(emhawkes.engine = "cpp")
@@ -1100,9 +1103,10 @@ mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
 summary(mle_ba)
 ```
 
-The C++ likelihood supports this observed baseline and sequential impact with
-numerical differentiation. The impact reads the current state before its jump.
-No Jacobian is required.
+Automatic selection uses the C++ likelihood for this observed baseline and
+sequential impact with numerical differentiation. The impact reads the current
+state before its jump. No Jacobian is required. The explicit engine setting below
+can be used to require C++ support.
 
 ```{r bid-ask-cpp-numeric, eval=FALSE}
 previous_engine <- options(emhawkes.engine = "cpp")

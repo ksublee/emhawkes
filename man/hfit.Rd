@@ -180,9 +180,10 @@ Fixed entries have zero derivative. Components with \code{param = numeric(0)} ne
 no Jacobian. Contributions for shared parameter names are added across components.
 Missing or malformed Jacobians produce an error. For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
-scores in Rcpp. With the default \code{emhawkes.engine = "auto"}, these functions
-still use the R likelihood. To use C++ with numerical differentiation, set
-\code{options(emhawkes.engine = "cpp")} before \code{hfit()}. No Jacobian is required.
+scores in Rcpp. The default \code{emhawkes.engine = "auto"} also selects C++ for
+supported function-valued models with numerical differentiation. No Jacobian
+is required. Unsupported specifications use R; \code{"cpp"} requires C++ support,
+and \code{"r"} selects the R likelihood. User callback errors propagate.
 This option supports parameter-only \code{mu}, \code{alpha}, \code{beta}, and \code{eta} functions
 returning plain numeric matrices with constant dimensions. They must be
 deterministic functions of \code{param}, with captured values held fixed.
@@ -190,7 +191,9 @@ Observed-state \code{impact} functions are also supported without Jacobians.
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
 Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} keeps its numeric-only C++ contract;
-use the R engine to evaluate a restored function-valued model.
+use the R engine to evaluate a restored function-valued model. Automatic
+fallback through \code{...} assumes deterministic callbacks with fixed captures;
+it may evaluate a callback again when an unsupported state read is detected.
 
 Observed-state \code{impact} functions may use \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type},
 \code{inter_arrival}, and the resolved \code{mu}, \code{alpha}, and \code{beta} matrices.

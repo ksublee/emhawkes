@@ -109,9 +109,10 @@ NULL
 #' no Jacobian. Contributions for shared parameter names are added across components.
 #' Missing or malformed Jacobians produce an error. For these functions, the
 #' analytic option evaluates their matrices in R and the likelihood and component
-#' scores in Rcpp. With the default `emhawkes.engine = "auto"`, these functions
-#' still use the R likelihood. To use C++ with numerical differentiation, set
-#' `options(emhawkes.engine = "cpp")` before `hfit()`. No Jacobian is required.
+#' scores in Rcpp. The default `emhawkes.engine = "auto"` also selects C++ for
+#' supported function-valued models with numerical differentiation. No Jacobian
+#' is required. Unsupported specifications use R; `"cpp"` requires C++ support,
+#' and `"r"` selects the R likelihood. User callback errors propagate.
 #' This option supports parameter-only `mu`, `alpha`, `beta`, and `eta` functions
 #' returning plain numeric matrices with constant dimensions. They must be
 #' deterministic functions of `param`, with captured values held fixed.
@@ -119,7 +120,9 @@ NULL
 #' Observed baselines and sequential state-dependent impacts are also supported
 #' as described below. Mark densities and residual distributions are excluded.
 #' Supplied `grad` and `hess` are retained. Standalone `logLik()` keeps its numeric-only C++ contract;
-#' use the R engine to evaluate a restored function-valued model.
+#' use the R engine to evaluate a restored function-valued model. Automatic
+#' fallback through `...` assumes deterministic callbacks with fixed captures;
+#' it may evaluate a callback again when an unsupported state read is detected.
 #'
 #' Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`, `type`,
 #' `inter_arrival`, and the resolved `mu`, `alpha`, and `beta` matrices.
@@ -477,13 +480,33 @@ setMethod(
       objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian)
       llh_function <- objective$loglik
       grad <- objective$gradient
-    } else if (identical(engine, "cpp") && (!is.null(object@impact) || any(vapply(
+    } else if (!is.null(engine) && engine %in% c("auto", "cpp") && (!is.null(object@impact) || any(vapply(
       list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1))))) {
       # Reuse native recursions without scores or component Jacobians.
       # Numerical differentiation and supplied grad/hess remain with maxLik.
-      objective <- make_hawkes_objective(object, observation, lambda_component0,
-        parameter_map, verbose, derivatives = FALSE)
-      llh_function <- objective$loglik
+      if (engine == "cpp") {
+        objective <- make_hawkes_objective(object, observation, lambda_component0,
+          parameter_map, verbose, derivatives = FALSE)
+        llh_function <- objective$loglik
+      } else if (auto_hawkes_fit_supported(object, observation)) {
+        objective <- tryCatch(make_hawkes_objective(object, observation, lambda_component0,
+          parameter_map, verbose, derivatives = FALSE),
+          emhawkes_cpp_unsupported = function(e) NULL)
+        if (!is.null(objective)) {
+          r_likelihood <- llh_function
+          native_available <- TRUE
+          llh_function <- function(param) {
+            if (!native_available) return(r_likelihood(param))
+            tryCatch(objective$loglik(param),
+              emhawkes_cpp_unsupported = function(e) {
+                # Some callback capabilities can only be detected on use.
+                # Stay on R for all subsequent proposals in this fit.
+                native_available <<- FALSE
+                r_likelihood(param)
+              })
+          }
+        }
+      }
     }
 
     #llh_function(starting_point)

@@ -50,8 +50,8 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
       context$mu <- restore_parameters(parameter_map, param)$mu
     # do.call supplies these as promises. Ignored ... remains compatible; reading
     # an unavailable intensity through ... fails instead of silently using NULL.
-    for (name in latent) context[[name]] <- substitute(stop(
-      MESSAGE, call. = FALSE), list(MESSAGE = paste0(
+    for (name in latent) context[[name]] <- substitute(stop_cpp_unsupported(
+      MESSAGE), list(MESSAGE = paste0(
         "Impact cannot read latent intensity states through '...' for ", mode, ".")))
     if (full) context$param <- stats::setNames(param, parameter_names) else if (component$has_param) {
       context$param <- stats::setNames(param[component$index], names(component$param))
@@ -78,7 +78,7 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
       context$n <- n
       value <- call_component(component$value, value_args, context)
       if (!is.numeric(value) || !is.matrix(value) || is.object(value) || !identical(dim(value), shape)) {
-        stop("impact must return a plain numeric matrix matching the kernel dimensions.", call. = FALSE)
+        stop_cpp_unsupported("impact must return a plain numeric matrix matching the kernel dimensions.")
       }
       if (any(!is.finite(value))) return(NULL)
       result[, n] <- as.vector(value)
