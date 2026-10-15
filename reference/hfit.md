@@ -184,9 +184,10 @@ hfit(
   matrix (column-major order); columns are named with the component's
   local `param` names. Column order is arbitrary. Required for each
   function with nonempty `param`. For an observed-state `impact`, also
-  supply `jacobian$impact`; see Details for its full-parameter
-  convention. Unused with a supplied `grad` or numerical
-  differentiation.
+  supply `jacobian$impact`. Observed baselines use a full-parameter
+  `jacobian$mu`; current-state feedback uses parameter and state
+  Jacobians. See Details for these conventions. Unused with a supplied
+  `grad` or numerical differentiation.
 
 ## Value
 
@@ -240,12 +241,13 @@ fallback reasons. A custom `mylogLik` bypasses this selection.
 Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
 supports fewer C++ models than `hfit()`. With `gradient = "analytic"`,
-Rcpp computes the likelihood and its gradient together and reuses the
-result at the same parameter vector. Matrix scores are summed according
-to the saved parameter map. Automatic initial states include their
-parameter derivatives; a singular automatic initialization requires an
-explicit `lambda_component0`. State-dependent baselines, impacts that
-depend on latent intensities, mark densities, residual distributions,
+Rcpp computes the likelihood and its gradient using native recursions
+and cached results at the same parameter vector. Matrix scores are
+summed according to the saved parameter map. Automatic initial states
+include their parameter derivatives; a singular automatic initialization
+requires an explicit `lambda_component0`. Observed baselines and
+current-component impacts are supported with Jacobians as described
+below. Full intensity histories, mark densities, residual distributions,
 and custom likelihoods are not supported by this option.
 Equality-constrained optimization is also excluded. BHHH requires event
 scores and cannot use this total score. A supplied `grad` takes
@@ -307,11 +309,12 @@ parameters; a parameter-independent impact has a zero matrix.
 
 Declare needed `N` and `Nc` arguments explicitly in the impact function,
 or supply these paths. Captured inputs must be fixed, and callbacks must
-be deterministic. Ignored `...` is allowed; reading `lambda`,
-`lambda_component`, or `lambda_component_n`, including through `...`, is
-unsupported by the analytic option and observed-only precomputation. A
-callback that forces all of `...` also forces these unavailable states
-and produces an error. R evaluates impacts and Jacobians; Rcpp computes
+be deterministic. Ignored `...` is allowed. Observed-only precomputation
+cannot read `lambda`, `lambda_component`, or `lambda_component_n`,
+including through `...`. Analytic current-component feedback requires
+the explicit declaration and state Jacobian described below. A callback
+that forces all of `...` also forces these unavailable states and
+produces an error. R evaluates impacts and Jacobians; Rcpp computes
 intensity recursions, component scores, and reverse sensitivities to
 event impacts. Temporary storage grows with observations times kernel
 components, without an additional
@@ -321,14 +324,14 @@ also supports these observed-state callbacks without Jacobians. Default
 fitting uses C++ for supported callbacks with numerical differentiation
 and requires no Jacobian.
 
-With numerical differentiation and the C++ engine, `mu` may depend on
-observed `n`, `N`, `Nc`, `mark`, `type`, and `inter_arrival`. Return a
-plain numeric dimensions-by-one matrix, constant over each inter-event
-interval. The call at index `n` supplies the baseline for the interval
-ending at event `n` and that event's intensity; use counts at `n - 1`
-for its predictable baseline. Initial values use `mu(n = 1)`.
-Latent-intensity dependencies and within-interval changes are
-unsupported for these baselines. Ignored `...` is allowed.
+With the C++ engine, `mu` may depend on observed `n`, `N`, `Nc`, `mark`,
+`type`, and `inter_arrival`. Return a plain numeric dimensions-by-one
+matrix, constant over each inter-event interval. The call at index `n`
+supplies the baseline for the interval ending at event `n` and that
+event's intensity; use counts at `n - 1` for its predictable baseline.
+Initial values use `mu(n = 1)`. Latent-intensity dependencies and
+within-interval changes are unsupported for these baselines. Ignored
+`...` is allowed.
 
 Numerical C++ fitting also supports an `impact` that explicitly declares
 `lambda_component_n`, `lambda`, or `lambda_component`. Rcpp calls it
@@ -348,8 +351,43 @@ differentiation repeats it at each likelihood evaluation. Undeclared
 latent access through `...` does not select this sequential path. When
 `mu` is an observed-baseline function, the impact's `mu` argument is the
 parameter-bound function, as in the R engine. Callbacks must be
-deterministic and keep captured inputs fixed. Analytic gradients do not
-support this feedback.
+deterministic and keep captured inputs fixed. Analytic gradients support
+current-component feedback with the derivatives below; full intensity
+histories require numerical differentiation.
+
+For an observed baseline with `gradient = "analytic"`, supply
+`jacobian$mu` as a matrix or function receiving the observed context.
+Its `param` is the full named optimization vector. Return a
+dimensions-by-parameters matrix with a column for every fitted
+parameter, including zero columns. Include dependencies through resolved
+`alpha` and `beta`. The baseline value function keeps its local
+parameter vector. The baseline Jacobian at `n = 1` also enters the
+derivative of automatic initialization. Declare needed `N` and `Nc` in
+the value function or supply their paths.
+
+An analytic impact that explicitly declares `lambda_component_n`
+requires `jacobian$impact = list(param = ..., state = ...)`. Each entry
+is a constant matrix or function receiving the same observed and
+current-component context. The Jacobians' `param` is the full named
+optimization vector. The `param` matrix has one row per impact entry and
+one named column per fitted parameter; differentiate the impact while
+holding `lambda_component_n` fixed, including direct dependencies
+through core components. The `state` matrix is square, with rows for
+impact entries and columns for current-component entries, both in
+[`as.vector()`](https://rdrr.io/r/base/vector.html) column-major order.
+It contains the partial derivative of the impact with respect to that
+pre-jump state. The package propagates state sensitivities through
+decay, event jumps, and initial components. Do not add those propagated
+effects again to the supplied `param` Jacobian. All Jacobians must be
+finite numeric matrices of constant dimensions. Derivatives must exist
+along the evaluated parameter path. Branches based only on observations
+are allowed; parameter-dependent discontinuities and arbitrary reads of
+`lambda` or `lambda_component` are unsupported. Current-state
+sensitivity storage grows with kernel components times fitted
+parameters. An observed baseline Jacobian path also grows with
+observations times dimensions times parameters. No derivative history of
+all kernel states is stored. Jacobians are evaluated only when a
+gradient is requested.
 
 The default uses numerical differentiation and does not run additional
 curvature checks. With `final_hessian = "stable"`, final curvature is
@@ -511,18 +549,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42494   1.629   0.1033    
+#> mu1      0.69221    0.42741   1.620   0.1053    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04916   0.291   0.7712    
-#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
-#> alpha34  0.29568    0.11634   2.542   0.0110 *  
-#> beta1.1  0.10275    0.08833   1.163   0.2447    
-#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
-#> alpha1n  0.03456    0.06731   0.513   0.6077    
-#> alpha1w  0.04976    0.06831   0.728   0.4664    
-#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
-#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
+#> alpha12  0.01429    0.04931   0.290   0.7719    
+#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
+#> alpha34  0.29568    0.11642   2.540   0.0111 *  
+#> beta1.1  0.10275    0.08867   1.159   0.2465    
+#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
+#> alpha1n  0.03456    0.06732   0.513   0.6077    
+#> alpha1w  0.04976    0.06843   0.727   0.4671    
+#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
+#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------

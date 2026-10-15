@@ -207,7 +207,9 @@ matrix or a function with the single argument <code>param</code> returning that 
 Rows follow <code><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector()</a></code> of the component matrix (column-major order); columns
 are named with the component's local <code>param</code> names. Column order is arbitrary.
 Required for each function with nonempty <code>param</code>. For an observed-state <code>impact</code>,
-also supply <code>jacobian$impact</code>; see Details for its full-parameter convention.
+also supply <code>jacobian$impact</code>. Observed baselines use a full-parameter
+<code>jacobian$mu</code>; current-state feedback uses parameter and state Jacobians.
+See Details for these conventions.
 Unused with a supplied <code>grad</code> or numerical differentiation.</p></dd>
 
 </dl></div>
@@ -249,11 +251,12 @@ automatic acceleration. Inspect <code>fit_diagnostics(fit)$computation$engine</c
 for actual engines and fallback reasons. A custom <code>mylogLik</code> bypasses this
 selection. Standalone <code><a href="logLik.html">logLik()</a></code> supports fewer C++ models than <code>hfit()</code>.
 With <code>gradient = "analytic"</code>, Rcpp computes the likelihood and its gradient
-together and reuses the result at the same parameter vector. Matrix scores are
+using native recursions and cached results at the same parameter vector. Matrix scores are
 summed according to the saved parameter map. Automatic initial states include
 their parameter derivatives; a singular automatic initialization requires an
-explicit <code>lambda_component0</code>. State-dependent baselines, impacts that depend on
-latent intensities, mark densities, residual distributions, and custom likelihoods are not supported
+explicit <code>lambda_component0</code>. Observed baselines and current-component impacts
+are supported with Jacobians as described below. Full intensity histories,
+mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
 BHHH requires event scores and cannot use this total score.
 A supplied <code>grad</code> takes precedence. A supplied <code>hess</code> is retained; otherwise
@@ -303,9 +306,10 @@ Jacobians for parameter-only components. A Jacobian is required even when the
 impact has no local parameters; a parameter-independent impact has a zero matrix.</p>
 <p>Declare needed <code>N</code> and <code>Nc</code> arguments explicitly in the impact function, or
 supply these paths. Captured inputs must be fixed, and callbacks must be
-deterministic. Ignored <code>...</code> is allowed; reading <code>lambda</code>, <code>lambda_component</code>,
-or <code>lambda_component_n</code>, including through <code>...</code>, is unsupported by the
-analytic option and observed-only precomputation. A callback
+deterministic. Ignored <code>...</code> is allowed. Observed-only precomputation cannot
+read <code>lambda</code>, <code>lambda_component</code>, or <code>lambda_component_n</code>, including through
+<code>...</code>. Analytic current-component feedback requires the explicit declaration
+and state Jacobian described below. A callback
 that forces all of <code>...</code> also forces these unavailable states and produces an
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
@@ -314,7 +318,7 @@ observations-by-components-by-parameters array. Standalone <code><a href="logLik
 supports these observed-state callbacks without Jacobians. Default fitting uses
 C++ for supported callbacks with
 numerical differentiation and requires no Jacobian.</p>
-<p>With numerical differentiation and the C++ engine, <code>mu</code> may depend on observed
+<p>With the C++ engine, <code>mu</code> may depend on observed
 <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>, and <code>inter_arrival</code>. Return a plain numeric
 dimensions-by-one matrix, constant over each inter-event interval. The call
 at index <code>n</code> supplies the baseline for the interval ending at event <code>n</code> and
@@ -338,7 +342,37 @@ history cost. Numerical differentiation repeats it at each likelihood evaluation
 Undeclared latent access through <code>...</code> does not select this sequential path.
 When <code>mu</code> is an observed-baseline function, the impact's <code>mu</code> argument is the
 parameter-bound function, as in the R engine. Callbacks must be deterministic
-and keep captured inputs fixed. Analytic gradients do not support this feedback.</p>
+and keep captured inputs fixed. Analytic gradients support current-component
+feedback with the derivatives below; full intensity histories require numerical
+differentiation.</p>
+<p>For an observed baseline with <code>gradient = "analytic"</code>, supply <code>jacobian$mu</code>
+as a matrix or function receiving the observed context. Its <code>param</code> is the
+full named optimization vector. Return a dimensions-by-parameters matrix
+with a column for every fitted parameter, including zero columns. Include
+dependencies through resolved <code>alpha</code> and <code>beta</code>. The baseline value function
+keeps its local parameter vector. The baseline Jacobian at <code>n = 1</code> also enters
+the derivative of automatic initialization. Declare needed <code>N</code> and <code>Nc</code> in
+the value function or supply their paths.</p>
+<p>An analytic impact that explicitly declares <code>lambda_component_n</code> requires
+<code>jacobian$impact = list(param = ..., state = ...)</code>. Each entry is a constant
+matrix or function receiving the same observed and current-component context.
+The Jacobians' <code>param</code> is the full named optimization vector. The <code>param</code>
+matrix has one row per impact entry and one named column per fitted parameter;
+differentiate the impact while holding <code>lambda_component_n</code> fixed, including
+direct dependencies through core components. The <code>state</code> matrix is square,
+with rows for impact entries and columns for current-component entries, both
+in <code><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector()</a></code> column-major order. It contains the partial derivative of
+the impact with respect to that pre-jump state. The package propagates state
+sensitivities through decay, event jumps, and initial components. Do not add
+those propagated effects again to the supplied <code>param</code> Jacobian.
+All Jacobians must be finite numeric matrices of constant dimensions.
+Derivatives must exist along the evaluated parameter path. Branches based
+only on observations are allowed; parameter-dependent discontinuities and
+arbitrary reads of <code>lambda</code> or <code>lambda_component</code> are unsupported.
+Current-state sensitivity storage grows with kernel components times fitted
+parameters. An observed baseline Jacobian path also grows with observations
+times dimensions times parameters. No derivative history of all kernel states
+is stored. Jacobians are evaluated only when a gradient is requested.</p>
 <p>The default uses numerical differentiation and does not run
 additional curvature checks. With <code>final_hessian = "stable"</code>, final curvature is
 checked after optimization without changing coefficients, log-likelihood,
@@ -487,18 +521,18 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42494   1.629   0.1033    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42741   1.620   0.1053    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.104   0.0354 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12632    0.06533  -1.934   0.0532 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04916   0.291   0.7712    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21477   4.475 7.64e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11634   2.542   0.0110 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08833   1.163   0.2447    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06731   0.513   0.6077    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06831   0.728   0.4664    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27579  -8.967  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11327   8.906  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04931   0.290   0.7719    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21342   4.503 6.69e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11642   2.540   0.0111 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08867   1.159   0.2465    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06732   0.513   0.6077    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06843   0.727   0.4671    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27378  -9.033  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11319   8.911  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>

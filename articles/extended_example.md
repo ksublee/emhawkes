@@ -1289,7 +1289,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x564388eeaa80>
+#> <bytecode: 0x5572c37ef560>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1299,7 +1299,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x56438a50ad18>
+#> <bytecode: 0x5572c3d3f970>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1309,7 +1309,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x564386279d18>
+#> <bytecode: 0x5572c4133a28>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1805,7 +1805,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x56438931a190>
+#> <bytecode: 0x5572c3fb6970>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2118,7 +2118,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x56438df9bd18>
+#> <bytecode: 0x5572c39c7a70>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2285,6 +2285,129 @@ stopifnot(isTRUE(all.equal(unname(replayed_ba$loglikelihood),
   as.numeric(mle_ba$maximum), tolerance = 1e-8)))
 ```
 
+The current-component version also supports an optional analytic
+gradient. The baseline Jacobian uses all fitted parameter names; the
+parameter-only alpha Jacobian uses its local names. For impact, supply
+separate derivatives with respect to parameters (holding the current
+state fixed) and the current state. All matrix entries use
+[`as.vector()`](https://rdrr.io/r/base/vector.html) column-major order.
+In particular, the state Jacobian differentiates the pre-jump row sums
+subtracted by impact. Counts and mark totals are observed data and have
+zero parameter derivative. The baseline uses counts before the event,
+while impact uses counts after it.
+
+``` r
+
+# Exact derivatives for the current-component Bid-ask example.
+bid_ask_jacobians <- function(initial_ask_price, initial_bid_price, initial_level,
+    initial_mid_price = (initial_ask_price + initial_bid_price) / 2) {
+  force(initial_ask_price); force(initial_bid_price); force(initial_level); force(initial_mid_price)
+  market_state <- function(n, Nc, after = FALSE) {
+    if (n == 1L) return(list(level = initial_level, mid = initial_mid_price))
+    k <- if (after) n else n - 1L
+    ask <- initial_ask_price + Nc[k, 1] - Nc[k, 2]
+    bid <- initial_bid_price + Nc[k, 3] - Nc[k, 4]
+    list(level = initial_level + Nc[k, 1] - Nc[k, 2] - (Nc[k, 3] - Nc[k, 4]),
+      mid = (ask + bid) / 2)
+  }
+  mu_jac <- function(param, n, Nc, ...) {
+    s <- market_state(n, Nc)
+    J <- matrix(0, 4, length(param), dimnames = list(NULL, names(param)))
+    J[c(1, 4), 'mu1'] <- 1
+    if (s$level > 0) J[c(2, 3), 'zeta1'] <- s$level / s$mid
+    J
+  }
+  alpha_jac <- matrix(0, 16, 5, dimnames = list(NULL,
+    c('alpha_s1', 'alpha_m', 'alpha_s2', 'alpha_w1', 'alpha_w2')))
+  alpha_jac[c(1, 16), 'alpha_s1'] <- 1
+  alpha_jac[c(5, 12), 'alpha_m'] <- 1
+  alpha_jac[c(9, 8), 'alpha_s2'] <- 1
+  alpha_jac[c(2, 15), 'alpha_w1'] <- 1
+  alpha_jac[c(3, 14), 'alpha_w2'] <- 1
+  impact_param_jac <- function(param, n, Nc, ...) {
+    s <- market_state(n, Nc, after = TRUE)
+    J <- matrix(0, 16, length(param), dimnames = list(NULL, names(param)))
+    J[c(6, 7, 10, 11), 'xi'] <- s$level / s$mid
+    J
+  }
+  impact_state_jac <- matrix(0, 16, 16)
+  impact_state_jac[c(6, 10), c(2, 6, 10, 14)] <- -1
+  impact_state_jac[c(7, 11), c(3, 7, 11, 15)] <- -1
+  list(mu = mu_jac, alpha = alpha_jac,
+    impact = list(param = impact_param_jac, state = impact_state_jac))
+}
+
+ba_jac <- bid_ask_jacobians(initial_ask_price, initial_bid_price, initial_level,
+  initial_mid_price)
+```
+
+``` r
+
+mle_ba_analytic <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival,
+  type = hr_ba$type, mark = hr_ba$mark,
+  lambda_component0 = matrix(1, 4, 4), gradient = "analytic",
+  jacobian = ba_jac, final_hessian = "stable")
+#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).
+#> Use reduced = FALSE to estimate matrix entries separately.
+stopifnot(abs(mle_ba_analytic$maximum - mle_ba$maximum) < 2e-6)
+cbind(numeric = coef(mle_ba), analytic = coef(mle_ba_analytic))
+#>              numeric    analytic
+#> mu1       0.06954108  0.06954108
+#> zeta1     0.10108287  0.10108287
+#> alpha_s1  4.65621404  4.65621171
+#> alpha_m  23.56109518 23.56109952
+#> alpha_s2  5.85020504  5.85020514
+#> alpha_w1 10.28637774 10.28637540
+#> alpha_w2  7.40377118  7.40376812
+#> beta1.1  51.87268426 51.87268077
+#> xi        1.76477904  1.76477956
+fit_diagnostics(mle_ba_analytic)$computation
+#> $recorded
+#> [1] TRUE
+#> 
+#> $engine
+#> $engine$requested
+#> [1] "auto"
+#> 
+#> $engine$used
+#> [1] "cpp"
+#> 
+#> $engine$fallback_reason
+#> NULL
+#> 
+#> 
+#> $gradient
+#> $gradient$requested
+#> [1] "analytic"
+#> 
+#> $gradient$used
+#> [1] "analytic"
+#> 
+#> $gradient$reason
+#> NULL
+#> 
+#> 
+#> $hessian
+#> $hessian$requested
+#> [1] "stable"
+#> 
+#> $hessian$finalHessian
+#> NULL
+#> 
+#> $hessian$used
+#> [1] "scaled_central_Richardson"
+#> 
+#> $hessian$reason
+#> NULL
+```
+
+Numerical differentiation remains the default. The optimization path and
+last digits may differ. Analytic fitting does not support arbitrary
+reads of the full `lambda` or `lambda_component` histories. Branches in
+this example depend only on observations. Parameter-dependent branch
+thresholds need separate differentiability checks. Faster gradients do
+not resolve weak identification or guarantee reliable standard errors.
+
 ## Point processes with flexible residuals
 
 ### One-dimensional model
@@ -2402,7 +2525,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x5643886ab780>
+#> <environment: 0x5572c5237c68>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2410,7 +2533,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x5643886ab780>
+#> <environment: 0x5572c5237c68>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2419,7 +2542,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x5643886ab780>
+#> <environment: 0x5572c5237c68>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2429,7 +2552,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x5643886ab780>
+#> <environment: 0x5572c5237c68>
 ```
 
 The following histogram shows inter-arrival times from a model with

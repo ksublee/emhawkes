@@ -39,7 +39,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
-<ul><li><p>Reduce observed-baseline dispatch overhead in numerical fitting and standalone likelihood/inference. Evaluate the unchanged R callback from a native loop, preserving default parameters, event indices, terminal calls and capability fallback.</p></li>
+<ul><li><p>Extend opt-in analytic gradients to observed baselines and impacts that explicitly use <code>lambda_component_n</code>. Accept full-parameter baseline Jacobians and separate direct-parameter/state impact Jacobians; propagate decay, jump, parameter-sharing and initial-state derivatives in C++. Keep numerical defaults and full-history restrictions.</p></li>
+<li><p>Reduce observed-baseline dispatch overhead in numerical fitting and standalone likelihood/inference. Evaluate the unchanged R callback from a native loop, preserving default parameters, event indices, terminal calls and capability fallback.</p></li>
 <li><p>Extend standalone C++ likelihood and intensity/residual inference to observed baselines and sequential state-dependent impacts, including Bid-ask models. Preserve terminal baseline evaluation, component attributes, callback snapshots, and independent function defaults.</p></li>
 <li><p>Extend standalone C++ likelihood and intensity/residual inference to observed-state impacts. Preserve independent callback defaults and permanent R fallback during fitting. Read flocking counts directly by row and column to avoid repeated full-column extraction.</p></li>
 <li><p>Accelerate standalone <code><a href="../reference/logLik.html">logLik()</a></code> and intensity/residual inference for parameter-only component functions, including restored fitted specifications. Preserve default evaluation, initialization, fallback and optimizer behavior.</p></li>
