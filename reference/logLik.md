@@ -133,15 +133,19 @@ must remain fixed and callbacks must be deterministic. Observed-state
 resolved core matrices. They must return finite plain numeric matrices
 matching the kernel dimensions. Each function retains its own default
 parameters; standalone evaluation does not apply fitting's sharing
-rules. Other core-function signatures, latent-state impacts, mark
-densities, residual distributions, and classed numeric inputs use the R
-engine. `rmark` and `rresidual` are simulation generators and do not by
-themselves prevent numeric likelihood acceleration. Set
-`options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
-automatic selection, or `"cpp"` to require a supported specification.
-Setting `"cpp"` is not needed for automatic acceleration. The engine
-supports unequal decay rates within a row and multi-kernel mappings.
-During fitting,
+rules. Observed baseline functions may use event context, excluding
+latent intensities, and return finite nonnegative dimensions-by-one
+matrices. Sequential impacts may explicitly request `lambda`,
+`lambda_component`, or `lambda_component_n`. They receive the state
+before the jump. The last post-event intensity uses the next baseline,
+as in R. Mark densities, residual distributions, unsupported function
+signatures, and classed numeric inputs use the R engine. `rmark` and
+`rresidual` are simulation generators and do not by themselves prevent
+numeric likelihood acceleration. Set `options(emhawkes.engine = "r")`
+for the R calculation, `"auto"` for automatic selection, or `"cpp"` to
+require a supported specification. Setting `"cpp"` is not needed for
+automatic acceleration. The engine supports unequal decay rates within a
+row and multi-kernel mappings. During fitting,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) also
 supports C++ adapters for the callback models documented there. Engine
 selection does not change simulation or enable analytic gradients.

@@ -788,9 +788,9 @@ likelihood evaluation and inference. During fitting, supported function
 components and impacts also use C++ automatically. Unsupported
 specifications and residual distributions use R. Standalone likelihood
 and inference also support parameter-only component functions returning
-plain numeric matrices and observed-state impacts. Observed baselines
-and latent-state impacts use R for standalone evaluation. Simulation
-uses R. The `emhawkes.engine` option has three settings:
+plain numeric matrices, observed baselines, and observed or sequential
+state-dependent impacts. Baselines that depend on latent intensities use
+R. Simulation uses R. The `emhawkes.engine` option has three settings:
 
 | Setting            | Role                                                 |
 |--------------------|------------------------------------------------------|
@@ -1289,7 +1289,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x555cd4881e48>
+#> <bytecode: 0x557069ec5f28>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1299,7 +1299,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x555cd4145b90>
+#> <bytecode: 0x55706b4bd850>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1309,7 +1309,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x555cd2ba9df8>
+#> <bytecode: 0x557067291df0>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1805,7 +1805,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x555cd3da4e28>
+#> <bytecode: 0x557069f43c60>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2118,7 +2118,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x555cd2942c48>
+#> <bytecode: 0x5570694e35c0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2272,6 +2272,19 @@ fit_diagnostics(mle_ba)$computation$engine
 #> NULL
 ```
 
+Replay the fitted model with the same initialization and observations.
+Automatic selection also uses C++ for its likelihood, intensity paths,
+and residuals.
+
+``` r
+
+replayed_ba <- do.call(logLik, c(list(object = fitted_hspec(mle_ba),
+  inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, mark = hr_ba$mark,
+  infer = TRUE), fit_initial_state(mle_ba)))
+stopifnot(isTRUE(all.equal(unname(replayed_ba$loglikelihood),
+  as.numeric(mle_ba$maximum), tolerance = 1e-8)))
+```
+
 ## Point processes with flexible residuals
 
 ### One-dimensional model
@@ -2389,7 +2402,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x555cd0fb60f8>
+#> <environment: 0x55706e1f56a8>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2397,7 +2410,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x555cd0fb60f8>
+#> <environment: 0x55706e1f56a8>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2406,7 +2419,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x555cd0fb60f8>
+#> <environment: 0x55706e1f56a8>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2416,7 +2429,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x555cd0fb60f8>
+#> <environment: 0x55706e1f56a8>
 ```
 
 The following histogram shows inter-arrival times from a model with

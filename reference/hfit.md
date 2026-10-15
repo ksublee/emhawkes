@@ -277,12 +277,11 @@ sequential state-dependent impacts are also supported as described
 below. Mark densities and residual distributions are excluded. Supplied
 `grad` and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-also uses C++ for parameter-only component functions and observed-state
-impacts, including restored fitted models. Observed baselines and
-latent-state impacts retain R for standalone evaluation. Automatic
-fallback through `...` assumes deterministic callbacks with fixed
-captures; it may evaluate a callback again when an unsupported state
-read is detected.
+also uses C++ for parameter-only component functions, observed
+baselines, and observed or sequential state-dependent impacts, including
+restored fitted models. Automatic fallback through `...` assumes
+deterministic callbacks with fixed captures; it may evaluate a callback
+again when an unsupported state read is detected.
 
 Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`,
 `type`, `inter_arrival`, and the resolved `mu`, `alpha`, and `beta`

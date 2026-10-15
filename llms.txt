@@ -127,9 +127,10 @@ With automatic engine selection, numeric Hawkes specifications use a
 compiled Rcpp engine for likelihood evaluation and inference, including
 multi-kernel models, unequal decay rates, and numeric mark effects.
 Standalone likelihood and inference also support parameter-only
-component functions returning plain numeric matrices. Observed-state
-impacts also use C++; other core-function signatures and latent-state
-impacts retain R. Mark densities, residual-distribution models, and
+component functions returning plain numeric matrices. Observed baselines
+and observed or sequential state-dependent impacts also use C++.
+Baselines cannot depend on latent intensities. Unsupported function
+signatures use R. Mark densities, residual-distribution models, and
 numeric inputs with custom classes use R. Simulation continues to use R.
 The fitting adapters below also select C++ automatically for supported
 callback models.
@@ -203,12 +204,11 @@ unsupported features. Callback errors propagate. Callbacks must be
 deterministic with fixed captures; detecting an unsupported state read
 through `...` can require a retry in R. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
-`infer = TRUE` also use C++ for parameter-only component functions and
-observed-state impacts. The default automatic selection therefore
-accelerates replay of restored models with these components. Observed
-baselines and latent-state impacts retain R for standalone evaluation.
-Each callback keeps its own defaults; standalone replay does not apply
-parameter-sharing rules from fitting.
+`infer = TRUE` also use C++ for parameter-only component functions,
+observed baselines, and observed or sequential state-dependent impacts.
+The default automatic selection therefore accelerates replay of restored
+models with these components. Each callback keeps its own defaults;
+standalone replay does not apply parameter-sharing rules from fitting.
 
 Observed-state `impact` functions can use the analytic option with
 `jacobian = list(impact = impact_jac)`. They may depend on observed `N`,
