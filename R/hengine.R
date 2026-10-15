@@ -226,7 +226,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
   component_names <- c("mu", "alpha", "beta", "eta")
   components <- parameter_map$components[component_names]
   functions <- names(components)[vapply(components, function(x) x$kind == "function", logical(1))]
-  observed_mu <- !derivatives && "mu" %in% functions &&
+  observed_mu <- "mu" %in% functions &&
     !identical(names(formals(components$mu$value)), "param")
   mu_args <- NULL
   mu_context <- function(param, values) {
@@ -301,7 +301,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
     if (p) value <- value[, param_names, drop = FALSE]
     value
   }
-  if (derivatives) for (name in functions) {
+  if (derivatives) for (name in setdiff(functions, if (observed_mu) "mu")) {
     if (is.null(jacobian[[name]])) {
       if (length(components[[name]]$param)) {
         stop("Analytic gradient requires jacobian$", name, " for this function component.", call. = FALSE)
@@ -315,7 +315,30 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
       validate_jacobian(jacobian[[name]](param = local_param(name, parameter_map$start)), name)
     } else jacobian[[name]] <- validate_jacobian(jacobian[[name]], name)
   }
-  list(start = start_values, functions = functions,
+  baseline_jacobian <- NULL
+  if (derivatives && observed_mu) {
+    if (is.null(jacobian$mu)) stop("Analytic observed baseline requires jacobian$mu.", call. = FALSE)
+    mu_jac <- jacobian$mu
+    available <- c("param", "n", "mark", "type", "inter_arrival", "N", "Nc",
+      "lambda", "lambda_component", "lambda_component_n", "mu", "alpha", "beta")
+    if (is.function(mu_jac) && any(names(formals(mu_jac)) %in%
+        c("lambda", "lambda_component", "lambda_component_n")))
+      stop("jacobian$mu cannot depend on latent intensity states.", call. = FALSE)
+    mu_jac_args <- if (is.function(mu_jac)) callback_plan(mu_jac, available, "jacobian$mu") else NULL
+    full_names <- names(parameter_map$start)
+    if (!is.function(mu_jac)) mu_jac <- validate_full_jacobian(mu_jac, object@dimens,
+      full_names, "jacobian$mu")
+    baseline_jacobian <- function(param, values) {
+      values$mu <- restore_parameters(parameter_map, param)$mu
+      context <- mu_context(param, values)
+      context$param <- stats::setNames(param, full_names)
+      if (is.function(mu_jac)) hawkes_jacobian_path_cpp(mu_jac, context[mu_jac_args],
+        object@dimens, length(observation$inter_arrival), full_names) else
+        matrix(as.vector(mu_jac), object@dimens * length(full_names), 1L)
+    }
+  }
+  list(start = start_values, functions = functions, observed_mu = observed_mu,
+    baseline_jacobian = baseline_jacobian,
     baseline = if (observed_mu) function(param, values) {
       values$mu <- restore_parameters(parameter_map, param)$mu
       context <- mu_context(param, values)[setdiff(mu_args, "param")]
@@ -338,6 +361,11 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
 make_hawkes_objective <- function(object, observation, lambda_component0,
                                  parameter_map, verbose = FALSE, jacobian = NULL, derivatives = TRUE,
                                  execution = NULL) {
+  observed_mu <- is.function(object@mu) && !identical(names(formals(object@mu)), "param")
+  state_impact <- !is.null(object@impact) && "lambda_component_n" %in% names(formals(object@impact))
+  if (derivatives && (observed_mu || state_impact))
+    return(make_state_gradient_objective(object, observation, lambda_component0,
+      parameter_map, verbose, jacobian, execution))
   plan <- hawkes_component_plan(object, observation, parameter_map, jacobian, derivatives)
   impact_plan <- hawkes_impact_plan(object, observation, parameter_map, jacobian$impact,
                                     dim(plan$start$beta), derivatives)

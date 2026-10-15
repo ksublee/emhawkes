@@ -1,0 +1,10 @@
+"tag","round","maximum_difference","max_parameter_difference","max_relative_parameter_difference","code","iterations"
+"analytic",1,1.17859144665999e-08,1.08718082998394e-05,4.94039467196207e-07,0,38
+"analytic",2,1.17859144665999e-08,1.08718082998394e-05,4.94039467196207e-07,0,38
+"analytic",3,1.17859144665999e-08,1.08718082998394e-05,4.94039467196207e-07,0,38
+"numeric",1,0,0,0,0,41
+"numeric",2,0,0,0,0,41
+"numeric",3,0,0,0,0,41
+"old",1,0,0,0,0,41
+"old",2,0,0,0,0,41
+"old",3,0,0,0,0,41

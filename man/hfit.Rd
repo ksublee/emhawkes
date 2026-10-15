@@ -119,7 +119,9 @@ matrix or a function with the single argument \code{param} returning that matrix
 Rows follow \code{as.vector()} of the component matrix (column-major order); columns
 are named with the component's local \code{param} names. Column order is arbitrary.
 Required for each function with nonempty \code{param}. For an observed-state \code{impact},
-also supply \code{jacobian$impact}; see Details for its full-parameter convention.
+also supply \code{jacobian$impact}. Observed baselines use a full-parameter
+\code{jacobian$mu}; current-state feedback uses parameter and state Jacobians.
+See Details for these conventions.
 Unused with a supplied \code{grad} or numerical differentiation.}
 }
 \value{
@@ -166,11 +168,12 @@ automatic acceleration. Inspect \code{fit_diagnostics(fit)$computation$engine}
 for actual engines and fallback reasons. A custom \code{mylogLik} bypasses this
 selection. Standalone \code{\link[=logLik]{logLik()}} supports fewer C++ models than \code{hfit()}.
 With \code{gradient = "analytic"}, Rcpp computes the likelihood and its gradient
-together and reuses the result at the same parameter vector. Matrix scores are
+using native recursions and cached results at the same parameter vector. Matrix scores are
 summed according to the saved parameter map. Automatic initial states include
 their parameter derivatives; a singular automatic initialization requires an
-explicit \code{lambda_component0}. State-dependent baselines, impacts that depend on
-latent intensities, mark densities, residual distributions, and custom likelihoods are not supported
+explicit \code{lambda_component0}. Observed baselines and current-component impacts
+are supported with Jacobians as described below. Full intensity histories,
+mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
 BHHH requires event scores and cannot use this total score.
 A supplied \code{grad} takes precedence. A supplied \code{hess} is retained; otherwise
@@ -224,9 +227,10 @@ impact has no local parameters; a parameter-independent impact has a zero matrix
 
 Declare needed \code{N} and \code{Nc} arguments explicitly in the impact function, or
 supply these paths. Captured inputs must be fixed, and callbacks must be
-deterministic. Ignored \code{...} is allowed; reading \code{lambda}, \code{lambda_component},
-or \code{lambda_component_n}, including through \code{...}, is unsupported by the
-analytic option and observed-only precomputation. A callback
+deterministic. Ignored \code{...} is allowed. Observed-only precomputation cannot
+read \code{lambda}, \code{lambda_component}, or \code{lambda_component_n}, including through
+\code{...}. Analytic current-component feedback requires the explicit declaration
+and state Jacobian described below. A callback
 that forces all of \code{...} also forces these unavailable states and produces an
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
@@ -236,7 +240,7 @@ supports these observed-state callbacks without Jacobians. Default fitting uses
 C++ for supported callbacks with
 numerical differentiation and requires no Jacobian.
 
-With numerical differentiation and the C++ engine, \code{mu} may depend on observed
+With the C++ engine, \code{mu} may depend on observed
 \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type}, and \code{inter_arrival}. Return a plain numeric
 dimensions-by-one matrix, constant over each inter-event interval. The call
 at index \code{n} supplies the baseline for the interval ending at event \code{n} and
@@ -261,7 +265,39 @@ history cost. Numerical differentiation repeats it at each likelihood evaluation
 Undeclared latent access through \code{...} does not select this sequential path.
 When \code{mu} is an observed-baseline function, the impact's \code{mu} argument is the
 parameter-bound function, as in the R engine. Callbacks must be deterministic
-and keep captured inputs fixed. Analytic gradients do not support this feedback.
+and keep captured inputs fixed. Analytic gradients support current-component
+feedback with the derivatives below; full intensity histories require numerical
+differentiation.
+
+For an observed baseline with \code{gradient = "analytic"}, supply \code{jacobian$mu}
+as a matrix or function receiving the observed context. Its \code{param} is the
+full named optimization vector. Return a dimensions-by-parameters matrix
+with a column for every fitted parameter, including zero columns. Include
+dependencies through resolved \code{alpha} and \code{beta}. The baseline value function
+keeps its local parameter vector. The baseline Jacobian at \code{n = 1} also enters
+the derivative of automatic initialization. Declare needed \code{N} and \code{Nc} in
+the value function or supply their paths.
+
+An analytic impact that explicitly declares \code{lambda_component_n} requires
+\code{jacobian$impact = list(param = ..., state = ...)}. Each entry is a constant
+matrix or function receiving the same observed and current-component context.
+The Jacobians' \code{param} is the full named optimization vector. The \code{param}
+matrix has one row per impact entry and one named column per fitted parameter;
+differentiate the impact while holding \code{lambda_component_n} fixed, including
+direct dependencies through core components. The \code{state} matrix is square,
+with rows for impact entries and columns for current-component entries, both
+in \code{as.vector()} column-major order. It contains the partial derivative of
+the impact with respect to that pre-jump state. The package propagates state
+sensitivities through decay, event jumps, and initial components. Do not add
+those propagated effects again to the supplied \code{param} Jacobian.
+All Jacobians must be finite numeric matrices of constant dimensions.
+Derivatives must exist along the evaluated parameter path. Branches based
+only on observations are allowed; parameter-dependent discontinuities and
+arbitrary reads of \code{lambda} or \code{lambda_component} are unsupported.
+Current-state sensitivity storage grows with kernel components times fitted
+parameters. An observed baseline Jacobian path also grows with observations
+times dimensions times parameters. No derivative history of all kernel states
+is stored. Jacobians are evaluated only when a gradient is requested.
 
 The default uses numerical differentiation and does not run
 additional curvature checks. With \code{final_hessian = "stable"}, final curvature is

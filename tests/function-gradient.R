@@ -158,7 +158,7 @@ fails(objective(h, normalize(h, dt, type, mark), .1, build_map(h, TRUE),
                 jacobian = bad_jac), "column names")
 bad <- unary
 bad@mu <- function(param = c(m = -.8), n = 1) matrix(exp(param))
-fails(make(model = bad), "only.*param")
+fails(make(model = bad)$gradient(build_map(bad, TRUE)$start), "incorrect dimensions")
 bad <- unary
 bad@mu <- function(param = c(m = -.8)) if (param[1] > 0) matrix(1, 2) else matrix(exp(param))
 fun <- make(model = bad)

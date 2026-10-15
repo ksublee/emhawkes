@@ -184,18 +184,20 @@ hfit(
   matrix (column-major order); columns are named with the component's
   local `param` names. Column order is arbitrary. Required for each
   function with nonempty `param`. For an observed-state `impact`, also
-  supply `jacobian$impact`; see Details for its full-parameter
-  convention. Unused with a supplied `grad` or numerical
-  differentiation.
+  supply `jacobian$impact`. Observed baselines use a full-parameter
+  `jacobian$mu`; current-state feedback uses parameter and state
+  Jacobians. See Details for these conventions. Unused with a supplied
+  `grad` or numerical differentiation.
 
 ## Value
 
 A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
 `emhawkes` attribute containing the original specification, parameter
 map, normalized initial-state arguments, constraints, `reduced` setting,
-supplied analytic Jacobians, and final curvature diagnostics. Use
+supplied analytic Jacobians, and final curvature diagnostics and
+recorded calculation methods. Use
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
-to inspect the checks and
+to inspect the methods and checks and
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
 to restore the estimated specification and
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
@@ -229,21 +231,30 @@ described by
 a shared parameter fixes all entries that use it.
 
 The built-in likelihood uses the calculation engine selected by
-`options(emhawkes.engine = "auto")`; see
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
-supported models. With `gradient = "analytic"`, Rcpp computes the
-likelihood and its gradient together and reuses the result at the same
-parameter vector. Matrix scores are summed according to the saved
-parameter map. Automatic initial states include their parameter
-derivatives; a singular automatic initialization requires an explicit
-`lambda_component0`. State-dependent baselines, impacts that depend on
-latent intensities, mark densities, residual distributions, and custom
-likelihoods are not supported by this option. Equality-constrained
-optimization is also excluded. BHHH requires event scores and cannot use
-this total score. A supplied `grad` takes precedence. A supplied `hess`
-is retained; otherwise `maxLik` can calculate curvature by
-differentiating the analytic gradient. Optimization paths and last
-digits can differ from numerical differentiation.
+`options(emhawkes.engine = "auto")` by default. It selects C++ for
+supported numeric and callback models described below, and R otherwise.
+Setting `"r"` forces the R likelihood for comparison or troubleshooting.
+Setting `"cpp"` requires C++ support and errors on unsupported models;
+it is not needed for automatic acceleration. Inspect
+`fit_diagnostics(fit)$computation$engine` for actual engines and
+fallback reasons. A custom `mylogLik` bypasses this selection.
+Standalone
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+supports fewer C++ models than `hfit()`. With `gradient = "analytic"`,
+Rcpp computes the likelihood and its gradient using native recursions
+and cached results at the same parameter vector. Matrix scores are
+summed according to the saved parameter map. Automatic initial states
+include their parameter derivatives; a singular automatic initialization
+requires an explicit `lambda_component0`. Observed baselines and
+current-component impacts are supported with Jacobians as described
+below. Full intensity histories, mark densities, residual distributions,
+and custom likelihoods are not supported by this option.
+Equality-constrained optimization is also excluded. BHHH requires event
+scores and cannot use this total score. A supplied `grad` takes
+precedence. A supplied `hess` is retained; otherwise `maxLik` can
+calculate curvature by differentiating the analytic gradient.
+Optimization paths and last digits can differ from numerical
+differentiation.
 
 Analytic function components must have the single argument `param` and
 return plain numeric matrices with constant dimensions. Their values and
@@ -255,9 +266,24 @@ derivative. Components with `param = numeric(0)` need no Jacobian.
 Contributions for shared parameter names are added across components.
 Missing or malformed Jacobians produce an error. For these functions,
 the analytic option evaluates their matrices in R and the likelihood and
-component scores in Rcpp. Default fitting and standalone
+component scores in Rcpp. The default `emhawkes.engine = "auto"` also
+selects C++ for supported function-valued models with numerical
+differentiation. No Jacobian is required. Unsupported specifications use
+R; `"cpp"` requires C++ support, and `"r"` selects the R likelihood.
+User callback errors propagate. This option supports parameter-only
+`mu`, `alpha`, `beta`, and `eta` functions returning plain numeric
+matrices with constant dimensions. They must be deterministic functions
+of `param`, with captured values held fixed. Observed-state `impact`
+functions are also supported without Jacobians. Observed baselines and
+sequential state-dependent impacts are also supported as described
+below. Mark densities and residual distributions are excluded. Supplied
+`grad` and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-still use the R path.
+also uses C++ for parameter-only component functions, observed
+baselines, and observed or sequential state-dependent impacts, including
+restored fitted models. Automatic fallback through `...` assumes
+deterministic callbacks with fixed captures; it may evaluate a callback
+again when an unsupported state read is detected.
 
 Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`,
 `type`, `inter_arrival`, and the resolved `mu`, `alpha`, and `beta`
@@ -269,30 +295,99 @@ type. The last event ends the likelihood window. Automatic
 initialization uses the existing `mu`/`alpha`/`beta` rule; the
 additional impact does not enter that rule.
 
-`jacobian$impact` is a matrix or a function with the same observed
-context. Its `param` argument receives the full named optimization
-vector, whereas the impact function itself receives its local `param`
-vector as before. Rows follow `as.vector(impact(...))`; columns must
-include every fitted parameter name, with zeros for no effect. Return
-the total derivative of the impact matrix, including any dependence
-through `mu`, `alpha`, or `beta`. Contributions for shared names belong
-in the same column. This convention differs from the local Jacobians for
-parameter-only components. A Jacobian is required even when the impact
-has no local parameters; a parameter-independent impact has a zero
-matrix.
+With `gradient = "analytic"`, `jacobian$impact` is a matrix or a
+function with the same observed context. Its `param` argument receives
+the full named optimization vector, whereas the impact function itself
+receives its local `param` vector as before. Rows follow
+`as.vector(impact(...))`; columns must include every fitted parameter
+name, with zeros for no effect. Return the total derivative of the
+impact matrix, including any dependence through `mu`, `alpha`, or
+`beta`. Contributions for shared names belong in the same column. This
+convention differs from the local Jacobians for parameter-only
+components. A Jacobian is required even when the impact has no local
+parameters; a parameter-independent impact has a zero matrix.
 
 Declare needed `N` and `Nc` arguments explicitly in the impact function,
 or supply these paths. Captured inputs must be fixed, and callbacks must
-be deterministic. Ignored `...` is allowed; reading `lambda`,
-`lambda_component`, or `lambda_component_n`, including through `...`, is
-unsupported. A callback that forces all of `...` also forces these
-unavailable states and produces an error. R evaluates impacts and
-Jacobians; Rcpp computes intensity recursions, component scores, and
-reverse sensitivities to event impacts. Temporary storage grows with
-observations times kernel components, without an additional
+be deterministic. Ignored `...` is allowed. Observed-only precomputation
+cannot read `lambda`, `lambda_component`, or `lambda_component_n`,
+including through `...`. Analytic current-component feedback requires
+the explicit declaration and state Jacobian described below. A callback
+that forces all of `...` also forces these unavailable states and
+produces an error. R evaluates impacts and Jacobians; Rcpp computes
+intensity recursions, component scores, and reverse sensitivities to
+event impacts. Temporary storage grows with observations times kernel
+components, without an additional
 observations-by-components-by-parameters array. Standalone
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
-default fitting retain the R path for these models.
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+also supports these observed-state callbacks without Jacobians. Default
+fitting uses C++ for supported callbacks with numerical differentiation
+and requires no Jacobian.
+
+With the C++ engine, `mu` may depend on observed `n`, `N`, `Nc`, `mark`,
+`type`, and `inter_arrival`. Return a plain numeric dimensions-by-one
+matrix, constant over each inter-event interval. The call at index `n`
+supplies the baseline for the interval ending at event `n` and that
+event's intensity; use counts at `n - 1` for its predictable baseline.
+Initial values use `mu(n = 1)`. Latent-intensity dependencies and
+within-interval changes are unsupported for these baselines. Ignored
+`...` is allowed.
+
+Numerical C++ fitting also supports an `impact` that explicitly declares
+`lambda_component_n`, `lambda`, or `lambda_component`. Rcpp calls it
+after computing the current event's intensity and before applying its
+jumps. `lambda_component_n` is the dimensions-by-kernels matrix just
+before the jump. `lambda` and `lambda_component` are allocated only when
+explicitly declared; they contain the initial and current pre-jump rows,
+with future rows zero. Component histories use the R engine's row-major
+column order and names. Retained callback arguments are snapshots.
+Prefer `lambda_component_n` when only the current state is needed. A
+full component history has storage proportional to events times
+dimensions times kernels. If callbacks retain history arguments,
+snapshot-preserving copies can make cumulative allocations grow
+quadratically with event count; this is separate from peak live memory.
+Current-state callbacks avoid this history cost. Numerical
+differentiation repeats it at each likelihood evaluation. Undeclared
+latent access through `...` does not select this sequential path. When
+`mu` is an observed-baseline function, the impact's `mu` argument is the
+parameter-bound function, as in the R engine. Callbacks must be
+deterministic and keep captured inputs fixed. Analytic gradients support
+current-component feedback with the derivatives below; full intensity
+histories require numerical differentiation.
+
+For an observed baseline with `gradient = "analytic"`, supply
+`jacobian$mu` as a matrix or function receiving the observed context.
+Its `param` is the full named optimization vector. Return a
+dimensions-by-parameters matrix with a column for every fitted
+parameter, including zero columns. Include dependencies through resolved
+`alpha` and `beta`. The baseline value function keeps its local
+parameter vector. The baseline Jacobian at `n = 1` also enters the
+derivative of automatic initialization. Declare needed `N` and `Nc` in
+the value function or supply their paths.
+
+An analytic impact that explicitly declares `lambda_component_n`
+requires `jacobian$impact = list(param = ..., state = ...)`. Each entry
+is a constant matrix or function receiving the same observed and
+current-component context. The Jacobians' `param` is the full named
+optimization vector. The `param` matrix has one row per impact entry and
+one named column per fitted parameter; differentiate the impact while
+holding `lambda_component_n` fixed, including direct dependencies
+through core components. The `state` matrix is square, with rows for
+impact entries and columns for current-component entries, both in
+[`as.vector()`](https://rdrr.io/r/base/vector.html) column-major order.
+It contains the partial derivative of the impact with respect to that
+pre-jump state. The package propagates state sensitivities through
+decay, event jumps, and initial components. Do not add those propagated
+effects again to the supplied `param` Jacobian. All Jacobians must be
+finite numeric matrices of constant dimensions. Derivatives must exist
+along the evaluated parameter path. Branches based only on observations
+are allowed; parameter-dependent discontinuities and arbitrary reads of
+`lambda` or `lambda_component` are unsupported. Current-state
+sensitivity storage grows with kernel components times fitted
+parameters. An observed baseline Jacobian path also grows with
+observations times dimensions times parameters. No derivative history of
+all kernel states is stored. Jacobians are evaluated only when a
+gradient is requested.
 
 The default uses numerical differentiation and does not run additional
 curvature checks. With `final_hessian = "stable"`, final curvature is
@@ -388,6 +483,9 @@ h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
 # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #      jacobian = list(alpha = alpha_jac))
 
+# Default auto selects C++ with numerical differentiation; no Jacobian:
+# fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
+
 # Observed counts can change the excitation after an event.
 count_impact <- function(param = c(a = 0.2), n, N, ...) {
   matrix(param["a"] * (1 + 0.2 * (N[n, 1] %% 2)))
@@ -402,6 +500,8 @@ h_count <- new("hspec", mu = 0.3,
   impact = count_impact)
 # hfit(h_count, inter_arrival, gradient = "analytic",
 #      jacobian = list(impact = count_jac))
+# Or keep numerical differentiation without a Jacobian:
+# hfit(h_count, inter_arrival)
 
 # example 2
 # \donttest{

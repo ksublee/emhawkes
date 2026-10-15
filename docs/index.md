@@ -46,6 +46,16 @@ inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
 requested checks. Supplied Hessians, disabled final curvature, BHHH,
 custom objectives, and residual models retain their calculation choices.
 
+The fit also records its calculation methods:
+
+`calculation`` ``<-`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``fit``)``$``computation`` ``calculation``$``engine`` ``# Requested engine, actual engines and auto fallback reason.`` ``calculation``$``gradient`` ``# Numeric, analytic or user-supplied score.`` ``calculation``$``hessian`` ``# Requested and applied final-Hessian methods.`
+
+An auto fit can record both `"cpp"` and `"r"` if it switches during
+estimation. The record includes final curvature evaluations and survives
+[`saveRDS()`](https://rdrr.io/r/base/readRDS.html). Older fits without
+this record return `recorded = FALSE` and `NA` for unrecorded methods.
+The existing curvature checks remain available at the top level.
+
 A stable Hessian does not guarantee reliable Wald intervals. Nearby
 kernel decay rates, weak excitation, boundaries, short samples, and
 nonsmooth callbacks can still make inference unreliable. The [Hawkes
@@ -87,12 +97,17 @@ and
 [`residual_process()`](https://ksublee.github.io/emhawkes/reference/residual_process.md)
 helpers. Simulation returns an `hreal` object.
 
-Numeric Hawkes specifications use a compiled Rcpp engine for likelihood
-evaluation and inference, including multi-kernel models, unequal decay
-rates, and numeric mark effects. Function-valued parameters,
-user-defined impact or mark densities, residual-distribution models, and
-numeric inputs with custom classes use the R implementation. Simulation
-continues to use R.
+With automatic engine selection, numeric Hawkes specifications use a
+compiled Rcpp engine for likelihood evaluation and inference, including
+multi-kernel models, unequal decay rates, and numeric mark effects.
+Standalone likelihood and inference also support parameter-only
+component functions returning plain numeric matrices. Observed baselines
+and observed or sequential state-dependent impacts also use C++.
+Baselines cannot depend on latent intensities. Unsupported function
+signatures use R. Mark densities, residual-distribution models, and
+numeric inputs with custom classes use R. Simulation continues to use R.
+The fitting adapters below also select C++ automatically for supported
+callback models.
 
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
 this engine for its built-in likelihood. Numerical differentiation
@@ -103,10 +118,11 @@ analytic gradient:
 
 This option supports shared and fixed parameters, multi-kernel mappings,
 numeric mark effects, and derivatives of automatic initial states. It
-computes the likelihood and score together. State-dependent baselines
-and impacts that use latent intensities, custom likelihoods, mark
-densities, residual distributions, equality constraints, and BHHH are
-not yet supported. Singular automatic initialization requires explicit
+computes the likelihood and score with native recursions. Observed
+baselines and current-state impacts require the Jacobians described
+below. Full intensity histories, custom likelihoods, mark densities,
+residual distributions, equality constraints, and BHHH are not yet
+supported. Singular automatic initialization requires explicit
 `lambda_component0`. A supplied `grad` takes precedence. A supplied
 `hess` is retained; otherwise `maxLik` can differentiate the analytic
 gradient for curvature. The optimizer’s path and last digits may differ
@@ -129,10 +145,30 @@ package does not derive or verify the formulas automatically. A
 component with `param = numeric(0)` needs no Jacobian. Shared parameter
 names receive the sum of all component contributions. Missing or
 malformed Jacobians produce an error. The analytic fit evaluates
-component functions in R and the likelihood and scores in Rcpp. Default
-fits and standalone
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-retain the R implementation.
+component functions in R and the likelihood and scores in Rcpp. With the
+default `"auto"` engine, supported function-valued models also use C++
+with numerical differentiation, without Jacobians:
+
+`fit_numeric`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h_fun``, ``path``$``inter_arrival``, ``path``$``type``)`
+
+The functions must return plain numeric matrices of constant dimensions
+and be deterministic in `param`. Observed-state `impact` functions also
+use this numerical path without Jacobians, including count- and
+mark-dependent impacts and the Hawkes flocking example. Numerical C++
+fitting also supports observed baselines and sequential impacts that
+explicitly request current or historical intensity states, including the
+bid-ask example. Mark densities and residual distributions remain
+unsupported. Supplied `grad` and `hess` are retained. Automatic
+selection uses R for unsupported specifications; forcing `"cpp"` reports
+unsupported features. Callback errors propagate. Callbacks must be
+deterministic with fixed captures; detecting an unsupported state read
+through `...` can require a retry in R. Standalone
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
+`infer = TRUE` also use C++ for parameter-only component functions,
+observed baselines, and observed or sequential state-dependent impacts.
+The default automatic selection therefore accelerates replay of restored
+models with these components. Each callback keeps its own defaults;
+standalone replay does not apply parameter-sharing rules from fitting.
 
 Observed-state `impact` functions can use the analytic option with
 `jacobian = list(impact = impact_jac)`. They may depend on observed `N`,
@@ -147,15 +183,73 @@ order and one named column per fitted parameter, including zero columns.
 Include derivatives through any core matrices used by the impact. The
 impact function keeps receiving its local parameters. See
 [`?hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md) for an
-example and the callback contract. Callbacks that read latent
-intensities remain unsupported. Default fits retain the R path.
+example and the callback contract. Current-component feedback can use
+the analytic option with additional derivatives below. Default numerical
+fitting uses C++ for supported callbacks. Declare `lambda_component_n`
+to receive the current pre-jump component matrix. Declare `lambda` or
+`lambda_component` only when full pre-jump histories are needed.
+Observed baselines may use counts and marks, return a dimensions-by-one
+matrix, and remain constant between events. They cannot depend on latent
+intensities. See the [bid-ask
+benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md)
+for the state convention, compatibility checks and timings.
 
-For comparison or troubleshooting, set `options(emhawkes.engine = "r")`
-to use the R calculation, or `"auto"` to restore automatic selection.
-The development setting `"cpp"` reports unsupported features instead of
-falling back to R. Parameter-only functions use C++ through the analytic
-adapter described above. Installing from source requires a C++ compiler
-and Rcpp; Windows source installations require Rtools.
+For an observed baseline, analytic fitting requires `jacobian$mu` with
+one row per event dimension and one named column per **full fitted
+parameter**, including zero columns. Its callback receives observations
+and the full named `param`. Include dependencies through resolved core
+components. The baseline itself continues to receive its local
+parameters.
+
+An impact that declares `lambda_component_n` can use:
+
+`fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, ``inter_arrival``, ``type``, ``mark``, lambda_component0 ``=`` ``initial``,`` `` gradient ``=`` ``"analytic"``, jacobian ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``mu ``=`` ``mu_jac``, alpha ``=`` ``alpha_jac``,`` `` impact ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``param ``=`` ``impact_param_jac``, state ``=`` ``impact_state_jac``)``)``)`
+
+Here `impact$param` differentiates the impact with respect to all fitted
+parameters **holding the current state fixed**. It includes direct
+dependencies through core components. `impact$state` differentiates
+impact entries with respect to current component entries. Both state
+axes follow [`as.vector()`](https://rdrr.io/r/base/vector.html)
+column-major order; the matrix is components-by-components. The package
+propagates derivatives through decay, selected jumps, and automatic
+initialization. Arbitrary reads of full `lambda` or `lambda_component`
+histories remain unsupported for analytic fitting. All callbacks must be
+deterministic, and supplied derivatives must exist at evaluated
+parameters. The [Bid-ask
+example](https://ksublee.github.io/emhawkes/articles/extended_example.html#bid-ask-price-model)
+contains the complete Jacobians and fit. See the
+`tools/state-gradient-results.md` report for accuracy checks and
+timings. Numerical differentiation remains the default.
+
+When only the current state is needed, use `lambda_component_n`. Full
+histories need storage proportional to events times dimensions times
+kernels. If a callback retains these histories, snapshot-preserving
+copies can make cumulative copying grow quadratically with event count.
+Peak live memory and cumulative allocation are different costs. See the
+[scaling
+measurements](https://github.com/ksublee/emhawkes/blob/main/tools/scaling-results.md)
+for time, allocation and memory comparisons.
+
+See the [count, mark and flocking
+benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)
+for complete-fit timings and accuracy checks.
+
+The `emhawkes.engine` option controls the built-in likelihood:
+
+| Setting | Role |
+|----|----|
+| `"auto"` (default) | Use C++ for supported models and R otherwise. Supported fitting adapters receive this acceleration automatically. |
+| `"r"` | Force the R likelihood for comparison or troubleshooting. |
+| `"cpp"` | Require C++ support; report an error for unsupported models. |
+
+Setting `"cpp"` is unnecessary to accelerate models already supported by
+`"auto"`. Inspect `fit_diagnostics(fit)$computation$engine` for the
+engines actually used and any automatic fallback reason. Engine
+selection does not enable analytic gradients: request
+`gradient = "analytic"` explicitly; unsupported analytic gradients
+produce an error. A custom `mylogLik` bypasses built-in engine
+selection. Installing from source requires a C++ compiler and Rcpp;
+Windows source installations require Rtools.
 
 See the [basic
 vignette](https://ksublee.github.io/emhawkes/articles/example.html) and

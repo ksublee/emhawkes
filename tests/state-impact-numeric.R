@@ -147,7 +147,7 @@ f <- objective(empty_model, normalize(empty_model, 0), 0, m, derivatives = FALSE
 close(f$loglik(m$start), 0, 0)
 
 # Explicit limitations and native validation cannot produce a wrong analytic score.
-fails(objective(h, obs, initial, map, jacobian = list(), derivatives = TRUE), "only.*param")
+fails(objective(h, obs, initial, map, jacobian = list(), derivatives = TRUE), "full intensity histories")
 bad <- unary
 bad@mu <- function(param = c(m = .4), lambda) matrix(param)
 fails(objective(bad, normalize(bad, dt), .1, map_for(bad, TRUE), derivatives = FALSE), "latent intensity")

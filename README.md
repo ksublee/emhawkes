@@ -102,7 +102,8 @@ fit <- hfit(h, path$inter_arrival, path$type, gradient = "analytic")
 
 This option supports shared and fixed parameters, multi-kernel mappings, numeric
 mark effects, and derivatives of automatic initial states. It computes the
-likelihood and score together. State-dependent baselines and impacts that use latent intensities,
+likelihood and score with native recursions. Observed baselines and current-state
+impacts require the Jacobians described below. Full intensity histories,
 custom likelihoods, mark densities, residual distributions, equality constraints,
 and BHHH are not yet supported. Singular automatic initialization requires explicit
 `lambda_component0`. A supplied `grad` takes precedence. A supplied `hess` is
@@ -166,8 +167,8 @@ For `jacobian$impact`, `param` is the **full named optimization vector**. Return
 matrix with one row per impact entry in column-major order and one named column
 per fitted parameter, including zero columns. Include derivatives through any
 core matrices used by the impact. The impact function keeps receiving its local
-parameters. See `?hfit` for an example and the callback contract. Callbacks that
-read latent intensities remain unsupported by the analytic option. Default numerical
+parameters. See `?hfit` for an example and the callback contract. Current-component
+feedback can use the analytic option with additional derivatives below. Default numerical
 fitting uses C++ for supported callbacks. Declare `lambda_component_n` to
 receive the current pre-jump component matrix. Declare `lambda` or
 `lambda_component` only when full pre-jump histories are needed. Observed
@@ -175,6 +176,34 @@ baselines may use counts and marks, return a dimensions-by-one matrix, and
 remain constant between events. They cannot depend on latent intensities.
 See the [bid-ask benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md)
 for the state convention, compatibility checks and timings.
+
+For an observed baseline, analytic fitting requires `jacobian$mu` with one row
+per event dimension and one named column per **full fitted parameter**, including
+zero columns. Its callback receives observations and the full named `param`.
+Include dependencies through resolved core components. The baseline itself
+continues to receive its local parameters.
+
+An impact that declares `lambda_component_n` can use:
+
+```r
+fit <- hfit(h, inter_arrival, type, mark, lambda_component0 = initial,
+  gradient = "analytic", jacobian = list(mu = mu_jac, alpha = alpha_jac,
+    impact = list(param = impact_param_jac, state = impact_state_jac)))
+```
+
+Here `impact$param` differentiates the impact with respect to all fitted parameters
+**holding the current state fixed**. It includes direct dependencies through core
+components. `impact$state` differentiates impact entries with respect to current
+component entries. Both state axes follow `as.vector()` column-major order;
+the matrix is components-by-components. The package propagates derivatives
+through decay, selected jumps, and automatic initialization. Arbitrary reads of
+full `lambda` or `lambda_component` histories remain unsupported for analytic
+fitting. All callbacks must be deterministic, and supplied derivatives must
+exist at evaluated parameters. The
+[Bid-ask example](https://ksublee.github.io/emhawkes/articles/extended_example.html#bid-ask-price-model)
+contains the complete Jacobians and fit. See the
+`tools/state-gradient-results.md` report
+for accuracy checks and timings. Numerical differentiation remains the default.
 
 When only the current state is needed, use `lambda_component_n`. Full histories
 need storage proportional to events times dimensions times kernels. If a callback

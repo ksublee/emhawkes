@@ -32,7 +32,7 @@ The existing Rcpp kernel returns component scores. For each function component `
 
 Component functions and Jacobians run in R; likelihood and component scores run in Rcpp. One cached evaluation supplies both the objective and gradient at the same parameter vector. Default fitting and standalone `logLik()` retain their existing R path for function components. This change does not add automatic differentiation or compile R function bodies.
 
-This report covers parameter-only components. Observed-state impacts are now supported separately; see the [observed-impact report](observed-impact-results.md). State-dependent baselines, impacts that depend on latent intensities, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH remain outside this option. A singular automatic initializer requires an explicit initial state. Finite matrices that overflow multivariate automatic initialization are rejected as invalid optimization proposals in the analytic path.
+This report covers parameter-only components. Observed-state impacts are now supported separately; see the [observed-impact report](observed-impact-results.md). Observed baselines and current-component impacts are now supported with additional Jacobians; see the [state-gradient report](state-gradient-results.md). Full intensity histories, mark densities, residual-distribution models, custom likelihoods, equality constraints, and BHHH remain outside this option. A singular automatic initializer requires an explicit initial state. Finite matrices that overflow multivariate automatic initialization are rejected as invalid optimization proposals in the analytic path.
 
 ## Accuracy
 

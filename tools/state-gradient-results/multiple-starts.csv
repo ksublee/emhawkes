@@ -1,0 +1,3 @@
+"start","numeric_loglik","analytic_loglik","loglik_difference","max_parameter_difference","max_relative_parameter_difference","numeric_code","analytic_code"
+"lower",-1810.89161528981,-1810.89161528973,8.45830072648823e-11,3.60429206551771e-05,9.89522066926562e-07,0,0
+"higher",-1810.89161528982,-1810.89161528973,9.34505806071684e-11,2.97768910968443e-05,1.17867023600759e-06,0,0
