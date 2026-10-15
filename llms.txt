@@ -201,8 +201,8 @@ unsupported features. Callback errors propagate. Callbacks must be
 deterministic with fixed captures; detecting an unsupported state read
 through `...` can require a retry in R. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-keeps its numeric-only C++ contract; select the R engine when evaluating
-a restored function-valued model.
+keeps its numeric-only C++ contract; select automatic selection (which
+uses R) when evaluating a restored function-valued model.
 
 Observed-state `impact` functions can use the analytic option with
 `jacobian = list(impact = impact_jac)`. They may depend on observed `N`,
@@ -232,13 +232,22 @@ See the [count, mark and flocking
 benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)
 for complete-fit timings and accuracy checks.
 
-For comparison or troubleshooting, set `options(emhawkes.engine = "r")`
-to use the R calculation, or `"auto"` to restore automatic selection.
-The development setting `"cpp"` reports unsupported features instead of
-falling back to R. Parameter-only functions and observed-state impacts
-can use the numerical or analytic fitting adapters described above.
-Installing from source requires a C++ compiler and Rcpp; Windows source
-installations require Rtools.
+The `emhawkes.engine` option controls the built-in likelihood:
+
+| Setting | Role |
+|----|----|
+| `"auto"` (default) | Use C++ for supported models and R otherwise. Supported fitting adapters receive this acceleration automatically. |
+| `"r"` | Force the R likelihood for comparison or troubleshooting. |
+| `"cpp"` | Require C++ support; report an error for unsupported models. |
+
+Setting `"cpp"` is unnecessary to accelerate models already supported by
+`"auto"`. Inspect `fit_diagnostics(fit)$computation$engine` for the
+engines actually used and any automatic fallback reason. Engine
+selection does not enable analytic gradients: request
+`gradient = "analytic"` explicitly; unsupported analytic gradients
+produce an error. A custom `mylogLik` bypasses built-in engine
+selection. Installing from source requires a C++ compiler and Rcpp;
+Windows source installations require Rtools.
 
 See the [basic
 vignette](https://ksublee.github.io/emhawkes/articles/example.html) and

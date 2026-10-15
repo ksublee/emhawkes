@@ -787,9 +787,23 @@ Numeric Hawkes specifications use the Rcpp engine automatically for
 likelihood evaluation and inference. During fitting, supported function
 components and impacts also use C++ automatically. Unsupported
 specifications and residual distributions use R. Standalone likelihood
-evaluation of function-valued models and simulation use R. Use the
-`emhawkes.engine` option to compare the R and automatic calculations.
-This function restores the previous option after each call.
+evaluation of function-valued models and simulation use R. The
+`emhawkes.engine` option has three settings:
+
+| Setting            | Role                                                 |
+|--------------------|------------------------------------------------------|
+| `"auto"` (default) | Select C++ for supported models and R otherwise.     |
+| `"r"`              | Force R for comparison or troubleshooting.           |
+| `"cpp"`            | Require C++ support and error on unsupported models. |
+
+Supported models receive acceleration with `"auto"`; setting `"cpp"` is
+unnecessary. Numerical differentiation remains the default. Analytic
+gradients require `gradient = "analytic"` and a supported specification.
+A custom `mylogLik` bypasses built-in engine selection.
+
+The following example compares standalone numeric likelihood
+calculations. This function restores the previous option after each
+call.
 
 ``` r
 
@@ -1273,7 +1287,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x5574ae6f31a8>
+#> <bytecode: 0x55b43baaec40>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1283,7 +1297,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x5574acff0a28>
+#> <bytecode: 0x55b43bebc830>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1293,7 +1307,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x5574ad416fb8>
+#> <bytecode: 0x55b43c3590b8>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1776,7 +1790,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x5574aec05860>
+#> <bytecode: 0x55b43d5f9c10>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1871,9 +1885,15 @@ needed; R still evaluates the impact.
 
 ``` r
 
-previous_engine <- options(emhawkes.engine = "cpp")
-fit_fl_cpp <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
-options(previous_engine)
+fit_diagnostics(fit_fl)$computation$engine
+#> $requested
+#> [1] "auto"
+#> 
+#> $used
+#> [1] "cpp"
+#> 
+#> $fallback_reason
+#> NULL
 ```
 
 ### Bid-ask price model
@@ -2068,7 +2088,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x5574ae5fb490>
+#> <bytecode: 0x55b43d03a510>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2197,16 +2217,21 @@ summary(mle_ba)
 
 Automatic selection uses the C++ likelihood for this observed baseline
 and sequential impact with numerical differentiation. The impact reads
-the current state before its jump. No Jacobian is required. The explicit
-engine setting below can be used to require C++ support.
+the current state before its jump. No Jacobian is required. Inspect the
+saved engine record to confirm which calculation was used and whether
+automatic selection fell back to R.
 
 ``` r
 
-previous_engine <- options(emhawkes.engine = "cpp")
-mle_ba_cpp <- hfit(h_ba, hr_ba$inter_arrival, hr_ba$type, hr_ba$mark,
-                   lambda_component0 = matrix(1, 4, 4),
-                   final_hessian = "stable")
-options(previous_engine)
+fit_diagnostics(mle_ba)$computation$engine
+#> $requested
+#> [1] "auto"
+#> 
+#> $used
+#> [1] "cpp"
+#> 
+#> $fallback_reason
+#> NULL
 ```
 
 ## Point processes with flexible residuals
@@ -2326,7 +2351,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x5574ae69e9f0>
+#> <environment: 0x55b43f9e8d18>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2334,7 +2359,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x5574ae69e9f0>
+#> <environment: 0x55b43f9e8d18>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2343,7 +2368,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x5574ae69e9f0>
+#> <environment: 0x55b43f9e8d18>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2353,7 +2378,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x5574ae69e9f0>
+#> <environment: 0x55b43f9e8d18>
 ```
 
 The following histogram shows inter-arrival times from a model with

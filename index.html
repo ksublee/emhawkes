@@ -109,11 +109,37 @@
 <p>Jacobian rows follow <code><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector()</a></code> of the returned matrix; columns are named with its <code>param</code> names. For nonlinear transformations, supply a <code>function(param)</code> that returns the Jacobian at that parameter vector. Components and Jacobians must be deterministic functions of <code>param</code> with fixed matrix dimensions. The package does not derive or verify the formulas automatically. A component with <code>param = numeric(0)</code> needs no Jacobian. Shared parameter names receive the sum of all component contributions. Missing or malformed Jacobians produce an error. The analytic fit evaluates component functions in R and the likelihood and scores in Rcpp. With the default <code>"auto"</code> engine, supported function-valued models also use C++ with numerical differentiation, without Jacobians:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_numeric</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h_fun</span>, <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">path</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span></code></pre></div>
-<p>The functions must return plain numeric matrices of constant dimensions and be deterministic in <code>param</code>. Observed-state <code>impact</code> functions also use this numerical path without Jacobians, including count- and mark-dependent impacts and the Hawkes flocking example. Numerical C++ fitting also supports observed baselines and sequential impacts that explicitly request current or historical intensity states, including the bid-ask example. Mark densities and residual distributions remain unsupported. Supplied <code>grad</code> and <code>hess</code> are retained. Automatic selection uses R for unsupported specifications; forcing <code>"cpp"</code> reports unsupported features. Callback errors propagate. Callbacks must be deterministic with fixed captures; detecting an unsupported state read through <code>...</code> can require a retry in R. Standalone <code><a href="reference/logLik.html">logLik()</a></code> keeps its numeric-only C++ contract; select the R engine when evaluating a restored function-valued model.</p>
+<p>The functions must return plain numeric matrices of constant dimensions and be deterministic in <code>param</code>. Observed-state <code>impact</code> functions also use this numerical path without Jacobians, including count- and mark-dependent impacts and the Hawkes flocking example. Numerical C++ fitting also supports observed baselines and sequential impacts that explicitly request current or historical intensity states, including the bid-ask example. Mark densities and residual distributions remain unsupported. Supplied <code>grad</code> and <code>hess</code> are retained. Automatic selection uses R for unsupported specifications; forcing <code>"cpp"</code> reports unsupported features. Callback errors propagate. Callbacks must be deterministic with fixed captures; detecting an unsupported state read through <code>...</code> can require a retry in R. Standalone <code><a href="reference/logLik.html">logLik()</a></code> keeps its numeric-only C++ contract; select automatic selection (which uses R) when evaluating a restored function-valued model.</p>
 <p>Observed-state <code>impact</code> functions can use the analytic option with <code>jacobian = list(impact = impact_jac)</code>. They may depend on observed <code>N</code>, <code>Nc</code>, marks, types, and times, and on the resolved <code>mu</code>, <code>alpha</code>, and <code>beta</code> matrices. Counts at row <code>n</code> include that event. The event’s impact affects subsequent intensities in the kernel columns selected by its type.</p>
 <p>For <code>jacobian$impact</code>, <code>param</code> is the <strong>full named optimization vector</strong>. Return a matrix with one row per impact entry in column-major order and one named column per fitted parameter, including zero columns. Include derivatives through any core matrices used by the impact. The impact function keeps receiving its local parameters. See <code><a href="reference/hfit.html">?hfit</a></code> for an example and the callback contract. Callbacks that read latent intensities remain unsupported by the analytic option. Default fits retain the R path. For numerical C++ fitting, declare <code>lambda_component_n</code> to receive the current pre-jump component matrix. Declare <code>lambda</code> or <code>lambda_component</code> only when full pre-jump histories are needed. Observed baselines may use counts and marks, return a dimensions-by-one matrix, and remain constant between events. They cannot depend on latent intensities. See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md" class="external-link">bid-ask benchmark</a> for the state convention, compatibility checks and timings.</p>
 <p>See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md" class="external-link">count, mark and flocking benchmark</a> for complete-fit timings and accuracy checks.</p>
-<p>For comparison or troubleshooting, set <code>options(emhawkes.engine = "r")</code> to use the R calculation, or <code>"auto"</code> to restore automatic selection. The development setting <code>"cpp"</code> reports unsupported features instead of falling back to R. Parameter-only functions and observed-state impacts can use the numerical or analytic fitting adapters described above. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.</p>
+<p>The <code>emhawkes.engine</code> option controls the built-in likelihood:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Setting</th>
+<th>Role</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>
+<code>"auto"</code> (default)</td>
+<td>Use C++ for supported models and R otherwise. Supported fitting adapters receive this acceleration automatically.</td>
+</tr>
+<tr>
+<td><code>"r"</code></td>
+<td>Force the R likelihood for comparison or troubleshooting.</td>
+</tr>
+<tr>
+<td><code>"cpp"</code></td>
+<td>Require C++ support; report an error for unsupported models.</td>
+</tr>
+</tbody>
+</table>
+<p>Setting <code>"cpp"</code> is unnecessary to accelerate models already supported by <code>"auto"</code>. Inspect <code>fit_diagnostics(fit)$computation$engine</code> for the engines actually used and any automatic fallback reason. Engine selection does not enable analytic gradients: request <code>gradient = "analytic"</code> explicitly; unsupported analytic gradients produce an error. A custom <code>mylogLik</code> bypasses built-in engine selection. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.</p>
 <p>See the <a href="https://ksublee.github.io/emhawkes/articles/example.html">basic vignette</a> and <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">extended examples</a>.</p>
 <p>The website is generated with <code>Rscript tools/build-docs.R</code> after installing the current package and <code>pkgdown</code>. The script includes the extended article from <code>vignettes_ext</code>, which is excluded from the CRAN package. The <a href="https://github.com/ksublee/emhawkes/blob/main/github_document/example.md" class="external-link">GitHub Markdown example</a> uses the same extended source.</p>
 </div>

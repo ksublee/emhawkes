@@ -122,14 +122,19 @@ with the arguments returned by
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
 to preserve the fit's initialization setting.
 
-Numeric Hawkes specifications use the Rcpp engine. Function-valued
+With the default automatic selection, standalone `logLik()` uses the
+Rcpp engine for numeric Hawkes specifications. Function-valued
 parameters, impact functions, mark densities, residual distributions,
 and classed numeric inputs use the R engine. `rmark` and `rresidual` are
 simulation generators and do not by themselves prevent numeric
 likelihood acceleration. Set `options(emhawkes.engine = "r")` for the R
 calculation, `"auto"` for automatic selection, or `"cpp"` to require a
-supported numeric specification. The engine supports unequal decay rates
-within a row and multi-kernel mappings.
+supported numeric specification. Setting `"cpp"` is not needed for
+automatic acceleration. The engine supports unequal decay rates within a
+row and multi-kernel mappings. During fitting,
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) also
+supports C++ adapters for the callback models documented there. Engine
+selection does not change simulation or enable analytic gradients.
 
 ## See also
 

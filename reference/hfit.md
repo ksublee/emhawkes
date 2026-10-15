@@ -230,21 +230,29 @@ described by
 a shared parameter fixes all entries that use it.
 
 The built-in likelihood uses the calculation engine selected by
-`options(emhawkes.engine = "auto")`; see
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) for
-supported models. With `gradient = "analytic"`, Rcpp computes the
-likelihood and its gradient together and reuses the result at the same
-parameter vector. Matrix scores are summed according to the saved
-parameter map. Automatic initial states include their parameter
-derivatives; a singular automatic initialization requires an explicit
-`lambda_component0`. State-dependent baselines, impacts that depend on
-latent intensities, mark densities, residual distributions, and custom
-likelihoods are not supported by this option. Equality-constrained
-optimization is also excluded. BHHH requires event scores and cannot use
-this total score. A supplied `grad` takes precedence. A supplied `hess`
-is retained; otherwise `maxLik` can calculate curvature by
-differentiating the analytic gradient. Optimization paths and last
-digits can differ from numerical differentiation.
+`options(emhawkes.engine = "auto")` by default. It selects C++ for
+supported numeric and callback models described below, and R otherwise.
+Setting `"r"` forces the R likelihood for comparison or troubleshooting.
+Setting `"cpp"` requires C++ support and errors on unsupported models;
+it is not needed for automatic acceleration. Inspect
+`fit_diagnostics(fit)$computation$engine` for actual engines and
+fallback reasons. A custom `mylogLik` bypasses this selection.
+Standalone
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+supports fewer C++ models than `hfit()`. With `gradient = "analytic"`,
+Rcpp computes the likelihood and its gradient together and reuses the
+result at the same parameter vector. Matrix scores are summed according
+to the saved parameter map. Automatic initial states include their
+parameter derivatives; a singular automatic initialization requires an
+explicit `lambda_component0`. State-dependent baselines, impacts that
+depend on latent intensities, mark densities, residual distributions,
+and custom likelihoods are not supported by this option.
+Equality-constrained optimization is also excluded. BHHH requires event
+scores and cannot use this total score. A supplied `grad` takes
+precedence. A supplied `hess` is retained; otherwise `maxLik` can
+calculate curvature by differentiating the analytic gradient.
+Optimization paths and last digits can differ from numerical
+differentiation.
 
 Analytic function components must have the single argument `param` and
 return plain numeric matrices with constant dimensions. Their values and
@@ -269,10 +277,10 @@ sequential state-dependent impacts are also supported as described
 below. Mark densities and residual distributions are excluded. Supplied
 `grad` and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-keeps its numeric-only C++ contract; use the R engine to evaluate a
-restored function-valued model. Automatic fallback through `...` assumes
-deterministic callbacks with fixed captures; it may evaluate a callback
-again when an unsupported state read is detected.
+keeps its numeric-only C++ contract; automatic selection uses R to
+evaluate a restored function-valued model. Automatic fallback through
+`...` assumes deterministic callbacks with fixed captures; it may
+evaluate a callback again when an unsupported state read is detected.
 
 Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`,
 `type`, `inter_arrival`, and the resolved `mu`, `alpha`, and `beta`
@@ -429,10 +437,8 @@ h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
 # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #      jacobian = list(alpha = alpha_jac))
 
-# C++ likelihood with the default numerical differentiation; no Jacobian:
-# previous_engine <- options(emhawkes.engine = "cpp")
+# Default auto selects C++ with numerical differentiation; no Jacobian:
 # fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
-# options(previous_engine)
 
 # Observed counts can change the excitation after an event.
 count_impact <- function(param = c(a = 0.2), n, N, ...) {
@@ -449,9 +455,7 @@ h_count <- new("hspec", mu = 0.3,
 # hfit(h_count, inter_arrival, gradient = "analytic",
 #      jacobian = list(impact = count_jac))
 # Or keep numerical differentiation without a Jacobian:
-# previous_engine <- options(emhawkes.engine = "cpp")
 # hfit(h_count, inter_arrival)
-# options(previous_engine)
 
 # example 2
 # \donttest{
@@ -499,18 +503,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42741   1.620   0.1053    
+#> mu1      0.69221    0.42494   1.629   0.1033    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04931   0.290   0.7719    
-#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
-#> alpha34  0.29568    0.11642   2.540   0.0111 *  
-#> beta1.1  0.10275    0.08867   1.159   0.2465    
-#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
-#> alpha1n  0.03456    0.06732   0.513   0.6077    
-#> alpha1w  0.04976    0.06843   0.727   0.4671    
-#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
-#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
+#> alpha12  0.01429    0.04916   0.291   0.7712    
+#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
+#> alpha34  0.29568    0.11634   2.542   0.0110 *  
+#> beta1.1  0.10275    0.08833   1.163   0.2447    
+#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
+#> alpha1n  0.03456    0.06731   0.513   0.6077    
+#> alpha1w  0.04976    0.06831   0.728   0.4664    
+#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
+#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
