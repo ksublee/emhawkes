@@ -702,8 +702,9 @@ Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
 evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
 distributions use R. Standalone likelihood and inference also support
-parameter-only component functions returning plain numeric matrices. Other
-function signatures and impacts use R for standalone evaluation. Simulation uses R.
+parameter-only component functions returning plain numeric matrices and
+observed-state impacts. Observed baselines and latent-state impacts use R for
+standalone evaluation. Simulation uses R.
 The `emhawkes.engine` option has three settings:
 
 | Setting | Role |
@@ -1647,7 +1648,7 @@ impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2
                   param['alpha2w'], param['alpha2n'], 0, 0,
                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
   
-  ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n]
+  ind <- N[n,"N1"] - N[n,"N2"] > N[n,"N3"] - N[n,"N4"]
   
   km <- matrix(c(!ind, !ind, !ind, !ind,
                  ind, ind, ind, ind,
@@ -1695,7 +1696,7 @@ hspec_fl
 #>         0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], 
 #>         param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], 
 #>         0, 0), nrow = 4, byrow = TRUE)
-#>     ind <- N[, "N1"][n] - N[, "N2"][n] > N[, "N3"][n] - N[, "N4"][n]
+#>     ind <- N[n, "N1"] - N[n, "N2"] > N[n, "N3"] - N[n, "N4"]
 #>     km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, 
 #>         ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, 
 #>         byrow = TRUE)

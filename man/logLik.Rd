@@ -88,8 +88,12 @@ These functions have only \code{param} as an argument and return plain numeric
 matrices. Their defaults are evaluated as in the R engine; no Jacobian is
 required. This supports likelihood values and, with \code{infer = TRUE}, intensity
 paths and residuals. Captured inputs must remain fixed and callbacks must be
-deterministic. Other function signatures, impact functions, mark densities,
-residual distributions, and classed numeric
+deterministic. Observed-state \code{impact} functions may also use \code{n}, \code{N}, \code{Nc},
+marks, types, times and resolved core matrices. They must return finite plain
+numeric matrices matching the kernel dimensions. Each function retains its own
+default parameters; standalone evaluation does not apply fitting's sharing rules.
+Other core-function signatures, latent-state impacts, mark densities, residual
+distributions, and classed numeric
 inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
 do not by themselves prevent numeric likelihood acceleration.
 Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
@@ -98,6 +102,8 @@ Setting \code{"cpp"} is not needed for automatic acceleration. The engine suppor
 unequal decay rates within a row and multi-kernel mappings. During fitting,
 \code{\link[=hfit]{hfit()}} also supports C++ adapters for the callback models documented there.
 Engine selection does not change simulation or enable analytic gradients.
+Automatic capability fallback may evaluate impact callbacks again. User errors
+propagate; deterministic callbacks with fixed captured inputs are required.
 }
 \seealso{
 \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}},

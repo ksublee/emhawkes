@@ -197,8 +197,9 @@ Observed-state \code{impact} functions are also supported without Jacobians.
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
 Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} also uses C++
-for parameter-only component functions, including restored fitted models.
-Other callbacks retain the R path for standalone evaluation. Automatic
+for parameter-only component functions and observed-state impacts, including
+restored fitted models. Observed baselines and latent-state impacts retain R
+for standalone evaluation. Automatic
 fallback through \code{...} assumes deterministic callbacks with fixed captures;
 it may evaluate a callback again when an unsupported state read is detected.
 
@@ -231,8 +232,9 @@ that forces all of \code{...} also forces these unavailable states and produces 
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
 grows with observations times kernel components, without an additional
-observations-by-components-by-parameters array. Standalone \code{logLik()} uses R
-for these callbacks. Default fitting uses C++ for supported callbacks with
+observations-by-components-by-parameters array. Standalone \code{logLik()} also
+supports these observed-state callbacks without Jacobians. Default fitting uses
+C++ for supported callbacks with
 numerical differentiation and requires no Jacobian.
 
 With numerical differentiation and the C++ engine, \code{mu} may depend on observed

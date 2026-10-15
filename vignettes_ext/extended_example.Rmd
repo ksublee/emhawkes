@@ -410,8 +410,9 @@ Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
 evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
 distributions use R. Standalone likelihood and inference also support
-parameter-only component functions returning plain numeric matrices. Other
-function signatures and impacts use R for standalone evaluation. Simulation uses R.
+parameter-only component functions returning plain numeric matrices and
+observed-state impacts. Observed baselines and latent-state impacts use R for
+standalone evaluation. Simulation uses R.
 The `emhawkes.engine` option has three settings:
 
 | Setting | Role |
@@ -925,6 +926,7 @@ beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = TRUE)
 The `impact` function below implements the model definition.
 Its `N` argument contains the counting process values, and `n` identifies the current event index.
 Include both arguments because the function uses them, along with `...` to accept other arguments supplied by the package.
+Use `N[n, "N1"]` to read one count directly, rather than extracting an entire column at every event.
 
 ```{r}
 impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
@@ -935,7 +937,7 @@ impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2
                   param['alpha2w'], param['alpha2n'], 0, 0,
                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
   
-  ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n]
+  ind <- N[n,"N1"] - N[n,"N2"] > N[n,"N3"] - N[n,"N4"]
   
   km <- matrix(c(!ind, !ind, !ind, !ind,
                  ind, ind, ind, ind,
@@ -967,6 +969,16 @@ evaluates the impact.
 
 ```{r flocking-engine}
 fit_diagnostics(fit_fl)$computation$engine
+```
+
+The same observed impact also supports automatic C++ intensity and residual replay.
+No Jacobian is needed; retain the fit's initial-state arguments.
+
+```{r flocking-replay}
+replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
+  inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
+  fit_initial_state(fit_fl)))
+c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
 ```
 
 ### Bid-ask price model

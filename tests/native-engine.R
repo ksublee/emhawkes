@@ -93,7 +93,9 @@ for (slot_name in c("impact", "dmark")) {
   methods::slot(custom, slot_name) <- if (slot_name == "impact") function(n) matrix(.01) else function(n) .5
   close(evaluate("auto", custom, c(0, .2, .3), infer = TRUE),
         evaluate("r", custom, c(0, .2, .3), infer = TRUE))
-  fails(evaluate("cpp", custom, c(0, .2)), "does not support")
+  if (slot_name == "impact") close(evaluate("cpp", custom, c(0, .2)),
+                                   evaluate("r", custom, c(0, .2))) else
+    fails(evaluate("cpp", custom, c(0, .2)), "does not support")
 }
 frpp <- set_residual(plain, c(rate = 2), dresidual = dexp,
                      presidual = pexp, qresidual = qexp)

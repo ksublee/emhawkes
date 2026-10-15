@@ -1,5 +1,8 @@
 # Parameter-only standalone likelihood and inference
 
+> Stage 1 measurement snapshot. Later observed-impact support is described in
+> [the stage 2 report](observed-replay-results.md) and current `logLik()` help.
+
 Stage 1 extends automatic standalone `logLik()` and `infer = TRUE` to `mu`,
 `alpha`, `beta` and `eta` functions whose sole argument is `param` and whose
 values are plain numeric matrices. R evaluates the defaults using the existing

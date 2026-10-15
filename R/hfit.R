@@ -126,8 +126,9 @@ NULL
 #' Observed baselines and sequential state-dependent impacts are also supported
 #' as described below. Mark densities and residual distributions are excluded.
 #' Supplied `grad` and `hess` are retained. Standalone `logLik()` also uses C++
-#' for parameter-only component functions, including restored fitted models.
-#' Other callbacks retain the R path for standalone evaluation. Automatic
+#' for parameter-only component functions and observed-state impacts, including
+#' restored fitted models. Observed baselines and latent-state impacts retain R
+#' for standalone evaluation. Automatic
 #' fallback through `...` assumes deterministic callbacks with fixed captures;
 #' it may evaluate a callback again when an unsupported state read is detected.
 #'
@@ -160,8 +161,9 @@ NULL
 #' error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 #' component scores, and reverse sensitivities to event impacts. Temporary storage
 #' grows with observations times kernel components, without an additional
-#' observations-by-components-by-parameters array. Standalone `logLik()` uses R
-#' for these callbacks. Default fitting uses C++ for supported callbacks with
+#' observations-by-components-by-parameters array. Standalone `logLik()` also
+#' supports these observed-state callbacks without Jacobians. Default fitting uses
+#' C++ for supported callbacks with
 #' numerical differentiation and requires no Jacobian.
 #'
 #' With numerical differentiation and the C++ engine, `mu` may depend on observed
@@ -458,7 +460,8 @@ setMethod(
       if (is.null(mylogLik)){
 
         logl <- loglik_hspec(hspec0, observation, lambda_component0,
-                            callbacks = callbacks, show_initial_message = FALSE, execution = execution)
+                            callbacks = callbacks, show_initial_message = FALSE, execution = execution,
+                            replay = FALSE)
 
       } else {
 

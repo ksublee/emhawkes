@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Extend standalone C++ likelihood and intensity/residual inference to observed-state impacts. Preserve independent callback defaults and permanent R fallback during fitting. Read flocking counts directly by row and column to avoid repeated full-column extraction.
+
 * Accelerate standalone `logLik()` and intensity/residual inference for parameter-only component functions, including restored fitted specifications. Preserve default evaluation, initialization, fallback and optimizer behavior.
 
 * Add event/dimension/kernel scaling and allocation benchmarks. Use current components in the GitHub Bid-ask example and explain full-history copying costs; preserve likelihood and optimizer behavior.

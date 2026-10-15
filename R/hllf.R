@@ -56,8 +56,12 @@ NULL
 #' matrices. Their defaults are evaluated as in the R engine; no Jacobian is
 #' required. This supports likelihood values and, with `infer = TRUE`, intensity
 #' paths and residuals. Captured inputs must remain fixed and callbacks must be
-#' deterministic. Other function signatures, impact functions, mark densities,
-#' residual distributions, and classed numeric
+#' deterministic. Observed-state `impact` functions may also use `n`, `N`, `Nc`,
+#' marks, types, times and resolved core matrices. They must return finite plain
+#' numeric matrices matching the kernel dimensions. Each function retains its own
+#' default parameters; standalone evaluation does not apply fitting's sharing rules.
+#' Other core-function signatures, latent-state impacts, mark densities, residual
+#' distributions, and classed numeric
 #' inputs use the R engine. `rmark` and `rresidual` are simulation generators and
 #' do not by themselves prevent numeric likelihood acceleration.
 #' Set `options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
@@ -66,6 +70,8 @@ NULL
 #' unequal decay rates within a row and multi-kernel mappings. During fitting,
 #' [hfit()] also supports C++ adapters for the callback models documented there.
 #' Engine selection does not change simulation or enable analytic gradients.
+#' Automatic capability fallback may evaluate impact callbacks again. User errors
+#' propagate; deterministic callbacks with fixed captured inputs are required.
 #'
 #' @seealso [fitted_hspec()], [fit_initial_state()],
 #' \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
@@ -101,23 +107,29 @@ setMethod(
 # Internal entry point for observations already checked by hfit.
 loglik_hspec <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
                          callbacks = model_callback_plans(object), show_initial_message = TRUE,
-                         engine = getOption("emhawkes.engine", "auto"), execution = NULL) {
+                         engine = getOption("emhawkes.engine", "auto"), execution = NULL, replay = TRUE) {
     engine <- match.arg(engine, c("auto", "r", "cpp"))
     values <- NULL
     if (engine != "r") {
       reason <- native_hawkes_reason(object, observation)
-      if (!is.null(reason) && parameter_only_hawkes_supported(object, observation)) {
+      if (replay && !is.null(reason) && standalone_hawkes_supported(object, observation)) {
         values <- setting(object)
         functions <- vapply(list(mu = object@mu, alpha = object@alpha,
           beta = object@beta, eta = object@eta), is.function, logical(1))
         plain <- vapply(values[functions], function(x) is.numeric(x) && is.matrix(x) && !is.object(x), logical(1))
-        reason <- if (all(plain)) native_hawkes_reason(object, observation, values) else
+        reason <- if (all(plain)) native_hawkes_reason(object, observation, values, allow_impact = TRUE) else
           "function components must return plain numeric matrices"
       }
       if (is.null(reason)) {
-        record_fit_engine(execution, "cpp")
-        return(loglik_hspec_cpp(object, observation, lambda_component0, infer,
-                                show_initial_message, values))
+        if (is.null(object@impact)) return(loglik_hspec_cpp(object, observation,
+          lambda_component0, infer, show_initial_message, values, execution))
+        result <- tryCatch(loglik_hspec_cpp(object, observation, lambda_component0,
+          infer, show_initial_message, values, execution),
+          emhawkes_cpp_unsupported = function(e) e)
+        if (!inherits(result, "emhawkes_cpp_unsupported")) return(result)
+        reason <- conditionMessage(result)
+        lambda_component0 <- result$initial
+        show_initial_message <- FALSE
       }
       if (engine == "cpp") stop("C++ Hawkes engine does not support this model: ", reason, call. = FALSE)
     }

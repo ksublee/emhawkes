@@ -90,18 +90,44 @@ native_hawkes_reason <- function(object, observation,
   NULL
 }
 
-# Standalone replay resolves only parameter-only functions, using setting()'s
-# existing default-argument evaluation. Reject other features before callbacks.
-parameter_only_hawkes_supported <- function(object, observation) {
+# Standalone replay resolves parameter-only core functions and observed impacts.
+# Reject unsupported features before evaluating user callbacks.
+standalone_hawkes_supported <- function(object, observation) {
   values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
   functions <- vapply(values, is.function, logical(1))
-  any(functions) && is.null(object@impact) &&
+  (any(functions) || !is.null(object@impact)) &&
+    (is.null(object@impact) || !any(names(formals(object@impact)) %in%
+      c("lambda", "lambda_component", "lambda_component_n"))) &&
     is.null(auto_hawkes_fit_reason(object, observation)) &&
     all(vapply(values[functions], function(fun) identical(names(formals(fun)), "param"), logical(1)))
 }
 
+# Replay uses each function's own defaults; no fitted-parameter map or sharing
+# rule may merge independent component defaults during standalone evaluation.
+standalone_observed_impacts <- function(object, observation, values) {
+  plan <- model_callback_plans(object)$impact
+  unavailable <- quote(stop_cpp_unsupported(
+    "Observed impacts cannot read latent intensity states through '...'."))
+  context <- c(list(n = 1L), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
+    list(lambda = unavailable, lambda_component = unavailable, lambda_component_n = unavailable),
+    values[c("mu", "alpha", "beta")])
+  shape <- dim(values$beta)
+  size <- length(observation$inter_arrival)
+  result <- matrix(0, prod(shape), size)
+  for (n in seq_len(size - 1L) + 1L) {
+    context$n <- n
+    value <- call_component(object@impact, plan, context)
+    if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
+        !identical(dim(value), shape) || any(!is.finite(value))) {
+      stop_cpp_unsupported("impact must return a finite plain numeric matrix matching the kernel dimensions.")
+    }
+    result[, n] <- as.vector(value)
+  }
+  result
+}
+
 loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
-                             show_initial_message, values = NULL) {
+                             show_initial_message, values = NULL, execution = NULL) {
   if (is.null(values)) values <- list(mu = object@mu, alpha = object@alpha,
                                     beta = object@beta, eta = object@eta)
   if (is.null(lambda_component0)) {
@@ -121,9 +147,17 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
   mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
   types <- observation$type
   if (types[1] != 0) types[1] <- 0L
+  impacts <- if (!is.null(object@impact)) tryCatch(
+    standalone_observed_impacts(object, observation, values),
+    emhawkes_cpp_unsupported = function(e) {
+      # Preserve the resolved automatic initial state on capability fallback.
+      e$initial <- initial
+      stop(e)
+    }) else NULL
+  record_fit_engine(execution, "cpp")
   result <- hawkes_loglik_cpp(observation$inter_arrival, as.integer(types),
     observation$mark, as.numeric(values$mu), values$alpha, values$beta, values$eta,
-    initial, mapping, infer)
+    initial, mapping, infer, impact = impacts)
   if (!infer) return(c(loglikelihood = result$loglikelihood))
   colnames(result$lambda) <- paste0("lambda", seq_len(dimensions))
   colnames(result$rambda) <- paste0("rambda", seq_len(dimensions))
