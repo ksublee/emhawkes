@@ -279,8 +279,9 @@ Observed-state <code>impact</code> functions are also supported without Jacobian
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
 Supplied <code>grad</code> and <code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> also uses C++
-for parameter-only component functions, including restored fitted models.
-Other callbacks retain the R path for standalone evaluation. Automatic
+for parameter-only component functions and observed-state impacts, including
+restored fitted models. Observed baselines and latent-state impacts retain R
+for standalone evaluation. Automatic
 fallback through <code>...</code> assumes deterministic callbacks with fixed captures;
 it may evaluate a callback again when an unsupported state read is detected.</p>
 <p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,
@@ -310,8 +311,9 @@ that forces all of <code>...</code> also forces these unavailable states and pro
 error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
 component scores, and reverse sensitivities to event impacts. Temporary storage
 grows with observations times kernel components, without an additional
-observations-by-components-by-parameters array. Standalone <code><a href="logLik.html">logLik()</a></code> uses R
-for these callbacks. Default fitting uses C++ for supported callbacks with
+observations-by-components-by-parameters array. Standalone <code><a href="logLik.html">logLik()</a></code> also
+supports these observed-state callbacks without Jacobians. Default fitting uses
+C++ for supported callbacks with
 numerical differentiation and requires no Jacobian.</p>
 <p>With numerical differentiation and the C++ engine, <code>mu</code> may depend on observed
 <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>, and <code>inter_arrival</code>. Return a plain numeric

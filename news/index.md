@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Extend standalone C++ likelihood and intensity/residual inference to
+  observed-state impacts. Preserve independent callback defaults and
+  permanent R fallback during fitting. Read flocking counts directly by
+  row and column to avoid repeated full-column extraction.
+
 - Accelerate standalone
   [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
   and intensity/residual inference for parameter-only component

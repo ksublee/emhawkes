@@ -128,18 +128,26 @@ component functions. These functions have only `param` as an argument
 and return plain numeric matrices. Their defaults are evaluated as in
 the R engine; no Jacobian is required. This supports likelihood values
 and, with `infer = TRUE`, intensity paths and residuals. Captured inputs
-must remain fixed and callbacks must be deterministic. Other function
-signatures, impact functions, mark densities, residual distributions,
-and classed numeric inputs use the R engine. `rmark` and `rresidual` are
-simulation generators and do not by themselves prevent numeric
-likelihood acceleration. Set `options(emhawkes.engine = "r")` for the R
-calculation, `"auto"` for automatic selection, or `"cpp"` to require a
-supported specification. Setting `"cpp"` is not needed for automatic
-acceleration. The engine supports unequal decay rates within a row and
-multi-kernel mappings. During fitting,
+must remain fixed and callbacks must be deterministic. Observed-state
+`impact` functions may also use `n`, `N`, `Nc`, marks, types, times and
+resolved core matrices. They must return finite plain numeric matrices
+matching the kernel dimensions. Each function retains its own default
+parameters; standalone evaluation does not apply fitting's sharing
+rules. Other core-function signatures, latent-state impacts, mark
+densities, residual distributions, and classed numeric inputs use the R
+engine. `rmark` and `rresidual` are simulation generators and do not by
+themselves prevent numeric likelihood acceleration. Set
+`options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
+automatic selection, or `"cpp"` to require a supported specification.
+Setting `"cpp"` is not needed for automatic acceleration. The engine
+supports unequal decay rates within a row and multi-kernel mappings.
+During fitting,
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) also
 supports C++ adapters for the callback models documented there. Engine
 selection does not change simulation or enable analytic gradients.
+Automatic capability fallback may evaluate impact callbacks again. User
+errors propagate; deterministic callbacks with fixed captured inputs are
+required.
 
 ## See also
 

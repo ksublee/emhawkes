@@ -277,11 +277,12 @@ sequential state-dependent impacts are also supported as described
 below. Mark densities and residual distributions are excluded. Supplied
 `grad` and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-also uses C++ for parameter-only component functions, including restored
-fitted models. Other callbacks retain the R path for standalone
-evaluation. Automatic fallback through `...` assumes deterministic
-callbacks with fixed captures; it may evaluate a callback again when an
-unsupported state read is detected.
+also uses C++ for parameter-only component functions and observed-state
+impacts, including restored fitted models. Observed baselines and
+latent-state impacts retain R for standalone evaluation. Automatic
+fallback through `...` assumes deterministic callbacks with fixed
+captures; it may evaluate a callback again when an unsupported state
+read is detected.
 
 Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`,
 `type`, `inter_arrival`, and the resolved `mu`, `alpha`, and `beta`
@@ -317,8 +318,9 @@ event impacts. Temporary storage grows with observations times kernel
 components, without an additional
 observations-by-components-by-parameters array. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-uses R for these callbacks. Default fitting uses C++ for supported
-callbacks with numerical differentiation and requires no Jacobian.
+also supports these observed-state callbacks without Jacobians. Default
+fitting uses C++ for supported callbacks with numerical differentiation
+and requires no Jacobian.
 
 With numerical differentiation and the C++ engine, `mu` may depend on
 observed `n`, `N`, `Nc`, `mark`, `type`, and `inter_arrival`. Return a

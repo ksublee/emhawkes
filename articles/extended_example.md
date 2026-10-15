@@ -788,9 +788,9 @@ likelihood evaluation and inference. During fitting, supported function
 components and impacts also use C++ automatically. Unsupported
 specifications and residual distributions use R. Standalone likelihood
 and inference also support parameter-only component functions returning
-plain numeric matrices. Other function signatures and impacts use R for
-standalone evaluation. Simulation uses R. The `emhawkes.engine` option
-has three settings:
+plain numeric matrices and observed-state impacts. Observed baselines
+and latent-state impacts use R for standalone evaluation. Simulation
+uses R. The `emhawkes.engine` option has three settings:
 
 | Setting            | Role                                                 |
 |--------------------|------------------------------------------------------|
@@ -1289,7 +1289,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x5598405a77f0>
+#> <bytecode: 0x555cd4881e48>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1299,7 +1299,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55983f913580>
+#> <bytecode: 0x555cd4145b90>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1309,7 +1309,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55983fbbb900>
+#> <bytecode: 0x555cd2ba9df8>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1761,7 +1761,8 @@ The `impact` function below implements the model definition. Its `N`
 argument contains the counting process values, and `n` identifies the
 current event index. Include both arguments because the function uses
 them, along with `...` to accept other arguments supplied by the
-package.
+package. Use `N[n, "N1"]` to read one count directly, rather than
+extracting an entire column at every event.
 
 ``` r
 
@@ -1773,7 +1774,7 @@ impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2
                   param['alpha2w'], param['alpha2n'], 0, 0,
                   param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
   
-  ind <- N[,"N1"][n] - N[,"N2"][n] > N[,"N3"][n] - N[,"N4"][n]
+  ind <- N[n,"N1"] - N[n,"N2"] > N[n,"N3"] - N[n,"N4"]
   
   km <- matrix(c(!ind, !ind, !ind, !ind,
                  ind, ind, ind, ind,
@@ -1804,7 +1805,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55984640f140>
+#> <bytecode: 0x555cd3da4e28>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1821,7 +1822,7 @@ hspec_fl
 #>         0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], 
 #>         param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], 
 #>         0, 0), nrow = 4, byrow = TRUE)
-#>     ind <- N[, "N1"][n] - N[, "N2"][n] > N[, "N3"][n] - N[, "N4"][n]
+#>     ind <- N[n, "N1"] - N[n, "N2"] > N[n, "N3"] - N[n, "N4"]
 #>     km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, 
 #>         ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, 
 #>         byrow = TRUE)
@@ -1908,6 +1909,21 @@ fit_diagnostics(fit_fl)$computation$engine
 #> 
 #> $fallback_reason
 #> NULL
+```
+
+The same observed impact also supports automatic C++ intensity and
+residual replay. No Jacobian is needed; retain the fit’s initial-state
+arguments.
+
+``` r
+
+replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
+  inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
+  fit_initial_state(fit_fl)))
+#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
+#>    fitted  replayed 
+#> -3050.319 -3050.319
 ```
 
 ### Bid-ask price model
@@ -2102,7 +2118,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55983e4e8660>
+#> <bytecode: 0x555cd2942c48>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2373,7 +2389,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55983ebcb168>
+#> <environment: 0x555cd0fb60f8>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2381,7 +2397,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55983ebcb168>
+#> <environment: 0x555cd0fb60f8>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2390,7 +2406,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55983ebcb168>
+#> <environment: 0x555cd0fb60f8>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2400,7 +2416,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55983ebcb168>
+#> <environment: 0x555cd0fb60f8>
 ```
 
 The following histogram shows inter-arrival times from a model with
