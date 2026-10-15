@@ -1,0 +1,13 @@
+"case","mode","round","evaluations","seconds"
+"bid_ask","original",1,100,3.18
+"bid_ask","compile_bound",1,100,11.26
+"bid_ask","compile_bound",2,100,10.47
+"bid_ask","original",2,100,3.68
+"bid_ask","original",3,100,3.61
+"bid_ask","compile_bound",3,100,11.02
+"bid_ask_current","original",1,100,3.73
+"bid_ask_current","compile_bound",1,100,9.75
+"bid_ask_current","compile_bound",2,100,9.59
+"bid_ask_current","original",2,100,3.26000000000001
+"bid_ask_current","original",3,100,3.55000000000001
+"bid_ask_current","compile_bound",3,100,10.16
