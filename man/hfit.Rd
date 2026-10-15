@@ -180,7 +180,16 @@ Fixed entries have zero derivative. Components with \code{param = numeric(0)} ne
 no Jacobian. Contributions for shared parameter names are added across components.
 Missing or malformed Jacobians produce an error. For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
-scores in Rcpp. Default fitting and standalone \code{logLik()} still use the R path.
+scores in Rcpp. With the default \code{emhawkes.engine = "auto"}, these functions
+still use the R likelihood. To use C++ with numerical differentiation, set
+\code{options(emhawkes.engine = "cpp")} before \code{hfit()}. No Jacobian is required.
+This option supports parameter-only \code{mu}, \code{alpha}, \code{beta}, and \code{eta} functions
+returning plain numeric matrices with constant dimensions. They must be
+deterministic functions of \code{param}, with captured values held fixed.
+Impacts, state-dependent baselines, mark densities and residual distributions
+are excluded from this numerical C++ path. Supplied \code{grad} and \code{hess} are
+retained. Standalone \code{logLik()} continues to use the documented numeric-only
+C++ engine; use the R engine to evaluate a restored function-valued model.
 
 Observed-state \code{impact} functions may use \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type},
 \code{inter_arrival}, and the resolved \code{mu}, \code{alpha}, and \code{beta} matrices.
@@ -267,6 +276,11 @@ alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
 h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
 # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #      jacobian = list(alpha = alpha_jac))
+
+# C++ likelihood with the default numerical differentiation; no Jacobian:
+# previous_engine <- options(emhawkes.engine = "cpp")
+# fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
+# options(previous_engine)
 
 # Observed counts can change the excitation after an event.
 count_impact <- function(param = c(a = 0.2), n, N, ...) {

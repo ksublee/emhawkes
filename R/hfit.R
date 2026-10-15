@@ -109,7 +109,16 @@ NULL
 #' no Jacobian. Contributions for shared parameter names are added across components.
 #' Missing or malformed Jacobians produce an error. For these functions, the
 #' analytic option evaluates their matrices in R and the likelihood and component
-#' scores in Rcpp. Default fitting and standalone `logLik()` still use the R path.
+#' scores in Rcpp. With the default `emhawkes.engine = "auto"`, these functions
+#' still use the R likelihood. To use C++ with numerical differentiation, set
+#' `options(emhawkes.engine = "cpp")` before `hfit()`. No Jacobian is required.
+#' This option supports parameter-only `mu`, `alpha`, `beta`, and `eta` functions
+#' returning plain numeric matrices with constant dimensions. They must be
+#' deterministic functions of `param`, with captured values held fixed.
+#' Impacts, state-dependent baselines, mark densities and residual distributions
+#' are excluded from this numerical C++ path. Supplied `grad` and `hess` are
+#' retained. Standalone `logLik()` continues to use the documented numeric-only
+#' C++ engine; use the R engine to evaluate a restored function-valued model.
 #'
 #' Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`, `type`,
 #' `inter_arrival`, and the resolved `mu`, `alpha`, and `beta` matrices.
@@ -204,6 +213,11 @@ NULL
 #' h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
 #' # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #' #      jacobian = list(alpha = alpha_jac))
+#'
+#' # C++ likelihood with the default numerical differentiation; no Jacobian:
+#' # previous_engine <- options(emhawkes.engine = "cpp")
+#' # fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
+#' # options(previous_engine)
 #'
 #' # Observed counts can change the excitation after an event.
 #' count_impact <- function(param = c(a = 0.2), n, N, ...) {
@@ -418,12 +432,14 @@ setMethod(
 
 
     gradient_used <- if (!is.null(grad)) "user" else gradient
+    engine <- if (is.null(mylogLik)) {
+      match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
+    } else NULL
     if (identical(gradient_used, "analytic")) {
       if (!is.null(mylogLik)) stop("Analytic gradient does not support a custom likelihood.")
       if (!is.null(constraints$eqA) || !is.null(constraints$eqB)) {
         stop('Analytic gradient does not support equality constraints; use gradient = "numeric".')
       }
-      engine <- match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
       if (engine == "r") stop('Analytic gradient requires the C++ engine; use emhawkes.engine = "auto" or "cpp".')
       if (identical(toupper(method), "BHHH") || isTRUE(additional_argument$bhhhHessian) ||
           identical(toupper(as.character(additional_argument$finalHessian)), "BHHH")) {
@@ -432,6 +448,16 @@ setMethod(
       objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian)
       llh_function <- objective$loglik
       grad <- objective$gradient
+    } else if (identical(engine, "cpp") && any(vapply(
+      list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1)))) {
+      if (!is.null(object@impact)) {
+        stop("C++ parameter-only fitting does not support an impact function; use the R engine.", call. = FALSE)
+      }
+      # Reuse native recursions without scores or component Jacobians.
+      # Numerical differentiation and supplied grad/hess remain with maxLik.
+      objective <- make_hawkes_objective(object, observation, lambda_component0,
+        parameter_map, verbose, derivatives = FALSE)
+      llh_function <- objective$loglik
     }
 
     #llh_function(starting_point)

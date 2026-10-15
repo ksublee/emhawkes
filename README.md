@@ -77,7 +77,7 @@ components for simulation and the built-in likelihood.
 paths, and residual vectors. Use it in place of the deprecated `infer_lambda()`
 and `residual_process()` helpers. Simulation returns an `hreal` object.
 
-Numeric Hawkes specifications use a compiled Rcpp engine for likelihood evaluation and inference, including multi-kernel models, unequal decay rates, and numeric mark effects. Function-valued parameters, user-defined impact or mark densities, residual-distribution models, and numeric inputs with custom classes use the R implementation. Simulation continues to use R.
+With automatic engine selection, numeric Hawkes specifications use a compiled Rcpp engine for likelihood evaluation and inference, including multi-kernel models, unequal decay rates, and numeric mark effects. Function-valued parameters, user-defined impact or mark densities, residual-distribution models, and numeric inputs with custom classes use the R implementation. Simulation continues to use R.
 
 `hfit()` uses this engine for its built-in likelihood. Numerical differentiation
 remains the default. For numeric Hawkes models, request the Rcpp analytic gradient:
@@ -119,7 +119,21 @@ not derive or verify the formulas automatically. A component with
 `param = numeric(0)` needs no Jacobian. Shared parameter names receive the sum of
 all component contributions. Missing or malformed Jacobians produce an error.
 The analytic fit evaluates component functions in R and the likelihood and scores
-in Rcpp. Default fits and standalone `logLik()` retain the R implementation.
+in Rcpp. With the default `"auto"` engine, function-valued models retain the R
+likelihood. Parameter-only functions can also use C++ with the default numerical
+differentiation, without Jacobians:
+
+```r
+previous_engine <- options(emhawkes.engine = "cpp")
+fit_numeric <- hfit(h_fun, path$inter_arrival, path$type)
+options(previous_engine)
+```
+
+The functions must return plain numeric matrices of constant dimensions and be
+deterministic in `param`. This numerical path excludes `impact`, state-dependent
+baselines, mark densities and residual distributions. Supplied `grad` and `hess`
+are retained. Standalone `logLik()` keeps its numeric-only C++ contract; select
+the R engine when evaluating a restored function-valued model.
 
 Observed-state `impact` functions can use the analytic option with
 `jacobian = list(impact = impact_jac)`. They may depend on observed `N`, `Nc`,
@@ -134,7 +148,7 @@ core matrices used by the impact. The impact function keeps receiving its local
 parameters. See `?hfit` for an example and the callback contract. Callbacks that
 read latent intensities remain unsupported. Default fits retain the R path.
 
-For comparison or troubleshooting, set `options(emhawkes.engine = "r")` to use the R calculation, or `"auto"` to restore automatic selection. The development setting `"cpp"` reports unsupported features instead of falling back to R. Parameter-only functions use C++ through the analytic adapter described above. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.
+For comparison or troubleshooting, set `options(emhawkes.engine = "r")` to use the R calculation, or `"auto"` to restore automatic selection. The development setting `"cpp"` reports unsupported features instead of falling back to R. Parameter-only functions can use the numerical or analytic fitting adapters described above. Installing from source requires a C++ compiler and Rcpp; Windows source installations require Rtools.
 
 See the [basic vignette](https://ksublee.github.io/emhawkes/articles/example.html) and [extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html).
 

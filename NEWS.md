@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Allow parameter-only component functions to use the C++ likelihood in `hfit()` with `emhawkes.engine = "cpp"` and the default numerical differentiation. Require no Jacobians, retain supplied derivatives and the default Hessian, and keep automatic engine selection unchanged.
+
 * Support analytic gradients for observed-state `impact` functions with `jacobian$impact`. Preserve event timing, count paths, kernel mappings, and parameter sharing. Use reverse event-impact scores in Rcpp and reject latent-intensity dependencies explicitly. Keep default fitting unchanged.
 * Extend the analytic gradient to parameter-only `mu`, `alpha`, `beta`, and `eta` functions through `hfit(jacobian = ...)`. Accept constant or parameter-dependent Jacobians, preserve fixed entries and shared names, and validate dimensions and parameter names. Default fitting remains unchanged.
 * Add optional `hfit(gradient = "analytic")` for numeric Hawkes models. Compute likelihood and score together in Rcpp, preserve parameter sharing and fixed parameters, and differentiate automatic initial states. Keep numerical differentiation as the default and retain supplied derivatives.

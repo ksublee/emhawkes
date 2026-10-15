@@ -1,0 +1,9 @@
+"case","reference","coefficient_max_abs_difference","loglik_abs_difference","reference_code","cpp_code","reference_iterations","cpp_iterations","reference_nan_se","cpp_nan_se","se_max_relative_difference"
+"univariate_log","r_numeric",0,0,0,0,25,25,0,0,0
+"univariate_log","cran",2.33892153422843e-08,3.31965566147119e-11,0,0,25,25,0,0,0.144803825000751
+"bivariate_fixed_zero","r_numeric",0,0,0,0,35,35,0,0,0
+"bivariate_fixed_zero","cran",3.8041648586784e-07,7.36690708436072e-11,0,0,35,35,0,0,1.6177218362027
+"bivariate_shared_name","r_numeric",0,0,0,0,40,40,0,0,0
+"bivariate_shared_name","cran",3.55885828362545e-07,4.54747350886464e-12,0,0,40,40,0,0,0.523792849373983
+"bivariate_multi_kernel","r_numeric",0,0,0,0,63,63,0,0,0
+"bivariate_multi_kernel","cran",0.000260276949070715,7.39456754672574e-06,0,0,63,63,2,0,NA

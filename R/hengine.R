@@ -82,12 +82,13 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
 # Prepare the chain-rule adapter once. Component/Jacobian functions must be
 # deterministic functions of their named local parameter vector.
 hawkes_component_plan <- function(object, observation, parameter_map, jacobian, derivatives = TRUE) {
+  label <- if (derivatives) "Analytic gradient" else "C++ likelihood"
   component_names <- c("mu", "alpha", "beta", "eta")
   components <- parameter_map$components[component_names]
   functions <- names(components)[vapply(components, function(x) x$kind == "function", logical(1))]
   for (name in functions) {
     if (!identical(names(formals(components[[name]]$value)), "param")) {
-      stop("Analytic gradient requires ", name, " to have only the 'param' argument.", call. = FALSE)
+      stop(label, " requires ", name, " to have only the 'param' argument.", call. = FALSE)
     }
   }
   if (is.null(jacobian)) jacobian <- list()
@@ -113,14 +114,15 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
       value <- values[[name]]
       if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
           !identical(dim(value), shapes[[name]])) {
-        stop(name, " must return a plain numeric matrix of constant dimensions for the analytic gradient.", call. = FALSE)
+        stop(name, " must return a plain numeric matrix of constant dimensions for the ",
+             if (derivatives) "analytic gradient." else "C++ likelihood.", call. = FALSE)
       }
     }
     values
   }
   start_values <- validate_values(start_values)
   reason <- native_hawkes_reason(object, observation, start_values, allow_impact = TRUE)
-  if (!is.null(reason)) stop("Analytic gradient does not support ", reason, ".", call. = FALSE)
+  if (!is.null(reason)) stop(label, " does not support ", reason, ".", call. = FALSE)
   validate_jacobian <- function(value, name) {
     param_names <- names(components[[name]]$param)
     p <- length(param_names)
@@ -195,16 +197,23 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
         gap <- values$beta[1] - values$alpha[1]
         current_initial <- matrix((values$mu[1] * values$beta[1] / gap - values$mu[1]) / 2)
         if (!all(is.finite(current_initial))) {
+          if (!derivatives) return(invalid)
           stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
         }
       } else {
         branching <- values$alpha / values$beta
         inverse <- tryCatch(solve(diag(dimensions) - branching), error = function(e) NULL)
         if (is.null(inverse)) {
-          stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
+          if (derivatives) {
+            stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
+          }
+          # Match get_lambda0() when its multivariate solve is singular.
+          warning("Due to the singualr martrix in caculcation, set initial value of lambda to mu.")
+          current_initial <- matrix(0, dimensions, dimensions)
+        } else {
+          stationary <- inverse %*% values$mu
+          current_initial <- matrix(rep(stationary, dimensions), nrow = dimensions, byrow = TRUE) * values$alpha / values$beta
         }
-        stationary <- inverse %*% values$mu
-        current_initial <- matrix(rep(stationary, dimensions), nrow = dimensions, byrow = TRUE) * values$alpha / values$beta
       }
     }
     # Finite component values can still overflow the automatic initializer.
