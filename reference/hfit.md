@@ -261,13 +261,14 @@ differentiation, set `options(emhawkes.engine = "cpp")` before `hfit()`.
 No Jacobian is required. This option supports parameter-only `mu`,
 `alpha`, `beta`, and `eta` functions returning plain numeric matrices
 with constant dimensions. They must be deterministic functions of
-`param`, with captured values held fixed. Impacts, state-dependent
-baselines, mark densities and residual distributions are excluded from
-this numerical C++ path. Supplied `grad` and `hess` are retained.
-Standalone
+`param`, with captured values held fixed. Observed-state `impact`
+functions are also supported without Jacobians. State-dependent
+baselines, latent-intensity impacts, mark densities and residual
+distributions are excluded from this numerical C++ path. Supplied `grad`
+and `hess` are retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-continues to use the documented numeric-only C++ engine; use the R
-engine to evaluate a restored function-valued model.
+keeps its numeric-only C++ contract; use the R engine to evaluate a
+restored function-valued model.
 
 Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`,
 `type`, `inter_arrival`, and the resolved `mu`, `alpha`, and `beta`
@@ -279,17 +280,17 @@ type. The last event ends the likelihood window. Automatic
 initialization uses the existing `mu`/`alpha`/`beta` rule; the
 additional impact does not enter that rule.
 
-`jacobian$impact` is a matrix or a function with the same observed
-context. Its `param` argument receives the full named optimization
-vector, whereas the impact function itself receives its local `param`
-vector as before. Rows follow `as.vector(impact(...))`; columns must
-include every fitted parameter name, with zeros for no effect. Return
-the total derivative of the impact matrix, including any dependence
-through `mu`, `alpha`, or `beta`. Contributions for shared names belong
-in the same column. This convention differs from the local Jacobians for
-parameter-only components. A Jacobian is required even when the impact
-has no local parameters; a parameter-independent impact has a zero
-matrix.
+With `gradient = "analytic"`, `jacobian$impact` is a matrix or a
+function with the same observed context. Its `param` argument receives
+the full named optimization vector, whereas the impact function itself
+receives its local `param` vector as before. Rows follow
+`as.vector(impact(...))`; columns must include every fitted parameter
+name, with zeros for no effect. Return the total derivative of the
+impact matrix, including any dependence through `mu`, `alpha`, or
+`beta`. Contributions for shared names belong in the same column. This
+convention differs from the local Jacobians for parameter-only
+components. A Jacobian is required even when the impact has no local
+parameters; a parameter-independent impact has a zero matrix.
 
 Declare needed `N` and `Nc` arguments explicitly in the impact function,
 or supply these paths. Captured inputs must be fixed, and callbacks must
@@ -417,6 +418,10 @@ h_count <- new("hspec", mu = 0.3,
   impact = count_impact)
 # hfit(h_count, inter_arrival, gradient = "analytic",
 #      jacobian = list(impact = count_jac))
+# Or keep numerical differentiation without a Jacobian:
+# previous_engine <- options(emhawkes.engine = "cpp")
+# hfit(h_count, inter_arrival)
+# options(previous_engine)
 
 # example 2
 # \donttest{
@@ -464,18 +469,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42741   1.620   0.1053    
+#> mu1      0.69221    0.42494   1.629   0.1033    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04931   0.290   0.7719    
-#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
-#> alpha34  0.29568    0.11642   2.540   0.0111 *  
-#> beta1.1  0.10275    0.08867   1.159   0.2465    
-#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
-#> alpha1n  0.03456    0.06732   0.513   0.6077    
-#> alpha1w  0.04976    0.06843   0.727   0.4671    
-#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
-#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
+#> alpha12  0.01429    0.04916   0.291   0.7712    
+#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
+#> alpha34  0.29568    0.11634   2.542   0.0110 *  
+#> beta1.1  0.10275    0.08833   1.163   0.2447    
+#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
+#> alpha1n  0.03456    0.06731   0.513   0.6077    
+#> alpha1w  0.04976    0.06831   0.728   0.4664    
+#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
+#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------

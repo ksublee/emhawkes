@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Allow observed-state `impact` functions to use the C++ likelihood with
+  numerical differentiation, including count- and mark-dependent impacts
+  and Hawkes flocking. Require no Jacobians and reject latent-intensity
+  dependencies, including reads through `...`. Keep automatic engine
+  selection unchanged.
+
 - Allow parameter-only component functions to use the C++ likelihood in
   [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) with
   `emhawkes.engine = "cpp"` and the default numerical differentiation.

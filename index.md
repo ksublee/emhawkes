@@ -174,9 +174,12 @@ options(previous_engine)
 ```
 
 The functions must return plain numeric matrices of constant dimensions
-and be deterministic in `param`. This numerical path excludes `impact`,
-state-dependent baselines, mark densities and residual distributions.
-Supplied `grad` and `hess` are retained. Standalone
+and be deterministic in `param`. Observed-state `impact` functions also
+use this numerical path without Jacobians, including count- and
+mark-dependent impacts and the Hawkes flocking example. State-dependent
+baselines, latent-intensity impacts, mark densities and residual
+distributions remain unsupported. Supplied `grad` and `hess` are
+retained. Standalone
 [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
 keeps its numeric-only C++ contract; select the R engine when evaluating
 a restored function-valued model.
@@ -197,13 +200,17 @@ impact function keeps receiving its local parameters. See
 example and the callback contract. Callbacks that read latent
 intensities remain unsupported. Default fits retain the R path.
 
+See the [count, mark and flocking
+benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)
+for complete-fit timings and accuracy checks.
+
 For comparison or troubleshooting, set `options(emhawkes.engine = "r")`
 to use the R calculation, or `"auto"` to restore automatic selection.
 The development setting `"cpp"` reports unsupported features instead of
-falling back to R. Parameter-only functions can use the numerical or
-analytic fitting adapters described above. Installing from source
-requires a C++ compiler and Rcpp; Windows source installations require
-Rtools.
+falling back to R. Parameter-only functions and observed-state impacts
+can use the numerical or analytic fitting adapters described above.
+Installing from source requires a C++ compiler and Rcpp; Windows source
+installations require Rtools.
 
 See the [basic
 vignette](https://ksublee.github.io/emhawkes/articles/example.html) and

@@ -1227,7 +1227,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55fd6733b928>
+#> <bytecode: 0x55be2b242480>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1237,7 +1237,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55fd676e0f98>
+#> <bytecode: 0x55be2b895d68>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1247,7 +1247,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55fd67d24d70>
+#> <bytecode: 0x55be2bea5870>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1730,7 +1730,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55fd6e6874c8>
+#> <bytecode: 0x55be30fd0790>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1817,6 +1817,17 @@ summary(fit_fl)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+```
+
+This impact depends on observed event counts, so the C++ likelihood can
+be used with numerical differentiation. No Jacobian is needed; R still
+evaluates the impact.
+
+``` r
+
+previous_engine <- options(emhawkes.engine = "cpp")
+fit_fl_cpp <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
+options(previous_engine)
 ```
 
 ### Bid-ask price model
@@ -2009,7 +2020,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55fd670be070>
+#> <bytecode: 0x55be2c923df8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2254,7 +2265,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55fd6ba6ddc0>
+#> <environment: 0x55be2e3dc470>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2262,7 +2273,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55fd6ba6ddc0>
+#> <environment: 0x55be2e3dc470>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2271,7 +2282,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55fd6ba6ddc0>
+#> <environment: 0x55be2e3dc470>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2281,7 +2292,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55fd6ba6ddc0>
+#> <environment: 0x55be2e3dc470>
 ```
 
 The following histogram shows inter-arrival times from a model with
