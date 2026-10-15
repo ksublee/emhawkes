@@ -1,0 +1,5 @@
+"case","events","repetitions","r_seconds","auto_seconds","speedup"
+"univariate",2000,3,0.98,0.0700000000000001,14
+"multi_kernel",2000,3,6.45,0.31,20.8064516129032
+"flocking",1999,3,129.02,86.32,1.49467099165894
+"bid_ask_current",999,3,42.1,30.46,1.38214051214708

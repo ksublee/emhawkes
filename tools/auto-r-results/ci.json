@@ -1,0 +1,46 @@
+{
+  "jobs": [
+    {
+      "name": "ubuntu-latest / R devel",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-15T04:29:16Z",
+      "completedAt": "2026-10-15T04:32:34Z",
+      "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953/job/116247494183"
+    },
+    {
+      "name": "ubuntu-latest / R release",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-15T04:29:16Z",
+      "completedAt": "2026-10-15T04:32:10Z",
+      "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953/job/116247494345"
+    },
+    {
+      "name": "macos-latest / R release",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-15T04:29:23Z",
+      "completedAt": "2026-10-15T04:33:27Z",
+      "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953/job/116247494388"
+    },
+    {
+      "name": "ubuntu-latest / R oldrel-1",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-15T04:29:15Z",
+      "completedAt": "2026-10-15T04:31:20Z",
+      "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953/job/116247494415"
+    },
+    {
+      "name": "windows-latest / R release",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-15T04:29:15Z",
+      "completedAt": "2026-10-15T04:33:11Z",
+      "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953/job/116247494492"
+    }
+  ],
+  "headSha": "cd132769a44a5bc0edbf7f28addff2b5a2fe8a47",
+  "url": "https://github.com/ksublee/emhawkes/actions/runs/38681705953"
+}
