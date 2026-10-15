@@ -12,7 +12,7 @@ emhawkes 내부에 C++ 계산 엔진을 추가한다. 모형 지정, 모수 공�
 사용자 함수의 오류는 그대로 알린다. `cpp`는 지원 조건을 강제하고 `r`은
 기존 계산 경로를 선택한다. 단독 `logLik()`과 시뮬레이션의 범위는 유지한다.
 
-## 2026년 10월 11일 구현 현황
+## 2026년 10월 11일 구현 현황 (당시 기록)
 
 숫자형 `mu`, `alpha`, `beta`, `eta`를 사용하는 Hawkes 로그우도와 추론 엔진을 추가했다. 기존 `hfit()`의 후보 복원과 생성자 검증 뒤에 연결했다. 사건별 감쇠·적분·강도 갱신과 추론의 잔차 누적을 한 native 호출에서 처리한다. 일반 R 계산은 `loglik_hspec_r()`로 유지했다.
 
@@ -67,6 +67,8 @@ flowchart TD
 
 ## 모형별 실행 경로
 
+다음 표는 첫 엔진의 도입 범위다. 현재 추정 지원 범위는 위 자동 선택 확장과 아래 함수형·Bid-ask 절을 따른다.
+
 지원 여부는 함수의 겉모양이나 한 번의 출력값만으로 추측하지 않는다. 연산 종류별로 필요한 기능을 판정한다. 예를 들어 `rmark`는 시뮬레이션에 관계하지만 관측 자료의 로그우도 가속을 막을 이유는 없다.
 
 | 기능 | 첫 C++ 엔진 | 후속 적용 조건 |
@@ -83,9 +85,9 @@ flowchart TD
 | 강도 경로와 잔차 추론 | 지원 | 같은 수치 코어에서 경로와 잔차를 계산한다. |
 | 시뮬레이션과 사용자 `rmark` | 후속 단계 또는 R | 난수 재현성과 callback 순서를 별도로 검증한다. |
 
-개발 중에는 내부 실행 선택자로 `r`, `cpp`, `auto`를 비교한다. 강제 `cpp`에서 지원하지 않는 기능을 만나면 이유를 명확히 알린다. `auto`는 지원 범위 밖의 모형을 R로 보낸다. C++ 계산 오류나 DLL 로딩 오류를 잡아서 조용히 R로 재실행하지 않는다. 계산을 두 번 실행하면 callback의 부작용이나 난수 상태도 달라질 수 있다.
+`options(emhawkes.engine = ...)`으로 `auto`, `r`, `cpp`를 선택한다. 기본 `auto`도 지원하는 추정 모형에 C++를 선택한다. 강제 `cpp`에서 지원하지 않는 기능을 만나면 이유를 명확히 알린다. `auto`는 지원 범위 밖의 모형을 R로 보낸다. C++ 계산 오류나 DLL 로딩 오류를 잡아서 조용히 R로 재실행하지 않는다. 계산을 두 번 실행하면 callback의 부작용이나 난수 상태도 달라질 수 있다.
 
-공개 `engine` 인수가 필요해지면 별도 호환성 검토 후 도입한다. 현재 `hfit()`의 `...`는 최적화 인수 전달에 쓰이므로 여기에 실행 선택자를 임의로 섞지 않는다. 실행 경로 안내가 필요하면 `verbose = TRUE`에서 시작 시 한 번 출력한다.
+공개 `engine` 인수가 필요해지면 별도 호환성 검토 후 도입한다. 현재 `hfit()`의 `...`는 최적화 인수 전달에 쓰이므로 여기에 실행 선택자를 임의로 섞지 않는다. 실제 실행 경로와 전환 이유는 `fit_diagnostics(fit)$computation$engine`에서 확인한다.
 
 ## 엔진 입력과 메모리
 
@@ -176,17 +178,17 @@ The Jacobian adapter now supports parameter-only functions through `hfit(jacobia
 
 Observed-state impacts now use `jacobian$impact` with the full fitted parameter vector. The native engine returns reverse sensitivities to event jumps; R contracts them with the supplied total impact derivatives. Observed `N`, `Nc`, marks, types, and times remain fixed. See the [observed-impact report](observed-impact-results.md). State-dependent baselines remain a separate extension. Callbacks that use `lambda_component` also need their state Jacobian: propagate both the parameter and state effects through every event. The current independent-component sensitivities cannot cover that feedback. Parameter-dependent branch thresholds require separate differentiability checks.
 
-Keep these extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
+Keep these analytic-gradient extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 
 ### 수치미분을 유지한 함수형 모형의 C++ 추정
 
-`options(emhawkes.engine = "cpp")`를 지정하면 모수만 받는 핵심 성분 함수와 관측 자료에 의존하는 `impact`를 C++ 우도로 추정할 수 있다. Jacobian 없이 기존 수치미분과 기본 Hessian 계산을 유지한다. 사건 수·마크에 의존하는 모형과 Hawkes flocking을 포함한다. R에서 사건별 impact 행렬을 계산하고, C++에서 감쇠·적분·강도 재귀를 계산한다.
+기본 `auto`에서도 모수만 받는 핵심 성분 함수와 지원하는 관측 자료 의존 `impact`를 C++ 우도로 추정한다. `cpp`는 가속을 켜는 설정이 아니라 C++ 지원을 강제하는 설정이다. Jacobian 없이 기존 수치미분과 기본 Hessian 계산을 유지한다. 사건 수·마크에 의존하는 모형과 Hawkes flocking을 포함한다. R에서 사건별 impact 행렬을 계산하고, C++에서 감쇠·적분·강도 재귀를 계산한다.
 
-기본 `"auto"` 선택은 바꾸지 않는다. 강도 이력에 의존하는 impact, 상태 의존 baseline, mark 밀도와 잔차분포는 이 경로에서 지원하지 않는다. `...`를 통한 강도 이력 접근도 명시적으로 거부한다. 정확성과 CRAN 비교 결과는 [수치미분 impact 보고서](impact-numeric-results.md)에 기록한다.
+현재 `auto`는 아래 Bid-ask 절의 관측 baseline과 명시적인 강도 상태 인수를 사용하는 순차 impact도 지원한다. 지원하지 않는 상태 접근은 R로 전환한다. mark 밀도와 잔차분포는 R로 계산한다. 정확성과 CRAN 비교 결과는 [수치미분 impact 보고서](impact-numeric-results.md)에 기록한다.
 
 ### Bid-ask의 순차 impact와 관측 baseline
 
-수치미분 경로에서 관측 자료에 의존하는 `mu`와 강도 상태에 의존하는 impact를 지원한다. `mu`는 구간별로 일정한 차원 × 1 행렬을 반환한다. C++ 사건 루프에서 사건 직전 상태를 계산한 뒤 R impact를 호출하고, 해당 유형의 커널 열에 갱신량을 더한다. 해석적 gradient와 기본 `"auto"` 선택은 유지한다.
+수치미분 경로에서 관측 자료에 의존하는 `mu`와 강도 상태에 의존하는 impact를 지원한다. `mu`는 구간별로 일정한 차원 × 1 행렬을 반환한다. C++ 사건 루프에서 사건 직전 상태를 계산한 뒤 R impact를 호출하고, 해당 유형의 커널 열에 갱신량을 더한다. 해석적 gradient의 지원 범위는 유지하며, 지원하는 순차 모형은 기본 `auto`에도 포함한다.
 
 현재 성분만 필요하면 `lambda_component_n`을 사용한다. 전체 이력은 명시적으로 요청할 때만 할당하고, callback이 보관한 행렬은 이후 사건에서 변하지 않도록 복사한다. baseline의 강도 이력 의존성과 구간 내부 변화는 지원하지 않는다. [Bid-ask 검증과 속도 결과](bid-ask-numeric-results.md)를 참고한다.
 

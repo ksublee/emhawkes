@@ -1,5 +1,7 @@
 # Numerical C++ fitting for observed-state impacts
 
+> Historical benchmark: the explicit `"cpp"` setting below records the measured configuration. Current `hfit()` also selects C++ automatically for these supported models with the default `"auto"`; `"cpp"` requires support.
+
 `hfit()` now accepts observed-state `impact` functions with
 `options(emhawkes.engine = "cpp")` and the default numerical differentiation.
 No Jacobian is needed. R evaluates the event impacts; C++ evaluates the

@@ -411,7 +411,20 @@ evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
 distributions use R. Standalone likelihood evaluation of function-valued models
 and simulation use R.
-Use the `emhawkes.engine` option to compare the R and automatic calculations.
+The `emhawkes.engine` option has three settings:
+
+| Setting | Role |
+| --- | --- |
+| `"auto"` (default) | Select C++ for supported models and R otherwise. |
+| `"r"` | Force R for comparison or troubleshooting. |
+| `"cpp"` | Require C++ support and error on unsupported models. |
+
+Supported models receive acceleration with `"auto"`; setting `"cpp"` is unnecessary.
+Numerical differentiation remains the default. Analytic gradients require
+`gradient = "analytic"` and a supported specification. A custom `mylogLik`
+bypasses built-in engine selection.
+
+The following example compares standalone numeric likelihood calculations.
 This function restores the previous option after each call.
 
 ```{r engine-comparison, message=FALSE}
@@ -943,10 +956,8 @@ This impact depends on observed event counts, so automatic selection uses the
 C++ likelihood with numerical differentiation. No Jacobian is needed; R still
 evaluates the impact.
 
-```{r flocking-cpp-numeric, eval=FALSE}
-previous_engine <- options(emhawkes.engine = "cpp")
-fit_fl_cpp <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
-options(previous_engine)
+```{r flocking-engine}
+fit_diagnostics(fit_fl)$computation$engine
 ```
 
 ### Bid-ask price model
@@ -1111,15 +1122,11 @@ summary(mle_ba)
 
 Automatic selection uses the C++ likelihood for this observed baseline and
 sequential impact with numerical differentiation. The impact reads the current
-state before its jump. No Jacobian is required. The explicit engine setting below
-can be used to require C++ support.
+state before its jump. No Jacobian is required. Inspect the saved engine record
+to confirm which calculation was used and whether automatic selection fell back to R.
 
-```{r bid-ask-cpp-numeric, eval=FALSE}
-previous_engine <- options(emhawkes.engine = "cpp")
-mle_ba_cpp <- hfit(h_ba, hr_ba$inter_arrival, hr_ba$type, hr_ba$mark,
-                   lambda_component0 = matrix(1, 4, 4),
-                   final_hessian = "stable")
-options(previous_engine)
+```{r bid-ask-engine}
+fit_diagnostics(mle_ba)$computation$engine
 ```
 
 ## Point processes with flexible residuals

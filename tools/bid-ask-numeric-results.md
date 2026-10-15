@@ -1,5 +1,7 @@
 # Numerical C++ fitting for the bid-ask model
 
+> Historical benchmark: the explicit `"cpp"` setting below records the measured configuration. Current `hfit()` also selects C++ automatically for these supported models with the default `"auto"`; `"cpp"` requires support.
+
 `hfit()` supports the bid-ask price model with `options(emhawkes.engine = "cpp")`
 and the default numerical differentiation. No Jacobian is needed. Default
 `"auto"` engine selection and the default maxLik Hessian are unchanged.

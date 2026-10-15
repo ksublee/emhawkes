@@ -87,7 +87,13 @@ NULL
 #' entries that use it.
 #'
 #' The built-in likelihood uses the calculation engine selected by
-#' `options(emhawkes.engine = "auto")`; see [logLik()] for supported models.
+#' `options(emhawkes.engine = "auto")` by default. It selects C++ for supported
+#' numeric and callback models described below, and R otherwise. Setting `"r"`
+#' forces the R likelihood for comparison or troubleshooting. Setting `"cpp"`
+#' requires C++ support and errors on unsupported models; it is not needed for
+#' automatic acceleration. Inspect `fit_diagnostics(fit)$computation$engine`
+#' for actual engines and fallback reasons. A custom `mylogLik` bypasses this
+#' selection. Standalone [logLik()] supports fewer C++ models than `hfit()`.
 #' With `gradient = "analytic"`, Rcpp computes the likelihood and its gradient
 #' together and reuses the result at the same parameter vector. Matrix scores are
 #' summed according to the saved parameter map. Automatic initial states include
@@ -120,7 +126,7 @@ NULL
 #' Observed baselines and sequential state-dependent impacts are also supported
 #' as described below. Mark densities and residual distributions are excluded.
 #' Supplied `grad` and `hess` are retained. Standalone `logLik()` keeps its numeric-only C++ contract;
-#' use the R engine to evaluate a restored function-valued model. Automatic
+#' automatic selection uses R to evaluate a restored function-valued model. Automatic
 #' fallback through `...` assumes deterministic callbacks with fixed captures;
 #' it may evaluate a callback again when an unsupported state read is detected.
 #'
@@ -242,10 +248,8 @@ NULL
 #' # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
 #' #      jacobian = list(alpha = alpha_jac))
 #'
-#' # C++ likelihood with the default numerical differentiation; no Jacobian:
-#' # previous_engine <- options(emhawkes.engine = "cpp")
+#' # Default auto selects C++ with numerical differentiation; no Jacobian:
 #' # fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
-#' # options(previous_engine)
 #'
 #' # Observed counts can change the excitation after an event.
 #' count_impact <- function(param = c(a = 0.2), n, N, ...) {
@@ -262,9 +266,7 @@ NULL
 #' # hfit(h_count, inter_arrival, gradient = "analytic",
 #' #      jacobian = list(impact = count_jac))
 #' # Or keep numerical differentiation without a Jacobian:
-#' # previous_engine <- options(emhawkes.engine = "cpp")
 #' # hfit(h_count, inter_arrival)
-#' # options(previous_engine)
 #'
 #' # example 2
 #' \donttest{

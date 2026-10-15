@@ -1,5 +1,7 @@
 # Numerical fitting for parameter-only functions
 
+> Historical benchmark: the explicit `"cpp"` setting below records the measured configuration. Current `hfit()` also selects C++ automatically for these supported models with the default `"auto"`; `"cpp"` requires support.
+
 `hfit()` can now use the existing native Hawkes objective with numerical
 differentiation when `options(emhawkes.engine = "cpp")` is selected. No
 component Jacobians are needed. `mu`, `alpha`, `beta` and `eta` functions must

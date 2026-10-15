@@ -1,12 +1,14 @@
 # emhawkes 0.9.9
 
+* Align engine documentation and examples: `auto` accelerates supported fits by default, `r` forces the reference likelihood, and `cpp` requires native support. Distinguish standalone likelihood support and explicit analytic gradients.
+
 * Record actual likelihood engines, auto fallback reasons, optimizer gradient sources and final-Hessian methods in `fit_diagnostics(fit)$computation`. Preserve the curvature diagnostics and saved-fit compatibility; report unrecorded methods without inferring them from current options.
 
 * Extend automatic engine selection in `hfit()` to supported parameter-only functions, observed baselines, and observed or sequential state-dependent impacts. Keep numerical differentiation and Hessian defaults. Unsupported specifications use R; forced C++ and user callback errors remain explicit. Standalone likelihood evaluation and simulation are unchanged.
 
-* Support numerical C++ fitting for observed baselines and sequential state-dependent impacts, including the bid-ask price model. Preserve pre-jump state timing and history layout, protect retained callback snapshots, and keep analytic gradients and automatic engine selection unchanged.
-* Allow observed-state `impact` functions to use the C++ likelihood with numerical differentiation, including count- and mark-dependent impacts and Hawkes flocking. Require no Jacobians and reject latent-intensity dependencies, including reads through `...`. Keep automatic engine selection unchanged.
-* Allow parameter-only component functions to use the C++ likelihood in `hfit()` with `emhawkes.engine = "cpp"` and the default numerical differentiation. Require no Jacobians, retain supplied derivatives and the default Hessian, and keep automatic engine selection unchanged.
+* Support numerical C++ fitting for observed baselines and sequential state-dependent impacts, including the bid-ask price model. Preserve pre-jump state timing and history layout, protect retained callback snapshots, and keep analytic gradients unchanged. These adapters are now included in automatic engine selection.
+* Allow observed-state `impact` functions to use the C++ likelihood with numerical differentiation, including count- and mark-dependent impacts and Hawkes flocking. Require no Jacobians and reject latent-intensity dependencies, including reads through `...`. These adapters are now included in automatic engine selection.
+* Allow parameter-only component functions to use the C++ likelihood in `hfit()` with `emhawkes.engine = "cpp"` and the default numerical differentiation. Require no Jacobians, retain supplied derivatives and the default Hessian. Supported fitting adapters now also use C++ with automatic engine selection.
 
 * Support analytic gradients for observed-state `impact` functions with `jacobian$impact`. Preserve event timing, count paths, kernel mappings, and parameter sharing. Use reverse event-impact scores in Rcpp and reject latent-intensity dependencies explicitly. Keep default fitting unchanged.
 * Extend the analytic gradient to parameter-only `mu`, `alpha`, `beta`, and `eta` functions through `hfit(jacobian = ...)`. Accept constant or parameter-dependent Jacobians, preserve fixed entries and shared names, and validate dimensions and parameter names. Default fitting remains unchanged.

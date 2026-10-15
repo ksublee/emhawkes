@@ -82,13 +82,17 @@ If initial intensity components are omitted, they are determined from the
 supplied model. For a fitted model, use \code{\link[=fitted_hspec]{fitted_hspec()}} with the arguments
 returned by \code{\link[=fit_initial_state]{fit_initial_state()}} to preserve the fit's initialization setting.
 
-Numeric Hawkes specifications use the Rcpp engine. Function-valued parameters,
+With the default automatic selection, standalone \code{logLik()} uses the Rcpp
+engine for numeric Hawkes specifications. Function-valued parameters,
 impact functions, mark densities, residual distributions, and classed numeric
 inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
 do not by themselves prevent numeric likelihood acceleration.
 Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
 automatic selection, or \code{"cpp"} to require a supported numeric specification.
-The engine supports unequal decay rates within a row and multi-kernel mappings.
+Setting \code{"cpp"} is not needed for automatic acceleration. The engine supports
+unequal decay rates within a row and multi-kernel mappings. During fitting,
+\code{\link[=hfit]{hfit()}} also supports C++ adapters for the callback models documented there.
+Engine selection does not change simulation or enable analytic gradients.
 }
 \seealso{
 \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}},

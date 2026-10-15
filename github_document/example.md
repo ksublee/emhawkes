@@ -698,12 +698,26 @@ use `...` to receive the remaining context.
 
 ### Calculation engines
 
-Numeric Hawkes specifications use the Rcpp engine automatically for
-likelihood evaluation and inference. Function components and
-residual-distribution models use the R implementation. Simulation uses
-R. Use the `emhawkes.engine` option to compare the R and automatic
-calculations. This function restores the previous option after each
-call.
+Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
+evaluation and inference. During fitting, supported function components and
+impacts also use C++ automatically. Unsupported specifications and residual
+distributions use R. Standalone likelihood evaluation of function-valued models
+and simulation use R.
+The `emhawkes.engine` option has three settings:
+
+| Setting | Role |
+| --- | --- |
+| `"auto"` (default) | Select C++ for supported models and R otherwise. |
+| `"r"` | Force R for comparison or troubleshooting. |
+| `"cpp"` | Require C++ support and error on unsupported models. |
+
+Supported models receive acceleration with `"auto"`; setting `"cpp"` is unnecessary.
+Numerical differentiation remains the default. Analytic gradients require
+`gradient = "analytic"` and a supported specification. A custom `mylogLik`
+bypasses built-in engine selection.
+
+The following example compares standalone numeric likelihood calculations.
+This function restores the previous option after each call.
 
 ``` r
 engine_loglik <- function(engine) {
