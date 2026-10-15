@@ -1,5 +1,8 @@
 # Bid-ask likelihood profiling
 
+> Historical profile at `63b3af7`. Updated measurements and baseline dispatch
+> improvements are described in [the callback overhead report](callback-overhead-results.md).
+
 The main cost is evaluating R callbacks, rather than the exponential recursion.
 The package calculation paths and default engine selection are unchanged.
 

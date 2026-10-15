@@ -1,0 +1,17 @@
+case,events,infer,tag,allocated_bytes,allocations,max_R_heap_MiB,exact
+bid_ask,1000,FALSE,old,507168,56,91.2,TRUE
+bid_ask,1000,TRUE,old,1028208,67,91.9,TRUE
+bid_ask,10000,FALSE,old,5043168,56,99.5,TRUE
+bid_ask,10000,TRUE,old,10244208,67,103.4,TRUE
+bid_ask_current,1000,FALSE,old,378992,55,92,TRUE
+bid_ask_current,1000,TRUE,old,1028208,67,89.5,TRUE
+bid_ask_current,10000,FALSE,old,3762992,55,99.4,TRUE
+bid_ask_current,10000,TRUE,old,10244208,67,101,TRUE
+bid_ask,1000,FALSE,new,507168,56,85.4,TRUE
+bid_ask,1000,TRUE,new,1028208,67,86.1,TRUE
+bid_ask,10000,FALSE,new,5043168,56,100,TRUE
+bid_ask,10000,TRUE,new,10244208,67,102.5,TRUE
+bid_ask_current,1000,FALSE,new,378992,55,86.1,TRUE
+bid_ask_current,1000,TRUE,new,1028208,67,83.6,TRUE
+bid_ask_current,10000,FALSE,new,3762992,55,99.4,TRUE
+bid_ask_current,10000,TRUE,new,10244208,67,100.8,TRUE

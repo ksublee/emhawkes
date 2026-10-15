@@ -1,0 +1,17 @@
+"case","mode","tag","seconds"
+"bid_ask","fit","new",27.09
+"bid_ask_current","fit","new",25.67
+"bid_ask","inference","new",0.0515
+"bid_ask_current","inference","new",0.0485
+"bid_ask","loglik","new",0.0455
+"bid_ask_current","loglik","new",0.039
+"bid_ask","objective","new",0.0235
+"bid_ask_current","objective","new",0.0225
+"bid_ask","fit","old",30.53
+"bid_ask_current","fit","old",28.95
+"bid_ask","inference","old",0.059
+"bid_ask_current","inference","old",0.057
+"bid_ask","loglik","old",0.06
+"bid_ask_current","loglik","old",0.058
+"bid_ask","objective","old",0.027
+"bid_ask_current","objective","old",0.0255

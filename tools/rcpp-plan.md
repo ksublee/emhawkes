@@ -194,6 +194,8 @@ Keep these analytic-gradient extensions opt-in until their derivatives, likeliho
 
 현재 성분만 필요하면 `lambda_component_n`을 사용한다. 전체 이력은 명시적으로 요청할 때만 할당하고, callback이 보관한 행렬은 이후 사건에서 변하지 않도록 복사한다. baseline의 강도 이력 의존성과 구간 내부 변화는 지원하지 않는다. [Bid-ask 검증과 속도 결과](bid-ask-numeric-results.md)를 참고한다.
 
+관측 baseline을 평가하는 반복문과 호출 인자 준비도 C++로 옮겼다. 사용자 함수는 R에서 사건별로 실행하며 기본 인자와 호출 횟수를 유지한다. 기본 인자를 모수로 바인딩하는 기존 구조는 유지한다. [호출 비용과 추정 시간 검증](callback-overhead-results.md)을 참고한다.
+
 ### 독립 우도와 추론의 확장
 
 `logLik()`의 C++ 경로를 모수 전용 함수, 관측 impact, 관측 baseline과 순차 impact 순서로 확장했다. 복원한 `hspec`도 같은 경로를 사용한다. 각 함수의 기본 모수는 독립적으로 유지하며 추정의 모수 공유 규칙을 적용하지 않는다. 해석적 gradient의 범위는 바꾸지 않는다.

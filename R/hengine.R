@@ -129,16 +129,13 @@ standalone_observed_impacts <- function(object, observation, values) {
 
 # Observed baselines retain their function in the callback context. Only the
 # initial numeric value and the interval path are supplied to the native kernel.
-standalone_baseline_call <- function(object, observation, values) {
+standalone_baseline_arguments <- function(object, observation, values) {
   plan <- model_callback_plans(object)$mu
   unavailable <- quote(stop_cpp_unsupported("Observed baselines cannot read latent intensity states."))
-  context <- c(list(n = 1L), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
+  context <- c(list(n = 1), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
     list(lambda = unavailable, lambda_component = unavailable, lambda_component_n = unavailable),
     values[c("mu", "alpha", "beta")])
-  function(n) {
-    context$n <- n
-    call_component(values$mu, plan, context)
-  }
+  context[plan]
 }
 
 validate_standalone_mu <- function(value, dimensions) {
@@ -159,8 +156,8 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
   initial <- NULL
   result <- tryCatch({
     observed_mu <- is.function(values$mu)
-    mu_call <- if (observed_mu) standalone_baseline_call(object, observation, values) else NULL
-    mu0 <- if (observed_mu) validate_standalone_mu(mu_call(1), dimensions) else values$mu
+    mu_arguments <- if (observed_mu) standalone_baseline_arguments(object, observation, values) else NULL
+    mu0 <- if (observed_mu) validate_standalone_mu(do.call(values$mu, mu_arguments), dimensions) else values$mu
     if (is.null(lambda_component0)) {
       if (length(object@type_col_map)) stop("In this model, please provide lambda_component0.")
       if (show_initial_message) {
@@ -174,16 +171,11 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
     kernels <- ncol(values$beta)
     initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
     baseline <- if (observed_mu) {
-      path <- matrix(0, dimensions, size + as.integer(infer && size > 1L))
-      path[, 1L] <- mu0
-      if (size > 1L) for (n in seq.int(2L, size + 1L)) {
-        value <- mu_call(as.double(n))
-        # R always evaluates the terminal next baseline. Without inference its
-        # value is unused, so do not impose a new shape/finite requirement on it.
-        if (n > size && !infer) next
-        path[, n] <- validate_standalone_mu(value, dimensions)
-      }
-      path
+      path <- hawkes_baseline_cpp(values$mu, mu_arguments, dimensions, size,
+        initial = mu0, infer = infer, integer_n = FALSE)
+      if (!is.null(path$unsupported) || isTRUE(path$invalid))
+        stop_cpp_unsupported("Observed mu must return a finite nonnegative plain numeric dimensions-by-one matrix.")
+      path$path
     } else NULL
     mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
     mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
@@ -254,16 +246,6 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
       c("param", "n", "mark", "type", "inter_arrival", "N", "Nc", "lambda",
         "lambda_component", "lambda_component_n", "mu", "alpha", "beta"), "mu")
     if (!components$mu$has_param) mu_args <- setdiff(mu_args, "param")
-    mu_invoke <- prepare_component_call(setdiff(mu_args, "param"))
-    call <- body(mu_invoke)
-    state_positions <- which(names(call)[-(1:3)] %in% c("lambda", "lambda_component", "lambda_component_n"))
-    if (length(state_positions)) {
-      # Force the observed prefix, leaving unavailable states lazy inside ... .
-      call[[2L]] <- as.integer(min(state_positions) - 1L)
-      for (index in state_positions + 3L) call[[index]] <- quote(stop_cpp_unsupported(
-        "Observed baselines cannot read latent intensity states."))
-      body(mu_invoke) <- call
-    }
   }
   for (name in setdiff(functions, if (observed_mu) "mu")) {
     if (!identical(names(formals(components[[name]]$value)), "param")) {
@@ -336,20 +318,12 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
   list(start = start_values, functions = functions,
     baseline = if (observed_mu) function(param, values) {
       values$mu <- restore_parameters(parameter_map, param)$mu
-      size <- length(observation$inter_arrival)
-      path <- matrix(0, object@dimens, size)
-      for (n in seq_len(size + as.integer(size > 1L))) {
-        value <- mu_invoke(values$mu, n, observation$mark, observation$type,
-          observation$inter_arrival, observation$N, observation$Nc, NULL, NULL,
-          NULL, values$mu, values$alpha, values$beta)
-        if (n > size) next # The R likelihood also calls the terminal next baseline.
-        if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
-            !identical(dim(value), c(as.integer(object@dimens), 1L)))
-          stop_cpp_unsupported("Observed mu must return a plain numeric dimensions-by-one matrix.")
-        if (any(!is.finite(value)) || any(value < 0)) return(NULL)
-        path[, n] <- value
-      }
-      path
+      context <- mu_context(param, values)[setdiff(mu_args, "param")]
+      path <- hawkes_baseline_cpp(values$mu, context, object@dimens,
+        length(observation$inter_arrival))
+      if (!is.null(path$unsupported)) stop_cpp_unsupported(path$unsupported)
+      if (isTRUE(path$invalid)) return(NULL)
+      path$path
     } else NULL,
     values = function(param) validate_values(values_at(param)),
     jacobian = function(name, param) {

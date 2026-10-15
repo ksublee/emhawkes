@@ -10,6 +10,22 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// hawkes_baseline_cpp
+Rcpp::List hawkes_baseline_cpp(Rcpp::Function callback, Rcpp::List arguments, int dimensions, int size, Rcpp::Nullable<Rcpp::NumericMatrix> initial, bool infer, bool integer_n);
+RcppExport SEXP _emhawkes_hawkes_baseline_cpp(SEXP callbackSEXP, SEXP argumentsSEXP, SEXP dimensionsSEXP, SEXP sizeSEXP, SEXP initialSEXP, SEXP inferSEXP, SEXP integer_nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type arguments(argumentsSEXP);
+    Rcpp::traits::input_parameter< int >::type dimensions(dimensionsSEXP);
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type initial(initialSEXP);
+    Rcpp::traits::input_parameter< bool >::type infer(inferSEXP);
+    Rcpp::traits::input_parameter< bool >::type integer_n(integer_nSEXP);
+    rcpp_result_gen = Rcpp::wrap(hawkes_baseline_cpp(callback, arguments, dimensions, size, initial, infer, integer_n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // hawkes_loglik_cpp
 Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta, Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient, Rcpp::Nullable<Rcpp::NumericMatrix> impact, Rcpp::Nullable<Rcpp::Function> impact_callback, bool keep_lambda, bool keep_components, Rcpp::Nullable<Rcpp::NumericMatrix> baseline, Rcpp::Nullable<Rcpp::List> impact_arguments);
 RcppExport SEXP _emhawkes_hawkes_loglik_cpp(SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP etaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP inferSEXP, SEXP gradientSEXP, SEXP impactSEXP, SEXP impact_callbackSEXP, SEXP keep_lambdaSEXP, SEXP keep_componentsSEXP, SEXP baselineSEXP, SEXP impact_argumentsSEXP) {
@@ -38,6 +54,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_emhawkes_hawkes_baseline_cpp", (DL_FUNC) &_emhawkes_hawkes_baseline_cpp, 7},
     {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 17},
     {NULL, NULL, 0}
 };

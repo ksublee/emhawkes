@@ -1,0 +1,6 @@
+"file","md5"
+"R/hengine.R","7b2b256d2bac59f808e558a93a95536f"
+"R/RcppExports.R","c63c6712172fc23fcdf19516997efd2e"
+"src/hawkes_baseline.cpp","45baf3e937c3f3ca7ca4b5f43b3049ac"
+"src/RcppExports.cpp","f645944d6be6cd17c7fca0aa52f231e4"
+"src/hawkes_loglik.cpp","2eb86f2135b4434bcdc8e2aa76bd60bf"

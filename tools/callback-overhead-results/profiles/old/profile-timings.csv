@@ -1,0 +1,5 @@
+"case","mode","evaluations","seconds"
+"bid_ask_current","objective",100,6.56
+"bid_ask_current","loglik",100,6.81
+"bid_ask_current","inference",100,6.94
+"bid_ask_current","fit",1,29.9
