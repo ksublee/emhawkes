@@ -262,7 +262,16 @@ Fixed entries have zero derivative. Components with <code>param = numeric(0)</co
 no Jacobian. Contributions for shared parameter names are added across components.
 Missing or malformed Jacobians produce an error. For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
-scores in Rcpp. Default fitting and standalone <code><a href="logLik.html">logLik()</a></code> still use the R path.</p>
+scores in Rcpp. With the default <code>emhawkes.engine = "auto"</code>, these functions
+still use the R likelihood. To use C++ with numerical differentiation, set
+<code>options(emhawkes.engine = "cpp")</code> before <code>hfit()</code>. No Jacobian is required.
+This option supports parameter-only <code>mu</code>, <code>alpha</code>, <code>beta</code>, and <code>eta</code> functions
+returning plain numeric matrices with constant dimensions. They must be
+deterministic functions of <code>param</code>, with captured values held fixed.
+Impacts, state-dependent baselines, mark densities and residual distributions
+are excluded from this numerical C++ path. Supplied <code>grad</code> and <code>hess</code> are
+retained. Standalone <code><a href="logLik.html">logLik()</a></code> continues to use the documented numeric-only
+C++ engine; use the R engine to evaluate a restored function-valued model.</p>
 <p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,
 <code>inter_arrival</code>, and the resolved <code>mu</code>, <code>alpha</code>, and <code>beta</code> matrices.
 They return a finite, plain numeric matrix with the kernel dimensions. As in the R
@@ -371,6 +380,11 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-in"><span><span class="va">h_fun</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha_fun</span>, beta <span class="op">=</span> <span class="va">beta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",</span></span></span>
 <span class="r-in"><span><span class="co">#      jacobian = list(alpha = alpha_jac))</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># C++ likelihood with the default numerical differentiation; no Jacobian:</span></span></span>
+<span class="r-in"><span><span class="co"># previous_engine &lt;- options(emhawkes.engine = "cpp")</span></span></span>
+<span class="r-in"><span><span class="co"># fit_fun &lt;- hfit(h_fun, res$inter_arrival, res$type)</span></span></span>
+<span class="r-in"><span><span class="co"># options(previous_engine)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Observed counts can change the excitation after an event.</span></span></span>
 <span class="r-in"><span><span class="va">count_impact</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>, <span class="va">n</span>, <span class="va">N</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span></span>
