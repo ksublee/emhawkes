@@ -702,9 +702,9 @@ Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
 evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
 distributions use R. Standalone likelihood and inference also support
-parameter-only component functions returning plain numeric matrices and
-observed-state impacts. Observed baselines and latent-state impacts use R for
-standalone evaluation. Simulation uses R.
+parameter-only component functions returning plain numeric matrices, observed
+baselines, and observed or sequential state-dependent impacts. Baselines
+that depend on latent intensities use R. Simulation uses R.
 The `emhawkes.engine` option has three settings:
 
 | Setting | Role |
@@ -2081,6 +2081,17 @@ summary(mle_ba)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
+```
+
+Automatic selection also uses C++ when replaying this fitted model's likelihood,
+intensity paths, and residuals. Use its saved initialization:
+
+``` r
+replayed_ba <- do.call(logLik, c(list(object = fitted_hspec(mle_ba),
+  inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, mark = hr_ba$mark,
+  infer = TRUE), fit_initial_state(mle_ba)))
+stopifnot(isTRUE(all.equal(unname(replayed_ba$loglikelihood),
+  as.numeric(mle_ba$maximum), tolerance = 1e-8)))
 ```
 
 ## Point processes with flexible residuals

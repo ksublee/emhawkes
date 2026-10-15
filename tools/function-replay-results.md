@@ -1,7 +1,8 @@
 # Parameter-only standalone likelihood and inference
 
 > Stage 1 measurement snapshot. Later observed-impact support is described in
-> [the stage 2 report](observed-replay-results.md) and current `logLik()` help.
+> [the stage 2 report](observed-replay-results.md). Observed baselines and state
+> impacts are covered by [the stage 3 report](state-replay-results.md).
 
 Stage 1 extends automatic standalone `logLik()` and `infer = TRUE` to `mu`,
 `alpha`, `beta` and `eta` functions whose sole argument is `param` and whose

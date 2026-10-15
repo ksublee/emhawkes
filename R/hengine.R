@@ -50,8 +50,9 @@ record_fit_engine <- function(execution, engine, reason = NULL) {
 # Inspect capabilities without evaluating a user function.
 native_hawkes_reason <- function(object, observation,
     values = list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta),
-    allow_impact = FALSE) {
-  if (any(vapply(values, is.function, logical(1)))) return("function-valued parameters")
+    allow_impact = FALSE, allow_baseline = FALSE) {
+  functions <- vapply(values, is.function, logical(1))
+  if (any(functions & !(names(values) == "mu" & allow_baseline))) return("function-valued parameters")
   if (!is.null(object@impact) && !allow_impact) return("a user-defined impact function")
   if (!is.null(object@dmark)) return("a mark density function")
   if (!is.null(object@dresidual)) return("a residual distribution")
@@ -69,14 +70,15 @@ native_hawkes_reason <- function(object, observation,
   if (length(dimensions) != 1L || !is.finite(dimensions) || dimensions < 1 ||
       dimensions != floor(dimensions) || length(shape) != 2L ||
       shape[1] != dimensions || shape[2] < 1L ||
-      !((is.matrix(values$mu) && identical(dim(values$mu), c(as.integer(dimensions), 1L))) ||
+      !((allow_baseline && is.function(values$mu)) ||
+        (is.matrix(values$mu) && identical(dim(values$mu), c(as.integer(dimensions), 1L))) ||
         (dimensions == 1 && is.numeric(values$mu) && is.null(dim(values$mu)) && length(values$mu) == 1L)) ||
       !identical(dim(values$alpha), shape) ||
       (!is.null(values$eta) && !identical(dim(values$eta), shape))) {
     return("inconsistent numeric parameter dimensions")
   }
-  if (any(vapply(values, function(value) any(!is.finite(value)), logical(1))) ||
-      any(values$beta <= 0) || any(values$mu < 0)) return("invalid numeric parameters")
+  if (any(vapply(values[!functions], function(value) any(!is.finite(value)), logical(1))) ||
+      any(values$beta <= 0) || (!is.function(values$mu) && any(values$mu < 0))) return("invalid numeric parameters")
   if (is.null(object@type_col_map)) {
     if (shape[2] != dimensions) return("a missing kernel column mapping")
   } else {
@@ -90,16 +92,15 @@ native_hawkes_reason <- function(object, observation,
   NULL
 }
 
-# Standalone replay resolves parameter-only core functions and observed impacts.
+# Standalone replay resolves core functions, observed baselines and state impacts.
 # Reject unsupported features before evaluating user callbacks.
 standalone_hawkes_supported <- function(object, observation) {
   values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
   functions <- vapply(values, is.function, logical(1))
   (any(functions) || !is.null(object@impact)) &&
-    (is.null(object@impact) || !any(names(formals(object@impact)) %in%
-      c("lambda", "lambda_component", "lambda_component_n"))) &&
     is.null(auto_hawkes_fit_reason(object, observation)) &&
-    all(vapply(values[functions], function(fun) identical(names(formals(fun)), "param"), logical(1)))
+    all(vapply(values[functions & names(values) != "mu"],
+      function(fun) identical(names(formals(fun)), "param"), logical(1)))
 }
 
 # Replay uses each function's own defaults; no fitted-parameter map or sharing
@@ -126,38 +127,94 @@ standalone_observed_impacts <- function(object, observation, values) {
   result
 }
 
+# Observed baselines retain their function in the callback context. Only the
+# initial numeric value and the interval path are supplied to the native kernel.
+standalone_baseline_call <- function(object, observation, values) {
+  plan <- model_callback_plans(object)$mu
+  unavailable <- quote(stop_cpp_unsupported("Observed baselines cannot read latent intensity states."))
+  context <- c(list(n = 1L), observation[c("mark", "type", "inter_arrival", "N", "Nc")],
+    list(lambda = unavailable, lambda_component = unavailable, lambda_component_n = unavailable),
+    values[c("mu", "alpha", "beta")])
+  function(n) {
+    context$n <- n
+    call_component(values$mu, plan, context)
+  }
+}
+
+validate_standalone_mu <- function(value, dimensions) {
+  if (!is.numeric(value) || !is.matrix(value) || is.object(value) ||
+      !identical(dim(value), c(as.integer(dimensions), 1L)) ||
+      any(!is.finite(value)) || any(value < 0)) {
+    stop_cpp_unsupported("Observed mu must return a finite nonnegative plain numeric dimensions-by-one matrix.")
+  }
+  value
+}
+
 loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
                              show_initial_message, values = NULL, execution = NULL) {
   if (is.null(values)) values <- list(mu = object@mu, alpha = object@alpha,
                                     beta = object@beta, eta = object@eta)
-  if (is.null(lambda_component0)) {
-    if (length(object@type_col_map)) stop("In this model, please provide lambda_component0.")
-    if (show_initial_message) {
-      message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
-    }
-    lambda_component0 <- get_lambda0(object,
-      mark = observation$mark, type = observation$type,
-      inter_arrival = observation$inter_arrival, N = observation$N, Nc = observation$Nc,
-      mu = values$mu, alpha = values$alpha, beta = values$beta)
-  }
   dimensions <- object@dimens
-  kernels <- ncol(values$beta)
-  initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
-  mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
-  mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
-  types <- observation$type
-  if (types[1] != 0) types[1] <- 0L
-  impacts <- if (!is.null(object@impact)) tryCatch(
-    standalone_observed_impacts(object, observation, values),
-    emhawkes_cpp_unsupported = function(e) {
-      # Preserve the resolved automatic initial state on capability fallback.
-      e$initial <- initial
-      stop(e)
-    }) else NULL
-  record_fit_engine(execution, "cpp")
-  result <- hawkes_loglik_cpp(observation$inter_arrival, as.integer(types),
-    observation$mark, as.numeric(values$mu), values$alpha, values$beta, values$eta,
-    initial, mapping, infer, impact = impacts)
+  size <- length(observation$inter_arrival)
+  initial <- NULL
+  result <- tryCatch({
+    observed_mu <- is.function(values$mu)
+    mu_call <- if (observed_mu) standalone_baseline_call(object, observation, values) else NULL
+    mu0 <- if (observed_mu) validate_standalone_mu(mu_call(1), dimensions) else values$mu
+    if (is.null(lambda_component0)) {
+      if (length(object@type_col_map)) stop("In this model, please provide lambda_component0.")
+      if (show_initial_message) {
+        message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+      }
+      lambda_component0 <- get_lambda0(object,
+        mark = observation$mark, type = observation$type,
+        inter_arrival = observation$inter_arrival, N = observation$N, Nc = observation$Nc,
+        mu = values$mu, alpha = values$alpha, beta = values$beta)
+    }
+    kernels <- ncol(values$beta)
+    initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
+    baseline <- if (observed_mu) {
+      path <- matrix(0, dimensions, size + as.integer(infer && size > 1L))
+      path[, 1L] <- mu0
+      if (size > 1L) for (n in seq.int(2L, size + 1L)) {
+        value <- mu_call(as.double(n))
+        # R always evaluates the terminal next baseline. Without inference its
+        # value is unused, so do not impose a new shape/finite requirement on it.
+        if (n > size && !infer) next
+        path[, n] <- validate_standalone_mu(value, dimensions)
+      }
+      path
+    } else NULL
+    mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
+    mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
+    types <- observation$type
+    if (types[1] != 0) types[1] <- 0L
+    state <- c("lambda", "lambda_component", "lambda_component_n")
+    sequential <- !is.null(object@impact) && any(names(formals(object@impact)) %in% state)
+    plan <- if (sequential) model_callback_plans(object)$impact else NULL
+    context <- if (sequential) c(list(n = 1L),
+      observation[c("mark", "type", "inter_arrival", "N", "Nc")],
+      list(lambda = NULL, lambda_component = NULL, lambda_component_n = NULL),
+      values[c("mu", "alpha", "beta")])[plan] else NULL
+    history <- if (infer) plan else if (is.null(object@impact)) character(0) else names(formals(object@impact))
+    impacts <- if (!is.null(object@impact) && !sequential)
+      standalone_observed_impacts(object, observation, values) else NULL
+    record_fit_engine(execution, "cpp")
+    native <- hawkes_loglik_cpp(observation$inter_arrival, as.integer(types),
+      observation$mark, as.numeric(mu0), values$alpha, values$beta, values$eta,
+      initial, mapping, infer, impact = impacts,
+      impact_callback = if (sequential) object@impact else NULL,
+      keep_lambda = sequential && "lambda" %in% history,
+      keep_components = sequential && "lambda_component" %in% history,
+      baseline = baseline, impact_arguments = context)
+    if (!is.null(native$unsupported)) stop_cpp_unsupported(native$unsupported)
+    if (isTRUE(native$nonfinite_impact))
+      stop_cpp_unsupported("impact must return finite numeric values for native replay.")
+    native
+  }, emhawkes_cpp_unsupported = function(e) {
+    if (!is.null(initial)) e$initial <- initial
+    stop(e)
+  })
   if (!infer) return(c(loglikelihood = result$loglikelihood))
   colnames(result$lambda) <- paste0("lambda", seq_len(dimensions))
   colnames(result$rambda) <- paste0("rambda", seq_len(dimensions))

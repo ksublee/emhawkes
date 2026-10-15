@@ -194,6 +194,12 @@ Keep these analytic-gradient extensions opt-in until their derivatives, likeliho
 
 현재 성분만 필요하면 `lambda_component_n`을 사용한다. 전체 이력은 명시적으로 요청할 때만 할당하고, callback이 보관한 행렬은 이후 사건에서 변하지 않도록 복사한다. baseline의 강도 이력 의존성과 구간 내부 변화는 지원하지 않는다. [Bid-ask 검증과 속도 결과](bid-ask-numeric-results.md)를 참고한다.
 
+### 독립 우도와 추론의 확장
+
+`logLik()`의 C++ 경로를 모수 전용 함수, 관측 impact, 관측 baseline과 순차 impact 순서로 확장했다. 복원한 `hspec`도 같은 경로를 사용한다. 각 함수의 기본 모수는 독립적으로 유지하며 추정의 모수 공유 규칙을 적용하지 않는다. 해석적 gradient의 범위는 바꾸지 않는다.
+
+관측 baseline은 구간별로 일정한 차원 × 1 행렬을 반환한다. 마지막 사건 뒤의 강도는 다음 baseline으로 계산한다. 전체 이력을 요청하면 추론에서 이미 할당한 행렬을 재사용한다. callback이 보관한 값은 이후 사건에서 바뀌지 않도록 보호한다. baseline의 잠재 강도 의존성은 R에서 계산한다. [정확성·속도·메모리 결과](state-replay-results.md)를 참고한다.
+
 ### 시뮬레이션
 
 현재 같은 행의 감쇠율이 같으면 후보 대기시간을 직접 생성하고, 하나라도 다른 행이 있으면 thinning 경로를 사용한다. baseline이 0인 경우에는 유한 총 hazard와 소멸을 처리한다. 이 분기들을 한 번에 바꾸지 않는다.

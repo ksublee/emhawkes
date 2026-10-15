@@ -60,9 +60,12 @@ NULL
 #' marks, types, times and resolved core matrices. They must return finite plain
 #' numeric matrices matching the kernel dimensions. Each function retains its own
 #' default parameters; standalone evaluation does not apply fitting's sharing rules.
-#' Other core-function signatures, latent-state impacts, mark densities, residual
-#' distributions, and classed numeric
-#' inputs use the R engine. `rmark` and `rresidual` are simulation generators and
+#' Observed baseline functions may use event context, excluding latent intensities,
+#' and return finite nonnegative dimensions-by-one matrices. Sequential impacts
+#' may explicitly request `lambda`, `lambda_component`, or `lambda_component_n`.
+#' They receive the state before the jump. The last post-event intensity uses
+#' the next baseline, as in R. Mark densities, residual distributions, unsupported
+#' function signatures, and classed numeric inputs use the R engine. `rmark` and `rresidual` are simulation generators and
 #' do not by themselves prevent numeric likelihood acceleration.
 #' Set `options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
 #' automatic selection, or `"cpp"` to require a supported specification.
@@ -116,20 +119,24 @@ loglik_hspec <- function(object, observation, lambda_component0 = NULL, infer = 
         values <- setting(object)
         functions <- vapply(list(mu = object@mu, alpha = object@alpha,
           beta = object@beta, eta = object@eta), is.function, logical(1))
-        plain <- vapply(values[functions], function(x) is.numeric(x) && is.matrix(x) && !is.object(x), logical(1))
-        reason <- if (all(plain)) native_hawkes_reason(object, observation, values, allow_impact = TRUE) else
+        plain <- vapply(values[functions & !vapply(values, is.function, logical(1))],
+          function(x) is.numeric(x) && is.matrix(x) && !is.object(x), logical(1))
+        reason <- if (all(plain)) native_hawkes_reason(object, observation, values,
+          allow_impact = TRUE, allow_baseline = TRUE) else
           "function components must return plain numeric matrices"
       }
       if (is.null(reason)) {
-        if (is.null(object@impact)) return(loglik_hspec_cpp(object, observation,
+        if (is.null(object@impact) && !is.function(values$mu)) return(loglik_hspec_cpp(object, observation,
           lambda_component0, infer, show_initial_message, values, execution))
         result <- tryCatch(loglik_hspec_cpp(object, observation, lambda_component0,
           infer, show_initial_message, values, execution),
           emhawkes_cpp_unsupported = function(e) e)
         if (!inherits(result, "emhawkes_cpp_unsupported")) return(result)
         reason <- conditionMessage(result)
-        lambda_component0 <- result$initial
-        show_initial_message <- FALSE
+        if (!is.null(result$initial)) {
+          lambda_component0 <- result$initial
+          show_initial_message <- FALSE
+        }
       }
       if (engine == "cpp") stop("C++ Hawkes engine does not support this model: ", reason, call. = FALSE)
     }

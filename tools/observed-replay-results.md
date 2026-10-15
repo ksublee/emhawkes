@@ -1,5 +1,8 @@
 # Observed-impact standalone likelihood and inference
 
+> Stage 2 measurement snapshot. Observed baselines and sequential impacts are
+> covered by [the stage 3 report](state-replay-results.md).
+
 Stage 2 extends standalone `logLik()` and `infer = TRUE` to observed-state
 impacts. Core functions remain parameter-only; impacts may use event index,
 counts, cumulative marks, observed times/types/marks and resolved core matrices.

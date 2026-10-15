@@ -1,0 +1,7 @@
+"field","exact","max_abs_difference"
+"estimate",TRUE,0
+"maximum",TRUE,0
+"gradient",TRUE,0
+"hessian",TRUE,0
+"code",TRUE,0
+"iterations",TRUE,0

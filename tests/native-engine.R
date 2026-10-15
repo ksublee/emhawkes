@@ -65,8 +65,7 @@ for (initial in c(0, -.1, 1e308)) {
   compare(h, c(0, 0, 0, 1000), initial = initial)
 }
 
-# Callback capabilities are inspected without calling the functions. Auto
-# preserves the exact R callback path, including environments and call order.
+# Baseline replay preserves R call counts, index values and index types.
 called <- integer()
 state <- new("hspec", mu = function(n) {
   called <<- c(called, n)
@@ -79,8 +78,11 @@ called <- integer()
 close(evaluate("auto", state, c(0, .2, .3), infer = TRUE), reference)
 stopifnot(identical(called, reference_calls))
 called <- integer()
-fails(evaluate("cpp", state, c(0, .2)), "function-valued parameters")
-stopifnot(length(called) == 0)
+short_reference <- evaluate("r", state, c(0, .2))
+short_calls <- called
+called <- integer()
+close(evaluate("cpp", state, c(0, .2)), short_reference)
+stopifnot(identical(called, short_calls))
 parameter_function <- new("hspec", mu = .2,
   alpha = function(param = c(a = .1)) matrix(param[1]), beta = 1)
 close(evaluate("auto", parameter_function, c(0, .2)),

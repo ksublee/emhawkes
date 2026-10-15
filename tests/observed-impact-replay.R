@@ -85,8 +85,8 @@ explicit <- hidden
 explicit@impact <- function(lambda_component_n) .01 * lambda_component_n
 calls <- 0L
 close(evaluate("auto", explicit, dt, TRUE), evaluate("r", explicit, dt, TRUE))
-stopifnot(calls == 0L)
-fails(evaluate("cpp", explicit, dt), "does not support")
+stopifnot(calls == 1L)
+close(evaluate("cpp", explicit, dt), evaluate("r", explicit, dt))
 # Nonfinite unselected entries can be ignored by R; preserve that behavior
 # instead of turning a finite R likelihood into native -Inf.
 unused <- new("hspec", mu = c(.3, .4), alpha = matrix(0, 2, 2), beta = matrix(1, 2, 2),

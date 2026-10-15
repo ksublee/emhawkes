@@ -6,7 +6,7 @@
 #include "exp_kernel.h"
 
 // Numeric Hawkes kernel with optional precomputed observed-state impacts.
-// Optional sequential R impacts are restricted to numerical fitting.
+// Optional observed baselines and sequential impacts support numerical replay.
 // Recursive storage is private; this kernel never draws random numbers.
 // [[Rcpp::export(rng = false)]]
 Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
@@ -22,8 +22,8 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     const bool has_callback = impact_callback.isNotNull();
     if (has_callback != impact_arguments.isNotNull())
         Rcpp::stop("Sequential impacts require a callback and named arguments together.");
-    if (has_callback && (gradient || infer || impact.isNotNull()))
-        Rcpp::stop("Sequential impacts support numerical fitting only, without precomputed impacts.");
+    if (has_callback && (gradient || impact.isNotNull()))
+        Rcpp::stop("Sequential impacts do not support gradients or precomputed impacts.");
     if (!has_callback && (keep_lambda || keep_components))
         Rcpp::stop("State histories require a sequential impact callback.");
 
@@ -38,10 +38,11 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     const bool has_baseline = baseline.isNotNull();
     Rcpp::NumericMatrix baseline_values;
     if (has_baseline) {
-        if (gradient || infer) Rcpp::stop("Observed baseline paths support numerical fitting only.");
+        if (gradient) Rcpp::stop("Observed baseline paths do not support gradients.");
         baseline_values = Rcpp::NumericMatrix(baseline.get());
-        if (baseline_values.nrow() != dimensions || baseline_values.ncol() != size)
-            Rcpp::stop("Native baseline dimensions must be dimensions by observations.");
+        const R_xlen_t expected_columns = static_cast<R_xlen_t>(size) + (infer && size > 1 ? 1 : 0);
+        if (baseline_values.nrow() != dimensions || baseline_values.ncol() != expected_columns)
+            Rcpp::stop("Native baseline dimensions must include the terminal next baseline for inference.");
         for (R_xlen_t k = 0; k < baseline_values.size(); ++k) {
             if ((k & 65535) == 0) Rcpp::checkUserInterrupt();
             if (!R_FINITE(baseline_values[k]) || baseline_values[k] < 0)
@@ -133,7 +134,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     }
     if (has_callback) {
         if (keep_lambda) {
-            lambda = Rcpp::NumericMatrix(size, dimensions);
+            if (!infer) lambda = Rcpp::NumericMatrix(size, dimensions);
             Rcpp::CharacterVector names(dimensions);
             for (int i = 0; i < dimensions; ++i) {
                 long double total = 0.0L;
@@ -144,7 +145,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             Rcpp::colnames(lambda) = names;
         }
         if (keep_components) {
-            lambda_component = Rcpp::NumericMatrix(size, components);
+            if (!infer) lambda_component = Rcpp::NumericMatrix(size, components);
             Rcpp::CharacterVector names(components);
             for (int i = 0; i < dimensions; ++i)
                 for (int j = 0; j < kernels; ++j) {
@@ -260,7 +261,9 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         if (has_callback) {
             if (n_node != R_NilValue) SETCAR(n_node, Rf_ScalarInteger(n + 1));
             if (current_node != R_NilValue) {
-                Rcpp::NumericMatrix current(dimensions, kernels);
+                // R's elementwise decay carries beta's attributes to the current
+                // component matrix, including dimnames used by callbacks.
+                Rcpp::NumericMatrix current = Rcpp::clone(beta);
                 std::copy(state.begin(), state.end(), current.begin());
                 SETCAR(current_node, current);
             }
@@ -284,7 +287,8 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                     "impact must return a plain numeric matrix matching the kernel dimensions.");
             for (int k = 0; k < components; ++k)
                 if (!R_FINITE(callback_impact[k]))
-                    return Rcpp::List::create(Rcpp::Named("loglikelihood") = R_NegInf);
+                    return Rcpp::List::create(Rcpp::Named("loglikelihood") = R_NegInf,
+                                              Rcpp::Named("nonfinite_impact") = true);
         }
         const std::vector<int>& selected = columns[event_type];
         for (std::size_t j = 0; j < selected.size(); ++j) {
@@ -308,7 +312,8 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
                     total += value;
                     rambda_component(n, i * kernels + j) = value;
                 }
-                rambda(n, i) = mu[i] + static_cast<double>(total);
+                const double post_mu = has_baseline ? baseline_values(i, n + 1) : mu[i];
+                rambda(n, i) = post_mu + static_cast<double>(total);
             }
         }
     }

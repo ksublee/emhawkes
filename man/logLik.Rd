@@ -92,9 +92,12 @@ deterministic. Observed-state \code{impact} functions may also use \code{n}, \co
 marks, types, times and resolved core matrices. They must return finite plain
 numeric matrices matching the kernel dimensions. Each function retains its own
 default parameters; standalone evaluation does not apply fitting's sharing rules.
-Other core-function signatures, latent-state impacts, mark densities, residual
-distributions, and classed numeric
-inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
+Observed baseline functions may use event context, excluding latent intensities,
+and return finite nonnegative dimensions-by-one matrices. Sequential impacts
+may explicitly request \code{lambda}, \code{lambda_component}, or \code{lambda_component_n}.
+They receive the state before the jump. The last post-event intensity uses
+the next baseline, as in R. Mark densities, residual distributions, unsupported
+function signatures, and classed numeric inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
 do not by themselves prevent numeric likelihood acceleration.
 Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
 automatic selection, or \code{"cpp"} to require a supported specification.
