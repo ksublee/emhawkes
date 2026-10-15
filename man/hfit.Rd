@@ -126,8 +126,8 @@ Unused with a supplied \code{grad} or numerical differentiation.}
 A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
 containing the original specification, parameter map, normalized initial-state
 arguments, constraints, \code{reduced} setting, supplied analytic Jacobians, and final
-curvature diagnostics.
-Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the checks and \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
+curvature diagnostics and recorded calculation methods.
+Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the methods and checks and \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
 specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retrieve its initial-state arguments.
 }
 \description{

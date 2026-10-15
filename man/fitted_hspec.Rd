@@ -27,7 +27,9 @@ other generator parameters keep their original defaults.
 The fit keeps its \code{maxLik} classes and methods. Its \code{emhawkes} attribute stores
 a versioned list with \code{specification}, \code{parameter_map}, \code{initial_state},
 \code{reduced}, and \code{custom_loglik}. New fits also retain \code{constraints} and final
-\code{diagnostics}, available through \code{\link[=fit_diagnostics]{fit_diagnostics()}}. Older fits without this metadata cannot be
+\code{diagnostics}, available through \code{\link[=fit_diagnostics]{fit_diagnostics()}}. New calculation records
+are in \code{fit_diagnostics(fit)$computation}. Fits without the original model
+metadata cannot be
 reconstructed by this function. Function environments remain references to
 the original environments; external state is not frozen.
 Use \code{saveRDS()} and \code{readRDS()} to retain the fit's metadata between sessions.

@@ -9,21 +9,42 @@ stop_cpp_unsupported <- function(message) {
 }
 
 # Reject declared unsupported features before evaluating any user callback.
-auto_hawkes_fit_supported <- function(object, observation) {
-  if (!is.null(object@dmark) || !is.null(object@dresidual)) return(FALSE)
+auto_hawkes_fit_reason <- function(object, observation) {
+  if (!is.null(object@dmark)) return("a mark density function")
+  if (!is.null(object@dresidual)) return("a residual distribution")
   values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
-  if (is.object(object@dimens) || is.object(object@type_col_map) ||
-      any(vapply(object@type_col_map, is.object, logical(1))) ||
-      any(vapply(values, is.object, logical(1))) ||
-      any(vapply(observation[c("inter_arrival", "type", "mark")], is.object, logical(1)))) return(FALSE)
+  if (is.object(object@dimens) || any(vapply(values, is.object, logical(1))))
+    return("classed numeric parameters")
+  if (is.object(object@type_col_map) || any(vapply(object@type_col_map, is.object, logical(1))))
+    return("a classed kernel mapping")
+  if (any(vapply(observation[c("inter_arrival", "type", "mark")], is.object, logical(1))))
+    return("classed observation vectors")
   for (name in names(values)) {
     fun <- values[[name]]
     if (!is.function(fun)) next
     args <- names(formals(fun))
-    if (name != "mu" && !identical(args, "param")) return(FALSE)
-    if (name == "mu" && any(args %in% c("lambda", "lambda_component", "lambda_component_n"))) return(FALSE)
+    if (name != "mu" && !identical(args, "param"))
+      return(paste0(name, " must have only the 'param' argument"))
+    if (name == "mu" && any(args %in% c("lambda", "lambda_component", "lambda_component_n")))
+      return("mu depends on latent intensity states")
   }
-  TRUE
+  NULL
+}
+
+auto_hawkes_fit_supported <- function(object, observation) {
+  is.null(auto_hawkes_fit_reason(object, observation))
+}
+
+# Keep only the first unsupported-feature reason and engines actually invoked.
+record_fit_engine <- function(execution, engine, reason = NULL) {
+  if (is.null(execution)) return(invisible(NULL))
+  if (!identical(execution$last, engine)) {
+    if (!(engine %in% execution$used)) execution$used <- c(execution$used, engine)
+    execution$last <- engine
+  }
+  if (identical(execution$requested, "auto") && is.null(execution$fallback_reason) &&
+      !is.null(reason)) execution$fallback_reason <- reason
+  invisible(NULL)
 }
 
 # Inspect capabilities without evaluating a user function.
@@ -238,7 +259,8 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
 # Hawkes objective: one native pass supplies both value and component scores.
 # The one-point cache is local to a fit and is invalidated by any parameter change.
 make_hawkes_objective <- function(object, observation, lambda_component0,
-                                 parameter_map, verbose = FALSE, jacobian = NULL, derivatives = TRUE) {
+                                 parameter_map, verbose = FALSE, jacobian = NULL, derivatives = TRUE,
+                                 execution = NULL) {
   plan <- hawkes_component_plan(object, observation, parameter_map, jacobian, derivatives)
   impact_plan <- hawkes_impact_plan(object, observation, parameter_map, jacobian$impact,
                                     dim(plan$start$beta), derivatives)
@@ -300,6 +322,7 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     impacts <- if (!is.null(impact_plan) && !sequential) impact_plan$values(param, values) else NULL
     if (!is.null(impact_plan) && !sequential && is.null(impacts)) return(invalid)
     runtime <- if (sequential) impact_plan$callback(param, values) else NULL
+    record_fit_engine(execution, "cpp")
     result <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
       as.numeric(values$mu), values$alpha, values$beta, values$eta,
       current_initial, mapping, infer = FALSE, gradient = derivatives, impact = impacts,

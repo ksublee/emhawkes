@@ -8,6 +8,8 @@ check_rds_session <- function() {
   script_path <- tempfile(fileext = ".R")
   on.exit(unlink(c(fit_path, libraries_path, script_path)), add = TRUE)
 
+  previous_options <- options(emhawkes.engine = "cpp")
+  on.exit(options(previous_options), add = TRUE)
   inter_arrival <- c(0, .2, .3, .5, 1)
   specification <- new("hspec", mu = .3, alpha = 0, beta = 1)
   fit <- suppressMessages(hfit(specification, inter_arrival,
@@ -22,6 +24,12 @@ check_rds_session <- function() {
     ".libPaths(readRDS(args[1]))",
     "library(emhawkes)",
     "fit <- readRDS(args[2])",
+    "options(emhawkes.engine = 'r')",
+    "calculation <- fit_diagnostics(fit)$computation",
+    "stopifnot(calculation$recorded, identical(calculation$engine$used, 'cpp'),",
+    "          calculation$engine$requested == 'cpp',",
+    "          calculation$gradient$used == 'numeric',",
+    "          calculation$hessian$used == 'maxLik_numeric')",
     "stopifnot(!('package:maxLik' %in% search()))",
     "coefficients <- stats::coef(fit)",
     "expected_names <- names(attr(fit, 'emhawkes')$parameter_map$start)",

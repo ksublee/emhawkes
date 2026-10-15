@@ -2,7 +2,7 @@
 % Please edit documentation in R/huncertainty.R
 \name{fit_diagnostics}
 \alias{fit_diagnostics}
-\title{Inspect Final Curvature Diagnostics}
+\title{Inspect Fit Computation and Curvature Diagnostics}
 \usage{
 fit_diagnostics(fit)
 }
@@ -10,14 +10,37 @@ fit_diagnostics(fit)
 \item{fit}{A result from \code{\link[=hfit]{hfit()}}.}
 }
 \value{
-A list describing the calculation status, reason, free parameters,
+A list with recorded methods in \code{computation}, calculation status,
+reason, free parameters,
 scale, and, when available, difference-step checks, curvature changes,
 recalculated score, scaled condition number, and Newton decrement.
 }
 \description{
-Return the final Hessian checks requested through \code{\link[=hfit]{hfit()}}.
+Return the recorded calculation methods and final Hessian checks from \code{\link[=hfit]{hfit()}}.
 }
 \details{
+\code{computation} records the engine, optimizer gradient source and stored final
+Hessian source without re-evaluating the model. Its \code{engine} list contains
+\code{requested}, \code{used} and \code{fallback_reason}. \code{used} lists engines actually invoked
+in first-use order, including any partial C++ pass before fallback. It can
+contain both \code{"cpp"} and \code{"r"}. A custom likelihood uses \code{"custom"} and has no
+requested built-in engine. Recording includes final curvature evaluations.
+
+\code{computation$gradient$used} is \code{"numeric"}, \code{"analytic"}, \code{"user"} or
+\code{"attribute"}. It describes the returned optimizer score, separately from a recalculated
+score in stable curvature checks. \code{computation$hessian$used} is
+\code{"maxLik_numeric"}, \code{"scaled_central_Richardson"}, \code{"user"}, \code{"attribute"},
+\code{"BHHH"}, \code{"disabled"} or \code{"unavailable"}. The Hessian list also retains the
+requested \code{final_hessian} choice and any \code{finalHessian} override. Its \code{reason}
+explains a skipped stabilization or unavailable result. If both a derivative
+function and likelihood derivative attributes were supplied, the source is
+\code{NA} with a reason because precedence depends on maxLik.
+
+The saved record is a snapshot; later objective evaluations or option changes
+do not update it. Older fits with model metadata but no computation record
+return \code{recorded = FALSE} and \code{NA} for unrecorded methods. Any previously saved
+gradient selection is retained. Their engine is not inferred from current options.
+
 \code{status = "ok"} means the numerical curvature checks passed, not that the
 optimizer found a global maximum or that Wald intervals have correct coverage.
 The numerical calculation checks information and standard-error stability
@@ -36,6 +59,7 @@ h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
             fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")
 fit_diagnostics(fit)$status
+fit_diagnostics(fit)$computation
 }
 \seealso{
 \code{\link[=hfit]{hfit()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}

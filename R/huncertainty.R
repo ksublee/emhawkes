@@ -257,14 +257,86 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   list(fit = fit, diagnostics = diagnostics)
 }
 
-#' Inspect Final Curvature Diagnostics
+# Summarize recorded execution without evaluating the model again.
+fit_computation <- function(fit, execution, gradient_requested, gradient_used,
+                            final_hessian, hess, additional, diagnostics) {
+  gradient_reason <- NULL
+  if (isTRUE(execution$gradient_attribute)) {
+    if (gradient_used == "user") {
+      gradient_used <- NA_character_
+      gradient_reason <- "Both grad and likelihood gradient attributes were supplied; maxLik controls precedence."
+    } else gradient_used <- "attribute"
+  }
+  H <- maxLik::hessian(fit)
+  final <- additional[["finalHessian"]]
+  disabled <- !is.null(final) && length(final) == 1L && !is.na(final) &&
+    (is.logical(final) || is.numeric(final)) && !as.logical(final)
+  reason <- if (final_hessian == "stable" && !identical(diagnostics$status, "ok"))
+    diagnostics$reason else NULL
+  used <- if (is.null(H)) {
+    if (disabled) "disabled" else "unavailable"
+  } else if (identical(diagnostics$method, "scaled_central_Richardson") &&
+             identical(diagnostics$status, "ok")) {
+    "scaled_central_Richardson"
+  } else if (identical(attr(H, "type", exact = TRUE), "BHHH")) {
+    "BHHH"
+  } else if (isTRUE(execution$hessian_attribute)) {
+    if (is.null(hess)) "attribute" else NA_character_
+  } else if (!is.null(hess)) "user" else "maxLik_numeric"
+  if (is.na(used)) {
+    reason <- "Both hess and likelihood Hessian attributes were supplied; maxLik controls precedence."
+  } else if (used == "unavailable" && is.null(reason)) {
+    reason <- "maxLik did not return a final Hessian."
+  }
+  list(recorded = TRUE,
+    engine = list(requested = execution$requested, used = execution$used,
+      fallback_reason = execution$fallback_reason),
+    gradient = list(requested = gradient_requested, used = gradient_used,
+      reason = gradient_reason),
+    hessian = list(requested = final_hessian, finalHessian = final,
+      used = used, reason = reason))
+}
+
+unrecorded_fit_computation <- function(metadata) {
+  list(recorded = FALSE,
+    engine = list(requested = NA_character_, used = NA_character_, fallback_reason = NULL),
+    gradient = list(requested = NA_character_,
+      used = if (is.null(metadata$gradient)) NA_character_ else metadata$gradient, reason = NULL),
+    hessian = list(requested = NA_character_, finalHessian = NULL,
+      used = NA_character_, reason = "not_recorded"))
+}
+
+#' Inspect Fit Computation and Curvature Diagnostics
 #'
-#' Return the final Hessian checks requested through [hfit()].
+#' Return the recorded calculation methods and final Hessian checks from [hfit()].
 #' @param fit A result from [hfit()].
-#' @return A list describing the calculation status, reason, free parameters,
+#' @return A list with recorded methods in `computation`, calculation status,
+#' reason, free parameters,
 #' scale, and, when available, difference-step checks, curvature changes,
 #' recalculated score, scaled condition number, and Newton decrement.
 #' @details
+#' `computation` records the engine, optimizer gradient source and stored final
+#' Hessian source without re-evaluating the model. Its `engine` list contains
+#' `requested`, `used` and `fallback_reason`. `used` lists engines actually invoked
+#' in first-use order, including any partial C++ pass before fallback. It can
+#' contain both `"cpp"` and `"r"`. A custom likelihood uses `"custom"` and has no
+#' requested built-in engine. Recording includes final curvature evaluations.
+#'
+#' `computation$gradient$used` is `"numeric"`, `"analytic"`, `"user"` or
+#' `"attribute"`. It describes the returned optimizer score, separately from a recalculated
+#' score in stable curvature checks. `computation$hessian$used` is
+#' `"maxLik_numeric"`, `"scaled_central_Richardson"`, `"user"`, `"attribute"`,
+#' `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian list also retains the
+#' requested `final_hessian` choice and any `finalHessian` override. Its `reason`
+#' explains a skipped stabilization or unavailable result. If both a derivative
+#' function and likelihood derivative attributes were supplied, the source is
+#' `NA` with a reason because precedence depends on maxLik.
+#'
+#' The saved record is a snapshot; later objective evaluations or option changes
+#' do not update it. Older fits with model metadata but no computation record
+#' return `recorded = FALSE` and `NA` for unrecorded methods. Any previously saved
+#' gradient selection is retained. Their engine is not inferred from current options.
+#'
 #' `status = "ok"` means the numerical curvature checks passed, not that the
 #' optimizer found a global maximum or that Wald intervals have correct coverage.
 #' The numerical calculation checks information and standard-error stability
@@ -284,7 +356,11 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
 #' fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
 #'             fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")
 #' fit_diagnostics(fit)$status
+#' fit_diagnostics(fit)$computation
 fit_diagnostics <- function(fit) {
-  diagnostics <- fit_metadata(fit)$diagnostics
-  if (is.null(diagnostics)) list(status = "not_checked", reason = "older_fit") else diagnostics
+  metadata <- fit_metadata(fit)
+  diagnostics <- metadata$diagnostics
+  if (is.null(diagnostics)) diagnostics <- list(status = "not_checked", reason = "older_fit")
+  if (is.null(diagnostics$computation)) diagnostics$computation <- unrecorded_fit_computation(metadata)
+  diagnostics
 }

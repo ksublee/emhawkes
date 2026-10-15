@@ -129,6 +129,12 @@ summary(mle)
 ```
 
 Use `fitted_hspec()` to reconstruct the model with the estimated parameters.
+The fit records its calculation methods, including any reason for auto to use R.
+
+```{r fit-calculation}
+fit_diagnostics(mle)$computation
+```
+
 By default, `hfit()` uses the final Hessian and standard errors from `maxLik`.
 Additional stabilization is optional. Request `final_hessian = "stable"` to check
 numerical Hawkes curvature across scaled difference steps without changing the

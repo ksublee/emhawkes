@@ -60,8 +60,8 @@ NULL
 #' @return A \code{\link[maxLik]{maxLik}} object with an `emhawkes` attribute
 #' containing the original specification, parameter map, normalized initial-state
 #' arguments, constraints, `reduced` setting, supplied analytic Jacobians, and final
-#' curvature diagnostics.
-#' Use [fit_diagnostics()] to inspect the checks and [fitted_hspec()] to restore the estimated
+#' curvature diagnostics and recorded calculation methods.
+#' Use [fit_diagnostics()] to inspect the methods and checks and [fitted_hspec()] to restore the estimated
 #' specification and [fit_initial_state()] to retrieve its initial-state arguments.
 #'
 #' @details
@@ -410,6 +410,11 @@ setMethod(
 
 
 
+    execution <- new.env(parent = emptyenv())
+    execution$used <- character(0)
+    execution$fallback_reason <- NULL
+    execution$gradient_attribute <- execution$hessian_attribute <- FALSE
+
     # Log-likelihood function passed to maxLik
     llh_function <- function(param){
 
@@ -444,13 +449,16 @@ setMethod(
       if (is.null(mylogLik)){
 
         logl <- loglik_hspec(hspec0, observation, lambda_component0,
-                            callbacks = callbacks, show_initial_message = FALSE)
+                            callbacks = callbacks, show_initial_message = FALSE, execution = execution)
 
       } else {
 
         context <- c(list(object = hspec0), observation,
                      list(lambda_component0 = lambda_component0, param = param, reduced = reduced))
+        record_fit_engine(execution, "custom")
         logl <- call_component(mylogLik, custom_plan, context)
+        if (!is.null(attr(logl, "gradient", exact = TRUE))) execution$gradient_attribute <- TRUE
+        if (!is.null(attr(logl, "hessian", exact = TRUE))) execution$hessian_attribute <- TRUE
       }
 
       if(verbose){
@@ -467,6 +475,7 @@ setMethod(
     engine <- if (is.null(mylogLik)) {
       match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
     } else NULL
+    execution$requested <- engine
     if (identical(gradient_used, "analytic")) {
       if (!is.null(mylogLik)) stop("Analytic gradient does not support a custom likelihood.")
       if (!is.null(constraints$eqA) || !is.null(constraints$eqB)) {
@@ -477,7 +486,7 @@ setMethod(
           identical(toupper(as.character(additional_argument$finalHessian)), "BHHH")) {
         stop("Analytic gradient supplies a total score, not the event scores required by BHHH.")
       }
-      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian)
+      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian, execution = execution)
       llh_function <- objective$loglik
       grad <- objective$gradient
     } else if (!is.null(engine) && engine %in% c("auto", "cpp") && (!is.null(object@impact) || any(vapply(
@@ -486,12 +495,16 @@ setMethod(
       # Numerical differentiation and supplied grad/hess remain with maxLik.
       if (engine == "cpp") {
         objective <- make_hawkes_objective(object, observation, lambda_component0,
-          parameter_map, verbose, derivatives = FALSE)
+          parameter_map, verbose, derivatives = FALSE, execution = execution)
         llh_function <- objective$loglik
-      } else if (auto_hawkes_fit_supported(object, observation)) {
-        objective <- tryCatch(make_hawkes_objective(object, observation, lambda_component0,
-          parameter_map, verbose, derivatives = FALSE),
-          emhawkes_cpp_unsupported = function(e) NULL)
+      } else {
+        execution$fallback_reason <- auto_hawkes_fit_reason(object, observation)
+        objective <- if (is.null(execution$fallback_reason)) tryCatch(make_hawkes_objective(object, observation, lambda_component0,
+          parameter_map, verbose, derivatives = FALSE, execution = execution),
+          emhawkes_cpp_unsupported = function(e) {
+            execution$fallback_reason <- conditionMessage(e)
+            NULL
+          }) else NULL
         if (!is.null(objective)) {
           r_likelihood <- llh_function
           native_available <- TRUE
@@ -502,6 +515,7 @@ setMethod(
                 # Some callback capabilities can only be detected on use.
                 # Stay on R for all subsequent proposals in this fit.
                 native_available <<- FALSE
+                execution$fallback_reason <- conditionMessage(e)
                 r_likelihood(param)
               })
           }
@@ -535,6 +549,8 @@ setMethod(
         list(fit = fit, diagnostics = list(status = "not_checked", reason = "custom_likelihood"))
       }
       fit <- final$fit
+      final$diagnostics$computation <- fit_computation(fit, execution, gradient,
+        gradient_used, final_hessian, hess, additional_argument, final$diagnostics)
       attr(fit, "emhawkes") <- list(
         version = 1L,
         specification = object,
