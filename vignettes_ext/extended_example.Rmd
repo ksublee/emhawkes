@@ -409,8 +409,9 @@ Component functions can declare only the arguments they need, and use `...` to r
 Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
 evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
-distributions use R. Standalone likelihood evaluation of function-valued models
-and simulation use R.
+distributions use R. Standalone likelihood and inference also support
+parameter-only component functions returning plain numeric matrices. Other
+function signatures and impacts use R for standalone evaluation. Simulation uses R.
 The `emhawkes.engine` option has three settings:
 
 | Setting | Role |
@@ -731,12 +732,20 @@ summary(fit_sy)
 ```
 
 The restored component functions use the estimated defaults.
-Both functions retain the same estimated `kappa`.
+Both functions retain the same estimated `kappa`. Their parameter-only interface
+also allows automatic C++ likelihood and residual replay with the saved initial state.
 
 ```{r shared-function-parameters}
 estimated_sy <- fitted_hspec(fit_sy)
 c(mu = eval(formals(estimated_sy@mu)$param)[["kappa"]],
   beta = eval(formals(estimated_sy@beta)$param)[["kappa"]])
+```
+
+```{r shared-function-replay}
+replayed_sy <- do.call(logLik, c(list(object = estimated_sy,
+  inter_arrival = res_sy$inter_arrival, type = res_sy$type, infer = TRUE),
+  fit_initial_state(fit_sy)))
+c(fitted = as.numeric(logLik(fit_sy)), replayed = replayed_sy$loglikelihood)
 ```
 
 ## Extended models

@@ -83,12 +83,17 @@ supplied model. For a fitted model, use \code{\link[=fitted_hspec]{fitted_hspec(
 returned by \code{\link[=fit_initial_state]{fit_initial_state()}} to preserve the fit's initialization setting.
 
 With the default automatic selection, standalone \code{logLik()} uses the Rcpp
-engine for numeric Hawkes specifications. Function-valued parameters,
-impact functions, mark densities, residual distributions, and classed numeric
+engine for numeric Hawkes specifications and parameter-only component functions.
+These functions have only \code{param} as an argument and return plain numeric
+matrices. Their defaults are evaluated as in the R engine; no Jacobian is
+required. This supports likelihood values and, with \code{infer = TRUE}, intensity
+paths and residuals. Captured inputs must remain fixed and callbacks must be
+deterministic. Other function signatures, impact functions, mark densities,
+residual distributions, and classed numeric
 inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
 do not by themselves prevent numeric likelihood acceleration.
 Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
-automatic selection, or \code{"cpp"} to require a supported numeric specification.
+automatic selection, or \code{"cpp"} to require a supported specification.
 Setting \code{"cpp"} is not needed for automatic acceleration. The engine supports
 unequal decay rates within a row and multi-kernel mappings. During fitting,
 \code{\link[=hfit]{hfit()}} also supports C++ adapters for the callback models documented there.

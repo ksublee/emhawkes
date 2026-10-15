@@ -90,8 +90,20 @@ native_hawkes_reason <- function(object, observation,
   NULL
 }
 
+# Standalone replay resolves only parameter-only functions, using setting()'s
+# existing default-argument evaluation. Reject other features before callbacks.
+parameter_only_hawkes_supported <- function(object, observation) {
+  values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta, eta = object@eta)
+  functions <- vapply(values, is.function, logical(1))
+  any(functions) && is.null(object@impact) &&
+    is.null(auto_hawkes_fit_reason(object, observation)) &&
+    all(vapply(values[functions], function(fun) identical(names(formals(fun)), "param"), logical(1)))
+}
+
 loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
-                             show_initial_message) {
+                             show_initial_message, values = NULL) {
+  if (is.null(values)) values <- list(mu = object@mu, alpha = object@alpha,
+                                    beta = object@beta, eta = object@eta)
   if (is.null(lambda_component0)) {
     if (length(object@type_col_map)) stop("In this model, please provide lambda_component0.")
     if (show_initial_message) {
@@ -100,17 +112,17 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
     lambda_component0 <- get_lambda0(object,
       mark = observation$mark, type = observation$type,
       inter_arrival = observation$inter_arrival, N = observation$N, Nc = observation$Nc,
-      mu = object@mu, alpha = object@alpha, beta = object@beta)
+      mu = values$mu, alpha = values$alpha, beta = values$beta)
   }
   dimensions <- object@dimens
-  kernels <- ncol(object@beta)
+  kernels <- ncol(values$beta)
   initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
   mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
   mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
   types <- observation$type
   if (types[1] != 0) types[1] <- 0L
   result <- hawkes_loglik_cpp(observation$inter_arrival, as.integer(types),
-    observation$mark, as.numeric(object@mu), object@alpha, object@beta, object@eta,
+    observation$mark, as.numeric(values$mu), values$alpha, values$beta, values$eta,
     initial, mapping, infer)
   if (!infer) return(c(loglikelihood = result$loglikelihood))
   colnames(result$lambda) <- paste0("lambda", seq_len(dimensions))

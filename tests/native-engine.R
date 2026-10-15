@@ -85,7 +85,8 @@ parameter_function <- new("hspec", mu = .2,
   alpha = function(param = c(a = .1)) matrix(param[1]), beta = 1)
 close(evaluate("auto", parameter_function, c(0, .2)),
       evaluate("r", parameter_function, c(0, .2)))
-fails(evaluate("cpp", parameter_function, c(0, .2)), "function-valued parameters")
+close(evaluate("cpp", parameter_function, c(0, .2)),
+      evaluate("r", parameter_function, c(0, .2)))
 plain <- new("hspec", mu = .2, alpha = .1, beta = 1)
 for (slot_name in c("impact", "dmark")) {
   custom <- plain

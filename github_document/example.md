@@ -701,8 +701,9 @@ use `...` to receive the remaining context.
 Numeric Hawkes specifications use the Rcpp engine automatically for likelihood
 evaluation and inference. During fitting, supported function components and
 impacts also use C++ automatically. Unsupported specifications and residual
-distributions use R. Standalone likelihood evaluation of function-valued models
-and simulation use R.
+distributions use R. Standalone likelihood and inference also support
+parameter-only component functions returning plain numeric matrices. Other
+function signatures and impacts use R for standalone evaluation. Simulation uses R.
 The `emhawkes.engine` option has three settings:
 
 | Setting | Role |

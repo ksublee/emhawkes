@@ -196,8 +196,9 @@ deterministic functions of \code{param}, with captured values held fixed.
 Observed-state \code{impact} functions are also supported without Jacobians.
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
-Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} keeps its numeric-only C++ contract;
-automatic selection uses R to evaluate a restored function-valued model. Automatic
+Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} also uses C++
+for parameter-only component functions, including restored fitted models.
+Other callbacks retain the R path for standalone evaluation. Automatic
 fallback through \code{...} assumes deterministic callbacks with fixed captures;
 it may evaluate a callback again when an unsupported state read is detected.
 
