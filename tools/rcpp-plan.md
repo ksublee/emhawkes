@@ -170,6 +170,12 @@ Observed-state impacts now use `jacobian$impact` with the full fitted parameter 
 
 Keep these extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 
+### 수치미분을 유지한 함수형 모형의 C++ 추정
+
+`options(emhawkes.engine = "cpp")`를 지정하면 모수만 받는 핵심 성분 함수와 관측 자료에 의존하는 `impact`를 C++ 우도로 추정할 수 있다. Jacobian 없이 기존 수치미분과 기본 Hessian 계산을 유지한다. 사건 수·마크에 의존하는 모형과 Hawkes flocking을 포함한다. R에서 사건별 impact 행렬을 계산하고, C++에서 감쇠·적분·강도 재귀를 계산한다.
+
+기본 `"auto"` 선택은 바꾸지 않는다. 강도 이력에 의존하는 impact, 상태 의존 baseline, mark 밀도와 잔차분포는 이 경로에서 지원하지 않는다. `...`를 통한 강도 이력 접근도 명시적으로 거부한다. 정확성과 CRAN 비교 결과는 [수치미분 impact 보고서](impact-numeric-results.md)에 기록한다.
+
 ### 시뮬레이션
 
 현재 같은 행의 감쇠율이 같으면 후보 대기시간을 직접 생성하고, 하나라도 다른 행이 있으면 thinning 경로를 사용한다. baseline이 0인 경우에는 유한 총 hazard와 소멸을 처리한다. 이 분기들을 한 번에 바꾸지 않는다.

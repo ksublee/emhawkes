@@ -1,0 +1,4 @@
+"case","events","cran_seconds","r_seconds","cpp_seconds","cran_speedup"
+"user_example",2000,9.34,9.91,4.92,1.89837398373984
+"bivariate_counts_marks",2000,9.19,7.84,4.69,1.95948827292111
+"flocking",1999,119.31,100.48,51.58,2.31310585498255

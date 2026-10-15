@@ -15,9 +15,10 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
   latent <- c("lambda", "lambda_component", "lambda_component_n")
   # Preserve the existing positional order inside ... as well as argument names.
   available <- c("param", observed, latent, "mu", "alpha", "beta")
+  mode <- if (derivatives) "the analytic gradient" else "the C++ likelihood"
   check_callback <- function(fun, label) {
     if (any(names(formals(fun)) %in% latent)) {
-      stop(label, " cannot depend on latent intensity states for the analytic gradient.", call. = FALSE)
+      stop(label, " cannot depend on latent intensity states for ", mode, ".", call. = FALSE)
     }
     callback_plan(fun, available, label)
   }
@@ -47,8 +48,9 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
                  values[c("mu", "alpha", "beta")])
     # do.call supplies these as promises. Ignored ... remains compatible; reading
     # an unavailable intensity through ... fails instead of silently using NULL.
-    for (name in latent) context[[name]] <- quote(stop(
-      "Analytic impact cannot read latent intensity states through '...'.", call. = FALSE))
+    for (name in latent) context[[name]] <- substitute(stop(
+      MESSAGE, call. = FALSE), list(MESSAGE = paste0(
+        "Impact cannot read latent intensity states through '...' for ", mode, ".")))
     if (full) context$param <- stats::setNames(param, parameter_names) else if (component$has_param) {
       context$param <- stats::setNames(param[component$index], names(component$param))
     }

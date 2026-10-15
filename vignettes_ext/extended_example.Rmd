@@ -931,6 +931,15 @@ fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
 summary(fit_fl)
 ```
 
+This impact depends on observed event counts, so the C++ likelihood can be used
+with numerical differentiation. No Jacobian is needed; R still evaluates the impact.
+
+```{r flocking-cpp-numeric, eval=FALSE}
+previous_engine <- options(emhawkes.engine = "cpp")
+fit_fl_cpp <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
+options(previous_engine)
+```
+
 ### Bid-ask price model
 
 This model describes bid and ask prices using a system of counting processes and their conditional intensities:

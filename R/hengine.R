@@ -171,7 +171,8 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
   kernels <- ncol(plan$start$beta)
   initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
   if (is.null(initial) && length(object@type_col_map)) {
-    stop("Analytic gradient requires lambda_component0 for a multi-kernel mapping.")
+    stop(if (derivatives) "Analytic gradient" else "C++ likelihood",
+         " requires lambda_component0 for a multi-kernel mapping.")
   }
   mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
   mapping <- lapply(mapping, function(x) as.integer(x) - 1L)

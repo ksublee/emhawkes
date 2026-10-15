@@ -150,14 +150,14 @@ stopifnot(identical(as.numeric(unary_fun$loglik(unary_point)), -Inf))
 unary_explicit <- objective(unary, normalize(unary, dt), .1, unary_map, derivatives = FALSE)
 stopifnot(is.finite(unary_explicit$loglik(unary_point)))
 
-# Unsupported state callbacks, impacts, distributions, classes and shape changes
+# Unsupported state callbacks, latent impacts, distributions, classes and shape changes
 # are rejected before they can silently enter the native loop.
 bad <- poisson
 bad@mu <- function(param = c(log_rate = 0), n = 1) matrix(exp(param))
 fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "only.*param")
 bad <- poisson
-bad@impact <- function(...) matrix(0)
-fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "impact function")
+bad@impact <- function(lambda, ...) matrix(0)
+fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "latent intensity")
 bad <- poisson
 bad@dmark <- function(...) 1
 fails(fit_engine("cpp", bad, dt, lambda_component0 = 0), "mark density")

@@ -1,0 +1,4 @@
+"case","previous_default_identical","cpp_six_fields_identical","cran_estimate_max_abs_difference","cran_maximum_abs_difference","cran_iterations","cpp_iterations","cran_code","cpp_code"
+"user_example",TRUE,TRUE,7.63143513937692e-08,5.27506927028298e-11,48,49,0,0
+"bivariate_counts_marks",TRUE,TRUE,1.71486189831649e-08,2.86490831058472e-11,46,46,0,0
+"flocking",TRUE,TRUE,2.78229258521279e-08,7.45785655453801e-11,84,84,0,0

@@ -186,10 +186,11 @@ still use the R likelihood. To use C++ with numerical differentiation, set
 This option supports parameter-only \code{mu}, \code{alpha}, \code{beta}, and \code{eta} functions
 returning plain numeric matrices with constant dimensions. They must be
 deterministic functions of \code{param}, with captured values held fixed.
-Impacts, state-dependent baselines, mark densities and residual distributions
-are excluded from this numerical C++ path. Supplied \code{grad} and \code{hess} are
-retained. Standalone \code{logLik()} continues to use the documented numeric-only
-C++ engine; use the R engine to evaluate a restored function-valued model.
+Observed-state \code{impact} functions are also supported without Jacobians.
+State-dependent baselines, latent-intensity impacts, mark densities and residual
+distributions are excluded from this numerical C++ path. Supplied \code{grad} and
+\code{hess} are retained. Standalone \code{logLik()} keeps its numeric-only C++ contract;
+use the R engine to evaluate a restored function-valued model.
 
 Observed-state \code{impact} functions may use \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type},
 \code{inter_arrival}, and the resolved \code{mu}, \code{alpha}, and \code{beta} matrices.
@@ -200,7 +201,8 @@ only in columns selected by its type. The last event ends the likelihood window.
 Automatic initialization uses the existing \code{mu}/\code{alpha}/\code{beta} rule; the
 additional impact does not enter that rule.
 
-\code{jacobian$impact} is a matrix or a function with the same observed context.
+With \code{gradient = "analytic"}, \code{jacobian$impact} is a matrix or a function with
+the same observed context.
 Its \code{param} argument receives the full named optimization vector, whereas
 the impact function itself receives its local \code{param} vector as before.
 Rows follow \code{as.vector(impact(...))}; columns must include every fitted parameter
@@ -296,6 +298,10 @@ h_count <- new("hspec", mu = 0.3,
   impact = count_impact)
 # hfit(h_count, inter_arrival, gradient = "analytic",
 #      jacobian = list(impact = count_jac))
+# Or keep numerical differentiation without a Jacobian:
+# previous_engine <- options(emhawkes.engine = "cpp")
+# hfit(h_count, inter_arrival)
+# options(previous_engine)
 
 # example 2
 \donttest{

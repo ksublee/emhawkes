@@ -115,10 +115,11 @@ NULL
 #' This option supports parameter-only `mu`, `alpha`, `beta`, and `eta` functions
 #' returning plain numeric matrices with constant dimensions. They must be
 #' deterministic functions of `param`, with captured values held fixed.
-#' Impacts, state-dependent baselines, mark densities and residual distributions
-#' are excluded from this numerical C++ path. Supplied `grad` and `hess` are
-#' retained. Standalone `logLik()` continues to use the documented numeric-only
-#' C++ engine; use the R engine to evaluate a restored function-valued model.
+#' Observed-state `impact` functions are also supported without Jacobians.
+#' State-dependent baselines, latent-intensity impacts, mark densities and residual
+#' distributions are excluded from this numerical C++ path. Supplied `grad` and
+#' `hess` are retained. Standalone `logLik()` keeps its numeric-only C++ contract;
+#' use the R engine to evaluate a restored function-valued model.
 #'
 #' Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`, `type`,
 #' `inter_arrival`, and the resolved `mu`, `alpha`, and `beta` matrices.
@@ -129,7 +130,8 @@ NULL
 #' Automatic initialization uses the existing `mu`/`alpha`/`beta` rule; the
 #' additional impact does not enter that rule.
 #'
-#' `jacobian$impact` is a matrix or a function with the same observed context.
+#' With `gradient = "analytic"`, `jacobian$impact` is a matrix or a function with
+#' the same observed context.
 #' Its `param` argument receives the full named optimization vector, whereas
 #' the impact function itself receives its local `param` vector as before.
 #' Rows follow `as.vector(impact(...))`; columns must include every fitted parameter
@@ -233,6 +235,10 @@ NULL
 #'   impact = count_impact)
 #' # hfit(h_count, inter_arrival, gradient = "analytic",
 #' #      jacobian = list(impact = count_jac))
+#' # Or keep numerical differentiation without a Jacobian:
+#' # previous_engine <- options(emhawkes.engine = "cpp")
+#' # hfit(h_count, inter_arrival)
+#' # options(previous_engine)
 #'
 #' # example 2
 #' \donttest{
@@ -448,11 +454,8 @@ setMethod(
       objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian)
       llh_function <- objective$loglik
       grad <- objective$gradient
-    } else if (identical(engine, "cpp") && any(vapply(
-      list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1)))) {
-      if (!is.null(object@impact)) {
-        stop("C++ parameter-only fitting does not support an impact function; use the R engine.", call. = FALSE)
-      }
+    } else if (identical(engine, "cpp") && (!is.null(object@impact) || any(vapply(
+      list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1))))) {
       # Reuse native recursions without scores or component Jacobians.
       # Numerical differentiation and supplied grad/hess remain with maxLik.
       objective <- make_hawkes_objective(object, observation, lambda_component0,
