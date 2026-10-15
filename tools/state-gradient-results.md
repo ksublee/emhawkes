@@ -138,3 +138,9 @@ dependency versions. From the repository root:
 The complete Bid-ask Jacobians are in `tools/state-gradient-cases.R` and the
 extended vignette. Requesting the analytic option without the required Jacobians
 produces an error. Public defaults and numerical fitting remain unchanged.
+
+## Scaling beyond Bid-ask
+
+The [Markov scaling study](gradient-scaling-results.md) varies event count,
+dimensions, kernel columns, and fitted parameter count. It reports full-fit
+comparisons separately from value-and-score timings and records memory costs.

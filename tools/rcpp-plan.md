@@ -178,7 +178,14 @@ The native loop returns partial scores for `mu`, `alpha`, `beta`, `eta`, and ini
 
 The Jacobian adapter now supports parameter-only functions through `hfit(jacobian = ...)`. Users supply exact component derivatives as constant matrices or `function(param)` callbacks. Shared names accumulate contributions; fixed entries have zero derivative. See the [function-gradient report](function-gradient-results.md).
 
-Observed-state impacts now use `jacobian$impact` with the full fitted parameter vector. The native engine returns reverse sensitivities to event jumps; R contracts them with the supplied total impact derivatives. Observed `N`, `Nc`, marks, types, and times remain fixed. See the [observed-impact report](observed-impact-results.md). Observed baselines now accept full-parameter `jacobian$mu`. Impacts declaring `lambda_component_n` accept separate direct parameter and current-state Jacobians; a native forward recursion propagates their effects. See the [state-gradient report](state-gradient-results.md). Arbitrary full-history callbacks using `lambda` or `lambda_component` remain unsupported by analytic fitting. Parameter-dependent branch thresholds require separate differentiability checks.
+Observed-state impacts now use `jacobian$impact` with the full fitted parameter vector. The native engine returns reverse sensitivities to event jumps; R contracts them with the supplied total impact derivatives. Observed `N`, `Nc`, marks, types, and times remain fixed. See the [observed-impact report](observed-impact-results.md). Observed baselines now accept full-parameter `jacobian$mu`. Impacts declaring `lambda_component_n` accept separate direct parameter and current-state Jacobians; a native forward recursion propagates their effects. See the [state-gradient report](state-gradient-results.md).
+
+Analytic development focuses on Markov models using current state. Extending
+derivatives to arbitrary full-history callbacks using `lambda` or
+`lambda_component` is outside the current plan. Parameter-dependent branch
+thresholds require separate differentiability checks. The
+[scaling study](gradient-scaling-results.md) compares event counts, dimensions,
+kernel columns, parameter sharing, fit accuracy, time, and memory.
 
 Keep these analytic-gradient extensions opt-in until their derivatives, likelihoods, fits, and timings agree with independent references. Do not infer reliable Wald inference from a faster score calculation.
 
