@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Accelerate standalone
+  [`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+  and intensity/residual inference for parameter-only component
+  functions, including restored fitted specifications. Preserve default
+  evaluation, initialization, fallback and optimizer behavior.
+
 - Add event/dimension/kernel scaling and allocation benchmarks. Use
   current components in the GitHub Bid-ask example and explain
   full-history copying costs; preserve likelihood and optimizer

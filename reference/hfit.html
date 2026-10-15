@@ -278,8 +278,9 @@ deterministic functions of <code>param</code>, with captured values held fixed.
 Observed-state <code>impact</code> functions are also supported without Jacobians.
 Observed baselines and sequential state-dependent impacts are also supported
 as described below. Mark densities and residual distributions are excluded.
-Supplied <code>grad</code> and <code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> keeps its numeric-only C++ contract;
-automatic selection uses R to evaluate a restored function-valued model. Automatic
+Supplied <code>grad</code> and <code>hess</code> are retained. Standalone <code><a href="logLik.html">logLik()</a></code> also uses C++
+for parameter-only component functions, including restored fitted models.
+Other callbacks retain the R path for standalone evaluation. Automatic
 fallback through <code>...</code> assumes deterministic callbacks with fixed captures;
 it may evaluate a callback again when an unsupported state read is detected.</p>
 <p>Observed-state <code>impact</code> functions may use <code>n</code>, <code>N</code>, <code>Nc</code>, <code>mark</code>, <code>type</code>,

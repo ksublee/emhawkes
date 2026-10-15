@@ -787,8 +787,10 @@ Numeric Hawkes specifications use the Rcpp engine automatically for
 likelihood evaluation and inference. During fitting, supported function
 components and impacts also use C++ automatically. Unsupported
 specifications and residual distributions use R. Standalone likelihood
-evaluation of function-valued models and simulation use R. The
-`emhawkes.engine` option has three settings:
+and inference also support parameter-only component functions returning
+plain numeric matrices. Other function signatures and impacts use R for
+standalone evaluation. Simulation uses R. The `emhawkes.engine` option
+has three settings:
 
 | Setting            | Role                                                 |
 |--------------------|------------------------------------------------------|
@@ -1287,7 +1289,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x559e7eefe848>
+#> <bytecode: 0x5598405a77f0>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1297,7 +1299,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x559e7f2ad380>
+#> <bytecode: 0x55983f913580>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1307,7 +1309,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x559e7f7cf370>
+#> <bytecode: 0x55983fbbb900>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1383,7 +1385,9 @@ summary(fit_sy)
 ```
 
 The restored component functions use the estimated defaults. Both
-functions retain the same estimated `kappa`.
+functions retain the same estimated `kappa`. Their parameter-only
+interface also allows automatic C++ likelihood and residual replay with
+the saved initial state.
 
 ``` r
 
@@ -1392,6 +1396,16 @@ c(mu = eval(formals(estimated_sy@mu)$param)[["kappa"]],
   beta = eval(formals(estimated_sy@beta)$param)[["kappa"]])
 #>        mu      beta 
 #> 0.4099007 0.4099007
+```
+
+``` r
+
+replayed_sy <- do.call(logLik, c(list(object = estimated_sy,
+  inter_arrival = res_sy$inter_arrival, type = res_sy$type, infer = TRUE),
+  fit_initial_state(fit_sy)))
+c(fitted = as.numeric(logLik(fit_sy)), replayed = replayed_sy$loglikelihood)
+#>    fitted  replayed 
+#> -260.6273 -260.6273
 ```
 
 ## Extended models
@@ -1790,7 +1804,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x559e804cdcd8>
+#> <bytecode: 0x55984640f140>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2088,7 +2102,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x559e804c3cd8>
+#> <bytecode: 0x55983e4e8660>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2359,7 +2373,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x559e7e980528>
+#> <environment: 0x55983ebcb168>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2367,7 +2381,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x559e7e980528>
+#> <environment: 0x55983ebcb168>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2376,7 +2390,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x559e7e980528>
+#> <environment: 0x55983ebcb168>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2386,7 +2400,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x559e7e980528>
+#> <environment: 0x55983ebcb168>
 ```
 
 The following histogram shows inter-arrival times from a model with

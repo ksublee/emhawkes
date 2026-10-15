@@ -126,8 +126,9 @@ helpers. Simulation returns an `hreal` object.
 With automatic engine selection, numeric Hawkes specifications use a
 compiled Rcpp engine for likelihood evaluation and inference, including
 multi-kernel models, unequal decay rates, and numeric mark effects.
-Standalone likelihood evaluation retains the R implementation for
-function-valued parameters and impacts. Mark densities,
+Standalone likelihood and inference also support parameter-only
+component functions returning plain numeric matrices. Other function
+signatures and impacts retain the R implementation. Mark densities,
 residual-distribution models, and numeric inputs with custom classes use
 R. Simulation continues to use R. The fitting adapters below also select
 C++ automatically for supported callback models.
@@ -200,9 +201,11 @@ selection uses R for unsupported specifications; forcing `"cpp"` reports
 unsupported features. Callback errors propagate. Callbacks must be
 deterministic with fixed captures; detecting an unsupported state read
 through `...` can require a retry in R. Standalone
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
-keeps its numeric-only C++ contract; select automatic selection (which
-uses R) when evaluating a restored function-valued model.
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
+`infer = TRUE` also use C++ for parameter-only component functions. The
+default automatic selection therefore accelerates replay of restored
+models with these components. Other callbacks retain the R path for
+standalone evaluation.
 
 Observed-state `impact` functions can use the analytic option with
 `jacobian = list(impact = impact_jac)`. They may depend on observed `N`,
