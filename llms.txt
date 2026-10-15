@@ -218,15 +218,24 @@ Include derivatives through any core matrices used by the impact. The
 impact function keeps receiving its local parameters. See
 [`?hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md) for an
 example and the callback contract. Callbacks that read latent
-intensities remain unsupported by the analytic option. Default fits
-retain the R path. For numerical C++ fitting, declare
-`lambda_component_n` to receive the current pre-jump component matrix.
-Declare `lambda` or `lambda_component` only when full pre-jump histories
-are needed. Observed baselines may use counts and marks, return a
-dimensions-by-one matrix, and remain constant between events. They
-cannot depend on latent intensities. See the [bid-ask
+intensities remain unsupported by the analytic option. Default numerical
+fitting uses C++ for supported callbacks. Declare `lambda_component_n`
+to receive the current pre-jump component matrix. Declare `lambda` or
+`lambda_component` only when full pre-jump histories are needed.
+Observed baselines may use counts and marks, return a dimensions-by-one
+matrix, and remain constant between events. They cannot depend on latent
+intensities. See the [bid-ask
 benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md)
 for the state convention, compatibility checks and timings.
+
+When only the current state is needed, use `lambda_component_n`. Full
+histories need storage proportional to events times dimensions times
+kernels. If a callback retains these histories, snapshot-preserving
+copies can make cumulative copying grow quadratically with event count.
+Peak live memory and cumulative allocation are different costs. See the
+[scaling
+measurements](https://github.com/ksublee/emhawkes/blob/main/tools/scaling-results.md)
+for time, allocation and memory comparisons.
 
 See the [count, mark and flocking
 benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)

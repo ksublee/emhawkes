@@ -1287,7 +1287,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55b43baaec40>
+#> <bytecode: 0x559e7eefe848>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -1297,7 +1297,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55b43bebc830>
+#> <bytecode: 0x559e7f2ad380>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -1307,7 +1307,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55b43c3590b8>
+#> <bytecode: 0x559e7f7cf370>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1790,7 +1790,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55b43d5f9c10>
+#> <bytecode: 0x559e804cdcd8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2088,7 +2088,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55b43d03a510>
+#> <bytecode: 0x559e804c3cd8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -2221,6 +2221,14 @@ the current state before its jump. No Jacobian is required. Inspect the
 saved engine record to confirm which calculation was used and whether
 automatic selection fell back to R.
 
+This example needs only the current component matrix, so it uses
+`lambda_component_n`. Requesting `lambda_component` also stores the full
+history. If a callback retains histories beyond its call, preserving
+those snapshots can copy the history repeatedly. Cumulative allocation
+can then grow quadratically with event count. This cost is repeated for
+each likelihood evaluation during numerical optimization. Peak live
+memory can be much smaller because old copies are reclaimed.
+
 ``` r
 
 fit_diagnostics(mle_ba)$computation$engine
@@ -2351,7 +2359,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55b43f9e8d18>
+#> <environment: 0x559e7e980528>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -2359,7 +2367,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55b43f9e8d18>
+#> <environment: 0x559e7e980528>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2368,7 +2376,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55b43f9e8d18>
+#> <environment: 0x559e7e980528>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -2378,7 +2386,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55b43f9e8d18>
+#> <environment: 0x559e7e980528>
 ```
 
 The following histogram shows inter-arrival times from a model with

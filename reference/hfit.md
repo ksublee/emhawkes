@@ -315,8 +315,9 @@ intensity recursions, component scores, and reverse sensitivities to
 event impacts. Temporary storage grows with observations times kernel
 components, without an additional
 observations-by-components-by-parameters array. Standalone
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
-default fitting retain the R path for these models.
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md)
+uses R for these callbacks. Default fitting uses C++ for supported
+callbacks with numerical differentiation and requires no Jacobian.
 
 With numerical differentiation and the C++ engine, `mu` may depend on
 observed `n`, `N`, `Nc`, `mark`, `type`, and `inter_arrival`. Return a
@@ -335,10 +336,15 @@ before the jump. `lambda` and `lambda_component` are allocated only when
 explicitly declared; they contain the initial and current pre-jump rows,
 with future rows zero. Component histories use the R engine's row-major
 column order and names. Retained callback arguments are snapshots.
-Prefer `lambda_component_n` when only the current state is needed; full
-histories can require substantial copies. Undeclared latent access
-through `...` does not select this sequential path. When `mu` is an
-observed-baseline function, the impact's `mu` argument is the
+Prefer `lambda_component_n` when only the current state is needed. A
+full component history has storage proportional to events times
+dimensions times kernels. If callbacks retain history arguments,
+snapshot-preserving copies can make cumulative allocations grow
+quadratically with event count; this is separate from peak live memory.
+Current-state callbacks avoid this history cost. Numerical
+differentiation repeats it at each likelihood evaluation. Undeclared
+latent access through `...` does not select this sequential path. When
+`mu` is an observed-baseline function, the impact's `mu` argument is the
 parameter-bound function, as in the R engine. Callbacks must be
 deterministic and keep captured inputs fixed. Analytic gradients do not
 support this feedback.
@@ -503,18 +509,18 @@ summary(fit)
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42494   1.629   0.1033    
+#> mu1      0.69221    0.42741   1.620   0.1053    
 #> mu3      0.07379    0.03508   2.104   0.0354 *  
 #> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04916   0.291   0.7712    
-#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
-#> alpha34  0.29568    0.11634   2.542   0.0110 *  
-#> beta1.1  0.10275    0.08833   1.163   0.2447    
-#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
-#> alpha1n  0.03456    0.06731   0.513   0.6077    
-#> alpha1w  0.04976    0.06831   0.728   0.4664    
-#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
-#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
+#> alpha12  0.01429    0.04931   0.290   0.7719    
+#> alpha33  0.96110    0.21342   4.503 6.69e-06 ***
+#> alpha34  0.29568    0.11642   2.540   0.0111 *  
+#> beta1.1  0.10275    0.08867   1.159   0.2465    
+#> beta3.1  1.33410    0.22718   5.873 4.29e-09 ***
+#> alpha1n  0.03456    0.06732   0.513   0.6077    
+#> alpha1w  0.04976    0.06843   0.727   0.4671    
+#> alpha2n -2.47298    0.27378  -9.033  < 2e-16 ***
+#> alpha2w  1.00872    0.11319   8.911  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------
