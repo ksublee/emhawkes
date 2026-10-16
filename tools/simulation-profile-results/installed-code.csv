@@ -1,0 +1,9 @@
+library,file,md5
+normal,emhawkes/DESCRIPTION,4cea66e915167625d1bff8f3f963087b
+normal,emhawkes/R/emhawkes.rdb,529e10d725228fa1eb06357f7ff802e8
+normal,emhawkes/R/emhawkes.rdx,3f4dea3ff658c8387f5dd9e6e15ffb3f
+normal,emhawkes/libs/x64/emhawkes.dll,130cced18e8922c687fbf3f95686ec2c
+profile,emhawkes/DESCRIPTION,dead46a73393d96f8decc9d7ef85bb1e
+profile,emhawkes/R/emhawkes.rdb,10f2ad6a3741178c16bc5e84c772e516
+profile,emhawkes/R/emhawkes.rdx,c9b51d2467bd42f390da1a810461b14f
+profile,emhawkes/libs/x64/emhawkes.dll,130cced18e8922c687fbf3f95686ec2c

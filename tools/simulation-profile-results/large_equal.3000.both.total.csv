@@ -1,0 +1,17 @@
+"","total.time","total.pct","self.time","self.pct"
+"""invoke""",0.01,100,0,0
+"""run""",0.01,100,0,0
+"""simulator""",0.01,100,0,0
+"""tryCatch""",0.01,100,0,0
+"""tryCatchList""",0.01,100,0,0
+"""withCallingHandlers""",0.01,100,0,0
+"""matrix""",0.005,50,0.004,40
+"""handle_arrival""",0.005,50,0,0
+"""rowSums""",0.003,30,0.002,20
+"""valid_components""",0.003,30,0,0
+"harrival.R#23",0.002,20,0.001,10
+"harrival.R#25",0.001,10,0.001,10
+"harrival.R#34",0.001,10,0.001,10
+"harrival.R#7",0.001,10,0.001,10
+"""is.data.frame""",0.001,10,0,0
+"""which""",0.001,10,0,0
