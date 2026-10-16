@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Reduce observed-baseline Jacobian storage for analytic scores and
+  opt-in stable Hessians. Retain event-row and integral projections with
+  separate initial derivatives; preserve callback order, parameter names
+  and the public Jacobian interface. Keep dense storage when its array
+  payload is smaller.
+
 - Warn about optimizer nonconvergence when opt-in stable curvature is
   unavailable. Preserve estimates, covariances and numerical thresholds;
   add Hawkes stress checks for coincident decay rates, weak excitation,

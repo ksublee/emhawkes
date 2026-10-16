@@ -395,6 +395,15 @@ measurements</a> for time, allocation and memory comparisons.</p>
 <p>See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md" class="external-link">count,
 mark and flocking benchmark</a> for complete-fit timings and accuracy
 checks.</p>
+<p>Observed-baseline derivatives retain the event-row derivative and the
+row sum needed by the integral, together with the initial Jacobian. This
+reduces storage from order <code>events * dimensions * parameters</code>
+to <code>events * parameters</code> when the compact array payload is
+smaller. Supply a matrix when the total Jacobian is constant; it then
+needs no event path. Small dimensions retain the dense path. Callback
+order and the public <code>jacobian$mu</code> interface are unchanged.
+State-Jacobian callback allocations remain separate. See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/baseline-projection-results.md" class="external-link">storage
+study</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="bid-ask-analytic-gradient">Bid-ask analytic gradient<a class="anchor" aria-label="anchor" href="#bid-ask-analytic-gradient"></a>
