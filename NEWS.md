@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Check the declared minimum R 4.0.0 in CI. Add native GC, memory-access and interruption checks, including callback failures and subsequent RNG recovery.
+
 * Reuse each row's exponential decay factor in native simulation when its kernel decay rates agree. Preserve component arithmetic, callback order, output and random draws; other simulation paths are unchanged.
 
 * Accelerate simulation for resolved parameter-only functions and, with positive baselines and equal within-row decay rates, numeric mark effects, context-free mark generators and current-component impacts. Keep user functions and their defaults in R, synchronize RNG around callbacks and errors, and preserve retained component snapshots. Other event contexts and `...` retain the R path; the existing numeric fast path and likelihood options are unchanged.

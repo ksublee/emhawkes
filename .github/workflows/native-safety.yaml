@@ -1,0 +1,46 @@
+name: Native safety
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      R_KEEP_PKG_SOURCE: yes
+      R_MAKEVARS_USER: ${{ github.workspace }}/native-safety.Makevars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+      - name: Install Valgrind and a debug build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+          printf 'CXXFLAGS=-O0 -g\nCXX11FLAGS=-O0 -g\nCXX14FLAGS=-O0 -g\nCXX17FLAGS=-O0 -g\nCXX20FLAGS=-O0 -g\n' > "$R_MAKEVARS_USER"
+          R CMD INSTALL --preclean .
+      - name: Force GC during native calls
+        run: Rscript --vanilla tools/check-native-safety.R gc native-safety-results/gc
+      - name: Interrupt a native rejection loop
+        run: Rscript --vanilla tools/check-native-interrupt.R native-safety-results/interrupt
+      - name: Check native memory with Valgrind
+        run: |
+          R -d "valgrind --tool=memcheck --track-origins=yes --leak-check=full --show-leak-kinds=definite --errors-for-leak-kinds=definite --error-exitcode=99 --log-file=native-safety-results/valgrind.log" --vanilla -f tools/check-native-safety.R --args basic native-safety-results/memcheck
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-safety
+          path: native-safety-results
