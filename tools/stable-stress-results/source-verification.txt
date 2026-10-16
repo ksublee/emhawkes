@@ -1,0 +1,1 @@
+Baseline runtime matches the prior installation. Parsed runtime changes only relocate the convergence-warning block; numerical calculations are unchanged. Rd check passed.

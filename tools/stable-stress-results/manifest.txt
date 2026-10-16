@@ -1,0 +1,11 @@
+baseline_commit ecedd5d586f289b986d6f89512f51088693c959c
+date 2026-10-16
+protocol 35 fixed-design cases, deterministic seeds, numeric optimizer gradient, auto engine, explicit initial components
+interpretation numerical Hessian and warning validation; no coverage or performance benchmark
+baseline_library C:\Users\KSLee\AppData\Local\Temp\emhawkes-stable-final-q2w675of\lib
+new_library C:\Users\KSLee\AppData\Local\Temp\emhawkes-stable-stress-mpw2vxuw\lib
+sha256 before 3d99bb2762fc932d3d1a50ab83d00b9243785f97b94cc7811b053f3f7a96be72
+sha256 after 87bb4374384d6b2fc47e6feca0df3a945142d59cfdcd6825c6772da6d312be9e
+sha256 study 2c5599e87dbdb240c05658169bfaf15f080176bba67293e1491f12e93afd41bc
+sha256 regression 1b3f52e8249cc3700c77e7a7c28863ac2272e791c960d9be965becb59048cf6d
+validation R CMD check --no-manual Status OK, 27 test scripts, no errors/warnings/notes

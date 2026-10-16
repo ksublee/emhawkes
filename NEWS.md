@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Warn about optimizer nonconvergence when opt-in stable curvature is unavailable. Preserve estimates, covariances and numerical thresholds; add Hawkes stress checks for coincident decay rates, weak excitation, short samples, initial transients and constraint boundaries.
+
 * Avoid a duplicate final Hessian for opt-in stable curvature in unconstrained BFGS, CG, Nelder-Mead and SANN Hawkes fits. Preserve explicit overrides, supplied Hessians, Newton methods and constrained fits; record the omitted pass in fit diagnostics.
 
 * Accelerate opt-in stable Hessians by centrally differentiating the built-in analytic score when available, including with a numerical optimizer gradient. Retain Richardson and step-stability checks, likelihood-difference fallback, optimizer results and default options. Record the curvature source and score fallback reason.

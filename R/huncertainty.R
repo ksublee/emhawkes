@@ -272,19 +272,19 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
     tolower(method) %in% numerical_methods) diagnostics$optimizer_code %in% c(1L, 2L, 8L) else
       diagnostics$optimizer_code == 0L
   diagnostics$free_parameters <- names(parameters)[active]
+  diagnostics$warnings <- character(0)
+  if (!is.na(diagnostics$optimizer_success) && !diagnostics$optimizer_success) {
+    diagnostics$warnings <- c(diagnostics$warnings, "optimizer_not_converged")
+    warning("The optimizer did not report normal convergence (code ",
+            diagnostics$optimizer_code, "). Stable curvature does not establish a reliable fit; ",
+            "see fit_diagnostics().", call. = FALSE)
+  }
   if (identical(diagnostics$status, "ok")) {
     covariance[active, active] <- diagnostics$covariance
     if (diagnostics$method %in% c("scaled_central_Richardson", "scaled_score_Richardson")) {
       H <- matrix(0, length(parameters), length(parameters), dimnames = dimnames(covariance))
       H[active, active] <- diagnostics$hessian
       fit$hessian <- H
-    }
-    diagnostics$warnings <- character(0)
-    if (!is.na(diagnostics$optimizer_success) && !diagnostics$optimizer_success) {
-      diagnostics$warnings <- c(diagnostics$warnings, "optimizer_not_converged")
-      warning("The optimizer did not report normal convergence (code ",
-              diagnostics$optimizer_code, "). Stable curvature does not establish a reliable fit; ",
-              "see fit_diagnostics().", call. = FALSE)
     }
     if (isTRUE(diagnostics$newton_decrement > .1)) {
       diagnostics$warnings <- c(diagnostics$warnings, "score_not_small")
@@ -406,6 +406,9 @@ unrecorded_fit_computation <- function(metadata) {
 #' optimizer found a global maximum or that Wald intervals have correct coverage.
 #' The numerical calculation checks information and standard-error stability
 #' across steps. The stored optimizer gradient and coefficients are not changed.
+#' For checked fits, optimizer nonconvergence is warned even when curvature is
+#' unavailable. Inspect `optimizer_success`, `optimizer_code` and the additional
+#' warning codes in `warnings` separately from the curvature `status` and `reason`.
 #' A Newton decrement above 0.1 triggers a score warning. Its square divided by
 #' two estimates the local quadratic improvement in log-likelihood.
 #' An information condition number above `1e8` triggers a weak-curvature warning;

@@ -60,6 +60,9 @@ gradient selection is retained. Their engine is not inferred from current option
 optimizer found a global maximum or that Wald intervals have correct coverage.
 The numerical calculation checks information and standard-error stability
 across steps. The stored optimizer gradient and coefficients are not changed.
+For checked fits, optimizer nonconvergence is warned even when curvature is
+unavailable. Inspect \code{optimizer_success}, \code{optimizer_code} and the additional
+warning codes in \code{warnings} separately from the curvature \code{status} and \code{reason}.
 A Newton decrement above 0.1 triggers a score warning. Its square divided by
 two estimates the local quadratic improvement in log-likelihood.
 An information condition number above \code{1e8} triggers a weak-curvature warning;
