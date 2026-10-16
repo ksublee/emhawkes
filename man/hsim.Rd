@@ -71,7 +71,12 @@ For unequal rates, the simulator uses a sufficient condition: group components
 by decay rate, multiply each group sum by its rate, and check that cumulative
 sums in increasing rate order are nonnegative.
 
-Simulation uses R. To simulate an estimated model, use \code{\link[=fitted_hspec]{fitted_hspec()}} and
+Simulation uses R. Arrival calculations use the current component state.
+Callbacks receive the arguments they request; callbacks with \code{...} continue
+to receive the full supported context. Requesting full histories can increase
+copying costs for long paths.
+
+To simulate an estimated model, use \code{\link[=fitted_hspec]{fitted_hspec()}} and
 pass \code{\link[=fit_initial_state]{fit_initial_state()}} to \code{hsim()} with \code{do.call()}. These arguments describe
 the start of the fitted observation window. Continuing after its last event
 requires the state at that event.

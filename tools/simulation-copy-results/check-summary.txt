@@ -1,0 +1,10 @@
+R CMD build new: OK; includes vignette generation
+R CMD check --no-manual --as-cran emhawkes_0.9.9.tar.gz
+_R_CHECK_CRAN_INCOMING_REMOTE_=false
+Status: OK
+29 test scripts: OK
+Examples including --run-donttest: OK
+Vignette rebuild: OK
+All new R scripts parse: OK
+Runner child-process launch: OK
+Final source expressions match timed installed hsim/rarrival/darrival: OK

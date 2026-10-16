@@ -13,6 +13,10 @@ rarrival <- function(...){
   dimens <- args$dimens
   type_col_map <- args$type_col_map
   n <- args$n
+  current_component <- args$current_component
+  if (is.null(current_component)) {
+    current_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+  }
 
 
   if (args$all_rows_beta_equal){
@@ -20,7 +24,7 @@ rarrival <- function(...){
     #mu can be zero, so warning is turned off for a moment
     candidate_arrival <- suppressWarnings(stats::rexp(dimens, rate = mu))
 
-    rowSums_rambda_component_n_miuns_1 <- rowSums(matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE))
+    rowSums_rambda_component_n_miuns_1 <- rowSums(current_component)
 
     scaled_log_u <- beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
     excited_arrival <- rep(Inf, dimens)
@@ -38,7 +42,7 @@ rarrival <- function(...){
 
     # thinning algorithm
 
-    rambda_component_n_miuns_1 <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+    rambda_component_n_miuns_1 <- current_component
     rowSums_rambda_component_n_miuns_1 <- rowSums(rambda_component_n_miuns_1)
     rambda_n_minus_1 <- rowSums_rambda_component_n_miuns_1 + mu
 
@@ -158,6 +162,10 @@ darrival <- function(...){
   dresidual <- args$dresidual
   presidual <- args$presidual
   n <- args$n
+  current_component <- args$current_component
+  if (is.null(current_component)) {
+    current_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+  }
   if(is.null(args$tol)) tol <- 1e-09
 
 
@@ -165,7 +173,7 @@ darrival <- function(...){
 
     #mu can be zero, so warning is turned off for a moment
 
-    rowSums_rambda_component_n_miuns_1 <- rowSums(matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE))
+    rowSums_rambda_component_n_miuns_1 <- rowSums(current_component)
 
     residuals_for_each_dimension <- rresidual(dimens)
 

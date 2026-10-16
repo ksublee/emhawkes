@@ -41,7 +41,12 @@ NULL
 #' by decay rate, multiply each group sum by its rate, and check that cumulative
 #' sums in increasing rate order are nonnegative.
 #'
-#' Simulation uses R. To simulate an estimated model, use [fitted_hspec()] and
+#' Simulation uses R. Arrival calculations use the current component state.
+#' Callbacks receive the arguments they request; callbacks with `...` continue
+#' to receive the full supported context. Requesting full histories can increase
+#' copying costs for long paths.
+#'
+#' To simulate an estimated model, use [fitted_hspec()] and
 #' pass [fit_initial_state()] to `hsim()` with `do.call()`. These arguments describe
 #' the start of the fitted observation window. Continuing after its last event
 #' requires the state at that event.
@@ -104,6 +109,9 @@ setMethod(
     beta <- plist$beta
     eta <- plist$eta
     callbacks <- model_callback_plans(object, simulation = TRUE)
+    mu_call <- prepare_component_call(callbacks$mu)
+    impact_call <- prepare_component_call(callbacks$impact)
+    rmark_call <- prepare_component_call(callbacks$rmark)
 
     # Check for each type, beta are equal
     all_rows_beta_equal <- TRUE
@@ -156,12 +164,10 @@ setMethod(
     N[1,] <- N0
     Nc[1,] <- Nc0
     lambda <- lambda_component <- lambda_component_n <- NULL
-    context_at <- function(n) list(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                   N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                   lambda_component_n = lambda_component_n, mu = mu, alpha = alpha, beta = beta)
 
     if (is.function(mu)){
-      mu0 <- call_component(mu, callbacks$mu, context_at(1))
+      mu0 <- mu_call(mu, 1, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
     } else {
       mu0 <- mu
     }
@@ -237,7 +243,8 @@ setMethod(
     # Mathematically, mu is a left continuous process, therefore, this is equivalent to mu(1 + dt)
     if (is.function(mu)){
       # Even if, we pass n=2 as argument, mu function probably use information up to n-1.
-      rmu_n <- call_component(mu, callbacks$mu, context_at(2))
+      rmu_n <- mu_call(mu, 2, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
     } else{
       rmu_n <- mu
     }
@@ -256,7 +263,8 @@ setMethod(
 
 
 
-    #current_rambda_component <- lambda_component0
+    # Keep the state used for the next event separate from stored output.
+    current_rambda_component <- lambda_component0
     generated <- 1L
     for (n in seq_len(size - 1L) + 1L) {
 
@@ -264,13 +272,13 @@ setMethod(
       # rmu_n is previously defined right continuous version.
       mu_n <- rmu_n
       if (length(mu_n) != dimens || any(!is.finite(mu_n)) || any(mu_n < 0) ||
-          !valid_components(matrix(rambda_component[n - 1, ], nrow = dimens, byrow = TRUE))) {
+          !valid_components(current_rambda_component)) {
         stop("Simulation requires finite, nonnegative baselines and nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
       }
 
 
       ### Determine the next arrival, type and mark #######################################################
-      res <- handle_arrival(n = n, rambda_component = rambda_component,
+      res <- handle_arrival(n = n, current_component = current_rambda_component,
                             mu = mu_n, alpha = alpha, beta = beta, dimens = object@dimens,
                             type_col_map = object@type_col_map,
                             rresidual = object@rresidual, dresidual = object@dresidual,
@@ -293,7 +301,8 @@ setMethod(
       # generate a mark for Hawkes
       if( !is.null(object@rmark) ){
         # mark may depends on other variables
-        mark[n] <- call_component(object@rmark, callbacks$rmark, context_at(n))
+        mark[n] <- rmark_call(object@rmark, n, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
       }
 
       Nc[n, ] <- Nc[n-1, ]
@@ -306,7 +315,7 @@ setMethod(
 
       decayed <- exp(-beta * inter_arrival[n])
 
-      decayed_lambda <- lambda_component_n <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE) * decayed
+      decayed_lambda <- lambda_component_n <- current_rambda_component * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -341,7 +350,8 @@ setMethod(
         # impact by mark
         impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
-        impact_res <- call_component(object@impact, callbacks$impact, context_at(n))
+        impact_res <- impact_call(object@impact, n, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -352,11 +362,14 @@ setMethod(
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
       rambda_component[n, ] <- t(new_lambda)
+      # The history row used previously had no matrix dimnames.
+      current_rambda_component <- matrix(new_lambda, nrow = dimens)
 
 
 
       if (is.function(mu)){
-        rmu_n <- call_component(mu, callbacks$mu, context_at(n + 1))
+        rmu_n <- mu_call(mu, n + 1, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
       } else{
         rmu_n <- mu
       }

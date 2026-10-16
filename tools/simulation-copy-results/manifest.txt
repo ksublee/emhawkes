@@ -1,0 +1,5 @@
+Date: 2026-10-16 Asia/Seoul
+Reference commit: 90ead474d99b5bdb59f177a62e53da586a556589
+40 edge cases; 20 timed case/size pairs; 3 repetitions per version; 12 allocation pairs.
+Timing worker and case factory were unchanged while workers ran.
+Rprofmem allocation totals are not peak memory.
