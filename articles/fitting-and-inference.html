@@ -401,6 +401,16 @@ standard errors, and discusses profile likelihood and bootstrap. The <a href="ht
 diagnostic report</a> records the original Hawkes and FRPP issues.</p>
 <p>Check convergence, score, and multiple starting values before
 interpreting intervals.</p>
+<p>For otherwise identical kernels driven by the same events, equal
+decay rates can leave only the combined amplitude identifiable. Small
+excitation alone does not require missing standard errors: known initial
+excitation can still carry decay information. See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/stable-stress-results.md" class="external-link">Hawkes
+curvature stress checks</a>.</p>
+<p>For checked fits, an unsuccessful optimizer triggers a warning even
+when stable curvature is unavailable. Inspect
+<code>optimizer_success</code>, <code>optimizer_code</code> and
+<code>warnings</code> in <code>fit_diagnostics(fit)</code> alongside its
+curvature <code>status</code> and <code>reason</code>.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_checked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">path</span><span class="op">$</span><span class="va">type</span>, final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>

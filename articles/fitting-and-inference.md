@@ -385,6 +385,18 @@ records the original Hawkes and FRPP issues.
 Check convergence, score, and multiple starting values before
 interpreting intervals.
 
+For otherwise identical kernels driven by the same events, equal decay
+rates can leave only the combined amplitude identifiable. Small
+excitation alone does not require missing standard errors: known initial
+excitation can still carry decay information. See the [Hawkes curvature
+stress
+checks](https://github.com/ksublee/emhawkes/blob/main/tools/stable-stress-results.md).
+
+For checked fits, an unsuccessful optimizer triggers a warning even when
+stable curvature is unavailable. Inspect `optimizer_success`,
+`optimizer_code` and `warnings` in `fit_diagnostics(fit)` alongside its
+curvature `status` and `reason`.
+
 ``` r
 
 fit_checked <- hfit(h, path$inter_arrival, path$type, final_hessian = "stable")

@@ -72,16 +72,19 @@ engine is not inferred from current options.
 the optimizer found a global maximum or that Wald intervals have correct
 coverage. The numerical calculation checks information and
 standard-error stability across steps. The stored optimizer gradient and
-coefficients are not changed. A Newton decrement above 0.1 triggers a
-score warning. Its square divided by two estimates the local quadratic
-improvement in log-likelihood. An information condition number above
-`1e8` triggers a weak-curvature warning; eigenvalues at or below `1e-10`
-times the largest absolute eigenvalue do not support numerical
-inversion. These thresholds are numerical diagnostics. With the default
-`final_hessian = "maxLik"`, these additional checks are not performed
-and the status is `"not_checked"`. Request `final_hessian = "stable"` to
-run them. Earlier fits without these checks also have status
-`"not_checked"`.
+coefficients are not changed. For checked fits, optimizer nonconvergence
+is warned even when curvature is unavailable. Inspect
+`optimizer_success`, `optimizer_code` and the additional warning codes
+in `warnings` separately from the curvature `status` and `reason`. A
+Newton decrement above 0.1 triggers a score warning. Its square divided
+by two estimates the local quadratic improvement in log-likelihood. An
+information condition number above `1e8` triggers a weak-curvature
+warning; eigenvalues at or below `1e-10` times the largest absolute
+eigenvalue do not support numerical inversion. These thresholds are
+numerical diagnostics. With the default `final_hessian = "maxLik"`,
+these additional checks are not performed and the status is
+`"not_checked"`. Request `final_hessian = "stable"` to run them. Earlier
+fits without these checks also have status `"not_checked"`.
 
 ## See also
 
