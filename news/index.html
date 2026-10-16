@@ -41,7 +41,7 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
-<ul><li><p>Check the declared minimum R 4.0.0 in CI and make sensitivity parameter-name conversion explicit for older Rcpp versions. Add native GC, memory-access and interruption checks, including callback failures and subsequent RNG recovery.</p></li>
+<ul><li><p>Check the declared minimum R 4.0.0 in CI. Make sensitivity parameter-name conversion explicit and enable Rcpp unwind protection for older Rcpp versions, preserving callback conditions and RNG recovery. Add native GC, memory-access and interruption checks.</p></li>
 <li><p>Reuse each row’s exponential decay factor in native simulation when its kernel decay rates agree. Preserve component arithmetic, callback order, output and random draws; other simulation paths are unchanged.</p></li>
 <li><p>Accelerate simulation for resolved parameter-only functions and, with positive baselines and equal within-row decay rates, numeric mark effects, context-free mark generators and current-component impacts. Keep user functions and their defaults in R, synchronize RNG around callbacks and errors, and preserve retained component snapshots. Other event contexts and <code>...</code> retain the R path; the existing numeric fast path and likelihood options are unchanged.</p></li>
 <li><p>Extend the numeric Rcpp simulation loop to unequal within-row decay rates, including mapped multi-kernel models and admissible signed components. Preserve the R thinning algorithm, rejected random draws, warnings and error RNG state. Callback, eta, custom-residual and zero-baseline models retain the R path.</p></li>
