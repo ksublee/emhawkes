@@ -2,6 +2,12 @@
 
 ## emhawkes 0.9.9
 
+- Accelerate opt-in stable Hessians by centrally differentiating the
+  built-in analytic score when available, including with a numerical
+  optimizer gradient. Retain Richardson and step-stability checks,
+  likelihood-difference fallback, optimizer results and default options.
+  Record the curvature source and score fallback reason.
+
 - Extend opt-in analytic gradients to observed baselines and impacts
   that explicitly use `lambda_component_n`. Accept full-parameter
   baseline Jacobians and separate direct-parameter/state impact

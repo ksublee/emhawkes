@@ -371,9 +371,17 @@ stabilization checks. If numerical Hawkes standard errors contain
 <code>NaN</code>, a short message suggests trying
 <code>final_hessian = "stable"</code>. Request this option to check
 numerical Hawkes curvature with scaled central differences and
-Richardson extrapolation. This preserves the optimizer’s coefficients
-and log-likelihood. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> then
-use the checked covariance; free-parameter standard errors are
+Richardson extrapolation. With <code>auto</code> or <code>cpp</code>,
+stable curvature differentiates the built-in analytic score when the
+model is supported and any required component Jacobians are supplied.
+This also works with the default numerical optimizer gradient.
+Unsupported score models, missing Jacobians, or failed score evaluations
+use likelihood differences; <code>r</code> always uses likelihood
+differences. Inspect <code>curvature_source</code> and
+<code>score_fallback_reason</code> in <code>fit_diagnostics(fit)</code>
+for the selected path. This preserves the optimizer’s coefficients and
+log-likelihood. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> then use
+the checked covariance; free-parameter standard errors are
 <code>NA</code> when stable inversion is unavailable. Inspect
 <code>fit_diagnostics(fit)</code> for the requested checks. Supplied
 Hessians, disabled final curvature, BHHH, custom objectives, and
@@ -395,10 +403,10 @@ interpreting intervals.</p>
 <span><span class="co">#&gt; [1] "ok"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $scaled_condition</span></span>
-<span><span class="co">#&gt; [1] 25.35155</span></span>
+<span><span class="co">#&gt; [1] 25.35156</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $newton_decrement</span></span>
-<span><span class="co">#&gt; [1] 8.296892e-06</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 8.296909e-06</span></span></code></pre></div>
 <p>The calculation record is explained in <a href="https://ksublee.github.io/emhawkes/articles/computation.html#recorded-calculation-methods">Computation</a>.</p>
 </div>
 <div class="section level2">

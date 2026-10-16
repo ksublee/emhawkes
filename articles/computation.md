@@ -140,6 +140,15 @@ estimation. The record includes final curvature evaluations and survives
 this record return `recorded = FALSE` and `NA` for unrecorded methods.
 The existing curvature checks remain available at the top level.
 
+With `final_hessian = "stable"`, `computation$hessian$used` is
+`"scaled_score_Richardson"` when the built-in analytic score is
+available, or `"scaled_central_Richardson"` for likelihood differences.
+The optimizer can still use the default numerical gradient. Supply the
+same component `jacobian` list as for analytic optimization to enable
+score-based curvature for function models.
+`fit_diagnostics(fit)$score_fallback_reason` explains a failed score
+attempt. The explicit `r` engine uses likelihood differences.
+
 ## Analytic gradients
 
 [`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses

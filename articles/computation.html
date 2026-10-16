@@ -220,6 +220,16 @@ evaluations and survives <code><a href="https://rdrr.io/r/base/readRDS.html" cla
 record return <code>recorded = FALSE</code> and <code>NA</code> for
 unrecorded methods. The existing curvature checks remain available at
 the top level.</p>
+<p>With <code>final_hessian = "stable"</code>,
+<code>computation$hessian$used</code> is
+<code>"scaled_score_Richardson"</code> when the built-in analytic score
+is available, or <code>"scaled_central_Richardson"</code> for likelihood
+differences. The optimizer can still use the default numerical gradient.
+Supply the same component <code>jacobian</code> list as for analytic
+optimization to enable score-based curvature for function models.
+<code>fit_diagnostics(fit)$score_fallback_reason</code> explains a
+failed score attempt. The explicit <code>r</code> engine uses likelihood
+differences.</p>
 </div>
 <div class="section level2">
 <h2 id="analytic-gradients">Analytic gradients<a class="anchor" aria-label="anchor" href="#analytic-gradients"></a>

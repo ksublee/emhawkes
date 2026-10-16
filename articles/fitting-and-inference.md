@@ -349,8 +349,15 @@ additional stabilization checks. If numerical Hawkes standard errors
 contain `NaN`, a short message suggests trying
 `final_hessian = "stable"`. Request this option to check numerical
 Hawkes curvature with scaled central differences and Richardson
-extrapolation. This preserves the optimizer’s coefficients and
-log-likelihood. [`summary()`](https://rdrr.io/r/base/summary.html) and
+extrapolation. With `auto` or `cpp`, stable curvature differentiates the
+built-in analytic score when the model is supported and any required
+component Jacobians are supplied. This also works with the default
+numerical optimizer gradient. Unsupported score models, missing
+Jacobians, or failed score evaluations use likelihood differences; `r`
+always uses likelihood differences. Inspect `curvature_source` and
+`score_fallback_reason` in `fit_diagnostics(fit)` for the selected path.
+This preserves the optimizer’s coefficients and log-likelihood.
+[`summary()`](https://rdrr.io/r/base/summary.html) and
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) then use the checked
 covariance; free-parameter standard errors are `NA` when stable
 inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
@@ -380,10 +387,10 @@ fit_diagnostics(fit_checked)[c("status", "scaled_condition", "newton_decrement")
 #> [1] "ok"
 #> 
 #> $scaled_condition
-#> [1] 25.35155
+#> [1] 25.35156
 #> 
 #> $newton_decrement
-#> [1] 8.296892e-06
+#> [1] 8.296909e-06
 ```
 
 The calculation record is explained in

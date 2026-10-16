@@ -280,12 +280,12 @@ summary(fit_mk)
 #> Estimates:
 #>          Estimate Std. error t value  Pr(> t)    
 #> mu1      0.011162   0.007743   1.442   0.1494    
-#> alpha1.1 2.474140   0.350307   7.063 1.63e-12 ***
-#> alpha1.2 1.380734   0.298056   4.632 3.61e-06 ***
-#> alpha1.3 0.044026   0.097974   0.449   0.6532    
-#> alpha1.4 0.231206   0.127204   1.818   0.0691 .  
-#> beta1.1  6.202808   1.480600   4.189 2.80e-05 ***
-#> beta1.3  0.700741   0.277816   2.522   0.0117 *  
+#> alpha1.1 2.474140   0.350309   7.063 1.63e-12 ***
+#> alpha1.2 1.380734   0.298057   4.632 3.61e-06 ***
+#> alpha1.3 0.044026   0.097978   0.449   0.6532    
+#> alpha1.4 0.231206   0.127207   1.818   0.0691 .  
+#> beta1.1  6.202808   1.480638   4.189 2.80e-05 ***
+#> beta1.3  0.700741   0.277825   2.522   0.0117 *  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -303,7 +303,7 @@ fit_diagnostics(fit_mk)[c("status", "newton_decrement", "warnings")]
 #> [1] "ok"
 #> 
 #> $newton_decrement
-#> [1] 0.0003105941
+#> [1] 0.0003106036
 #> 
 #> $warnings
 #> character(0)
@@ -399,7 +399,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x562a84091e20>
+#> <bytecode: 0x55ea27b04240>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -409,7 +409,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x562a8457aea0>
+#> <bytecode: 0x55ea284856f0>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -419,7 +419,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x562a84925258>
+#> <bytecode: 0x55ea24886310>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -915,7 +915,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x562a80707898>
+#> <bytecode: 0x55ea2a5dd268>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1228,7 +1228,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x562a848d7d40>
+#> <bytecode: 0x55ea237428a0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1517,7 +1517,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x562a87541eb0>
+#> <environment: 0x55ea2641d470>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -1525,7 +1525,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x562a87541eb0>
+#> <environment: 0x55ea2641d470>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1534,7 +1534,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x562a87541eb0>
+#> <environment: 0x55ea2641d470>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1544,7 +1544,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x562a87541eb0>
+#> <environment: 0x55ea2641d470>
 ```
 
 The following histogram shows inter-arrival times from a model with
