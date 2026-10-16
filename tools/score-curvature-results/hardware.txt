@@ -1,0 +1,5 @@
+CPU: Intel(R) Core(TM) Ultra 7 356H
+Physical cores: 16
+Logical processors: 16
+Installed RAM GiB: 31.39
+Timing worker affinity mask: 4

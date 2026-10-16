@@ -71,6 +71,10 @@ check <- function(model, jac, initial, dt0 = dt, type0 = type, mark0 = mark) {
       close(f$loglik(point), numeric$loglik(point), 1e-13)
       close(f$loglik(point), reference(point), 1e-12)
       g <- f$gradient(point)
+      cold <- objective(model, o, initial, m, jacobian = jac)
+      close(cold$score(rev(point)), g, 0)
+      close(cold$loglik(point), f$loglik(point), 0)
+      close(cold$gradient(point), g, 0)
       stopifnot(identical(names(g), names(p)))
       for (step in c(1e-4, 2e-5)) close(g, central(reference, point, step))
       close(sum(g * direction), (reference(point + 2e-5 * direction) -
@@ -78,7 +82,8 @@ check <- function(model, jac, initial, dt0 = dt, type0 = type, mark0 = mark) {
       close(f$gradient(rev(point)), g, 0)
     }
     bad <- p; bad[1] <- Inf
-    stopifnot(identical(as.numeric(f$loglik(bad)), -Inf), all(is.na(f$gradient(bad))))
+    stopifnot(identical(as.numeric(f$loglik(bad)), -Inf), all(is.na(f$gradient(bad))),
+      all(is.na(f$score(bad))))
   }
   stopifnot(identical(snapshot, serialize(model, NULL)))
 }
@@ -99,6 +104,22 @@ m <- build(u, TRUE)
 pj <- matrix(0, 1, length(m$start), dimnames = list(NULL, names(m$start))); pj[, 'q'] <- 1
 uj <- list(impact = list(param = pj, state = matrix(.03)))
 check(u, uj, NULL, type0 = rep(1, length(dt)))
+# Curvature's cold score needs only one event replay, then caches both outputs.
+counted <- u
+calls <- 0L
+counted@impact <- function(param = c(q = .02), lambda_component_n) {
+  calls <<- calls + 1L
+  matrix(param['q'] + .03 * lambda_component_n)
+}
+co <- normalize(counted, dt, rep(1, length(dt)), mark)
+cm <- build(counted, TRUE)
+cf <- objective(counted, co, .1, cm, jacobian = uj)
+g <- cf$score(cm$start)
+stopifnot(calls == length(dt) - 1L)
+seen <- calls
+invisible(cf$loglik(cm$start)); close(cf$gradient(cm$start), g, 0)
+stopifnot(calls == seen)
+
 check(u, uj, .2, dt0 = c(0, 0, 1e-10, 100, .4, .6, .1), type0 = rep(1, length(dt)))
 # Extreme rates use a scaled local beta parameter so independent differences
 # stay in-domain and exercise the integral derivative without huge perturbations.

@@ -1,0 +1,9 @@
+starting_repository_commit 6df1aa7919065542838d9ca8194935e4f3ec6e7a
+baseline_runtime_commit 4d6ea845cbce711b3b778bde2f0decfe07a75138
+date 2026-10-16
+protocol single sequential worker, affinity mask 4, no tracing
+excluded_initial_results discarded-before-single-pass
+sha256 R/hfit.R a995359b7914f6fab4bb26f67b275b1c4c3ba537bd834d847e989de8eba5b284
+sha256 R/hgradient.R 5d7a97f3e7c00e4202bdd33da3afa9d22e08ba10e566edcbf912dda267097be5
+sha256 R/huncertainty.R b9fe01e41cd69d205991f91138809916e6a2f81d62f3847e39b38adeb0d7d6ac
+source_hash_note frozen installed sources; later roxygen-only wording edits leave parsed function bodies identical

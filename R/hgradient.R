@@ -111,7 +111,7 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     context
   }
   cached_param <- cached <- NULL
-  prepare <- function(param) {
+  prepare <- function(param, value_only = TRUE) {
     if (!is.null(names(param))) param <- param[parameter_names]
     if (length(param) != length(parameter_names)) stop("Parameter vector does not match the model.")
     param <- unname(param)
@@ -132,25 +132,21 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     numeric_context <- context
     if (stateful) numeric_context["lambda_component_n"] <- list(NULL)
     numeric_args <- numeric_context[value_args]
-    record_fit_engine(execution, "cpp")
-    value <- hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
+    if (value_only) record_fit_engine(execution, "cpp")
+    value <- if (value_only) hawkes_loglik_cpp(observation$inter_arrival, types, observation$mark,
       as.numeric(values$mu), values$alpha, values$beta, values$eta, base_initial,
       mapping, FALSE, impact_callback = fun, impact_arguments = if (!is.null(fun)) numeric_args else NULL,
-      baseline = baseline, strict_callback = TRUE)
+      baseline = baseline, strict_callback = TRUE) else NULL
     if (!is.null(value$unsupported)) stop_cpp_unsupported(value$unsupported)
     result <- list(loglikelihood = value$loglikelihood,
-      gradient = if (!is.finite(value$loglikelihood)) invalid$gradient else NULL,
+      gradient = if (!is.null(value) && !is.finite(value$loglikelihood)) invalid$gradient else NULL,
       values = values, baseline = baseline, context = context, fun = fun,
       initial = base_initial)
     cached_param <<- param; cached <<- result
     result
   }
-  list(loglik = function(param) {
-    value <- prepare(param)$loglikelihood
-    if (verbose) { cat("Parameters : ", param, "\n"); cat("Log likelihood : ", value, "\n") }
-    c(loglikelihood = value)
-  }, gradient = function(param) {
-    result <- prepare(param)
+  evaluate_gradient <- function(param, value_only = TRUE) {
+    result <- prepare(param, value_only)
     if (!is.null(result$gradient)) return(result$gradient)
     p <- cached_param; values <- result$values
     core <- lapply(c("mu", "alpha", "beta", "eta"), function(name) {
@@ -176,9 +172,18 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
       impact_arguments = if (!is.null(result$fun)) context[value_args] else NULL,
       baseline = result$baseline, sensitivity = sensitivity)
     if (!is.null(scored$unsupported)) stop_cpp_unsupported(scored$unsupported)
-    if (!identical(scored$loglikelihood, result$loglikelihood))
+    if (!is.null(result$loglikelihood) && !identical(scored$loglikelihood, result$loglikelihood))
       stop("Analytic likelihood changed between value and gradient passes; callbacks must be deterministic.", call. = FALSE)
+    cached$loglikelihood <<- scored$loglikelihood
     cached$gradient <<- scored$gradient
     scored$gradient
-  })
+  }
+  list(loglik = function(param) {
+    value <- prepare(param)$loglikelihood
+    if (verbose) { cat("Parameters : ", param, "\n"); cat("Log likelihood : ", value, "\n") }
+    c(loglikelihood = value)
+  }, gradient = evaluate_gradient,
+  # Curvature asks for scores at fresh vectors, without a preceding line search.
+  # Obtain value and score together; retain the optimizer's value-first behavior.
+  score = function(param) evaluate_gradient(param, value_only = FALSE))
 }

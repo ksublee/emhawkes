@@ -103,6 +103,11 @@ This argument must be named.}
 The default retains the final Hessian and covariance calculation from \code{maxLik}.
 Request \code{"stable"} to recalculate numerical final curvature for the built-in
 Hawkes likelihood using scaled central differences and Richardson extrapolation.
+With the \code{"auto"} or \code{"cpp"} engine, use the built-in analytic score when
+supported and supplied with any required \code{jacobian}, independently of the
+optimizer's \code{gradient} choice. Otherwise use likelihood differences. The
+\code{"r"} engine retains likelihood differences. Failed score evaluations also
+fall back to likelihood differences; inspect \code{\link[=fit_diagnostics]{fit_diagnostics()}} for the reason.
 User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
 and residual-distribution likelihoods retain their calculation choices.}
 
@@ -114,7 +119,7 @@ and explicit or differentiable automatic initial states. Requires the \code{"aut
 or \code{"cpp"} engine. Unsupported specifications produce an error.}
 
 \item{jacobian}{Named-only list of derivatives for parameter-only \code{mu}, \code{alpha},
-\code{beta}, and \code{eta} functions when \code{gradient = "analytic"}. Each entry is a numeric
+\code{beta}, and \code{eta} functions for analytic gradients. Each entry is a numeric
 matrix or a function with the single argument \code{param} returning that matrix.
 Rows follow \code{as.vector()} of the component matrix (column-major order); columns
 are named with the component's local \code{param} names. Column order is arbitrary.
@@ -122,7 +127,8 @@ Required for each function with nonempty \code{param}. For an observed-state \co
 also supply \code{jacobian$impact}. Observed baselines use a full-parameter
 \code{jacobian$mu}; current-state feedback uses parameter and state Jacobians.
 See Details for these conventions.
-Unused with a supplied \code{grad} or numerical differentiation.}
+Also used by \code{final_hessian = "stable"} when optimization uses numerical
+differentiation or a supplied \code{grad}; otherwise unused with those choices.}
 }
 \value{
 A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
@@ -187,7 +193,8 @@ must remain fixed. Supply exact derivatives in \code{jacobian}; the package does
 automatically differentiate function bodies or verify the supplied formulas.
 Fixed entries have zero derivative. Components with \code{param = numeric(0)} need
 no Jacobian. Contributions for shared parameter names are added across components.
-Missing or malformed Jacobians produce an error. For these functions, the
+With \code{gradient = "analytic"}, missing or malformed Jacobians produce an error.
+For these functions, the
 analytic option evaluates their matrices in R and the likelihood and component
 scores in Rcpp. The default \code{emhawkes.engine = "auto"} also selects C++ for
 supported function-valued models with numerical differentiation. No Jacobian

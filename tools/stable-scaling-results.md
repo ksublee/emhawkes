@@ -14,6 +14,9 @@ installed RAM, R 4.6.0, maxLik 1.5-2.2 and Rcpp 1.1.2. Raw
 [session information](stable-scaling-results/session-info.txt) and
 [hardware](stable-scaling-results/hardware.txt) are included.
 
+A [follow-up study](score-curvature-results.md) compares the new analytic-score
+curvature path with these likelihood-difference results.
+
 ## Design
 
 Every case uses the same model-generated observations, starting parameters,

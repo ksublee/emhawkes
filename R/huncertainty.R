@@ -32,6 +32,33 @@ fit_scaled_derivatives <- function(fn, parameters, scale, step, value) {
   list(gradient = gradient, hessian = hessian)
 }
 
+# Differentiate the full analytic score, retaining only free coordinates.
+fit_scaled_score <- function(score, parameters, active, scale, step, gradient) {
+  free <- parameters[active]
+  evaluate <- function(offset) {
+    proposal <- parameters
+    proposal[active] <- free + scale * offset
+    answer <- score(proposal)
+    if (!is.numeric(answer) || length(answer) != length(parameters) ||
+        any(!is.finite(answer))) stop("Analytic curvature score is not finite or has the wrong length.")
+    if (!is.null(names(answer))) {
+      if (anyNA(names(answer)) || anyDuplicated(names(answer)) ||
+          !setequal(names(answer), names(parameters)))
+        stop("Analytic curvature score names do not match the fitted parameters.")
+      answer <- answer[names(parameters)]
+    }
+    answer[active] * scale
+  }
+  if (is.null(gradient)) gradient <- evaluate(numeric(length(free)))
+  H <- matrix(0, length(free), length(free), dimnames = list(names(free), names(free)))
+  for (j in seq_along(free)) {
+    offset <- numeric(length(free))
+    offset[j] <- step
+    H[, j] <- (evaluate(offset) - evaluate(-offset)) / (2 * step)
+  }
+  list(gradient = gradient, hessian = (H + t(H)) / 2)
+}
+
 fit_information <- function(hessian) {
   information <- -(hessian + t(hessian)) / 2
   if (any(!is.finite(information))) {
@@ -64,7 +91,7 @@ fit_curvature_change <- function(first, second) {
     standard_error = max(abs(se1 - se2) / pmax(se1, se2)))
 }
 
-stable_fit_curvature <- function(fit) {
+stable_fit_curvature <- function(fit, score = NULL) {
   parameters <- stats::coef(fit)
   active <- maxLik::activePar(fit)
   free <- parameters[active]
@@ -86,8 +113,14 @@ stable_fit_curvature <- function(fit) {
   checks <- list()
   chosen <- NULL
   change <- NULL
+  score_gradient <- NULL
   for (index in seq_along(steps)) {
-    derivative <- fit_scaled_derivatives(fn, free, scale, steps[index], value)
+    derivative <- if (is.null(score)) {
+      fit_scaled_derivatives(fn, free, scale, steps[index], value)
+    } else {
+      fit_scaled_score(score, parameters, active, scale, steps[index], score_gradient)
+    }
+    if (!is.null(score)) score_gradient <- derivative$gradient
     derivative$information <- fit_information(derivative$hessian)
     derivatives[[index]] <- derivative
     checks[[index]] <- data.frame(step = steps[index],
@@ -117,7 +150,8 @@ stable_fit_curvature <- function(fit) {
       }
     }
   }
-  common <- list(scale = scale, checks = do.call(rbind, checks),
+  common <- list(curvature_source = if (is.null(score)) "likelihood" else "analytic_score",
+                 scale = scale, checks = do.call(rbind, checks),
                  change = change, original_hessian = maxLik::hessian(fit))
   if (is.null(chosen)) {
     reason <- if (any(vapply(derivatives, function(item) item$information$positive,
@@ -131,7 +165,8 @@ stable_fit_curvature <- function(fit) {
   gradient <- chosen$gradient / scale
   decrement <- sqrt(max(0, drop(crossprod(chosen$gradient,
                           information$covariance %*% chosen$gradient))))
-  c(list(status = "ok", reason = NULL, method = "scaled_central_Richardson",
+  c(list(status = "ok", reason = NULL,
+         method = if (is.null(score)) "scaled_central_Richardson" else "scaled_score_Richardson",
          hessian = hessian, covariance = covariance, gradient = gradient,
          scaled_condition = information$condition, newton_decrement = decrement,
          maximum_standardized_score = max(abs(gradient) * sqrt(diag(covariance)))), common)
@@ -156,7 +191,7 @@ fit_constraint_status <- function(constraints, parameters, active, scale) {
 }
 
 finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, method,
-                               final_hessian) {
+                               final_hessian, score_factory = NULL) {
   unchecked <- function(reason) {
     list(fit = fit, diagnostics = list(status = "not_checked", reason = reason))
   }
@@ -201,7 +236,21 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
       covariance = if (information$positive) information$covariance * outer(scale, scale) else NULL,
       scaled_condition = information$condition)
   } else {
-    diagnostics <- stable_fit_curvature(fit)
+    score_reason <- NULL
+    diagnostics <- if (!is.null(score_factory)) tryCatch({
+      objective <- score_factory()
+      value <- sum(objective$loglik(parameters))
+      if (!is.finite(value) || !isTRUE(all.equal(value, as.numeric(stats::logLik(fit)),
+                                                tolerance = 1e-8)))
+        stop("Analytic curvature likelihood does not match the fitted likelihood.")
+      score <- if (is.function(objective$score)) objective$score else objective$gradient
+      stable_fit_curvature(fit, score = score)
+    }, error = function(e) {
+      score_reason <<- conditionMessage(e)
+      NULL
+    }) else NULL
+    if (is.null(diagnostics)) diagnostics <- stable_fit_curvature(fit)
+    diagnostics$score_fallback_reason <- score_reason
   }
   if (identical(diagnostics$status, "ok") && identical(diagnostics$method, "supplied")) {
     gradient <- maxLik::gradient(fit)[active]
@@ -225,7 +274,7 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   diagnostics$free_parameters <- names(parameters)[active]
   if (identical(diagnostics$status, "ok")) {
     covariance[active, active] <- diagnostics$covariance
-    if (identical(diagnostics$method, "scaled_central_Richardson")) {
+    if (diagnostics$method %in% c("scaled_central_Richardson", "scaled_score_Richardson")) {
       H <- matrix(0, length(parameters), length(parameters), dimnames = dimnames(covariance))
       H[active, active] <- diagnostics$hessian
       fit$hessian <- H
@@ -275,9 +324,9 @@ fit_computation <- function(fit, execution, gradient_requested, gradient_used,
     diagnostics$reason else NULL
   used <- if (is.null(H)) {
     if (disabled) "disabled" else "unavailable"
-  } else if (identical(diagnostics$method, "scaled_central_Richardson") &&
+  } else if (isTRUE(diagnostics$method %in% c("scaled_central_Richardson", "scaled_score_Richardson")) &&
              identical(diagnostics$status, "ok")) {
-    "scaled_central_Richardson"
+    diagnostics$method
   } else if (identical(attr(H, "type", exact = TRUE), "BHHH")) {
     "BHHH"
   } else if (isTRUE(execution$hessian_attribute)) {
@@ -311,7 +360,7 @@ unrecorded_fit_computation <- function(metadata) {
 #' Return the recorded calculation methods and final Hessian checks from [hfit()].
 #' @param fit A result from [hfit()].
 #' @return A list with recorded methods in `computation`, calculation status,
-#' reason, free parameters,
+#' reason, free parameters, curvature source and analytic-score fallback reason,
 #' scale, and, when available, difference-step checks, curvature changes,
 #' recalculated score, scaled condition number, and Newton decrement.
 #' @details
@@ -325,12 +374,23 @@ unrecorded_fit_computation <- function(metadata) {
 #' `computation$gradient$used` is `"numeric"`, `"analytic"`, `"user"` or
 #' `"attribute"`. It describes the returned optimizer score, separately from a recalculated
 #' score in stable curvature checks. `computation$hessian$used` is
-#' `"maxLik_numeric"`, `"scaled_central_Richardson"`, `"user"`, `"attribute"`,
+#' `"maxLik_numeric"`, `"scaled_central_Richardson"`, `"scaled_score_Richardson"`,
+#' `"user"`, `"attribute"`,
 #' `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian list also retains the
 #' requested `final_hessian` choice and any `finalHessian` override. Its `reason`
 #' explains a skipped stabilization or unavailable result. If both a derivative
 #' function and likelihood derivative attributes were supplied, the source is
 #' `NA` with a reason because precedence depends on maxLik.
+#'
+#' Stable curvature records `curvature_source = "analytic_score"` when it
+#' differentiates the built-in analytic score, including with a numerical optimizer
+#' gradient. On success its method is `"scaled_score_Richardson"`. Likelihood
+#' differences record `curvature_source = "likelihood"` and, on success,
+#' `"scaled_central_Richardson"`. A score matrix that fails the step checks remains
+#' unavailable rather than switching methods to obtain standard errors.
+#' `score_fallback_reason` records an analytic-adapter or score-evaluation failure;
+#' an explicitly requested R engine uses likelihood differences without trying
+#' the analytic score. Both paths retain the same checks across difference steps.
 #'
 #' The saved record is a snapshot; later objective evaluations or option changes
 #' do not update it. Older fits with model metadata but no computation record

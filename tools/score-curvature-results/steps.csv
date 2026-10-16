@@ -1,0 +1,16 @@
+"id","source","step","minimum_scaled_information_eigenvalue","scaled_condition","positive_definite"
+"n10000-d4-k8-p12-dense-observed-coupled","analytic_score",0.004,0.176793393745077,1509.63925473401,TRUE
+"n10000-d4-k8-p12-dense-observed-coupled","analytic_score",0.002,0.176793261398265,1509.63783572357,TRUE
+"n10000-d4-k8-p12-dense-observed-coupled","analytic_score",0.001,0.176793228310246,1509.63748098248,TRUE
+"n10000-d4-k8-p12-diagonal-observed","analytic_score",0.004,0.234999325113169,1221.40372892415,TRUE
+"n10000-d4-k8-p12-diagonal-observed","analytic_score",0.002,0.234998660946938,1221.40481562691,TRUE
+"n10000-d4-k8-p12-diagonal-observed","analytic_score",0.001,0.234998494902136,1221.40508732112,TRUE
+"n10000-d8-k16-p24-dense-observed","analytic_score",0.004,0.0597333876071331,17337.6530872348,TRUE
+"n10000-d8-k16-p24-dense-observed","analytic_score",0.002,0.059733302510498,17337.3306553736,TRUE
+"n10000-d8-k16-p24-dense-observed","analytic_score",0.001,0.0597332812308336,17337.2500495969,TRUE
+"n10000-d8-k16-p24-diagonal-constant","analytic_score",0.004,0.0339882251705953,9358.46928431405,TRUE
+"n10000-d8-k16-p24-diagonal-constant","analytic_score",0.002,0.0339883406368045,9358.3569948922,TRUE
+"n10000-d8-k16-p24-diagonal-constant","analytic_score",0.001,0.0339883695033382,9358.32892280545,TRUE
+"n10000-d8-k16-p24-diagonal-observed","analytic_score",0.004,0.151051934556618,1334.73122009441,TRUE
+"n10000-d8-k16-p24-diagonal-observed","analytic_score",0.002,0.151051852681859,1334.72779318401,TRUE
+"n10000-d8-k16-p24-diagonal-observed","analytic_score",0.001,0.151051832212653,1334.72693646324,TRUE

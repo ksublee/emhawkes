@@ -41,7 +41,7 @@ tagged <- fit(hess = tagged_hess)
 stopifnot(computation(tagged)$hessian$used == "user")
 stable <- fit(final_hessian = "stable")
 stopifnot(computation(stable)$hessian$requested == "stable",
-  computation(stable)$hessian$used == "scaled_central_Richardson",
+  computation(stable)$hessian$used == "scaled_score_Richardson",
   computation(stable)$gradient$used == "numeric")
 for (flag in list(FALSE, 0)) {
   disabled <- fit(finalHessian = flag, final_hessian = "stable")

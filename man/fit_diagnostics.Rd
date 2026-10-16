@@ -11,7 +11,7 @@ fit_diagnostics(fit)
 }
 \value{
 A list with recorded methods in \code{computation}, calculation status,
-reason, free parameters,
+reason, free parameters, curvature source and analytic-score fallback reason,
 scale, and, when available, difference-step checks, curvature changes,
 recalculated score, scaled condition number, and Newton decrement.
 }
@@ -29,12 +29,23 @@ requested built-in engine. Recording includes final curvature evaluations.
 \code{computation$gradient$used} is \code{"numeric"}, \code{"analytic"}, \code{"user"} or
 \code{"attribute"}. It describes the returned optimizer score, separately from a recalculated
 score in stable curvature checks. \code{computation$hessian$used} is
-\code{"maxLik_numeric"}, \code{"scaled_central_Richardson"}, \code{"user"}, \code{"attribute"},
+\code{"maxLik_numeric"}, \code{"scaled_central_Richardson"}, \code{"scaled_score_Richardson"},
+\code{"user"}, \code{"attribute"},
 \code{"BHHH"}, \code{"disabled"} or \code{"unavailable"}. The Hessian list also retains the
 requested \code{final_hessian} choice and any \code{finalHessian} override. Its \code{reason}
 explains a skipped stabilization or unavailable result. If both a derivative
 function and likelihood derivative attributes were supplied, the source is
 \code{NA} with a reason because precedence depends on maxLik.
+
+Stable curvature records \code{curvature_source = "analytic_score"} when it
+differentiates the built-in analytic score, including with a numerical optimizer
+gradient. On success its method is \code{"scaled_score_Richardson"}. Likelihood
+differences record \code{curvature_source = "likelihood"} and, on success,
+\code{"scaled_central_Richardson"}. A score matrix that fails the step checks remains
+unavailable rather than switching methods to obtain standard errors.
+\code{score_fallback_reason} records an analytic-adapter or score-evaluation failure;
+an explicitly requested R engine uses likelihood differences without trying
+the analytic score. Both paths retain the same checks across difference steps.
 
 The saved record is a snapshot; later objective evaluations or option changes
 do not update it. Older fits with model metadata but no computation record

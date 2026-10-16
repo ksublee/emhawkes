@@ -39,7 +39,7 @@ NULL
 #' and explicit or differentiable automatic initial states. Requires the `"auto"`
 #' or `"cpp"` engine. Unsupported specifications produce an error.
 #' @param jacobian Named-only list of derivatives for parameter-only `mu`, `alpha`,
-#' `beta`, and `eta` functions when `gradient = "analytic"`. Each entry is a numeric
+#' `beta`, and `eta` functions for analytic gradients. Each entry is a numeric
 #' matrix or a function with the single argument `param` returning that matrix.
 #' Rows follow `as.vector()` of the component matrix (column-major order); columns
 #' are named with the component's local `param` names. Column order is arbitrary.
@@ -47,13 +47,19 @@ NULL
 #' also supply `jacobian$impact`. Observed baselines use a full-parameter
 #' `jacobian$mu`; current-state feedback uses parameter and state Jacobians.
 #' See Details for these conventions.
-#' Unused with a supplied `grad` or numerical differentiation.
+#' Also used by `final_hessian = "stable"` when optimization uses numerical
+#' differentiation or a supplied `grad`; otherwise unused with those choices.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
 #' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
 #' The default retains the final Hessian and covariance calculation from `maxLik`.
 #' Request `"stable"` to recalculate numerical final curvature for the built-in
 #' Hawkes likelihood using scaled central differences and Richardson extrapolation.
+#' With the `"auto"` or `"cpp"` engine, use the built-in analytic score when
+#' supported and supplied with any required `jacobian`, independently of the
+#' optimizer's `gradient` choice. Otherwise use likelihood differences. The
+#' `"r"` engine retains likelihood differences. Failed score evaluations also
+#' fall back to likelihood differences; inspect `fit_diagnostics()` for the reason.
 #' User-supplied `hess`, `finalHessian = FALSE`, BHHH curvature, custom likelihoods,
 #' and residual-distribution likelihoods retain their calculation choices.
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
@@ -116,7 +122,8 @@ NULL
 #' automatically differentiate function bodies or verify the supplied formulas.
 #' Fixed entries have zero derivative. Components with `param = numeric(0)` need
 #' no Jacobian. Contributions for shared parameter names are added across components.
-#' Missing or malformed Jacobians produce an error. For these functions, the
+#' With `gradient = "analytic"`, missing or malformed Jacobians produce an error.
+#' For these functions, the
 #' analytic option evaluates their matrices in R and the likelihood and component
 #' scores in Rcpp. The default `emhawkes.engine = "auto"` also selects C++ for
 #' supported function-valued models with numerical differentiation. No Jacobian
@@ -519,6 +526,7 @@ setMethod(
 
 
     gradient_used <- if (!is.null(grad)) "user" else gradient
+    curvature_objective <- NULL
     engine <- if (is.null(mylogLik)) {
       match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
     } else NULL
@@ -536,6 +544,7 @@ setMethod(
       objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian, execution = execution)
       llh_function <- objective$loglik
       grad <- objective$gradient
+      curvature_objective <- objective
     } else if (!is.null(engine) && engine %in% c("auto", "cpp") && (!is.null(object@impact) || any(vapply(
       list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1))))) {
       # Reuse native recursions without scores or component Jacobians.
@@ -591,7 +600,14 @@ setMethod(
     if (!is.null(fit)) {
       final <- if (is.null(mylogLik)) {
         finalize_hawkes_fit(fit, object, constraints, hess, additional_argument,
-                           method, final_hessian)
+                           method, final_hessian,
+                           score_factory = if (engine %in% c("auto", "cpp") &&
+                             is.null(execution$fallback_reason) &&
+                             is.null(constraints$eqA) && is.null(constraints$eqB)) function() {
+                               if (!is.null(curvature_objective)) return(curvature_objective)
+                               make_hawkes_objective(object, observation, lambda_component0,
+                                 parameter_map, FALSE, jacobian, execution = execution)
+                             } else NULL)
       } else {
         list(fit = fit, diagnostics = list(status = "not_checked", reason = "custom_likelihood"))
       }
@@ -606,7 +622,7 @@ setMethod(
                              N0 = observation$N0, Nc0 = observation$Nc0),
         reduced = reduced,
         gradient = gradient_used,
-        jacobian = if (gradient_used == "analytic") jacobian else NULL,
+        jacobian = if (gradient_used == "analytic" || final_hessian == "stable") jacobian else NULL,
         custom_loglik = !is.null(mylogLik),
         constraints = constraints,
         diagnostics = final$diagnostics
