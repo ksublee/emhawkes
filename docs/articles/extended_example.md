@@ -1,390 +1,30 @@
 # Extended examples for the emhawkes package
 
-## Basic Hawkes model
+These examples cover models beyond the basic univariate and bivariate
+workflow. Read [Get
+started](https://ksublee.github.io/emhawkes/articles/example.html)
+first. Each model section defines its own specification and simulated
+data.
 
-### Univariate Hawkes process
+For background and shared conventions, see:
+
+- [Univariate](https://ksublee.github.io/emhawkes/articles/example.html#univariate-hawkes-process)
+  and
+  [bivariate](https://ksublee.github.io/emhawkes/articles/example.html#bivariate-hawkes-model)
+  basics: Get started.
+- [Parameter
+  settings](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#parameter-settings)
+  and [observed data and initial
+  state](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#observed-data-and-initial-state):
+  Fitting and inference.
+- [Calculation
+  engines](https://ksublee.github.io/emhawkes/articles/computation.html#calculation-engines):
+  Computation.
+- [Residual
+  diagnostics](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#residual-process):
+  Fitting and inference.
 
 [`library`](https://rdrr.io/r/base/library.html)`(`[`emhawkes`](https://github.com/ksublee/emhawkes)`)`
-
-This section shows how to specify, simulate, and fit a univariate Hawkes
-model. First, create an `hspec` object to define the model. The S4 class
-`hspec` includes slots such as `mu`, `alpha`, `beta`, `dimens`, `rmark`,
-and `impact`.
-
-In a univariate model, `mu`, `alpha`, and `beta` can be supplied as
-numeric values, which are converted to matrices. The following example
-defines an unmarked univariate Hawkes model.
-
-`mu1`` ``<-`` ``0.3``; ``alpha1`` ``<-`` ``1.2``; ``beta1`` ``<-`` ``1.5`` ``hspec1`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu1``, alpha ``=`` ``alpha1``, beta ``=`` ``beta1``)`` ``show``(``hspec1``)`` ``#> An object of class "hspec" of 1-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.3`` ``#> `` ``#> Slot alpha: `` ``#> [,1]`` ``#> [1,] 1.2`` ``#> `` ``#> Slot beta: `` ``#> [,1]`` ``#> [1,] 1.5`
-
-The `hsim` function simulates a path from an `hspec` object. The `size`
-argument specifies the number of rows, including the initial state. The
-optional arguments `lambda_component0` and `N0` specify the initial
-intensity components and event counts, respectively. The intensity of
-the basic univariate Hawkes model is
-
-``` math
-\lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
-```
-
-where `lambda_component0` denotes
-
-``` math
-\lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
-```
-
-If `lambda_component0` is omitted, the function determines the initial
-intensity components internally. For a sufficiently long simulation of a
-stable model, the effect of the initial intensity diminishes over time.
-The default initial value of the counting process, `N0`, is zero.
-
-[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``res1`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec1``, size ``=`` ``1000``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``res1``)`` ``#> -------------------------------------------------------`` ``#> Simulation result of exponential (marked) Hawkes model.`` ``#> Realized path :`` ``#> arrival N1 mark lambda1`` ``#> [1,] 0.00000 0 0 0.90000`` ``#> [2,] 0.97794 1 1 0.43838`` ``#> [3,] 1.09001 2 1 1.43128`` ``#> [4,] 1.28999 3 1 2.02711`` ``#> [5,] 1.53225 4 1 2.33527`` ``#> [6,] 1.65001 5 1 3.01139`` ``#> [7,] 2.51807 6 1 1.36377`` ``#> [8,] 2.81710 7 1 1.74553`` ``#> [9,] 2.87547 8 1 2.72378`` ``#> [10,] 3.16415 9 1 2.65016`` ``#> [11,] 3.51378 10 1 2.40131`` ``#> [12,] 4.22355 11 1 1.43843`` ``#> [13,] 16.96752 12 1 0.30000`` ``#> [14,] 17.71654 13 1 0.69015`` ``#> [15,] 19.10293 14 1 0.49874`` ``#> [16,] 24.06354 15 1 0.30082`` ``#> [17,] 24.09256 16 1 1.44967`` ``#> [18,] 28.40173 17 1 0.30366`` ``#> [19,] 28.53743 18 1 1.28198`` ``#> [20,] 28.56702 19 1 2.38725`` ``#> ... with 980 more rows `` ``#> -------------------------------------------------------`
-
-The `hsim` function returns an S3 object of class `hreal` with the
-following components.
-
-- `hspec` is the model specification.
-
-- `inter_arrival` contains the times between consecutive events.
-
-- `arrival` is the cumulative sum of `inter_arrival`.
-
-- `type` identifies the counting process associated with each event:
-  type $`i`$ corresponds to $`N_i`$.
-
-- `mark` contains the mark associated with each event.
-
-- `N` contains the cumulative event counts for each type.
-
-- `Nc` contains the cumulative marks for each type.
-
-- `lambda` contains the intensity immediately before each event.
-
-- `rambda` contains the intensity immediately after each event.
-
-- `lambda_component` and `rambda_component` contain the intensity
-  components $`\lambda_{ij}`$ immediately before and after each event,
-  respectively.
-
-With the default initial values, `inter_arrival`, `type`, `mark`, `N`,
-and `Nc` begin with zero. The
-[`summary()`](https://rdrr.io/r/base/summary.html) function displays the
-first 20 rows of the realized path by default. The
-[`print()`](https://rdrr.io/r/base/print.html) function also displays
-the model specification and intensity components.
-
-In this univariate model, `lambda == mu + lambda_component`.
-
-`# The first and third columns are equal.`` `[`cbind`](https://rdrr.io/r/base/cbind.html)`(``res1``$``lambda``[``1``:``5``]``, ``res1``$``lambda_component``[``1``:``5``]``, ``mu1`` ``+`` ``res1``$``lambda_component``[``1``:``5``]``)`` ``#> [,1] [,2] [,3]`` ``#> [1,] 0.900000 0.600000 0.900000`` ``#> [2,] 0.438383 0.138383 0.438383`` ``#> [3,] 1.431282 1.131282 1.431282`` ``#> [4,] 2.027111 1.727111 2.027111`` ``#> [5,] 2.335269 2.035269 2.335269`
-
-For all rows except the first, `rambda` equals `lambda + alpha` in this
-model.
-
-`# The second and third columns are equal except in the initial row.`` `[`cbind`](https://rdrr.io/r/base/cbind.html)`(``res1``$``lambda``[``1``:``5``]``, ``res1``$``rambda``[``1``:``5``]``, ``res1``$``lambda``[``1``:``5``]`` ``+`` ``alpha1``)`` ``#> [,1] [,2] [,3]`` ``#> [1,] 0.900000 0.900000 2.100000`` ``#> [2,] 0.438383 1.638383 1.638383`` ``#> [3,] 1.431282 2.631282 2.631282`` ``#> [4,] 2.027111 3.227111 3.227111`` ``#> [5,] 2.335269 3.535269 3.535269`
-
-The following calculation verifies the exponential decay between events.
-
-`# By definition, the following two are equal:`` ``res1``$``lambda``[``2``:``6``]`` ``#> [1] 0.438383 1.431282 2.027111 2.335269 3.011391`` ``mu1`` ``+`` ``(``res1``$``rambda``[``1``:``5``]`` ``-`` ``mu1``)`` ``*`` `[`exp`](https://rdrr.io/r/base/Log.html)`(``-``beta1`` ``*`` ``res1``$``inter_arrival``[``2``:``6``]``)`` ``#> [1] 0.438383 1.431282 2.027111 2.335269 3.011391`
-
-Use `logLik` to evaluate the log-likelihood from the model specification
-and observed inter-arrival times.
-
-[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hspec1``, inter_arrival ``=`` ``res1``$``inter_arrival``)`` ``#> The initial values for intensity processes are not provided. Internally determined initial values are used.`` ``#> loglikelihood `` ``#> -214.2385`
-
-Use `hfit` for maximum likelihood estimation. The `hspec0` object
-supplies the initial parameter values for optimization. For this
-univariate model, `inter_arrival` is the only required data argument. If
-the initial intensity component is known, pass it as
-`lambda_component0`; otherwise, the function determines it internally.
-The default optimization method is BFGS.
-
-`# Initial parameter values for numerical optimization.`` ``mu0`` ``<-`` ``0.5``; ``alpha0`` ``<-`` ``1.0``; ``beta0`` ``<-`` ``1.8`` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu0``, alpha ``=`` ``alpha0``, beta ``=`` ``beta0``)`` ``# Supply the initial values through hspec0.`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 24 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -213.4658 `` ``#> 3 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.33641 0.03505 9.597 <2e-16 ***`` ``#> alpha1 1.16654 0.10400 11.217 <2e-16 ***`` ``#> beta1 1.52270 0.13615 11.184 <2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-Use
-[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
-to reconstruct the model with the estimated parameters. The fit records
-its calculation methods, including any reason for auto to use R.
-
-[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle``)``$``computation`` ``#> $recorded`` ``#> [1] TRUE`` ``#> `` ``#> $engine`` ``#> $engine$requested`` ``#> [1] "auto"`` ``#> `` ``#> $engine$used`` ``#> [1] "cpp"`` ``#> `` ``#> $engine$fallback_reason`` ``#> NULL`` ``#> `` ``#> `` ``#> $gradient`` ``#> $gradient$requested`` ``#> [1] "numeric"`` ``#> `` ``#> $gradient$used`` ``#> [1] "numeric"`` ``#> `` ``#> $gradient$reason`` ``#> NULL`` ``#> `` ``#> `` ``#> $hessian`` ``#> $hessian$requested`` ``#> [1] "maxLik"`` ``#> `` ``#> $hessian$finalHessian`` ``#> NULL`` ``#> `` ``#> $hessian$used`` ``#> [1] "maxLik_numeric"`` ``#> `` ``#> $hessian$reason`` ``#> NULL`
-
-By default,
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
-the final Hessian and standard errors from `maxLik`. Additional
-stabilization is optional. Request `final_hessian = "stable"` to check
-numerical Hawkes curvature across scaled difference steps without
-changing the optimizer’s estimates. For this requested calculation,
-[`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
-covariance and `NA` standard errors indicate failed checks.
-
-`mle_checked`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res1``$``inter_arrival``,`` `` final_hessian ``=`` ``"stable"``)`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle_checked``)``[`[`c`](https://rdrr.io/r/base/c.html)`(``"status"``, ``"scaled_condition"``, ``"newton_decrement"``)``]`` ``#> $status`` ``#> [1] "ok"`` ``#> `` ``#> $scaled_condition`` ``#> [1] 20.3342`` ``#> `` ``#> $newton_decrement`` ``#> [1] 0.00130504`
-
-A stable Hessian does not establish reliable confidence intervals. Check
-convergence, score, and multiple starting values. The fit retains its
-original parameter map, including shared parameters and fixed constants
-in component functions.
-[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
-retrieves the initial counts and initial intensity setting.
-
-`estimated`` ``<-`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``mle``)`` ``initial`` ``<-`` `[`fit_initial_state`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)`(``mle``)`` ``inferred`` ``<-`` `[`do.call`](https://rdrr.io/r/base/do.call.html)`(``logLik``, `[`c`](https://rdrr.io/r/base/c.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``object ``=`` ``estimated``,`` `` inter_arrival ``=`` ``res1``$``inter_arrival``, infer ``=`` ``TRUE``)``, ``initial``)``)`` `[`c`](https://rdrr.io/r/base/c.html)`(``fitted ``=`` `[`as.numeric`](https://rdrr.io/r/base/numeric.html)`(`[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``mle``)``)``, restored ``=`` ``inferred``$``loglikelihood``)`` ``#> fitted restored `` ``#> -213.4658 -213.4658`` `[`head`](https://rdrr.io/r/utils/head.html)`(``inferred``$``lambda``)`` ``#> lambda1`` ``#> [1,] 0.8873272`` ``#> [2,] 0.4606831`` ``#> [3,] 1.4247076`` ``#> [4,] 1.9993196`` ``#> [5,] 2.2929804`` ``#> [6,] 2.9468135`` `[`head`](https://rdrr.io/r/utils/head.html)`(``inferred``$``res_process1``)`` ``#> [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413`
-
-When the initial intensity was omitted, its saved setting remains `NULL`
-and is recalculated using the restored parameters. The restored
-specification also retains the mark and residual generators for
-subsequent simulation.
-
-Pass the restored model and initial-state arguments to
-[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
-generate a new path. These arguments describe the start of the fitted
-observation window. They do not continue the path after its last event.
-Check the fit’s convergence and the model’s suitability for simulation
-first.
-
-[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1108``)`` ``simulated`` ``<-`` `[`do.call`](https://rdrr.io/r/base/do.call.html)`(``hsim``, `[`c`](https://rdrr.io/r/base/c.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``object ``=`` ``estimated``, size ``=`` ``100``)``, ``initial``)``)`` `[`head`](https://rdrr.io/r/utils/head.html)`(``simulated``$``arrival``)`` ``#> [1] 0.000000 1.434237 1.782855 3.231614 3.984735 4.465780`
-
-The saved fit retains the information needed to reconstruct the model
-later. Keep the observed data separately when re-evaluating the
-likelihood.
-
-[`saveRDS`](https://rdrr.io/r/base/readRDS.html)`(``mle``, ``"hawkes-fit.rds"``)`` ``saved_fit`` ``<-`` `[`readRDS`](https://rdrr.io/r/base/readRDS.html)`(``"hawkes-fit.rds"``)`` ``estimated`` ``<-`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``saved_fit``)`` ``initial`` ``<-`` `[`fit_initial_state`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)`(``saved_fit``)`
-
-### Bivariate Hawkes model
-
-The intensity process of a basic bivariate Hawkes model is defined by
-
-``` math
- \lambda_1(t) = \mu_1 + \int_{-\infty}^t \alpha_{11} e^{-\beta_{11}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
-```
-
-``` math
- \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)} d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
-```
-
-For this bivariate model, `mu` is a 2-by-1 matrix, and `alpha` and
-`beta` are 2-by-2 matrices.
-
-``` math
-\mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
-\alpha = \begin{bmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{bmatrix}, \quad
-\beta =
-\begin{bmatrix} \beta_{11} & \beta_{12} \\ \beta_{21} & \beta_{22} \end{bmatrix}
-```
-
-`rmark` generates marks during simulation and can be omitted for
-unmarked models. The 2-by-2 matrix `lambda_component0` specifies the
-initial values of `lambda11`, `lambda12`, `lambda21`, and `lambda22`.
-The intensity processes are represented by
-
-``` math
- \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t),
-```
-
-``` math
- \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t).
-```
-
-The terms $`\lambda_{ij}`$ are called intensity components, and
-`lambda_component0` specifies their initial values $`\lambda_{ij}(0)`$.
-If `lambda_component0` is omitted, the function determines these values
-internally.
-
-`mu2`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.2``)``, nrow ``=`` ``2``)`` ``alpha2`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.5``, ``0.9``, ``0.9``, ``0.5``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``beta2`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``2.25``, ``2.25``, ``2.25``, ``2.25``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``hspec2`` ``<-`` ``new``(``"hspec"``, mu``=``mu2``, alpha``=``alpha2``, beta``=``beta2``)`` `[`print`](https://rdrr.io/r/base/print.html)`(``hspec2``)`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.2`` ``#> [2,] 0.2`` ``#> `` ``#> Slot alpha: `` ``#> [,1] [,2]`` ``#> [1,] 0.5 0.9`` ``#> [2,] 0.9 0.5`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2]`` ``#> [1,] 2.25 2.25`` ``#> [2,] 2.25 2.25`
-
-Use `hsim` to simulate the model.
-
-[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``res2`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec2``, size``=``1000``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``res2``)`` ``#> -------------------------------------------------------`` ``#> Simulation result of exponential (marked) Hawkes model.`` ``#> Realized path :`` ``#> arrival N1 N2 mark lambda1 lambda2`` ``#> [1,] 0.00000 0 0 0 0.52941 0.52941`` ``#> [2,] 0.57028 1 0 1 0.29130 0.29130`` ``#> [3,] 1.66175 1 1 1 0.25073 0.28505`` ``#> [4,] 2.17979 1 2 1 0.49638 0.38238`` ``#> [5,] 2.47685 1 3 1 0.81319 0.54975`` ``#> [6,] 2.64001 2 3 1 1.24825 0.78866`` ``#> [7,] 2.70249 3 3 1 1.54519 1.49341`` ``#> [8,] 2.94547 4 3 1 1.26810 1.46968`` ``#> [9,] 3.39313 4 4 1 0.77271 0.99242`` ``#> [10,] 3.52533 4 5 1 1.29379 1.15989`` ``#> [11,] 3.56971 5 5 1 2.00432 1.52115`` ``#> [12,] 3.70761 5 6 1 1.88965 1.82866`` ``#> [13,] 4.30122 5 7 1 0.88106 0.75983`` ``#> [14,] 4.34337 6 7 1 1.63800 1.16393`` ``#> [15,] 4.40222 7 7 1 1.89764 1.83275`` ``#> [16,] 4.58943 8 7 1 1.64219 1.86211`` ``#> [17,] 5.14665 9 7 1 0.75437 0.93131`` ``#> [18,] 5.18186 9 8 1 1.17407 1.70707`` ``#> [19,] 5.36167 9 9 1 1.45050 1.53925`` ``#> [20,] 5.89118 10 9 1 0.85331 0.75875`` ``#> ... with 980 more rows `` ``#> -------------------------------------------------------`
-
-In multivariate models, `type` identifies the counting process
-associated with each event.
-
-`# A bivariate model has two event types: 1 and 2.`` ``res2``$``type``[``1``:``10``]`` ``#> [1] 0 1 2 2 2 1 1 1 2 2`
-
-In multivariate models, the column names of `N` are `N1`, `N2`, `N3`,
-and so on.
-
-`res2``$``N``[``1``:``3``, ``]`` ``#> N1 N2`` ``#> [1,] 0 0`` ``#> [2,] 1 0`` ``#> [3,] 1 1`
-
-Similarly, the column names of `lambda` are `lambda1`, `lambda2`,
-`lambda3`, and so on.
-
-`res2``$``lambda``[``1``:``3``, ``]`` ``#> lambda1 lambda2`` ``#> [1,] 0.5294118 0.5294118`` ``#> [2,] 0.2913028 0.2913028`` ``#> [3,] 0.2507301 0.2850475`
-
-In this bivariate model, the columns of `lambda_component` are
-`lambda11`, `lambda12`, `lambda21`, and `lambda22`.
-
-`res2``$``lambda_component``[``1``:``3``, ``]`` ``#> lambda11 lambda12 lambda21 lambda22`` ``#> [1,] 0.11764706 0.211764706 0.21176471 0.117647059`` ``#> [2,] 0.03260813 0.058694641 0.05869464 0.032608134`` ``#> [3,] 0.04569443 0.005035631 0.08224997 0.002797573`
-
-By definition, the following two expressions are equivalent:
-
-`mu2``[``1``]`` ``+`` `[`rowSums`](https://rdrr.io/r/base/colSums.html)`(``res2``$``lambda_component``[``1``:``5``, `[`c`](https://rdrr.io/r/base/c.html)`(``"lambda11"``, ``"lambda12"``)``]``)`` ``#> [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889`` ``res2``$``lambda``[``1``:``5``, ``"lambda1"``]`` ``#> [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889`
-
-Extract the observed `inter_arrival` and `type` vectors from the
-simulation result. Both are required to fit a bivariate model.
-
-`inter_arrival2`` ``<-`` ``res2``$``inter_arrival`` ``type2`` ``<-`` ``res2``$``type`
-
-Use `logLik` to evaluate the log-likelihood.
-
-[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hspec2``, inter_arrival ``=`` ``inter_arrival2``, type ``=`` ``type2``)`` ``#> The initial values for intensity processes are not provided. Internally determined initial values are used.`` ``#> loglikelihood `` ``#> -974.2809`
-
-Use `hfit` to estimate the parameters from `inter_arrival` and `type`.
-The values of `mu`, `alpha`, and `beta` in `hspec0` provide starting
-points for optimization. Here, we use the simulation parameters by
-setting `hspec0 <- hspec2`. For observed data, choose initial values
-because the true parameters are unknown.
-
-The default fit groups equal starting values within each matrix and
-estimates four parameters here: one for `mu`, two for `alpha`, and one
-for `beta`. `hfit` explains this rule once before optimization.
-
-`hspec0`` ``<-`` ``hspec2`` ``mle`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``inter_arrival2``, type ``=`` ``type2``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``mle``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 35 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -970.1408 `` ``#> 4 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.19095 0.01635 11.68 < 2e-16 ***`` ``#> alpha1.1 0.48217 0.07373 6.54 6.15e-11 ***`` ``#> alpha1.2 0.98625 0.09484 10.40 < 2e-16 ***`` ``#> beta1.1 2.07987 0.16728 12.43 < 2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-[`coef`](https://rdrr.io/r/stats/coef.html)`(``mle``)`` ``#> mu1 alpha1.1 alpha1.2 beta1.1 `` ``#> 0.1909541 0.4821725 0.9862542 2.0798690`
-
-`miscTools``::`[`stdEr`](https://rdrr.io/pkg/miscTools/man/stdEr.html)`(``mle``)`` ``#> mu1 alpha1.1 alpha1.2 beta1.1 `` ``#> 0.01635080 0.07372719 0.09484410 0.16727659`
-
-The restored matrices retain the shared parameters from this fit. The
-diagonal entries of `alpha` remain equal, as do its off-diagonal
-entries.
-
-`estimated2`` ``<-`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``mle``)`` ``estimated2``@``alpha`` ``#> [,1] [,2]`` ``#> [1,] 0.4821725 0.9862542`` ``#> [2,] 0.9862542 0.4821725`` ``estimated2``@``beta`` ``#> [,1] [,2]`` ``#> [1,] 2.079869 2.079869`` ``#> [2,] 2.079869 2.079869`
-
-### Parameter settings
-
-The initial values in `hspec0` determine which parameters are estimated
-separately. With the default setting `reduced = TRUE`, equal entries
-within a parameter matrix share one estimated value. The rule is applied
-separately to each matrix; equal values in `mu` and `alpha` do not link
-those components. The startup message lists the matrices with shared
-entries. Use `suppressMessages(hfit(...))` to hide it.
-
-For example, if `alpha[1,1]` and `alpha[1,2]` have different initial
-values, `hfit` estimates them separately. If they have the same initial
-value, `hfit` treats them as a single parameter.
-
-The previous example uses a symmetric Hawkes model: `alpha` is
-symmetric, and all entries of `beta` are equal.
-
-[`print`](https://rdrr.io/r/base/print.html)`(``hspec2``)`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.2`` ``#> [2,] 0.2`` ``#> `` ``#> Slot alpha: `` ``#> [,1] [,2]`` ``#> [1,] 0.5 0.9`` ``#> [2,] 0.9 0.5`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2]`` ``#> [1,] 2.25 2.25`` ``#> [2,] 2.25 2.25`
-
-[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``res2`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec2``, size ``=`` ``1000``)`
-
-In the first example, all entries of `alpha0` are set to 0.75. This
-constrains `alpha11`, `alpha12`, `alpha21`, and `alpha22` to share one
-estimated value, even though their simulation values differ. The same
-rule applies within `mu0` and `beta0`.
-
-`mu0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.15``, ``0.15``)``, nrow ``=`` ``2``)`` ``alpha0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.75``, ``0.75``, ``0.75``, ``0.75``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` ``beta0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``2.6``, ``2.6``, ``2.6``, ``2.6``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` `` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu``=``mu0``, alpha``=``alpha0``, beta``=``beta0``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(`[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res2``$``inter_arrival``, type ``=`` ``res2``$``type``)``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 45 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -979.5687 `` ``#> 3 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.19125 0.01641 11.65 <2e-16 ***`` ``#> alpha1.1 0.73981 0.06270 11.80 <2e-16 ***`` ``#> beta1.1 2.09707 0.17502 11.98 <2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-This fit estimates one excitation parameter for both self-excitation and
-mutual excitation, whose simulation values are 0.5 and 0.9,
-respectively.
-
-In the second example, `alpha0` has the same symmetry as the simulation
-model. Its diagonal entries are equal, and its off-diagonal entries
-share a different value. The model therefore has two excitation
-parameters to estimate.
-
-`mu0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.15``, ``0.15``)``, nrow ``=`` ``2``)`` ``alpha0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.75``, ``0.751``, ``0.751``, ``0.75``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` ``beta0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``2.6``, ``2.6``, ``2.6``, ``2.6``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` `` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu``=``mu0``, alpha``=``alpha0``, beta``=``beta0``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(`[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res2``$``inter_arrival``, type ``=`` ``res2``$``type``)``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 30 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -970.1408 `` ``#> 4 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.19095 0.01635 11.676 < 2e-16 ***`` ``#> alpha1.1 0.48226 0.07204 6.694 2.17e-11 ***`` ``#> alpha1.2 0.98626 0.09114 10.821 < 2e-16 ***`` ``#> beta1.1 2.08008 0.15980 13.017 < 2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-The third example allows `mu1` and `mu2` to differ, even though they are
-equal in the simulation model.
-
-`mu0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.15``, ``0.14``)``, nrow ``=`` ``2``)`` ``alpha0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.75``, ``0.751``, ``0.751``, ``0.75``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` ``beta0`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``2.6``, ``2.6``, ``2.6``, ``2.6``)``, nrow ``=`` ``2``, byrow``=``TRUE``)`` `` ``hspec0`` ``<-`` ``new``(``"hspec"``, mu``=``mu0``, alpha``=``alpha0``, beta``=``beta0``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(`[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec0``, inter_arrival ``=`` ``res2``$``inter_arrival``, type ``=`` ``res2``$``type``)``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; alpha, beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 44 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -969.9914 `` ``#> 5 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.18300 0.02157 8.483 < 2e-16 ***`` ``#> mu2 0.19872 0.02206 9.009 < 2e-16 ***`` ``#> alpha1.1 0.48149 0.07355 6.546 5.89e-11 ***`` ``#> alpha1.2 0.98720 0.09427 10.472 < 2e-16 ***`` ``#> beta1.1 2.07973 0.17051 12.197 < 2e-16 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-Set `reduced = FALSE` to estimate each matrix entry separately,
-including entries with equal initial values.
-
-[`summary`](https://rdrr.io/r/base/summary.html)`(`[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``hspec2``, inter_arrival ``=`` ``res2``$``inter_arrival``, type ``=`` ``res2``$``type``, reduced``=``FALSE``)``)`` ``#> --------------------------------------------`` ``#> Maximum Likelihood estimation`` ``#> BFGS maximization, 51 iterations`` ``#> Return code 0: successful convergence `` ``#> Log-Likelihood: -966.5055 `` ``#> 10 free parameters`` ``#> Estimates:`` ``#> Estimate Std. error t value Pr(> t) `` ``#> mu1 0.17997 0.02271 7.926 2.27e-15 ***`` ``#> mu2 0.20060 0.02430 8.255 < 2e-16 ***`` ``#> alpha1.1 0.44726 0.16076 2.782 0.005400 ** `` ``#> alpha2.1 1.17743 0.26171 4.499 6.83e-06 ***`` ``#> alpha1.2 0.97048 0.13597 7.137 9.51e-13 ***`` ``#> alpha2.2 0.48979 0.11381 4.304 1.68e-05 ***`` ``#> beta1.1 2.52210 1.00909 2.499 0.012441 * `` ``#> beta2.1 3.15498 0.88787 3.553 0.000380 ***`` ``#> beta1.2 1.80167 0.23773 7.579 3.49e-14 ***`` ``#> beta2.2 1.51338 0.40168 3.768 0.000165 ***`` ``#> ---`` ``#> Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1`` ``#> --------------------------------------------`
-
-The same rules apply to higher-dimensional models. For function
-components, the named entries in `param` define the estimated
-parameters. Matching parameter names are shared across functions, even
-with `reduced = FALSE`. Use different names for independent parameters
-with equal starting values. Conflicting starting values for a shared
-name produce a warning, and the first value is used. A zero in a numeric
-matrix is an estimated starting value; constants inside a component
-function remain fixed.
-
-### Observed data and initial state
-
-The first row is the initial state, followed by the observed events. For
-event times measured from the observation start, use
-`c(0, diff(c(0, event_times)))` for `inter_arrival` and prepend zero to
-the event-type and mark vectors. The likelihood currently ends at the
-last supplied event, and the input order is preserved when event times
-coincide.
-
-`N0` and `Nc0` specify initial event counts and mark totals. Pass `Nc0`
-by name in `hfit`. Use the same initial counts and `lambda_component0`
-for simulation and likelihood evaluation when comparing their paths. A
-scalar `lambda_component0` is expanded to all kernel components; a
-matrix must match the kernel dimensions. For multi-kernel models, supply
-`lambda_component0` explicitly.
-
-Counting-process matrices supplied as `N` or `Nc` must agree with the
-event data and initial counts. Each row contains the values after that
-event. A baseline function called with index `n` uses row `n - 1` for
-the preceding state; an impact function uses row `n` for the current
-event. Component functions can declare only the arguments they need, and
-use `...` to receive the remaining context.
-
-### Calculation engines
-
-Numeric Hawkes specifications use the Rcpp engine automatically for
-likelihood evaluation and inference. During fitting, supported function
-components and impacts also use C++ automatically. Unsupported
-specifications and residual distributions use R. Standalone likelihood
-and inference also support parameter-only component functions returning
-plain numeric matrices, observed baselines, and observed or sequential
-state-dependent impacts. Baselines that depend on latent intensities use
-R. Simulation uses R. The `emhawkes.engine` option has three settings:
-
-| Setting            | Role                                                 |
-|--------------------|------------------------------------------------------|
-| `"auto"` (default) | Select C++ for supported models and R otherwise.     |
-| `"r"`              | Force R for comparison or troubleshooting.           |
-| `"cpp"`            | Require C++ support and error on unsupported models. |
-
-Supported models receive acceleration with `"auto"`; setting `"cpp"` is
-unnecessary. Numerical differentiation remains the default. Analytic
-gradients require `gradient = "analytic"` and a supported specification.
-A custom `mylogLik` bypasses built-in engine selection.
-
-The following example compares standalone numeric likelihood
-calculations. This function restores the previous option after each
-call.
-
-`engine_loglik`` ``<-`` ``function``(``engine``)`` ``{`` `` ``previous`` ``<-`` `[`options`](https://rdrr.io/r/base/options.html)`(``emhawkes.engine ``=`` ``engine``)`` `` `[`on.exit`](https://rdrr.io/r/base/on.exit.html)`(`[`options`](https://rdrr.io/r/base/options.html)`(``previous``)``)`` `` `[`as.numeric`](https://rdrr.io/r/base/numeric.html)`(`[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hspec2``, inter_arrival ``=`` ``inter_arrival2``, type ``=`` ``type2``)``)`` ``}`` `[`c`](https://rdrr.io/r/base/c.html)`(``R ``=`` ``engine_loglik``(``"r"``)``, automatic ``=`` ``engine_loglik``(``"auto"``)``)`` ``#> R automatic `` ``#> -974.2809 -974.2809`
-
-### Residual process
-
-Set `infer = TRUE` in `logLik` to obtain the log-likelihood, intensity
-paths, and residual processes. These are computed using the parameters
-in the supplied `hspec` object. For a univariate model, `res_process1`
-contains the residual inter-arrival times.
-
-`hrp`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``0.3``, alpha ``=`` ``1.2``, beta ``=`` ``1.5``)`` ``res_rp`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hrp``, size ``=`` ``1000``)`` `` ``# inferred result`` ``infered_res`` ``<-`` `[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hrp``, ``res_rp``$``inter_arrival``, infer ``=`` ``TRUE``)`` `` ``## QQ-plot`` ``p`` ``<-`` `[`ppoints`](https://rdrr.io/r/stats/ppoints.html)`(``100``)`` ``q`` ``<-`` `[`quantile`](https://rdrr.io/r/stats/quantile.html)`(``infered_res``$``res_process1``, p ``=`` ``p``)`` `[`plot`](https://rdrr.io/r/graphics/plot.default.html)`(`[`qexp`](https://rdrr.io/r/stats/Exponential.html)`(``p``)``, ``q``, xlab``=``"Theoretical Quantiles"``,ylab``=``"Sample Quantiles"``)`` `[`qqline`](https://rdrr.io/r/stats/qqnorm.html)`(``q``, distribution``=``qexp``,col``=``"blue"``, lty``=``2``)`
-
-![](extended_example_files/figure-html/unnamed-chunk-27-1.png)
-
-For observed data, estimate the parameters before computing the residual
-processes.
-
-` ``# estimation`` ``mle_rp`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``new``(``"hspec"``, mu ``=`` ``0.2``, alpha ``=`` ``1``, beta ``=`` ``2``)``,`` `` ``res_rp``$``inter_arrival``)`` `` ``# Restore the estimated model and the initial-state arguments.`` ``he`` ``<-`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``mle_rp``)`` ``initial_rp`` ``<-`` `[`fit_initial_state`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)`(``mle_rp``)`` `` ``# infer intensity`` ``infered_res`` ``<-`` `[`do.call`](https://rdrr.io/r/base/do.call.html)`(``logLik``, `[`c`](https://rdrr.io/r/base/c.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``object ``=`` ``he``,`` `` inter_arrival ``=`` ``res_rp``$``inter_arrival``, type ``=`` ``res_rp``$``type``, infer ``=`` ``TRUE``)``, ``initial_rp``)``)`` `` ``rpe`` ``<-`` ``infered_res``$``res_process1`` `` ``p`` ``<-`` `[`ppoints`](https://rdrr.io/r/stats/ppoints.html)`(``100``)`` ``q`` ``<-`` `[`quantile`](https://rdrr.io/r/stats/quantile.html)`(``rpe``, p``=``p``)`` `[`plot`](https://rdrr.io/r/graphics/plot.default.html)`(`[`qexp`](https://rdrr.io/r/stats/Exponential.html)`(``p``)``, ``q``, xlab``=``"Theoretical Quantiles"``,ylab``=``"Sample Quantiles"``)`` `[`qqline`](https://rdrr.io/r/stats/qqnorm.html)`(``q``, distribution``=``qexp``,col``=``"blue"``, lty``=``2``)`
-
-![](extended_example_files/figure-html/unnamed-chunk-28-1.png)
-
-For an $`n`$-dimensional model, `logLik` returns one residual process
-for each event type. In the following bivariate example, these are
-`infer_res2$res_process1` and `infer_res2$res_process2`.
-
-`hrp2`` ``<-`` ``new``(``"hspec"``, mu ``=`` `[`rep`](https://rdrr.io/r/base/rep.html)`(``0.3``, ``2``)``, `` `` alpha ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``1.2``, ``1.5``, ``1.5``, ``1.2``)``, nrow``=``2``)``, `` `` beta ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`rep`](https://rdrr.io/r/base/rep.html)`(``3``, ``4``)``, nrow``=``2``)``)`` ``res_hrp2`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hrp2``, size ``=`` ``2000``)`` `` ``infer_res2`` ``<-`` `[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hrp2``, ``res_hrp2``$``inter_arrival``, ``res_hrp2``$``type``, infer ``=`` ``TRUE``)`` `` ``p`` ``<-`` `[`ppoints`](https://rdrr.io/r/stats/ppoints.html)`(``100``)`` ``q`` ``<-`` `[`quantile`](https://rdrr.io/r/stats/quantile.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``infer_res2``$``res_process1``, ``infer_res2``$``res_process2``)``, p``=``p``)`` `[`plot`](https://rdrr.io/r/graphics/plot.default.html)`(`[`qexp`](https://rdrr.io/r/stats/Exponential.html)`(``p``)``, ``q``, xlab``=``"Theoretical Quantiles"``,ylab``=``"Sample Quantiles"``)`` `[`qqline`](https://rdrr.io/r/stats/qqnorm.html)`(``q``, distribution``=``qexp``,col``=``"blue"``, lty``=``2``)`
-
-![](extended_example_files/figure-html/unnamed-chunk-29-1.png)
-
-`# Plot the pooled residuals for both event types.`` `` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` `[`c`](https://rdrr.io/r/base/c.html)`(``infer_res2``$``res_process1``, ``infer_res2``$``res_process2``)``,`` `` breaks ``=`` ``50``,`` `` probability ``=`` ``TRUE``,`` `` main ``=`` ``"Histogram of Inferred Residual Process"``,`` `` xlab ``=`` ``"Residual Value"``,`` `` ylab ``=`` ``"Density"`` ``)`` `` ``x`` ``<-`` `[`seq`](https://rdrr.io/r/base/seq.html)`(``0``, ``8``, ``0.1``)`` `` `[`lines`](https://rdrr.io/r/graphics/lines.html)`(`` `` ``x``,`` `` `[`dexp`](https://rdrr.io/r/stats/Exponential.html)`(``x``)``,`` `` col ``=`` ``'red'``,`` `` lwd ``=`` ``2`` ``)`` `` `[`legend`](https://rdrr.io/r/graphics/legend.html)`(``"topright"``, legend ``=`` ``"Theoretical PDF"``, col ``=`` ``"red"``, lwd ``=`` ``2``)`
-
-![](extended_example_files/figure-html/unnamed-chunk-30-1.png)
 
 ## More complex models
 
@@ -500,7 +140,7 @@ To implement this reparameterization, define `mu`, `alpha`, and `beta`
 as functions. Each function takes a named parameter vector, `param`, as
 its first argument.
 
-`mu`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``theta_p ``=`` ``0.15``, theta_n ``=`` ``0.21``, kappa ``=`` ``0.12``)``)``{`` `` ``theta`` ``<-`` ``(``param``[``"theta_n"``]`` ``+`` ``param``[``"theta_p"``]``)``/``2`` `` ``theta_tl`` ``<-`` ``(``param``[``"theta_n"``]`` ``-`` ``param``[``"theta_p"``]``)``/``2`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``theta``/``2``/``(``1`` ``-`` ``param``[``"kappa"``]``)`` ``+`` ``theta_tl``/``2``/``(``1`` ``+`` ``param``[``"kappa"``]``)``,`` `` ``theta``/``2``/``(``1`` ``-`` ``param``[``"kappa"``]``)`` ``-`` ``theta_tl``/``2``/``(``1`` ``+`` ``param``[``"kappa"``]``)``)``, nrow``=``2``)`` ``}`` `` ``alpha`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``eta ``=`` ``5``, nu ``=`` ``3``)``)``{`` `` ``zeta`` ``<-`` ``(``param``[``"eta"``]`` ``+`` ``param``[``"nu"``]``)``/``2`` `` ``zeta_tl`` ``<-`` ``(``param``[``"eta"``]`` ``-`` ``param``[``"nu"``]``)``/``2`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``zeta``, ``zeta_tl``, ``zeta``, ``-``zeta_tl``,`` `` ``zeta``, ``-``zeta_tl``, ``zeta``, ``zeta_tl``)``, nrow``=``2``, byrow``=``TRUE``)`` ``}`` `` ``beta`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``beta ``=`` ``12``, kappa ``=`` ``0.12``)``)``{`` `` ``beta1`` ``<-`` ``param``[``"beta"``]`` ``*`` ``(``1`` ``-`` ``param``[``"kappa"``]``)`` `` ``beta2`` ``<-`` ``param``[``"beta"``]`` ``*`` ``(``1`` ``+`` ``param``[``"kappa"``]``)`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``beta1``, ``beta2``, ``beta1``, ``beta2``,`` `` ``beta1``, ``beta2``, ``beta1``, ``beta2``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``}`` `` ``type_col_map`` ``<-`` `[`list`](https://rdrr.io/r/base/list.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``1``,``2``)``, `[`c`](https://rdrr.io/r/base/c.html)`(``3``,``4``)``)`` `` ``h_sy`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, type_col_map ``=`` ``type_col_map``)`` ``h_sy`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> function (param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)) `` ``#> {`` ``#> theta <- (param["theta_n"] + param["theta_p"])/2`` ``#> theta_tl <- (param["theta_n"] - param["theta_p"])/2`` ``#> matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]), `` ``#> theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), `` ``#> nrow = 2)`` ``#> }`` ``#> <bytecode: 0x00000197e3b16e08>`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(eta = 5, nu = 3)) `` ``#> {`` ``#> zeta <- (param["eta"] + param["nu"])/2`` ``#> zeta_tl <- (param["eta"] - param["nu"])/2`` ``#> matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, `` ``#> zeta_tl), nrow = 2, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x00000197e4f55158>`` ``#> `` ``#> Slot beta: `` ``#> function (param = c(beta = 12, kappa = 0.12)) `` ``#> {`` ``#> beta1 <- param["beta"] * (1 - param["kappa"])`` ``#> beta2 <- param["beta"] * (1 + param["kappa"])`` ``#> matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, `` ``#> beta2), nrow = 2, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x00000197e548af20>`` ``#> `` ``#> Slot type_col_map: `` ``#> [[1]]`` ``#> [1] 1 2`` ``#> `` ``#> [[2]]`` ``#> [1] 3 4`
+`mu`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``theta_p ``=`` ``0.15``, theta_n ``=`` ``0.21``, kappa ``=`` ``0.12``)``)``{`` `` ``theta`` ``<-`` ``(``param``[``"theta_n"``]`` ``+`` ``param``[``"theta_p"``]``)``/``2`` `` ``theta_tl`` ``<-`` ``(``param``[``"theta_n"``]`` ``-`` ``param``[``"theta_p"``]``)``/``2`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``theta``/``2``/``(``1`` ``-`` ``param``[``"kappa"``]``)`` ``+`` ``theta_tl``/``2``/``(``1`` ``+`` ``param``[``"kappa"``]``)``,`` `` ``theta``/``2``/``(``1`` ``-`` ``param``[``"kappa"``]``)`` ``-`` ``theta_tl``/``2``/``(``1`` ``+`` ``param``[``"kappa"``]``)``)``, nrow``=``2``)`` ``}`` `` ``alpha`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``eta ``=`` ``5``, nu ``=`` ``3``)``)``{`` `` ``zeta`` ``<-`` ``(``param``[``"eta"``]`` ``+`` ``param``[``"nu"``]``)``/``2`` `` ``zeta_tl`` ``<-`` ``(``param``[``"eta"``]`` ``-`` ``param``[``"nu"``]``)``/``2`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``zeta``, ``zeta_tl``, ``zeta``, ``-``zeta_tl``,`` `` ``zeta``, ``-``zeta_tl``, ``zeta``, ``zeta_tl``)``, nrow``=``2``, byrow``=``TRUE``)`` ``}`` `` ``beta`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``beta ``=`` ``12``, kappa ``=`` ``0.12``)``)``{`` `` ``beta1`` ``<-`` ``param``[``"beta"``]`` ``*`` ``(``1`` ``-`` ``param``[``"kappa"``]``)`` `` ``beta2`` ``<-`` ``param``[``"beta"``]`` ``*`` ``(``1`` ``+`` ``param``[``"kappa"``]``)`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``beta1``, ``beta2``, ``beta1``, ``beta2``,`` `` ``beta1``, ``beta2``, ``beta1``, ``beta2``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``}`` `` ``type_col_map`` ``<-`` `[`list`](https://rdrr.io/r/base/list.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``1``,``2``)``, `[`c`](https://rdrr.io/r/base/c.html)`(``3``,``4``)``)`` `` ``h_sy`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, type_col_map ``=`` ``type_col_map``)`` ``h_sy`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> function (param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)) `` ``#> {`` ``#> theta <- (param["theta_n"] + param["theta_p"])/2`` ``#> theta_tl <- (param["theta_n"] - param["theta_p"])/2`` ``#> matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]), `` ``#> theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), `` ``#> nrow = 2)`` ``#> }`` ``#> <bytecode: 0x000001d411c1d818>`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(eta = 5, nu = 3)) `` ``#> {`` ``#> zeta <- (param["eta"] + param["nu"])/2`` ``#> zeta_tl <- (param["eta"] - param["nu"])/2`` ``#> matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, `` ``#> zeta_tl), nrow = 2, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x000001d40d263778>`` ``#> `` ``#> Slot beta: `` ``#> function (param = c(beta = 12, kappa = 0.12)) `` ``#> {`` ``#> beta1 <- param["beta"] * (1 - param["kappa"])`` ``#> beta2 <- param["beta"] * (1 + param["kappa"])`` ``#> matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, `` ``#> beta2), nrow = 2, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x000001d40c0b0040>`` ``#> `` ``#> Slot type_col_map: `` ``#> [[1]]`` ``#> [1] 1 2`` ``#> `` ``#> [[2]]`` ``#> [1] 3 4`
 
 [`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``# run simulation`` ``res_sy`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``h_sy``, size ``=`` ``2000``, lambda_component0 ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`rep`](https://rdrr.io/r/base/rep.html)`(``1``, ``2`` ``*`` ``4``)``, nrow``=``2``)``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``res_sy``)`` ``#> -------------------------------------------------------`` ``#> Simulation result of exponential (marked) Hawkes model.`` ``#> Realized path :`` ``#> arrival N1 N2 mark lambda1 lambda2`` ``#> [1,] 0.0000 0 0 0 4.11567 4.08888`` ``#> [2,] 7.2506 0 1 1 0.11567 0.08888`` ``#> [3,] 7.4805 0 2 1 0.42304 0.48724`` ``#> [4,] 7.4915 1 2 1 3.09049 4.86829`` ``#> [5,] 17.7981 2 2 1 0.11567 0.08888`` ``#> [6,] 20.0276 2 3 1 0.11567 0.08888`` ``#> [7,] 20.0484 2 4 1 2.56966 4.05419`` ``#> [8,] 20.0609 3 4 1 4.94847 7.88899`` ``#> [9,] 20.1607 4 4 1 3.58697 3.81330`` ``#> [10,] 20.2304 5 4 1 4.09539 3.38445`` ``#> [11,] 20.5057 5 5 1 0.56602 0.47289`` ``#> [12,] 26.4862 6 5 1 0.11567 0.08888`` ``#> [13,] 32.5114 6 6 1 0.11567 0.08888`` ``#> [14,] 32.6227 6 7 1 1.12663 1.54804`` ``#> [15,] 32.6316 6 8 1 3.79509 5.94053`` ``#> [16,] 32.6480 7 8 1 5.81283 9.13210`` ``#> [17,] 32.6921 7 9 1 6.87877 7.59586`` ``#> [18,] 32.7953 8 9 1 3.51752 4.17621`` ``#> [19,] 32.9249 8 10 1 2.20298 1.94570`` ``#> [20,] 34.7648 9 10 1 0.11567 0.08888`` ``#> ... with 1980 more rows `` ``#> -------------------------------------------------------`
 
@@ -637,7 +277,7 @@ them, along with `...` to accept other arguments supplied by the
 package. Use `N[n, "N1"]` to read one count directly, rather than
 extracting an entire column at every event.
 
-`impact`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``alpha1n``=``0.25``, alpha1w``=``0.1``, alpha2n``=``0.1``, alpha2w``=``0.2``)``,`` `` ``N``=``N``, ``n``=``n``, ``...``)``{`` `` `` `` ``Psi`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``param``[``'alpha1w'``]``, ``param``[``'alpha1n'``]``,`` `` ``0``, ``0``, ``param``[``'alpha1n'``]``, ``param``[``'alpha1w'``]``,`` `` ``param``[``'alpha2w'``]``, ``param``[``'alpha2n'``]``, ``0``, ``0``,`` `` ``param``[``'alpha2n'``]``, ``param``[``'alpha2w'``]``, ``0``, ``0``)``, nrow``=``4``, byrow``=``TRUE``)`` `` `` `` ``ind`` ``<-`` ``N``[``n``,``"N1"``]`` ``-`` ``N``[``n``,``"N2"``]`` ``>`` ``N``[``n``,``"N3"``]`` ``-`` ``N``[``n``,``"N4"``]`` `` `` `` ``km`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``!``ind``, ``!``ind``, ``!``ind``, ``!``ind``,`` `` ``ind``, ``ind``, ``ind``, ``ind``,`` `` ``ind``, ``ind``, ``ind``, ``ind``,`` `` ``!``ind``, ``!``ind``, ``!``ind``, ``!``ind``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` `` `` `` ``km`` ``*`` ``Psi`` ``}`` `` ``hspec_fl`` ``<-`` ``new``(``"hspec"``,`` `` mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, impact ``=`` ``impact``)`` ``hspec_fl`` ``#> An object of class "hspec" of 4-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.02`` ``#> [2,] 0.02`` ``#> [3,] 0.04`` ``#> [4,] 0.04`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, `` ``#> alpha34 = 0.4)) `` ``#> {`` ``#> matrix(c(param["alpha11"], param["alpha12"], 0, 0, param["alpha12"], `` ``#> param["alpha11"], 0, 0, 0, 0, param["alpha33"], param["alpha34"], `` ``#> 0, 0, param["alpha34"], param["alpha33"]), nrow = 4, `` ``#> byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x00000197e355ed20>`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2] [,3] [,4]`` ``#> [1,] 0.7 0.7 0.7 0.7`` ``#> [2,] 0.7 0.7 0.7 0.7`` ``#> [3,] 1.1 1.1 1.1 1.1`` ``#> [4,] 1.1 1.1 1.1 1.1`` ``#> `` ``#> Slot impact: `` ``#> function (param = c(alpha1n = 0.25, alpha1w = 0.1, alpha2n = 0.1, `` ``#> alpha2w = 0.2), N = N, n = n, ...) `` ``#> {`` ``#> Psi <- matrix(c(0, 0, param["alpha1w"], param["alpha1n"], `` ``#> 0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], `` ``#> param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], `` ``#> 0, 0), nrow = 4, byrow = TRUE)`` ``#> ind <- N[n, "N1"] - N[n, "N2"] > N[n, "N3"] - N[n, "N4"]`` ``#> km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, `` ``#> ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, `` ``#> byrow = TRUE)`` ``#> km * Psi`` ``#> }`
+`impact`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``alpha1n``=``0.25``, alpha1w``=``0.1``, alpha2n``=``0.1``, alpha2w``=``0.2``)``,`` `` ``N``=``N``, ``n``=``n``, ``...``)``{`` `` `` `` ``Psi`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``param``[``'alpha1w'``]``, ``param``[``'alpha1n'``]``,`` `` ``0``, ``0``, ``param``[``'alpha1n'``]``, ``param``[``'alpha1w'``]``,`` `` ``param``[``'alpha2w'``]``, ``param``[``'alpha2n'``]``, ``0``, ``0``,`` `` ``param``[``'alpha2n'``]``, ``param``[``'alpha2w'``]``, ``0``, ``0``)``, nrow``=``4``, byrow``=``TRUE``)`` `` `` `` ``ind`` ``<-`` ``N``[``n``,``"N1"``]`` ``-`` ``N``[``n``,``"N2"``]`` ``>`` ``N``[``n``,``"N3"``]`` ``-`` ``N``[``n``,``"N4"``]`` `` `` `` ``km`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``!``ind``, ``!``ind``, ``!``ind``, ``!``ind``,`` `` ``ind``, ``ind``, ``ind``, ``ind``,`` `` ``ind``, ``ind``, ``ind``, ``ind``,`` `` ``!``ind``, ``!``ind``, ``!``ind``, ``!``ind``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` `` `` `` ``km`` ``*`` ``Psi`` ``}`` `` ``hspec_fl`` ``<-`` ``new``(``"hspec"``,`` `` mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, impact ``=`` ``impact``)`` ``hspec_fl`` ``#> An object of class "hspec" of 4-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.02`` ``#> [2,] 0.02`` ``#> [3,] 0.04`` ``#> [4,] 0.04`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, `` ``#> alpha34 = 0.4)) `` ``#> {`` ``#> matrix(c(param["alpha11"], param["alpha12"], 0, 0, param["alpha12"], `` ``#> param["alpha11"], 0, 0, 0, 0, param["alpha33"], param["alpha34"], `` ``#> 0, 0, param["alpha34"], param["alpha33"]), nrow = 4, `` ``#> byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x000001d41694d120>`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2] [,3] [,4]`` ``#> [1,] 0.7 0.7 0.7 0.7`` ``#> [2,] 0.7 0.7 0.7 0.7`` ``#> [3,] 1.1 1.1 1.1 1.1`` ``#> [4,] 1.1 1.1 1.1 1.1`` ``#> `` ``#> Slot impact: `` ``#> function (param = c(alpha1n = 0.25, alpha1w = 0.1, alpha2n = 0.1, `` ``#> alpha2w = 0.2), N = N, n = n, ...) `` ``#> {`` ``#> Psi <- matrix(c(0, 0, param["alpha1w"], param["alpha1n"], `` ``#> 0, 0, param["alpha1n"], param["alpha1w"], param["alpha2w"], `` ``#> param["alpha2n"], 0, 0, param["alpha2n"], param["alpha2w"], `` ``#> 0, 0), nrow = 4, byrow = TRUE)`` ``#> ind <- N[n, "N1"] - N[n, "N2"] > N[n, "N3"] - N[n, "N4"]`` ``#> km <- matrix(c(!ind, !ind, !ind, !ind, ind, ind, ind, ind, `` ``#> ind, ind, ind, ind, !ind, !ind, !ind, !ind), nrow = 4, `` ``#> byrow = TRUE)`` ``#> km * Psi`` ``#> }`
 
 [`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``hr_fl`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec_fl``, size``=``2000``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``hr_fl``)`` ``#> -------------------------------------------------------`` ``#> Simulation result of exponential (marked) Hawkes model.`` ``#> Realized path :`` ``#> arrival N1 N2 N3 N4 mark lambda1 lambda2 lambda3 lambda4`` ``#> [1,] 0.00000 0 0 0 0 0 0.070000 0.070000 0.110000 0.110000`` ``#> [2,] 0.84055 0 0 1 0 1 0.047761 0.047761 0.067768 0.067768`` ``#> [3,] 7.35095 0 0 2 0 1 0.021340 0.020291 0.040254 0.040332`` ``#> [4,] 8.74603 1 0 2 0 1 0.058165 0.020110 0.104718 0.126289`` ``#> [5,] 29.54186 2 0 2 0 1 0.020000 0.020000 0.040000 0.040000`` ``#> [6,] 30.90333 2 1 2 0 1 0.097114 0.135671 0.040000 0.062366`` ``#> [7,] 31.08275 3 1 2 0 1 0.352605 0.298414 0.040000 0.222539`` ``#> [8,] 33.42583 4 1 2 0 1 0.123299 0.132184 0.040000 0.061465`` ``#> [9,] 33.75532 5 1 2 0 1 0.260826 0.347283 0.179195 0.054939`` ``#> [10,] 34.28018 6 1 2 0 1 0.325287 0.454414 0.230420 0.048387`` ``#> [11,] 35.06698 6 2 2 0 1 0.311303 0.443397 0.204307 0.043530`` ``#> [12,] 35.31209 6 3 2 0 1 0.518076 0.545110 0.241844 0.042695`` ``#> [13,] 35.91748 6 4 2 0 1 0.542398 0.494637 0.195086 0.041385`` ``#> [14,] 36.30025 7 4 2 0 1 0.649096 0.536065 0.141792 0.172180`` ``#> [15,] 36.96094 7 5 2 0 1 0.542096 0.533891 0.185908 0.103906`` ``#> [16,] 36.99520 7 5 2 1 1 0.822615 0.716974 0.180512 0.294145`` ``#> [17,] 37.01805 8 5 2 1 1 0.809878 0.804326 0.567094 0.580389`` ``#> [18,] 37.57785 9 5 2 1 1 0.688962 0.752790 0.432793 0.331931`` ``#> [19,] 39.12437 9 5 2 2 1 0.314339 0.369832 0.148166 0.093268`` ``#> [20,] 40.15404 10 5 2 2 1 0.163160 0.238789 0.203723 0.153817`` ``#> ... with 1980 more rows `` ``#> -------------------------------------------------------`
 
@@ -723,7 +363,7 @@ is needed. Individual components can be negative after a reset. The
 equal decay rates used here allow simulation as long as the sum of the
 components in each row remains nonnegative.
 
-` ``alpha`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``alpha_s1``=``4``, alpha_m``=``26``, alpha_s2``=``5``,`` `` alpha_w1``=``11``, alpha_w2``=``7``)``)``{`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``param``[``"alpha_s1"``]``, ``param``[``"alpha_m"``]``, ``param``[``"alpha_s2"``]``, ``0``,`` `` ``param``[``"alpha_w1"``]``, ``0``, ``0``, ``param``[``"alpha_w2"``]``,`` `` ``param``[``"alpha_w2"``]``, ``0``, ``0``, ``param``[``"alpha_w1"``]``,`` `` ``0``, ``param``[``"alpha_s2"``]``, ``param``[``"alpha_m"``]``, ``param``[``"alpha_s1"``]``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` ``}`` `` ``impact`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``xi ``=`` ``2.7``)``, ``n``=``n``, ``Nc``=``Nc``, ``lambda_component_n`` ``=`` ``lambda_component_n``, ``...`` ``)``{`` `` ``if``(``n`` ``==`` ``1``)``{`` `` ``level`` ``<-`` ``initial_level`` `` ``# mid <- initial_mid_price`` `` ``}`` ``else`` ``{`` `` ``level`` ``<-`` ``Nc``[``n``,``1``]`` ``-`` ``Nc``[``n``,``2``]`` ``-`` ``(``Nc``[``n``,``3``]`` ``-`` ``Nc``[``n``,``4``]``)`` ``+`` ``initial_level`` `` ``ask`` ``<-`` ``initial_ask_price`` ``+`` ``(``Nc``[``n``,``1``]`` ``-`` ``Nc``[``n``,``2``]``)`` `` ``bid`` ``<-`` ``initial_bid_price`` ``+`` ``(``Nc``[``n``,``3``]`` ``-`` ``Nc``[``n``,``4``]``)`` `` ``mid`` ``<-`` ``(``ask`` ``+`` ``bid``)``/``2`` `` ``}`` `` `` `` ``lambda_component_matrix`` ``<-`` ``lambda_component_n`` `` `` ``l2`` ``<-`` `[`sum`](https://rdrr.io/r/base/sum.html)`(``lambda_component_matrix``[``2``,``]``)`` ``# sum of second row`` `` ``l3`` ``<-`` `[`sum`](https://rdrr.io/r/base/sum.html)`(``lambda_component_matrix``[``3``,``]``)`` ``# sum of third row`` `` `` ``im`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``0``, ``0``,`` `` ``0``, ``-``l2`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``-``l2`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``0``,`` `` ``0``, ``-``l3`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``-``l3`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``0``,`` `` ``0``, ``0``, ``0``, ``0``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` `` ``}`` `` ``beta`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`rep`](https://rdrr.io/r/base/rep.html)`(``50``, ``16``)``, nrow ``=`` ``4``, byrow``=``TRUE``)`` `` ``rmark`` ``<-`` ``function``(``n``=``n``, ``Nc``=``Nc``, ``type``, ``...``)``{`` `` ``if``(``n`` ``==`` ``1``)``{`` `` ``level`` ``<-`` ``initial_level`` `` ``}`` ``else`` ``{`` `` ``level`` ``<-`` ``Nc``[``n``-``1``,``1``]`` ``-`` ``Nc``[``n``-``1``,``2``]`` ``-`` ``(``Nc``[``n``-``1``,``3``]`` ``-`` ``Nc``[``n``-``1``,``4``]``)`` ``+`` ``initial_level`` `` ``}`` `` ``if`` ``(``type``[``n``]`` ``==`` ``2`` ``|`` ``type``[``n``]`` ``==`` ``3``)``{`` `` `[`min`](https://rdrr.io/r/base/Extremes.html)`(``level``, `[`rgeom`](https://rdrr.io/r/stats/Geometric.html)`(``1``, p``=``0.65``)`` ``+`` ``1``)`` `` ``}`` ``else`` ``{`` `` `[`rgeom`](https://rdrr.io/r/stats/Geometric.html)`(``1``, p``=``0.65``)`` ``+`` ``1`` `` ``}`` ``}`` `` `` ``h_ba`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, impact``=``impact``, rmark ``=`` ``rmark``)`` ``h_ba`` ``#> An object of class "hspec" of 4-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> function (param = c(mu1 = 0.08, zeta1 = 0.1), n = n, Nc = Nc, `` ``#> ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> mid <- initial_mid_price`` ``#> }`` ``#> else {`` ``#> level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - `` ``#> Nc[n - 1, 4]) + initial_level`` ``#> ask <- initial_ask_price + (Nc[n - 1, 1] - Nc[n - 1, `` ``#> 2])`` ``#> bid <- initial_bid_price + (Nc[n - 1, 3] - Nc[n - 1, `` ``#> 4])`` ``#> mid <- (ask + bid)/2`` ``#> }`` ``#> if (level <= 0) {`` ``#> matrix(c(param["mu1"], 0, 0, param["mu1"]), nrow = 4)`` ``#> }`` ``#> else {`` ``#> matrix(c(param["mu1"], param["zeta1"] * level/mid, param["zeta1"] * `` ``#> level/mid, param["mu1"]), nrow = 4)`` ``#> }`` ``#> }`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(alpha_s1 = 4, alpha_m = 26, alpha_s2 = 5, `` ``#> alpha_w1 = 11, alpha_w2 = 7)) `` ``#> {`` ``#> matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], `` ``#> 0, param["alpha_w1"], 0, 0, param["alpha_w2"], param["alpha_w2"], `` ``#> 0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], `` ``#> param["alpha_s1"]), nrow = 4, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x00000197e794a460>`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2] [,3] [,4]`` ``#> [1,] 50 50 50 50`` ``#> [2,] 50 50 50 50`` ``#> [3,] 50 50 50 50`` ``#> [4,] 50 50 50 50`` ``#> `` ``#> Slot impact: `` ``#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component_n = lambda_component_n, `` ``#> ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> }`` ``#> else {`` ``#> level <- Nc[n, 1] - Nc[n, 2] - (Nc[n, 3] - Nc[n, 4]) + `` ``#> initial_level`` ``#> ask <- initial_ask_price + (Nc[n, 1] - Nc[n, 2])`` ``#> bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])`` ``#> mid <- (ask + bid)/2`` ``#> }`` ``#> lambda_component_matrix <- lambda_component_n`` ``#> l2 <- sum(lambda_component_matrix[2, ])`` ``#> l3 <- sum(lambda_component_matrix[3, ])`` ``#> im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, `` ``#> -l2 + param["xi"] * level/mid, 0, 0, -l3 + param["xi"] * `` ``#> level/mid, -l3 + param["xi"] * level/mid, 0, 0, 0, `` ``#> 0, 0), nrow = 4, byrow = TRUE)`` ``#> }`` ``#> `` ``#> Slot rmark: `` ``#> function (n = n, Nc = Nc, type, ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> }`` ``#> else {`` ``#> level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - `` ``#> Nc[n - 1, 4]) + initial_level`` ``#> }`` ``#> if (type[n] == 2 | type[n] == 3) {`` ``#> min(level, rgeom(1, p = 0.65) + 1)`` ``#> }`` ``#> else {`` ``#> rgeom(1, p = 0.65) + 1`` ``#> }`` ``#> }`
+` ``alpha`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``alpha_s1``=``4``, alpha_m``=``26``, alpha_s2``=``5``,`` `` alpha_w1``=``11``, alpha_w2``=``7``)``)``{`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``param``[``"alpha_s1"``]``, ``param``[``"alpha_m"``]``, ``param``[``"alpha_s2"``]``, ``0``,`` `` ``param``[``"alpha_w1"``]``, ``0``, ``0``, ``param``[``"alpha_w2"``]``,`` `` ``param``[``"alpha_w2"``]``, ``0``, ``0``, ``param``[``"alpha_w1"``]``,`` `` ``0``, ``param``[``"alpha_s2"``]``, ``param``[``"alpha_m"``]``, ``param``[``"alpha_s1"``]``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` ``}`` `` ``impact`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``xi ``=`` ``2.7``)``, ``n``=``n``, ``Nc``=``Nc``, ``lambda_component_n`` ``=`` ``lambda_component_n``, ``...`` ``)``{`` `` ``if``(``n`` ``==`` ``1``)``{`` `` ``level`` ``<-`` ``initial_level`` `` ``# mid <- initial_mid_price`` `` ``}`` ``else`` ``{`` `` ``level`` ``<-`` ``Nc``[``n``,``1``]`` ``-`` ``Nc``[``n``,``2``]`` ``-`` ``(``Nc``[``n``,``3``]`` ``-`` ``Nc``[``n``,``4``]``)`` ``+`` ``initial_level`` `` ``ask`` ``<-`` ``initial_ask_price`` ``+`` ``(``Nc``[``n``,``1``]`` ``-`` ``Nc``[``n``,``2``]``)`` `` ``bid`` ``<-`` ``initial_bid_price`` ``+`` ``(``Nc``[``n``,``3``]`` ``-`` ``Nc``[``n``,``4``]``)`` `` ``mid`` ``<-`` ``(``ask`` ``+`` ``bid``)``/``2`` `` ``}`` `` `` `` ``lambda_component_matrix`` ``<-`` ``lambda_component_n`` `` `` ``l2`` ``<-`` `[`sum`](https://rdrr.io/r/base/sum.html)`(``lambda_component_matrix``[``2``,``]``)`` ``# sum of second row`` `` ``l3`` ``<-`` `[`sum`](https://rdrr.io/r/base/sum.html)`(``lambda_component_matrix``[``3``,``]``)`` ``# sum of third row`` `` `` ``im`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``0``, ``0``,`` `` ``0``, ``-``l2`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``-``l2`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``0``,`` `` ``0``, ``-``l3`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``-``l3`` ``+`` ``param``[``"xi"``]``*``level``/``mid``, ``0``,`` `` ``0``, ``0``, ``0``, ``0``)``, nrow ``=`` ``4``, byrow ``=`` ``TRUE``)`` `` ``}`` `` ``beta`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`rep`](https://rdrr.io/r/base/rep.html)`(``50``, ``16``)``, nrow ``=`` ``4``, byrow``=``TRUE``)`` `` ``rmark`` ``<-`` ``function``(``n``=``n``, ``Nc``=``Nc``, ``type``, ``...``)``{`` `` ``if``(``n`` ``==`` ``1``)``{`` `` ``level`` ``<-`` ``initial_level`` `` ``}`` ``else`` ``{`` `` ``level`` ``<-`` ``Nc``[``n``-``1``,``1``]`` ``-`` ``Nc``[``n``-``1``,``2``]`` ``-`` ``(``Nc``[``n``-``1``,``3``]`` ``-`` ``Nc``[``n``-``1``,``4``]``)`` ``+`` ``initial_level`` `` ``}`` `` ``if`` ``(``type``[``n``]`` ``==`` ``2`` ``|`` ``type``[``n``]`` ``==`` ``3``)``{`` `` `[`min`](https://rdrr.io/r/base/Extremes.html)`(``level``, `[`rgeom`](https://rdrr.io/r/stats/Geometric.html)`(``1``, p``=``0.65``)`` ``+`` ``1``)`` `` ``}`` ``else`` ``{`` `` `[`rgeom`](https://rdrr.io/r/stats/Geometric.html)`(``1``, p``=``0.65``)`` ``+`` ``1`` `` ``}`` ``}`` `` `` ``h_ba`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``mu``, alpha ``=`` ``alpha``, beta ``=`` ``beta``, impact``=``impact``, rmark ``=`` ``rmark``)`` ``h_ba`` ``#> An object of class "hspec" of 4-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> function (param = c(mu1 = 0.08, zeta1 = 0.1), n = n, Nc = Nc, `` ``#> ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> mid <- initial_mid_price`` ``#> }`` ``#> else {`` ``#> level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - `` ``#> Nc[n - 1, 4]) + initial_level`` ``#> ask <- initial_ask_price + (Nc[n - 1, 1] - Nc[n - 1, `` ``#> 2])`` ``#> bid <- initial_bid_price + (Nc[n - 1, 3] - Nc[n - 1, `` ``#> 4])`` ``#> mid <- (ask + bid)/2`` ``#> }`` ``#> if (level <= 0) {`` ``#> matrix(c(param["mu1"], 0, 0, param["mu1"]), nrow = 4)`` ``#> }`` ``#> else {`` ``#> matrix(c(param["mu1"], param["zeta1"] * level/mid, param["zeta1"] * `` ``#> level/mid, param["mu1"]), nrow = 4)`` ``#> }`` ``#> }`` ``#> `` ``#> Slot alpha: `` ``#> function (param = c(alpha_s1 = 4, alpha_m = 26, alpha_s2 = 5, `` ``#> alpha_w1 = 11, alpha_w2 = 7)) `` ``#> {`` ``#> matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], `` ``#> 0, param["alpha_w1"], 0, 0, param["alpha_w2"], param["alpha_w2"], `` ``#> 0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], `` ``#> param["alpha_s1"]), nrow = 4, byrow = TRUE)`` ``#> }`` ``#> <bytecode: 0x000001d41408ceb0>`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2] [,3] [,4]`` ``#> [1,] 50 50 50 50`` ``#> [2,] 50 50 50 50`` ``#> [3,] 50 50 50 50`` ``#> [4,] 50 50 50 50`` ``#> `` ``#> Slot impact: `` ``#> function (param = c(xi = 2.7), n = n, Nc = Nc, lambda_component_n = lambda_component_n, `` ``#> ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> }`` ``#> else {`` ``#> level <- Nc[n, 1] - Nc[n, 2] - (Nc[n, 3] - Nc[n, 4]) + `` ``#> initial_level`` ``#> ask <- initial_ask_price + (Nc[n, 1] - Nc[n, 2])`` ``#> bid <- initial_bid_price + (Nc[n, 3] - Nc[n, 4])`` ``#> mid <- (ask + bid)/2`` ``#> }`` ``#> lambda_component_matrix <- lambda_component_n`` ``#> l2 <- sum(lambda_component_matrix[2, ])`` ``#> l3 <- sum(lambda_component_matrix[3, ])`` ``#> im <- matrix(c(0, 0, 0, 0, 0, -l2 + param["xi"] * level/mid, `` ``#> -l2 + param["xi"] * level/mid, 0, 0, -l3 + param["xi"] * `` ``#> level/mid, -l3 + param["xi"] * level/mid, 0, 0, 0, `` ``#> 0, 0), nrow = 4, byrow = TRUE)`` ``#> }`` ``#> `` ``#> Slot rmark: `` ``#> function (n = n, Nc = Nc, type, ...) `` ``#> {`` ``#> if (n == 1) {`` ``#> level <- initial_level`` ``#> }`` ``#> else {`` ``#> level <- Nc[n - 1, 1] - Nc[n - 1, 2] - (Nc[n - 1, 3] - `` ``#> Nc[n - 1, 4]) + initial_level`` ``#> }`` ``#> if (type[n] == 2 | type[n] == 3) {`` ``#> min(level, rgeom(1, p = 0.65) + 1)`` ``#> }`` ``#> else {`` ``#> rgeom(1, p = 0.65) + 1`` ``#> }`` ``#> }`
 
 [`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``hr_ba`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``h_ba``, size``=``1000``, lambda_component0 ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`rep`](https://rdrr.io/r/base/rep.html)`(``1``, ``16``)``, ``4``)``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``hr_ba``)`` ``#> -------------------------------------------------------`` ``#> Simulation result of exponential (marked) Hawkes model.`` ``#> Realized path :`` ``#> arrival N1 N2 N3 N4 mark lambda1 lambda2 lambda3 lambda4`` ``#> [1,] 0.0000 0 0 0 0 0 4.08000 4.0082500 4.0082500 4.0800`` ``#> [2,] 3.6673 1 0 0 0 2 0.08000 0.0082500 0.0082500 0.0800`` ``#> [3,] 6.9225 2 0 0 0 1 0.08000 0.0084097 0.0084097 0.0800`` ``#> [4,] 20.0251 2 0 0 1 1 0.08000 0.0084894 0.0084894 0.0800`` ``#> [5,] 24.3957 2 0 0 2 3 0.08000 0.0085762 0.0085762 0.0800`` ``#> [6,] 24.4026 2 0 1 2 1 0.08000 4.9856950 7.8296138 2.9239`` ``#> [7,] 27.9067 3 0 1 2 1 0.08000 0.0087500 0.0087500 0.0800`` ``#> [8,] 27.9378 3 1 1 2 1 0.92442 2.3309869 1.4865661 0.0800`` ``#> [9,] 33.8868 3 1 2 2 2 0.08000 0.0087500 0.0087500 0.0800`` ``#> [10,] 33.8900 3 1 2 3 1 4.33027 0.2054120 0.2054120 22.1814`` ``#> [11,] 34.3764 4 1 2 3 1 0.08000 0.0086631 0.0086631 0.0800`` ``#> [12,] 34.4342 4 2 2 3 1 0.30328 0.6227650 0.3994842 0.0800`` ``#> [13,] 36.5641 5 2 2 3 2 0.08000 0.0086631 0.0086631 0.0800`` ``#> [14,] 36.5658 5 3 2 3 2 3.74917 10.0990280 6.4298623 0.0800`` ``#> [15,] 40.4590 5 3 2 4 1 0.08000 0.0086631 0.0086631 0.0800`` ``#> [16,] 40.4666 5 3 3 4 1 0.08000 4.8059475 7.5472032 2.8213`` ``#> [17,] 43.8835 6 3 3 4 5 0.08000 0.0086631 0.0086631 0.0800`` ``#> [18,] 44.8818 7 3 3 4 2 0.08000 0.0090607 0.0090607 0.0800`` ``#> [19,] 47.6976 7 3 3 5 2 0.08000 0.0092193 0.0092193 0.0800`` ``#> [20,] 51.7138 8 3 3 5 1 0.08000 0.0093932 0.0093932 0.0800`` ``#> ... with 980 more rows `` ``#> -------------------------------------------------------`
 
@@ -756,27 +396,10 @@ and residuals.
 
 `replayed_ba`` ``<-`` `[`do.call`](https://rdrr.io/r/base/do.call.html)`(``logLik``, `[`c`](https://rdrr.io/r/base/c.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``object ``=`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``mle_ba``)``,`` `` inter_arrival ``=`` ``hr_ba``$``inter_arrival``, type ``=`` ``hr_ba``$``type``, mark ``=`` ``hr_ba``$``mark``,`` `` infer ``=`` ``TRUE``)``, `[`fit_initial_state`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)`(``mle_ba``)``)``)`` `[`stopifnot`](https://rdrr.io/r/base/stopifnot.html)`(`[`isTRUE`](https://rdrr.io/r/base/Logic.html)`(`[`all.equal`](https://rdrr.io/r/base/all.equal.html)`(`[`unname`](https://rdrr.io/r/base/unname.html)`(``replayed_ba``$``loglikelihood``)``,`` `` `[`as.numeric`](https://rdrr.io/r/base/numeric.html)`(``mle_ba``$``maximum``)``, tolerance ``=`` ``1e-8``)``)``)`
 
-The current-component version also supports an optional analytic
-gradient. The baseline Jacobian uses all fitted parameter names; the
-parameter-only alpha Jacobian uses its local names. For impact, supply
-separate derivatives with respect to parameters (holding the current
-state fixed) and the current state. All matrix entries use
-[`as.vector()`](https://rdrr.io/r/base/vector.html) column-major order.
-In particular, the state Jacobian differentiates the pre-jump row sums
-subtracted by impact. Counts and mark totals are observed data and have
-zero parameter derivative. The baseline uses counts before the event,
-while impact uses counts after it.
-
-`# Exact derivatives for the current-component Bid-ask example.`` ``bid_ask_jacobians`` ``<-`` ``function``(``initial_ask_price``, ``initial_bid_price``, ``initial_level``,`` `` ``initial_mid_price`` ``=`` ``(``initial_ask_price`` ``+`` ``initial_bid_price``)`` ``/`` ``2``)`` ``{`` `` `[`force`](https://rdrr.io/r/base/force.html)`(``initial_ask_price``)``; `[`force`](https://rdrr.io/r/base/force.html)`(``initial_bid_price``)``; `[`force`](https://rdrr.io/r/base/force.html)`(``initial_level``)``; `[`force`](https://rdrr.io/r/base/force.html)`(``initial_mid_price``)`` `` ``market_state`` ``<-`` ``function``(``n``, ``Nc``, ``after`` ``=`` ``FALSE``)`` ``{`` `` ``if`` ``(``n`` ``==`` ``1L``)`` `[`return`](https://rdrr.io/r/base/function.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``level ``=`` ``initial_level``, mid ``=`` ``initial_mid_price``)``)`` `` ``k`` ``<-`` ``if`` ``(``after``)`` ``n`` ``else`` ``n`` ``-`` ``1L`` `` ``ask`` ``<-`` ``initial_ask_price`` ``+`` ``Nc``[``k``, ``1``]`` ``-`` ``Nc``[``k``, ``2``]`` `` ``bid`` ``<-`` ``initial_bid_price`` ``+`` ``Nc``[``k``, ``3``]`` ``-`` ``Nc``[``k``, ``4``]`` `` `[`list`](https://rdrr.io/r/base/list.html)`(``level ``=`` ``initial_level`` ``+`` ``Nc``[``k``, ``1``]`` ``-`` ``Nc``[``k``, ``2``]`` ``-`` ``(``Nc``[``k``, ``3``]`` ``-`` ``Nc``[``k``, ``4``]``)``,`` `` mid ``=`` ``(``ask`` ``+`` ``bid``)`` ``/`` ``2``)`` `` ``}`` `` ``mu_jac`` ``<-`` ``function``(``param``, ``n``, ``Nc``, ``...``)`` ``{`` `` ``s`` ``<-`` ``market_state``(``n``, ``Nc``)`` `` ``J`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``0``, ``4``, `[`length`](https://rdrr.io/r/base/length.html)`(``param``)``, dimnames ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``NULL``, `[`names`](https://rdrr.io/r/base/names.html)`(``param``)``)``)`` `` ``J``[`[`c`](https://rdrr.io/r/base/c.html)`(``1``, ``4``)``, ``'mu1'``]`` ``<-`` ``1`` `` ``if`` ``(``s``$``level`` ``>`` ``0``)`` ``J``[`[`c`](https://rdrr.io/r/base/c.html)`(``2``, ``3``)``, ``'zeta1'``]`` ``<-`` ``s``$``level`` ``/`` ``s``$``mid`` `` ``J`` `` ``}`` `` ``alpha_jac`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``0``, ``16``, ``5``, dimnames ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``NULL``,`` `` `[`c`](https://rdrr.io/r/base/c.html)`(``'alpha_s1'``, ``'alpha_m'``, ``'alpha_s2'``, ``'alpha_w1'``, ``'alpha_w2'``)``)``)`` `` ``alpha_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``1``, ``16``)``, ``'alpha_s1'``]`` ``<-`` ``1`` `` ``alpha_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``5``, ``12``)``, ``'alpha_m'``]`` ``<-`` ``1`` `` ``alpha_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``9``, ``8``)``, ``'alpha_s2'``]`` ``<-`` ``1`` `` ``alpha_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``2``, ``15``)``, ``'alpha_w1'``]`` ``<-`` ``1`` `` ``alpha_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``3``, ``14``)``, ``'alpha_w2'``]`` ``<-`` ``1`` `` ``impact_param_jac`` ``<-`` ``function``(``param``, ``n``, ``Nc``, ``...``)`` ``{`` `` ``s`` ``<-`` ``market_state``(``n``, ``Nc``, after ``=`` ``TRUE``)`` `` ``J`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``0``, ``16``, `[`length`](https://rdrr.io/r/base/length.html)`(``param``)``, dimnames ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``NULL``, `[`names`](https://rdrr.io/r/base/names.html)`(``param``)``)``)`` `` ``J``[`[`c`](https://rdrr.io/r/base/c.html)`(``6``, ``7``, ``10``, ``11``)``, ``'xi'``]`` ``<-`` ``s``$``level`` ``/`` ``s``$``mid`` `` ``J`` `` ``}`` `` ``impact_state_jac`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``0``, ``16``, ``16``)`` `` ``impact_state_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``6``, ``10``)``, `[`c`](https://rdrr.io/r/base/c.html)`(``2``, ``6``, ``10``, ``14``)``]`` ``<-`` ``-``1`` `` ``impact_state_jac``[`[`c`](https://rdrr.io/r/base/c.html)`(``7``, ``11``)``, `[`c`](https://rdrr.io/r/base/c.html)`(``3``, ``7``, ``11``, ``15``)``]`` ``<-`` ``-``1`` `` `[`list`](https://rdrr.io/r/base/list.html)`(``mu ``=`` ``mu_jac``, alpha ``=`` ``alpha_jac``,`` `` impact ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``param ``=`` ``impact_param_jac``, state ``=`` ``impact_state_jac``)``)`` ``}`` `` ``ba_jac`` ``<-`` ``bid_ask_jacobians``(``initial_ask_price``, ``initial_bid_price``, ``initial_level``,`` `` ``initial_mid_price``)`
-
-`mle_ba_analytic`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h_ba``, inter_arrival ``=`` ``hr_ba``$``inter_arrival``,`` `` type ``=`` ``hr_ba``$``type``, mark ``=`` ``hr_ba``$``mark``,`` `` lambda_component0 ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``1``, ``4``, ``4``)``, gradient ``=`` ``"analytic"``,`` `` jacobian ``=`` ``ba_jac``, final_hessian ``=`` ``"stable"``)`` ``#> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; beta).`` ``#> Use reduced = FALSE to estimate matrix entries separately.`` `[`stopifnot`](https://rdrr.io/r/base/stopifnot.html)`(`[`abs`](https://rdrr.io/r/base/MathFun.html)`(``mle_ba_analytic``$``maximum`` ``-`` ``mle_ba``$``maximum``)`` ``<`` ``2e-6``)`` `[`cbind`](https://rdrr.io/r/base/cbind.html)`(``numeric ``=`` `[`coef`](https://rdrr.io/r/stats/coef.html)`(``mle_ba``)``, analytic ``=`` `[`coef`](https://rdrr.io/r/stats/coef.html)`(``mle_ba_analytic``)``)`` ``#> numeric analytic`` ``#> mu1 0.06954281 0.06954281`` ``#> zeta1 0.10108321 0.10108321`` ``#> alpha_s1 4.65635627 4.65635412`` ``#> alpha_m 23.56209031 23.56209041`` ``#> alpha_s2 5.85039311 5.85039236`` ``#> alpha_w1 10.28644177 10.28643743`` ``#> alpha_w2 7.40358218 7.40357852`` ``#> beta1.1 51.87378378 51.87377291`` ``#> xi 1.76530923 1.76530853`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``mle_ba_analytic``)``$``computation`` ``#> $recorded`` ``#> [1] TRUE`` ``#> `` ``#> $engine`` ``#> $engine$requested`` ``#> [1] "auto"`` ``#> `` ``#> $engine$used`` ``#> [1] "cpp"`` ``#> `` ``#> $engine$fallback_reason`` ``#> NULL`` ``#> `` ``#> `` ``#> $gradient`` ``#> $gradient$requested`` ``#> [1] "analytic"`` ``#> `` ``#> $gradient$used`` ``#> [1] "analytic"`` ``#> `` ``#> $gradient$reason`` ``#> NULL`` ``#> `` ``#> `` ``#> $hessian`` ``#> $hessian$requested`` ``#> [1] "stable"`` ``#> `` ``#> $hessian$finalHessian`` ``#> NULL`` ``#> `` ``#> $hessian$used`` ``#> [1] "scaled_central_Richardson"`` ``#> `` ``#> $hessian$reason`` ``#> NULL`
-
-Numerical differentiation remains the default. The optimization path and
-last digits may differ. Analytic fitting does not support arbitrary
-reads of the full `lambda` or `lambda_component` histories. Branches in
-this example depend only on observations. Parameter-dependent branch
-thresholds need separate differentiability checks. Faster gradients do
-not resolve weak identification or guarantee reliable standard errors.
+For the optional analytic fit, see the [Bid-ask Jacobians and analytic
+gradient](https://ksublee.github.io/emhawkes/articles/computation.html#bid-ask-analytic-gradient).
+That section continues from this example and gives the complete
+derivatives and fit. Numerical differentiation remains the default.
 
 ## Point processes with flexible residuals
 
@@ -797,7 +420,7 @@ log-density and tail-probability support.
 
 `dh1_real`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec1_d``, size ``=`` ``3000``)`` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``dh1_real``$``inter_arrival``[``dh1_real``$``inter_arrival`` ``<`` ``3``]``,`` `` breaks ``=`` ``50``,`` `` main ``=`` ``"Histogram of Inter-Arrival Times"``,`` `` xlab ``=`` ``"Inter-Arrival Time"``,`` `` ylab ``=`` ``"Frequency"`` ``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-57-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-28-1.png)
 
 Use `logLik` to evaluate the observed inter-arrival times under
 `hspec1_d`. Setting `infer = TRUE` also returns the intensity and
@@ -805,21 +428,21 @@ residual processes in `infer_res_dh1`.
 
 `# Infer the residual process using the log-likelihood method`` ``# 'infer_res_dh1' contains the inferred process data based on the inter-arrival times`` ``infer_res_dh1`` ``<-`` `[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hspec1_d``, inter_arrival ``=`` ``dh1_real``$``inter_arrival``, infer ``=`` ``TRUE``)`` `` ``# Plot a histogram of the inferred residual process`` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``infer_res_dh1``$``res_process1``,`` `` breaks ``=`` ``100``,`` `` probability ``=`` ``TRUE``,`` `` main ``=`` ``"Histogram of Inferred Residual Process"``,`` `` xlab ``=`` ``"Residual Value"``,`` `` ylab ``=`` ``"Density"`` ``)`` `` ``x`` ``<-`` `[`seq`](https://rdrr.io/r/base/seq.html)`(``0``, ``8``, ``0.1``)`` `` `[`lines`](https://rdrr.io/r/graphics/lines.html)`(`` `` ``x``,`` `` `[`dtzexp`](https://ksublee.github.io/emhawkes/reference/tzexp.md)`(``x``, a ``=`` ``a``, ell ``=`` ``ell``)``,`` `` col ``=`` ``'red'``,`` `` lwd ``=`` ``2`` ``)`` `` ``# Add legend for clarity`` `[`legend`](https://rdrr.io/r/graphics/legend.html)`(``"topright"``, legend ``=`` ``"Theoretical PDF"``, col ``=`` ``"red"``, lwd ``=`` ``2``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-58-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-29-1.png)
 
 ### Two-dimensional model
 
 The same approach extends to multiple dimensions, using parameter
 matrices as in a multivariate Hawkes model.
 
-`mu2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.3``)``, nrow ``=`` ``2``)`` ``alpha2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.5``, ``0.8``, ``0.8``, ``0.5``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``beta2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``1.5``, ``1.5``, ``1.5``, ``1.5``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``a`` ``<-`` ``0.7``; ``ell`` ``<-`` ``1.6`` `` ``hspec2_du`` ``<-`` `[`set_residual`](https://ksublee.github.io/emhawkes/reference/set_residual.md)`(`` `` ``new``(``"hspec"``, mu ``=`` ``mu2_d``, alpha ``=`` ``alpha2_d``, beta ``=`` ``beta2_d``)``,`` `` param ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``a ``=`` ``a``, ell ``=`` ``ell``)``,`` `` dresidual ``=`` ``dtzexp``, presidual ``=`` ``ptzexp``,`` `` qresidual ``=`` ``qtzexp``, rresidual ``=`` ``rtzexp`` ``)`` `[`print`](https://rdrr.io/r/base/print.html)`(``hspec2_du``)`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.3`` ``#> [2,] 0.3`` ``#> `` ``#> Slot alpha: `` ``#> [,1] [,2]`` ``#> [1,] 0.5 0.8`` ``#> [2,] 0.8 0.5`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2]`` ``#> [1,] 1.5 1.5`` ``#> [2,] 1.5 1.5`` ``#> `` ``#> Slot rresidual: `` ``#> function (size, param = c(a = 0.7, ell = 1.6)) `` ``#> {`` ``#> do.call(rresidual, c(list(size), distribution_parameters(rresidual, `` ``#> param)))`` ``#> }`` ``#> <environment: 0x00000197e7e0d0a8>`` ``#> `` ``#> Slot dresidual: `` ``#> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) `` ``#> {`` ``#> residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, `` ``#> param))`` ``#> }`` ``#> <environment: 0x00000197e7e0d0a8>`` ``#> `` ``#> Slot presidual: `` ``#> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, `` ``#> log.p = FALSE) `` ``#> {`` ``#> residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, `` ``#> params = distribution_parameters(presidual, param))`` ``#> }`` ``#> <environment: 0x00000197e7e0d0a8>`` ``#> `` ``#> Slot qresidual: `` ``#> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, `` ``#> log.p = FALSE) `` ``#> {`` ``#> residual_quantile(qresidual, p, lower.tail = lower.tail, `` ``#> log.p = log.p, params = distribution_parameters(qresidual, `` ``#> param))`` ``#> }`` ``#> <environment: 0x00000197e7e0d0a8>`
+`mu2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.3``)``, nrow ``=`` ``2``)`` ``alpha2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.5``, ``0.8``, ``0.8``, ``0.5``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``beta2_d`` ``<-`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``1.5``, ``1.5``, ``1.5``, ``1.5``)``, nrow ``=`` ``2``, byrow ``=`` ``TRUE``)`` ``a`` ``<-`` ``0.7``; ``ell`` ``<-`` ``1.6`` `` ``hspec2_du`` ``<-`` `[`set_residual`](https://ksublee.github.io/emhawkes/reference/set_residual.md)`(`` `` ``new``(``"hspec"``, mu ``=`` ``mu2_d``, alpha ``=`` ``alpha2_d``, beta ``=`` ``beta2_d``)``,`` `` param ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``a ``=`` ``a``, ell ``=`` ``ell``)``,`` `` dresidual ``=`` ``dtzexp``, presidual ``=`` ``ptzexp``,`` `` qresidual ``=`` ``qtzexp``, rresidual ``=`` ``rtzexp`` ``)`` `[`print`](https://rdrr.io/r/base/print.html)`(``hspec2_du``)`` ``#> An object of class "hspec" of 2-dimensional Hawkes process`` ``#> `` ``#> Slot mu: `` ``#> [,1]`` ``#> [1,] 0.3`` ``#> [2,] 0.3`` ``#> `` ``#> Slot alpha: `` ``#> [,1] [,2]`` ``#> [1,] 0.5 0.8`` ``#> [2,] 0.8 0.5`` ``#> `` ``#> Slot beta: `` ``#> [,1] [,2]`` ``#> [1,] 1.5 1.5`` ``#> [2,] 1.5 1.5`` ``#> `` ``#> Slot rresidual: `` ``#> function (size, param = c(a = 0.7, ell = 1.6)) `` ``#> {`` ``#> do.call(rresidual, c(list(size), distribution_parameters(rresidual, `` ``#> param)))`` ``#> }`` ``#> <environment: 0x000001d41318e190>`` ``#> `` ``#> Slot dresidual: `` ``#> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) `` ``#> {`` ``#> residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, `` ``#> param))`` ``#> }`` ``#> <environment: 0x000001d41318e190>`` ``#> `` ``#> Slot presidual: `` ``#> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, `` ``#> log.p = FALSE) `` ``#> {`` ``#> residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, `` ``#> params = distribution_parameters(presidual, param))`` ``#> }`` ``#> <environment: 0x000001d41318e190>`` ``#> `` ``#> Slot qresidual: `` ``#> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, `` ``#> log.p = FALSE) `` ``#> {`` ``#> residual_quantile(qresidual, p, lower.tail = lower.tail, `` ``#> log.p = log.p, params = distribution_parameters(qresidual, `` ``#> param))`` ``#> }`` ``#> <environment: 0x000001d41318e190>`
 
 The following histogram shows inter-arrival times from a model with
 `tzexp` residuals.
 
 [`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``duh2_real`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``hspec2_du``, size ``=`` ``10000``)`` ``# Plot a histogram of the inter-arrival times less than 5`` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``duh2_real``$``inter_arrival``[``duh2_real``$``inter_arrival`` ``<`` ``5``]``,`` `` breaks ``=`` ``50``,`` `` main ``=`` ``"Histogram of Inter-Arrival Times"``,`` `` xlab ``=`` ``"Inter-Arrival Time"``,`` `` ylab ``=`` ``"Frequency"`` ``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-60-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-31-1.png)
 
 Use `logLik` with `infer = TRUE` to recover the intensity and residual
 processes.
@@ -831,14 +454,14 @@ specified residual distribution.
 
 `# Plot a histogram of the inferred residual process`` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``infer_res_dh2``$``res_process2``,`` `` breaks ``=`` ``50``,`` `` probability ``=`` ``TRUE``,`` `` main ``=`` ``"Histogram of Inferred Residual Process"``,`` `` xlab ``=`` ``"Residual Value"``,`` `` ylab ``=`` ``"Density"`` ``)`` `` ``# Generate a sequence of x values for plotting the theoretical distribution`` ``x`` ``<-`` `[`seq`](https://rdrr.io/r/base/seq.html)`(``0``, ``8``, ``0.1``)`` `` ``# Add a line to the histogram representing the theoretical density function`` `[`lines`](https://rdrr.io/r/graphics/lines.html)`(`` `` ``x``,`` `` `[`dtzexp`](https://ksublee.github.io/emhawkes/reference/tzexp.md)`(``x``, a ``=`` ``a``, ell ``=`` ``ell``)``,`` `` col ``=`` ``'red'``,`` `` lwd ``=`` ``2`` ``)`` `` ``# Add legend for clarity`` `[`legend`](https://rdrr.io/r/graphics/legend.html)`(``"topright"``, legend ``=`` ``"Theoretical PDF"``, col ``=`` ``"red"``, lwd ``=`` ``2``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-62-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-33-1.png)
 
 The transformed residuals in `eres_process1` follow an exponential
 distribution with rate 1 under a correctly specified model.
 
 [`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``infer_res_dh2``$``eres_process1``,`` `` breaks ``=`` ``50``,`` `` probability ``=`` ``TRUE``,`` `` main ``=`` ``"Histogram of Inferred eResidual Process"``,`` `` xlab ``=`` ``"Residual Value"``,`` `` ylab ``=`` ``"Density"`` ``)`` `` ``# Generate a sequence of x values for plotting the theoretical distribution`` ``x`` ``<-`` `[`seq`](https://rdrr.io/r/base/seq.html)`(``0``, ``8``, ``0.1``)`` `` ``# Add a line to the histogram representing the theoretical density function`` `[`lines`](https://rdrr.io/r/graphics/lines.html)`(`` `` ``x``,`` `` `[`dexp`](https://rdrr.io/r/stats/Exponential.html)`(``x``)``,`` `` col ``=`` ``'red'``,`` `` lwd ``=`` ``2`` ``)`` `` ``# Add legend for clarity`` `[`legend`](https://rdrr.io/r/graphics/legend.html)`(``"topright"``, legend ``=`` ``"Theoretical PDF"``, col ``=`` ``"red"``, lwd ``=`` ``2``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-63-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-34-1.png)
 
 Use `hfit` for maximum likelihood estimation. The distribution requires
 `0 < a <= 3`, `ell > 0`, and a nonnegative density. The last condition
@@ -877,4 +500,4 @@ Plot a histogram of the inferred residuals:
 
 ` ``infer_res_duh2`` ``<-`` `[`logLik`](https://ksublee.github.io/emhawkes/reference/logLik.md)`(``hspec2_du``, `` `` inter_arrival ``=`` ``duh2_real``$``inter_arrival``, `` `` type ``=`` ``duh2_real``$``type``, infer ``=`` ``TRUE``)`` `` `[`hist`](https://rdrr.io/r/graphics/hist.html)`(`` `` ``infer_res_duh2``$``res_process1``,`` `` breaks ``=`` ``50``,`` `` probability ``=`` ``TRUE``,`` `` main ``=`` ``"Histogram of Inferred Residual Process"``,`` `` xlab ``=`` ``"Residual Value"``,`` `` ylab ``=`` ``"Density"`` ``)`
 
-![](extended_example_files/figure-html/unnamed-chunk-66-1.png)
+![](extended_example_files/figure-html/unnamed-chunk-37-1.png)

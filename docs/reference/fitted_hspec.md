@@ -37,7 +37,8 @@ stores a versioned list with `specification`, `parameter_map`,
 `initial_state`, `reduced`, and `custom_loglik`. New fits also retain
 `constraints` and final `diagnostics`, available through
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md).
-Older fits without this metadata cannot be reconstructed by this
+New calculation records are in `fit_diagnostics(fit)$computation`. Fits
+without the original model metadata cannot be reconstructed by this
 function. Function environments remain references to the original
 environments; external state is not frozen. Use
 [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and

@@ -2,6 +2,7 @@
 title: "Extended examples for the emhawkes package"
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
+description: "Model examples; start with the package vignette and follow the linked guides for fitting and computation."
 output:
   github_document:
     html_preview: false
@@ -13,5 +14,6 @@ header_end <- which(example_source == "---")[2]
 example_text <- knitr::knit_child(text = example_source[-seq_len(header_end)], quiet = TRUE)
 figure_root <- dirname(dirname(sub("/$", "", knitr::opts_chunk$get("fig.path"))))
 example_text <- gsub(paste0(normalizePath(figure_root, winslash = "/"), "/"), "", example_text, fixed = TRUE)
+example_text <- gsub("(?m)^(#>.*?)[ \\t]+$", "\\1", example_text, perl = TRUE)
 cat(example_text, sep = "\n")
 ```

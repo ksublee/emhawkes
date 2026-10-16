@@ -1,4 +1,38 @@
 url: https://ksublee.github.io/emhawkes/
 template:
   bootstrap: 5
-
+navbar:
+  structure:
+    left: [intro, examples, guides, reference, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/example.html
+    examples:
+      text: Examples
+      href: articles/extended_example.html
+    guides:
+      text: Guides
+      menu:
+      - text: Fitting and inference
+        href: articles/fitting-and-inference.html
+      - text: Computation
+        href: articles/computation.html
+    news:
+      text: News
+      href: news/index.html
+articles:
+- title: Get started
+  desc: Define, simulate, fit and check a basic Hawkes model.
+  contents:
+  - example
+- title: Examples
+  desc: Marked, state-dependent, multi-kernel and flexible residual models.
+  contents:
+  - articles/extended_example
+- title: Guides
+  desc: Estimation, interpretation and calculation options.
+  contents:
+  - articles/fitting-and-inference
+  - articles/computation

@@ -3,262 +3,48 @@
 `emhawkes` specifies, simulates, and fits exponential Hawkes models,
 including marked, state-dependent, and multi-kernel models.
 
-[`library`](https://rdrr.io/r/base/library.html)`(`[`emhawkes`](https://github.com/ksublee/emhawkes)`)`` `` ``h`` ``<-`` ``new``(``"hspec"``,`` `` mu ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``0.2``, ``0.2``)``,`` `` alpha ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``0.5``, ``0.9``, ``0.9``, ``0.5``)``, ``2``, byrow ``=`` ``TRUE``)``,`` `` beta ``=`` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(``2.25``, ``2``, ``2``)`` ``)`` `[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``path`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``h``, size ``=`` ``1000``)`` ``fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, ``path``$``inter_arrival``, ``path``$``type``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``fit``)`
+## Installation
 
-Use `fitted_hspec(fit)` to restore the estimated model and
-`fit_initial_state(fit)` to retrieve the initial-state arguments:
+Install the CRAN release:
 
-`estimated`` ``<-`` `[`fitted_hspec`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)`(``fit``)`` ``initial`` ``<-`` `[`fit_initial_state`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)`(``fit``)`` ``inferred`` ``<-`` `[`do.call`](https://rdrr.io/r/base/do.call.html)`(``logLik``, `[`c`](https://rdrr.io/r/base/c.html)`(`[`list`](https://rdrr.io/r/base/list.html)`(``object ``=`` ``estimated``,`` `` inter_arrival ``=`` ``path``$``inter_arrival``, type ``=`` ``path``$``type``, mark ``=`` ``path``$``mark``,`` `` infer ``=`` ``TRUE``)``, ``initial``)``)`
+[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"emhawkes"``)`
 
-The result remains a `maxLik` object, so
-[`coef()`](https://rdrr.io/r/stats/coef.html),
-[`summary()`](https://rdrr.io/r/base/summary.html), and
-[`vcov()`](https://rdrr.io/r/stats/vcov.html) keep their existing
-behavior. The saved parameter map preserves shared parameters and fixed
-constants in component functions. Simulation generators are retained,
-and their named parameters are updated when they match estimated
-coefficient names. Automatic initial intensity remains `NULL` and is
-recalculated for the restored model. Initial counts are retained. A
-custom objective is not incorporated into the restored model.
+For the development version and the features described in the guides:
 
-Save the fit with [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) to
-retain this information between sessions. Keep the observed data
-separately and supply them again for inference. The stored optimization
-objective can retain data in its function environment. The saved initial
-state describes the start of the observation window. Pass it to
-[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
-start a new path from the estimated model. Continuing after the last
-observed event requires that event’s state. Fits created without the new
-metadata need to be refitted before using the reconstruction helpers.
+`# install.packages("remotes")`` ``remotes``::``install_github``(``"ksublee/emhawkes"``)`
 
-By default,
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
-the final Hessian and standard errors from `maxLik`. It does not run the
-additional stabilization checks. If numerical Hawkes standard errors
-contain `NaN`, a short message suggests trying
-`final_hessian = "stable"`. Request this option to check numerical
-Hawkes curvature with scaled central differences and Richardson
-extrapolation. This preserves the optimizer’s coefficients and
-log-likelihood. [`summary()`](https://rdrr.io/r/base/summary.html) and
-[`vcov()`](https://rdrr.io/r/stats/vcov.html) then use the checked
-covariance; free-parameter standard errors are `NA` when stable
-inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
-requested checks. Supplied Hessians, disabled final curvature, BHHH,
-custom objectives, and residual models retain their calculation choices.
+Source installation requires a C++ compiler and Rcpp; on Windows,
+install Rtools.
 
-The fit also records its calculation methods:
+## Quick start
 
-`calculation`` ``<-`` `[`fit_diagnostics`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)`(``fit``)``$``computation`` ``calculation``$``engine`` ``# Requested engine, actual engines and auto fallback reason.`` ``calculation``$``gradient`` ``# Numeric, analytic or user-supplied score.`` ``calculation``$``hessian`` ``# Requested and applied final-Hessian methods.`
+[`library`](https://rdrr.io/r/base/library.html)`(`[`emhawkes`](https://github.com/ksublee/emhawkes)`)`` `` ``h`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``0.3``, alpha ``=`` ``1.2``, beta ``=`` ``1.5``)`` `[`set.seed`](https://rdrr.io/r/base/Random.html)`(``1107``)`` ``path`` ``<-`` `[`hsim`](https://ksublee.github.io/emhawkes/reference/hsim.md)`(``h``, size ``=`` ``1000``)`` ``fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, inter_arrival ``=`` ``path``$``inter_arrival``)`` `[`summary`](https://rdrr.io/r/base/summary.html)`(``fit``)`
 
-An auto fit can record both `"cpp"` and `"r"` if it switches during
-estimation. The record includes final curvature evaluations and survives
-[`saveRDS()`](https://rdrr.io/r/base/readRDS.html). Older fits without
-this record return `recorded = FALSE` and `NA` for unrecorded methods.
-The existing curvature checks remain available at the top level.
+[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) returns
+an `hreal` path;
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) returns
+a `maxLik` fit. The first path row is the initial state, so `size`
+includes that row.
 
-A stable Hessian does not guarantee reliable Wald intervals. Nearby
-kernel decay rates, weak excitation, boundaries, short samples, and
-nonsmooth callbacks can still make inference unreliable. The [Hawkes
-standard-error
-report](https://github.com/ksublee/emhawkes/blob/main/tools/hawkes-standard-errors.md)
-compares unchanged estimates and corrected standard errors, and
-discusses profile likelihood and bootstrap. The [earlier diagnostic
-report](https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md)
-records the original Hawkes and FRPP issues.
+## Documentation
 
-By default, `reduced = TRUE` treats equal starting values **within each
-parameter matrix** as one parameter. This example estimates four
-parameters: one for `mu`, two for `alpha`, and one for `beta`.
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md)
-explains this rule once before optimization.
+- [Get
+  started](https://ksublee.github.io/emhawkes/articles/example.html):
+  the basic workflow, input data and a first diagnostic.
+- [Extended
+  examples](https://ksublee.github.io/emhawkes/articles/extended_example.html):
+  marked, state-dependent, multi-kernel and flexible residual models.
+- [Fitting and
+  inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html):
+  parameter sharing, initial states, fitted models, residuals and
+  standard errors.
+- [Computation](https://ksublee.github.io/emhawkes/articles/computation.html):
+  R/C++ engines, gradients, Jacobians and performance.
+- [Reference](https://ksublee.github.io/emhawkes/reference/index.html)
+  and [News](https://ksublee.github.io/emhawkes/news/index.html):
+  function details and version changes.
 
-Use `reduced = FALSE` to estimate the ten matrix entries separately,
-even when their starting values are equal. Function components share
-parameters by name under either setting. A zero in a numeric matrix is
-also a starting value; use a component function to fix selected entries
-at zero.
-
-The first data row is the initial state. `inter_arrival`, `type`, and
-`mark` start with zero, followed by the observed events. `hsim(size)`
-includes this initial row. `N0` and `Nc0` specify initial counts and
-mark totals; `Nc0` must be named in
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md).
-
-The likelihood ends at the last supplied event. `N0` and `Nc0` accept a
-scalar or one value per event type. Supplied `N` and `Nc` matrices must
-agree with the event data and initial counts. Explicit `type_col_map`
-requires initial kernel components for simulation and the built-in
-likelihood.
-
-`logLik(h, ..., infer = TRUE)` returns a list with the likelihood,
-intensity paths, and residual vectors. Use it in place of the deprecated
-[`infer_lambda()`](https://ksublee.github.io/emhawkes/reference/infer_lambda.md)
-and
-[`residual_process()`](https://ksublee.github.io/emhawkes/reference/residual_process.md)
-helpers. Simulation returns an `hreal` object.
-
-With automatic engine selection, numeric Hawkes specifications use a
-compiled Rcpp engine for likelihood evaluation and inference, including
-multi-kernel models, unequal decay rates, and numeric mark effects.
-Standalone likelihood and inference also support parameter-only
-component functions returning plain numeric matrices. Observed baselines
-and observed or sequential state-dependent impacts also use C++.
-Baselines cannot depend on latent intensities. Unsupported function
-signatures use R. Mark densities, residual-distribution models, and
-numeric inputs with custom classes use R. Simulation continues to use R.
-The fitting adapters below also select C++ automatically for supported
-callback models.
-
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
-this engine for its built-in likelihood. Numerical differentiation
-remains the default. For numeric Hawkes models, request the Rcpp
-analytic gradient:
-
-`fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, ``path``$``inter_arrival``, ``path``$``type``, gradient ``=`` ``"analytic"``)`
-
-This option supports shared and fixed parameters, multi-kernel mappings,
-numeric mark effects, and derivatives of automatic initial states. It
-computes the likelihood and score with native recursions. Observed
-baselines and current-state impacts require the Jacobians described
-below. Full intensity histories, custom likelihoods, mark densities,
-residual distributions, equality constraints, and BHHH are not yet
-supported. Singular automatic initialization requires explicit
-`lambda_component0`. A supplied `grad` takes precedence. A supplied
-`hess` is retained; otherwise `maxLik` can differentiate the analytic
-gradient for curvature. The optimizer’s path and last digits may differ
-from numerical differentiation. The [gradient
-report](https://github.com/ksublee/emhawkes/blob/main/tools/gradient-results.md)
-describes accuracy, full-fit timings, and the state-dependent extension.
-
-Parameter-only `mu`, `alpha`, `beta`, and `eta` functions can also use
-the analytic option when supplied with their exact Jacobians. For
-example, this function fixes one excitation entry at zero:
-
-`alpha_fun`` ``<-`` ``function``(``param`` ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``a ``=`` ``0.2``, b ``=`` ``0.1``)``)`` ``{`` `` `[`matrix`](https://rdrr.io/r/base/matrix.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``param``[``"a"``]``, ``0``, ``param``[``"b"``]``, ``param``[``"a"``]``)``, ``2``)`` ``}`` ``alpha_jac`` ``<-`` `[`cbind`](https://rdrr.io/r/base/cbind.html)`(``a ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``1``, ``0``, ``0``, ``1``)``, b ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``0``, ``0``, ``1``, ``0``)``)`` ``h_fun`` ``<-`` ``new``(``"hspec"``, mu ``=`` ``h``@``mu``, alpha ``=`` ``alpha_fun``, beta ``=`` ``h``@``beta``)`` ``fit_fun`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h_fun``, ``path``$``inter_arrival``, ``path``$``type``,`` `` gradient ``=`` ``"analytic"``, jacobian ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``alpha ``=`` ``alpha_jac``)``)`
-
-Jacobian rows follow [`as.vector()`](https://rdrr.io/r/base/vector.html)
-of the returned matrix; columns are named with its `param` names. For
-nonlinear transformations, supply a `function(param)` that returns the
-Jacobian at that parameter vector. Components and Jacobians must be
-deterministic functions of `param` with fixed matrix dimensions. The
-package does not derive or verify the formulas automatically. A
-component with `param = numeric(0)` needs no Jacobian. Shared parameter
-names receive the sum of all component contributions. Missing or
-malformed Jacobians produce an error. The analytic fit evaluates
-component functions in R and the likelihood and scores in Rcpp. With the
-default `"auto"` engine, supported function-valued models also use C++
-with numerical differentiation, without Jacobians:
-
-`fit_numeric`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h_fun``, ``path``$``inter_arrival``, ``path``$``type``)`
-
-The functions must return plain numeric matrices of constant dimensions
-and be deterministic in `param`. Observed-state `impact` functions also
-use this numerical path without Jacobians, including count- and
-mark-dependent impacts and the Hawkes flocking example. Numerical C++
-fitting also supports observed baselines and sequential impacts that
-explicitly request current or historical intensity states, including the
-bid-ask example. Mark densities and residual distributions remain
-unsupported. Supplied `grad` and `hess` are retained. Automatic
-selection uses R for unsupported specifications; forcing `"cpp"` reports
-unsupported features. Callback errors propagate. Callbacks must be
-deterministic with fixed captures; detecting an unsupported state read
-through `...` can require a retry in R. Standalone
-[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md) and
-`infer = TRUE` also use C++ for parameter-only component functions,
-observed baselines, and observed or sequential state-dependent impacts.
-The default automatic selection therefore accelerates replay of restored
-models with these components. Each callback keeps its own defaults;
-standalone replay does not apply parameter-sharing rules from fitting.
-
-Observed-state `impact` functions can use the analytic option with
-`jacobian = list(impact = impact_jac)`. They may depend on observed `N`,
-`Nc`, marks, types, and times, and on the resolved `mu`, `alpha`, and
-`beta` matrices. Counts at row `n` include that event. The event’s
-impact affects subsequent intensities in the kernel columns selected by
-its type.
-
-For `jacobian$impact`, `param` is the **full named optimization
-vector**. Return a matrix with one row per impact entry in column-major
-order and one named column per fitted parameter, including zero columns.
-Include derivatives through any core matrices used by the impact. The
-impact function keeps receiving its local parameters. See
-[`?hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md) for an
-example and the callback contract. Current-component feedback can use
-the analytic option with additional derivatives below. Default numerical
-fitting uses C++ for supported callbacks. Declare `lambda_component_n`
-to receive the current pre-jump component matrix. Declare `lambda` or
-`lambda_component` only when full pre-jump histories are needed.
-Observed baselines may use counts and marks, return a dimensions-by-one
-matrix, and remain constant between events. They cannot depend on latent
-intensities. See the [bid-ask
-benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/bid-ask-numeric-results.md)
-for the state convention, compatibility checks and timings.
-
-For an observed baseline, analytic fitting requires `jacobian$mu` with
-one row per event dimension and one named column per **full fitted
-parameter**, including zero columns. Its callback receives observations
-and the full named `param`. Include dependencies through resolved core
-components. The baseline itself continues to receive its local
-parameters.
-
-An impact that declares `lambda_component_n` can use:
-
-`fit`` ``<-`` `[`hfit`](https://ksublee.github.io/emhawkes/reference/hfit.md)`(``h``, ``inter_arrival``, ``type``, ``mark``, lambda_component0 ``=`` ``initial``,`` `` gradient ``=`` ``"analytic"``, jacobian ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``mu ``=`` ``mu_jac``, alpha ``=`` ``alpha_jac``,`` `` impact ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(``param ``=`` ``impact_param_jac``, state ``=`` ``impact_state_jac``)``)``)`
-
-Here `impact$param` differentiates the impact with respect to all fitted
-parameters **holding the current state fixed**. It includes direct
-dependencies through core components. `impact$state` differentiates
-impact entries with respect to current component entries. Both state
-axes follow [`as.vector()`](https://rdrr.io/r/base/vector.html)
-column-major order; the matrix is components-by-components. The package
-propagates derivatives through decay, selected jumps, and automatic
-initialization. Arbitrary reads of full `lambda` or `lambda_component`
-histories remain unsupported for analytic fitting. All callbacks must be
-deterministic, and supplied derivatives must exist at evaluated
-parameters. The [Bid-ask
-example](https://ksublee.github.io/emhawkes/articles/extended_example.html#bid-ask-price-model)
-contains the complete Jacobians and fit. See the
-`tools/state-gradient-results.md` report for accuracy checks and
-timings. Numerical differentiation remains the default.
-
-When only the current state is needed, use `lambda_component_n`. Full
-histories need storage proportional to events times dimensions times
-kernels. If a callback retains these histories, snapshot-preserving
-copies can make cumulative copying grow quadratically with event count.
-Peak live memory and cumulative allocation are different costs. See the
-[scaling
-measurements](https://github.com/ksublee/emhawkes/blob/main/tools/scaling-results.md)
-for time, allocation and memory comparisons.
-
-See the [count, mark and flocking
-benchmark](https://github.com/ksublee/emhawkes/blob/main/tools/impact-numeric-results.md)
-for complete-fit timings and accuracy checks.
-
-The `emhawkes.engine` option controls the built-in likelihood:
-
-| Setting | Role |
-|----|----|
-| `"auto"` (default) | Use C++ for supported models and R otherwise. Supported fitting adapters receive this acceleration automatically. |
-| `"r"` | Force the R likelihood for comparison or troubleshooting. |
-| `"cpp"` | Require C++ support; report an error for unsupported models. |
-
-Setting `"cpp"` is unnecessary to accelerate models already supported by
-`"auto"`. Inspect `fit_diagnostics(fit)$computation$engine` for the
-engines actually used and any automatic fallback reason. Engine
-selection does not enable analytic gradients: request
-`gradient = "analytic"` explicitly; unsupported analytic gradients
-produce an error. A custom `mylogLik` bypasses built-in engine
-selection. Installing from source requires a C++ compiler and Rcpp;
-Windows source installations require Rtools.
-
-See the [basic
-vignette](https://ksublee.github.io/emhawkes/articles/example.html) and
-[extended
-examples](https://ksublee.github.io/emhawkes/articles/extended_example.html).
-
-The website is generated with `Rscript tools/build-docs.R` after
-installing the current package and `pkgdown`. The script includes the
-extended article from `vignettes_ext`, which is excluded from the CRAN
-package. The [GitHub Markdown
-example](https://github.com/ksublee/emhawkes/blob/main/github_document/example.md)
-uses the same extended source.
+The basic vignette is also available in R with
+[`vignette("example", package = "emhawkes")`](https://ksublee.github.io/emhawkes/articles/example.md).
+The website is built from this repository; the version in its header
+identifies the documented package.
