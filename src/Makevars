@@ -1,0 +1,2 @@
+# Older Rcpp releases require opting in to preserve R callback conditions.
+PKG_CPPFLAGS = -DRCPP_USE_UNWIND_PROTECT

@@ -35,6 +35,14 @@ matched 215,039 rejected exponential/uniform pairs before the interrupt.
 The first R 4.0.0 run used Rcpp 1.0.8.3 and found an ambiguous constructor for
 sensitivity parameter names. An explicit `Rcpp::as<Rcpp::CharacterVector>`
 conversion resolves the overload without changing the parameter values.
+The next run compiled successfully but exposed lost callback condition classes
+and changed messages. Rcpp 1.0.8.3 makes unwind protection opt-in, so both
+`Makevars` files explicitly enable `RCPP_USE_UNWIND_PROTECT`. This preserves
+original R conditions and lets C++ destructors restore RNG state while unwinding.
+Newer Rcpp versions already enable that mechanism by default; the R and Rcpp
+version requirements are unchanged. See the
+[Rcpp 1.0.8.3 headers](https://github.com/cran/Rcpp/blob/1.0.8.3/inst/include/Rcpp/r/headers.h)
+and [evaluation implementation](https://github.com/cran/Rcpp/blob/1.0.8.3/inst/include/Rcpp/api/meat/Rcpp_eval.h).
 The numerical simulation, likelihood, callback and RNG algorithms are unchanged.
 They exercise representative paths and do not prove the absence of all native
 memory defects.

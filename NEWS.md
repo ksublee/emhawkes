@@ -1,6 +1,6 @@
 # emhawkes 0.9.9
 
-* Check the declared minimum R 4.0.0 in CI and make sensitivity parameter-name conversion explicit for older Rcpp versions. Add native GC, memory-access and interruption checks, including callback failures and subsequent RNG recovery.
+* Check the declared minimum R 4.0.0 in CI. Make sensitivity parameter-name conversion explicit and enable Rcpp unwind protection for older Rcpp versions, preserving callback conditions and RNG recovery. Add native GC, memory-access and interruption checks.
 
 * Reuse each row's exponential decay factor in native simulation when its kernel decay rates agree. Preserve component arithmetic, callback order, output and random draws; other simulation paths are unchanged.
 
