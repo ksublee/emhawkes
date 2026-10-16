@@ -59,6 +59,9 @@ event loop. Value-only line searches defer Jacobians. Values and gradients are
 cached at one parameter vector per fit. Current sensitivity storage is proportional
 to components times parameters; no full derivative history is stored. An observed
 baseline Jacobian path requires observations times dimensions times parameters.
+This describes the original implementation. The subsequent
+[storage study](baseline-projection-results.md) reduces that path to event-row
+and integral projections when the compact representation is smaller.
 Dense state-Jacobian multiplication can become costly for large models; this
 small Bid-ask benchmark does not establish scaling for every callback.
 

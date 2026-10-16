@@ -1,0 +1,13 @@
+baseline_commit b928eca263c804258307a9162eab9d48cc8d5eff
+timing_rounds 3
+memory_rounds 1
+affinity_mask 4
+timed_workers_sequential TRUE
+timing_memory_separate TRUE
+storage_only_events 100000
+numeric_fit_events 750
+analytic_fit_events 1000
+simulation_excluded TRUE
+b0548b61b6c72a9383d3ba71a1ab3f3cf175efb4485d0822fc22785df7b7028a tools/benchmark-baseline-projection.R
+074d4a1f4b253f75321e669366625353706fc5095433674d19531001bcc33030 tools/compare-baseline-projection.R
+f03f9b44349b1cf0c9561e92857abdfc76c356667b6cdc7f6f5a4de3d7390d05 tools/gradient-scaling-cases.R

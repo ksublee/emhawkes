@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Reduce observed-baseline Jacobian storage for analytic scores and opt-in stable Hessians. Retain event-row and integral projections with separate initial derivatives; preserve callback order, parameter names and the public Jacobian interface. Keep dense storage when its array payload is smaller.
+
 * Warn about optimizer nonconvergence when opt-in stable curvature is unavailable. Preserve estimates, covariances and numerical thresholds; add Hawkes stress checks for coincident decay rates, weak excitation, short samples, initial transients and constraint boundaries.
 
 * Avoid a duplicate final Hessian for opt-in stable curvature in unconstrained BFGS, CG, Nelder-Mead and SANN Hawkes fits. Preserve explicit overrides, supplied Hessians, Newton methods and constrained fits; record the omitted pass in fit diagnostics.

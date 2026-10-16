@@ -333,7 +333,7 @@ hawkes_component_plan <- function(object, observation, parameter_map, jacobian, 
       context <- mu_context(param, values)
       context$param <- stats::setNames(param, full_names)
       if (is.function(mu_jac)) hawkes_jacobian_path_cpp(mu_jac, context[mu_jac_args],
-        object@dimens, length(observation$inter_arrival), full_names) else
+        object@dimens, observation$inter_arrival, as.integer(observation$type), full_names) else
         matrix(as.vector(mu_jac), object@dimens * length(full_names), 1L)
     }
   }

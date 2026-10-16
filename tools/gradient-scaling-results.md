@@ -204,6 +204,8 @@ For the observed baseline, the analytic path also stores a
 largest recorded R allocation. Streaming these derivatives is a second candidate.
 The native forward state sensitivities themselves scale with states times
 parameters, rather than a full event history.
+A [subsequent implementation and study](baseline-projection-results.md)
+reduces observed-baseline derivative storage while preserving callback order.
 
 No runtime optimization is included in this study. Small parameter counts with
 many states can have little timing benefit or a regression; the analytic option

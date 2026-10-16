@@ -156,7 +156,8 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     })
     names(core) <- c("mu", "alpha", "beta", "eta")
     baseline_jac <- if (plan$observed_mu) plan$baseline_jacobian(p, values) else NULL
-    if (plan$observed_mu) core$mu <- matrix(baseline_jac[, 1L], dimensions, length(p))
+    if (plan$observed_mu) core$mu <- if (is.list(baseline_jac)) baseline_jac$initial else
+      matrix(baseline_jac[, 1L], dimensions, length(p))
     init <- state_initial_sensitivity(values, core, initial, dimensions, kernels)
     if (any(!is.finite(init$jacobian))) stop("Nonfinite automatic initial-state derivative; supply lambda_component0.", call. = FALSE)
     context <- result$context

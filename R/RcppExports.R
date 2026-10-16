@@ -5,8 +5,8 @@ hawkes_baseline_cpp <- function(callback, arguments, dimensions, size, initial =
     .Call(`_emhawkes_hawkes_baseline_cpp`, callback, arguments, dimensions, size, initial, infer, integer_n)
 }
 
-hawkes_jacobian_path_cpp <- function(callback, arguments, dimensions, size, parameter_names) {
-    .Call(`_emhawkes_hawkes_jacobian_path_cpp`, callback, arguments, dimensions, size, parameter_names)
+hawkes_jacobian_path_cpp <- function(callback, arguments, dimensions, dt, type, parameter_names) {
+    .Call(`_emhawkes_hawkes_jacobian_path_cpp`, callback, arguments, dimensions, dt, type, parameter_names)
 }
 
 hawkes_loglik_cpp <- function(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient = FALSE, impact = NULL, impact_callback = NULL, keep_lambda = FALSE, keep_components = FALSE, baseline = NULL, impact_arguments = NULL, sensitivity = NULL, strict_callback = FALSE) {

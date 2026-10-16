@@ -27,16 +27,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // hawkes_jacobian_path_cpp
-Rcpp::NumericMatrix hawkes_jacobian_path_cpp(SEXP callback, Rcpp::List arguments, int dimensions, int size, Rcpp::CharacterVector parameter_names);
-RcppExport SEXP _emhawkes_hawkes_jacobian_path_cpp(SEXP callbackSEXP, SEXP argumentsSEXP, SEXP dimensionsSEXP, SEXP sizeSEXP, SEXP parameter_namesSEXP) {
+Rcpp::RObject hawkes_jacobian_path_cpp(SEXP callback, Rcpp::List arguments, int dimensions, Rcpp::NumericVector dt, Rcpp::IntegerVector type, Rcpp::CharacterVector parameter_names);
+RcppExport SEXP _emhawkes_hawkes_jacobian_path_cpp(SEXP callbackSEXP, SEXP argumentsSEXP, SEXP dimensionsSEXP, SEXP dtSEXP, SEXP typeSEXP, SEXP parameter_namesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type arguments(argumentsSEXP);
     Rcpp::traits::input_parameter< int >::type dimensions(dimensionsSEXP);
-    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type type(typeSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type parameter_names(parameter_namesSEXP);
-    rcpp_result_gen = Rcpp::wrap(hawkes_jacobian_path_cpp(callback, arguments, dimensions, size, parameter_names));
+    rcpp_result_gen = Rcpp::wrap(hawkes_jacobian_path_cpp(callback, arguments, dimensions, dt, type, parameter_names));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -71,7 +72,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_emhawkes_hawkes_baseline_cpp", (DL_FUNC) &_emhawkes_hawkes_baseline_cpp, 7},
-    {"_emhawkes_hawkes_jacobian_path_cpp", (DL_FUNC) &_emhawkes_hawkes_jacobian_path_cpp, 5},
+    {"_emhawkes_hawkes_jacobian_path_cpp", (DL_FUNC) &_emhawkes_hawkes_jacobian_path_cpp, 6},
     {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 19},
     {NULL, NULL, 0}
 };

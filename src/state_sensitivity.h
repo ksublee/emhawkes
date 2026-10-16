@@ -11,16 +11,18 @@ namespace emhawkes {
 class StateSensitivity {
     int dimensions_, components_, parameters_;
     Rcpp::CharacterVector names_;
-    Rcpp::NumericMatrix alpha_, beta_, eta_, mu_, baseline_;
-    bool has_baseline_;
+    Rcpp::NumericMatrix alpha_, beta_, eta_, mu_, baseline_, baseline_sum_;
+    Rcpp::IntegerMatrix baseline_exponent_;
+    bool has_baseline_, compact_baseline_;
     std::vector<long double> state_, jump_, score_;
     std::unique_ptr<JacobianCall> impact_param_, impact_state_;
-    Rcpp::NumericMatrix matrix(Rcpp::List input, const char* name, int rows) {
+    Rcpp::NumericMatrix matrix(Rcpp::List input, const char* name, int rows, int columns = -1) {
+        if (columns < 0) columns = parameters_;
         SEXP value = input[name];
         if ((TYPEOF(value) != REALSXP && TYPEOF(value) != INTSXP) || !Rf_isMatrix(value) || Rf_isObject(value))
             Rcpp::stop("Invalid native sensitivity matrix: %s", name);
         Rcpp::NumericMatrix result = Rcpp::as<Rcpp::NumericMatrix>(value);
-        if (result.nrow() != rows || result.ncol() != parameters_)
+        if (result.nrow() != rows || result.ncol() != columns)
             Rcpp::stop("Invalid native sensitivity dimensions: %s", name);
         for (R_xlen_t k = 0; k < result.size(); ++k)
             if (!R_FINITE(result[k])) Rcpp::stop("Nonfinite native sensitivity: %s", name);
@@ -30,7 +32,7 @@ public:
     bool stateful;
     StateSensitivity(Rcpp::List input, int dimensions, int kernels, int size, bool baseline,
                      bool impact) : dimensions_(dimensions), components_(dimensions * kernels),
-                     names_(input["names"]), has_baseline_(baseline) {
+                     names_(input["names"]), has_baseline_(baseline), compact_baseline_(false) {
         parameters_ = names_.size();
         if (parameters_ && components_ > INT_MAX / parameters_)
             Rcpp::stop("Native sensitivity dimensions are too large.");
@@ -42,14 +44,30 @@ public:
         stateful = Rcpp::as<bool>(input["stateful"]);
         if (has_baseline_) {
             SEXP b = input["baseline"];
-            if ((TYPEOF(b) != REALSXP && TYPEOF(b) != INTSXP) || !Rf_isMatrix(b) || Rf_isObject(b))
-                Rcpp::stop("Invalid native baseline Jacobian path.");
-            baseline_ = Rcpp::as<Rcpp::NumericMatrix>(b);
-            if (baseline_.nrow() != dimensions_ * parameters_ ||
-                (baseline_.ncol() != 1 && baseline_.ncol() != size))
-                Rcpp::stop("Invalid native baseline Jacobian path dimensions.");
-            for (R_xlen_t k = 0; k < baseline_.size(); ++k)
-                if (!R_FINITE(baseline_[k])) Rcpp::stop("Nonfinite native baseline Jacobian.");
+            compact_baseline_ = TYPEOF(b) == VECSXP;
+            if (compact_baseline_) {
+                Rcpp::List projected(b);
+                baseline_ = matrix(projected, "event", parameters_, size);
+                baseline_sum_ = matrix(projected, "sum", parameters_, size);
+                SEXP powers = projected["exponent"];
+                if (TYPEOF(powers) != INTSXP || !Rf_isMatrix(powers) || Rf_isObject(powers))
+                    Rcpp::stop("Invalid native baseline projection exponents.");
+                baseline_exponent_ = Rcpp::IntegerMatrix(powers);
+                if (baseline_exponent_.nrow() != parameters_ || baseline_exponent_.ncol() != size)
+                    Rcpp::stop("Invalid native baseline projection exponent dimensions.");
+                for (R_xlen_t k = 0; k < baseline_exponent_.size(); ++k)
+                    if (baseline_exponent_[k] == NA_INTEGER || std::abs(baseline_exponent_[k]) > 1074)
+                        Rcpp::stop("Invalid native baseline projection exponent.");
+            } else {
+                if ((TYPEOF(b) != REALSXP && TYPEOF(b) != INTSXP) || !Rf_isMatrix(b) || Rf_isObject(b))
+                    Rcpp::stop("Invalid native baseline Jacobian path.");
+                baseline_ = Rcpp::as<Rcpp::NumericMatrix>(b);
+                if (baseline_.nrow() != dimensions_ * parameters_ ||
+                    (baseline_.ncol() != 1 && baseline_.ncol() != size))
+                    Rcpp::stop("Invalid native baseline Jacobian path dimensions.");
+                for (R_xlen_t k = 0; k < baseline_.size(); ++k)
+                    if (!R_FINITE(baseline_[k])) Rcpp::stop("Nonfinite native baseline Jacobian.");
+            }
         }
         if (impact) {
             Rcpp::List arguments = input["impact_arguments"];
@@ -79,12 +97,17 @@ public:
     }
     void event(int n, int event_type, double intensity, double dt) {
         const double denominator = intensity > 0.0 ? intensity : R_NaN;
+        int dt_exponent = 0;
+        const double dt_fraction = compact_baseline_ ? std::frexp(dt, &dt_exponent) : dt;
         for (int p = 0; p < parameters_; ++p) {
-            long double derivative = mu(event_type, p, n);
+            long double derivative = compact_baseline_ ? baseline_(p, n) : mu(event_type, p, n);
             for (int index = event_type; index < components_; index += dimensions_)
                 derivative += state_[index + components_ * p];
             score_[p] += derivative / denominator;
-            for (int i = 0; i < dimensions_; ++i) {
+            if (compact_baseline_)
+                score_[p] -= std::ldexp(static_cast<long double>(dt_fraction) * baseline_sum_(p, n),
+                                      dt_exponent + baseline_exponent_(p, n));
+            else for (int i = 0; i < dimensions_; ++i) {
                 const double dmu = mu(i, p, n);
                 if (dmu != 0.0) score_[p] -= static_cast<long double>(dt) * dmu;
             }

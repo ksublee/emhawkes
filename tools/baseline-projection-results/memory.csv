@@ -1,0 +1,13 @@
+"id","operation","events","round","version","allocated_bytes","largest_bytes","heap_peak_mib","rss_before","rss_peak"
+"n10000-d2-k4-p3-diagonal-observed","score",10000,0,"before",6426376,480096,95.9,94597120,142036992
+"n10000-d2-k4-p3-diagonal-observed","score",10000,0,"after",6466432,480096,96,94859264,142086144
+"n10000-d4-k8-p12-diagonal-observed-mixedmu","score",10000,0,"before",124473016,3840432,135.2,100511744,189030400
+"n10000-d4-k8-p12-diagonal-observed-mixedmu","score",10000,0,"after",123072352,960144,133.9,100671488,187109376
+"n10000-d4-k8-p12-diagonal-observed","score",10000,0,"before",124535816,3840432,135.5,96067584,193347584
+"n10000-d4-k8-p12-diagonal-observed","score",10000,0,"after",123135152,960144,134.1,96481280,188981248
+"n10000-d8-k16-p24-diagonal-observed","cold",10000,0,"before",1423919048,15361584,145.3,103116800,207204352
+"n10000-d8-k16-p24-diagonal-observed","cold",10000,0,"after",1413395744,1920240,145.4,102866944,207671296
+"n10000-d8-k16-p24-diagonal-observed","path",100000,0,"before",366538784,153601584,256.9,148041728,307580928
+"n10000-d8-k16-p24-diagonal-observed","path",100000,0,"after",261339464,19200240,156.5,148066304,202530816
+"n10000-d8-k16-p24-diagonal-observed","score",10000,0,"before",1466800552,15361584,145.3,103190528,205619200
+"n10000-d8-k16-p24-diagonal-observed","score",10000,0,"after",1456277248,1920240,145.4,102596608,206319616

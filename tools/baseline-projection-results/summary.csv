@@ -1,0 +1,10 @@
+"id","operation","events","seconds.after","seconds.before","speedup"
+"n10000-d4-k8-p12-diagonal-observed","fit_numeric",750,9.94,11.61,1.16800804828974
+"n10000-d4-k8-p12-diagonal-observed-mixedmu","fit_numeric",750,13.75,13.98,1.01672727272727
+"n10000-d8-k16-p24-diagonal-observed","fit_analytic",1000,53.4,53.11,0.994569288389513
+"n10000-d8-k16-p24-diagonal-observed","cold",10000,1.16,1.14,0.982758620689655
+"n10000-d2-k4-p3-diagonal-observed","score",10000,0.2,0.22,1.1
+"n10000-d4-k8-p12-diagonal-observed","score",10000,0.38,0.37,0.973684210526316
+"n10000-d4-k8-p12-diagonal-observed-mixedmu","score",10000,0.47,0.49,1.04255319148936
+"n10000-d8-k16-p24-diagonal-observed","score",10000,1.25,1.25,1
+"n10000-d8-k16-p24-diagonal-observed","path",100000,1.78,1.7,0.955056179775281
