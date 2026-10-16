@@ -10,5 +10,6 @@ cran-comments.md
 ^docs$
 ^pkgdown$
 ^\.github$
+^\.git$
 ^vignettes_ext$
 ^tools$

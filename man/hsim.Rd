@@ -71,7 +71,14 @@ For unequal rates, the simulator uses a sufficient condition: group components
 by decay rate, multiply each group sum by its rate, and check that cumulative
 sums in increasing rate order are nonnegative.
 
-Simulation uses R. Arrival calculations use the current component state.
+Simulation automatically uses an Rcpp event loop for plain numeric \code{mu},
+\code{alpha}, and \code{beta}, positive baselines in every dimension, and equal decay
+rates within each row. This includes multivariate and mapped multi-kernel
+models. Models with \code{eta}, component functions, event callbacks, or custom
+residual distributions use R, as do zero baselines and unequal within-row
+decay rates. This selection is independent of \code{emhawkes.engine}, which
+controls likelihood calculations. Both paths use R's RNG in the same order.
+Arrival calculations use the current component state.
 Callbacks receive the arguments they request; callbacks with \code{...} continue
 to receive the full supported context. Requesting full histories can increase
 copying costs for long paths.

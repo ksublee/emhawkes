@@ -1,0 +1,6 @@
+baseline ac880e1f55f6ae18a4c33c8fe32a6928901115df
+Three alternating-order rounds; separate processes, sequential workers.
+Small requests use repeated complete hsim calls; setup and installation excluded.
+Rprofmem is cumulative R allocation; process peak RSS includes loading/warm-up.
+processor AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD
+Elapsed uses high-resolution Sys.time(); CPU uses proc.time().

@@ -1,0 +1,9 @@
+"version","case","events","round","mode","iterations","elapsed","cpu","allocated_bytes","peak_process_rss_bytes","output_bytes"
+"base","univariate",10000,0,"memory",1,NA,NA,1881376,139231232,807872
+"native","univariate",10000,0,"memory",1,NA,NA,1040720,108531712,807872
+"base","multi_equal",10000,0,"memory",1,NA,NA,38527472,150626304,6734496
+"native","multi_equal",10000,0,"memory",1,NA,NA,7443792,113487872,6734496
+"base","large_equal",10000,0,"memory",1,NA,NA,161910992,196976640,23392864
+"native","large_equal",10000,0,"memory",1,NA,NA,24738944,131231744,23392864
+"base","state_current",10000,0,"memory",1,NA,NA,53727472,155729920,6737328
+"native","state_current",10000,0,"memory",1,NA,NA,53727472,154464256,6737328

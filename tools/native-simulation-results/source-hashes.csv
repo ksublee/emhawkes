@@ -1,0 +1,5 @@
+"path","md5"
+"R/hsim.R","7afc1411051bc79d3d55f67c396947bd"
+"R/RcppExports.R","9922efa60ae31cb448bd2101aaee92f9"
+"src/hawkes_simulate.cpp","69f042662742f694d4be6feb59329fc5"
+"src/RcppExports.cpp","dc83b2e7e0c434e78c7adf7dc158aafc"

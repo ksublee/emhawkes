@@ -13,3 +13,7 @@ hawkes_loglik_cpp <- function(dt, type, mark, mu, alpha, beta, eta, initial, map
     .Call(`_emhawkes_hawkes_loglik_cpp`, dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact, impact_callback, keep_lambda, keep_components, baseline, impact_arguments, sensitivity, strict_callback)
 }
 
+hawkes_simulate_cpp <- function(mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark) {
+    .Call(`_emhawkes_hawkes_simulate_cpp`, mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark)
+}
+

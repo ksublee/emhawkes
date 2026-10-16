@@ -41,7 +41,14 @@ NULL
 #' by decay rate, multiply each group sum by its rate, and check that cumulative
 #' sums in increasing rate order are nonnegative.
 #'
-#' Simulation uses R. Arrival calculations use the current component state.
+#' Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
+#' `alpha`, and `beta`, positive baselines in every dimension, and equal decay
+#' rates within each row. This includes multivariate and mapped multi-kernel
+#' models. Models with `eta`, component functions, event callbacks, or custom
+#' residual distributions use R, as do zero baselines and unequal within-row
+#' decay rates. This selection is independent of `emhawkes.engine`, which
+#' controls likelihood calculations. Both paths use R's RNG in the same order.
+#' Arrival calculations use the current component state.
 #' Callbacks receive the arguments they request; callbacks with `...` continue
 #' to receive the full supported context. Requesting full histories can increase
 #' copying costs for long paths.
@@ -78,13 +85,20 @@ setGeneric("hsim", function(object, size = 100,
   standardGeneric("hsim"))
 
 #' @rdname hsim
-setMethod(
-  f="hsim",
-  signature(object = "hspec"),
-  definition = function(object, size = 100,
-                        lambda_component0 = NULL,  N0 = NULL, Nc0 = NULL,
-                        verbose = FALSE, ...){
+setMethod("hsim", "hspec", function(object, size = 100,
+    lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
+  simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...)
+})
 
+# Internal reference selector: independent of the likelihood engine option.
+simulate_hawkes_r <- function(object, size = 100, lambda_component0 = NULL,
+    N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
+  simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...,
+                  .native = FALSE)
+}
+
+simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
+    N0 = NULL, Nc0 = NULL, verbose = FALSE, ..., .native = TRUE) {
     # Process additional arguments passed through '...'
     additional_argument <- list(...)
     if (length(size) != 1L || !is.finite(size) || size < 1 || size != floor(size)) {
@@ -201,6 +215,32 @@ setMethod(
     lambda_component_n <- lambda_component0
     if (!valid_components(lambda_component0)) {
       stop("Initial kernel components must define nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
+    }
+
+    # Decide support before entering any RNG scope; never restart after draws.
+    if (.native && is.null(native_simulation_reason(object, mu, alpha, beta,
+                                                   all_rows_beta_equal))) {
+      mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimens)) else object@type_col_map
+      mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
+      out <- hawkes_simulate_cpp(as.numeric(mu), alpha, beta, lambda_component0,
+        mapping, N, Nc, inter_arrival, type, mark)
+      colnames(out$lambda) <- paste0("lambda", seq_len(dimens))
+      colnames(out$rambda) <- paste0("rambda", seq_len(dimens))
+      component_names <- as.vector(t(outer(paste0("lambda", seq_len(dimens)),
+        seq_len(ncol(beta)), FUN = paste0)))
+      colnames(out$lambda_component) <- component_names
+      colnames(out$rambda_component) <- sub("^lambda", "rambda", component_names)
+      if (out$generated < size) {
+        rows <- seq_len(out$generated)
+        for (name in c("inter_arrival", "type", "mark")) out[[name]] <- out[[name]][rows]
+        for (name in c("N", "Nc", "lambda", "rambda", "lambda_component", "rambda_component"))
+          out[[name]] <- out[[name]][rows, , drop = FALSE]
+      }
+      return(structure(list(hspec = object, inter_arrival = out$inter_arrival,
+        arrival = cumsum(out$inter_arrival), type = out$type, mark = out$mark,
+        N = out$N, Nc = out$Nc, lambda = out$lambda,
+        lambda_component = out$lambda_component, rambda = out$rambda,
+        rambda_component = out$rambda_component), class = "hreal"))
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
@@ -392,7 +432,21 @@ setMethod(
     class(realization) <- c("hreal")
 
     realization
-  }
-)
+}
 
-
+# Conservative support check. A function returning numeric parameters still uses R.
+native_simulation_reason <- function(object, mu, alpha, beta, equal) {
+  values <- list(object@mu, object@alpha, object@beta)
+  if (any(vapply(values, is.function, logical(1)))) return("function_parameters")
+  if (any(vapply(values, is.object, logical(1)))) return("classed_parameters")
+  if (!is.null(object@eta)) return("eta")
+  if (!is.null(object@impact) || !is.null(object@rmark)) return("event_callback")
+  if (!is.null(object@rresidual) || !is.null(object@dresidual) ||
+      !is.null(object@presidual) || !is.null(object@qresidual)) return("residual_distribution")
+  if (any(!is.finite(mu)) || any(mu <= 0)) return("nonpositive_baseline")
+  if (!equal) return("unequal_decays")
+  if (any(!is.finite(alpha)) || any(!is.finite(beta)) || any(beta <= 0)) return("invalid_parameters")
+  if (is.object(object@type_col_map) || any(vapply(object@type_col_map, is.object, logical(1))))
+    return("classed_mapping")
+  NULL
+}
