@@ -1,0 +1,4 @@
+"id","method","kind","text"
+"n10000-d8-k16-p24-dense-observed","maxLik","messages","hfit: some standard errors are NaN. Try final_hessian = ""stable"" for Hawkes Hessian stabilization."
+"n10000-d8-k16-p24-diagonal-constant","maxLik","messages","hfit: some standard errors are NaN. Try final_hessian = ""stable"" for Hawkes Hessian stabilization."
+"n10000-d8-k16-p24-diagonal-observed","maxLik","messages","hfit: some standard errors are NaN. Try final_hessian = ""stable"" for Hawkes Hessian stabilization."

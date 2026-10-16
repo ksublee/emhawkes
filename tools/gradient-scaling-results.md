@@ -134,6 +134,8 @@ that every model has well-identified parameters or reliable standard errors.
 The existing `final_hessian = "stable"` option remains available for separate
 inference checks; it is not used or timed in this study. No Hessian policy changes
 are included. See [Hessian cross-checks](gradient-scaling-results/hessian-cross-checks.csv).
+A [follow-up study](stable-scaling-results.md) applies the existing stable option
+to these five cases and compares standard errors, estimates and complete fit times.
 
 ## Complete estimation timing
 

@@ -1,0 +1,5 @@
+repository_commit 59814894377abc12fe4931f583b5974ea615e320
+runtime_source 4d6ea845cbce711b3b778bde2f0decfe07a75138
+R 4.6.0
+maxLik 1.5.2.2
+Rcpp 1.1.2
