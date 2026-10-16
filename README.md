@@ -37,8 +37,8 @@ The first path row is the initial state, so `size` includes that row.
 ## Documentation
 
 - [Get started](https://ksublee.github.io/emhawkes/articles/example.html): the basic workflow, input data and a first diagnostic.
-- [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent, multi-kernel and flexible residual models.
 - [Fitting and inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html): parameter sharing, initial states, fitted models, residuals and standard errors.
+- [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent, multi-kernel and flexible residual models.
 - [Computation](https://ksublee.github.io/emhawkes/articles/computation.html): R/C++ engines, gradients, Jacobians and performance.
 - [Reference](https://ksublee.github.io/emhawkes/reference/index.html) and [News](https://ksublee.github.io/emhawkes/news/index.html): function details and version changes.
 

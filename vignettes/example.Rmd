@@ -328,7 +328,7 @@ Their rows contain the cumulative values after each event.
 
 ## Next steps
 
-- [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent, multi-kernel and flexible residual models.
 - [Fitting and inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html): parameter settings, initial states, fitted models, residual diagnostics and standard errors.
+- [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent, multi-kernel and flexible residual models.
 - [Computation](https://ksublee.github.io/emhawkes/articles/computation.html): likelihood engines, analytic gradients, Jacobians and performance.
 - [Reference](https://ksublee.github.io/emhawkes/reference/index.html): function arguments and return values.
