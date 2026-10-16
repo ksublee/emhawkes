@@ -17,3 +17,7 @@ hawkes_simulate_cpp <- function(mu, alpha, beta, initial, mapping, N, Nc, dt, ty
     .Call(`_emhawkes_hawkes_simulate_cpp`, mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark)
 }
 
+hawkes_simulate_callbacks_cpp <- function(mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark, eta, rmark, impact, component_template) {
+    .Call(`_emhawkes_hawkes_simulate_callbacks_cpp`, mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark, eta, rmark, impact, component_template)
+}
+

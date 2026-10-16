@@ -91,10 +91,9 @@ for (h in models) {
 unsupported <- list(
   new("hspec",mu=0,alpha=.1,beta=1),
   new("hspec",mu=c(0,.4),alpha=matrix(.01,2,2),beta=matrix(1,2,2)),
-  new("hspec",mu=.4,alpha=.1,beta=1,eta=.01),
-  new("hspec",mu=function(param=c(level=.4))matrix(param[1]),alpha=.1,beta=1),
-  new("hspec",mu=.4,alpha=.1,beta=1,impact=function(lambda_component_n) .01*lambda_component_n),
-  new("hspec",mu=.4,alpha=.1,beta=1,rmark=function()rgeom(1,.7)+1))
+  new("hspec",mu=function(n)matrix(.4),alpha=.1,beta=1),
+  new("hspec",mu=.4,alpha=.1,beta=1,impact=function(lambda_component_n, ...) .01*lambda_component_n),
+  new("hspec",mu=.4,alpha=.1,beta=1,rmark=function(n)rgeom(1,.7)+1))
 unsupported[[length(unsupported)+1L]] <- set_residual(new("hspec",mu=.4,alpha=.1,beta=1),
   param=c(shape=2),rresidual=function(n,shape)rgamma(n,shape),
   dresidual=function(x,shape)dgamma(x,shape),presidual=function(q,shape)pgamma(q,shape),

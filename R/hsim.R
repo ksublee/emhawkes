@@ -42,12 +42,18 @@ NULL
 #' sums in increasing rate order are nonnegative.
 #'
 #' Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
-#' `alpha`, and `beta` and positive baselines in every dimension. This includes
+#' `alpha`, and `beta`, including functions with exactly one `param` argument
+#' resolved to such values, and positive baselines in every dimension. This includes
 #' multivariate and mapped multi-kernel models with equal or unequal decay rates
 #' within a row. Equal-rate models use direct arrival sampling; unequal-rate
-#' models retain the R algorithm's thinning and rejected draws. Models with
-#' `eta`, component functions, event callbacks, custom residual distributions,
-#' or zero baselines use R. This selection is independent of `emhawkes.engine`,
+#' models retain the R algorithm's thinning and rejected draws. Equal-rate models
+#' also support numeric `eta`, `rmark` functions requesting no event context, and
+#' `impact` functions requesting only `lambda_component_n` or no event context.
+#' Other optional arguments keep their defaults. Marks and impact components must
+#' be real numeric values. User functions still run in R; RNG state is synchronized
+#' before and after every call, including errors. Other event callbacks, `...`,
+#' event-dependent baselines, custom residual distributions, zero baselines, and
+#' callback models with unequal rates use R. This selection is independent of `emhawkes.engine`,
 #' which controls likelihood calculations. Both paths use R's RNG in the same order.
 #' Arrival calculations use the current component state.
 #' Callbacks receive the arguments they request; callbacks with `...` continue
@@ -220,11 +226,36 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
 
     # Decide support before entering any RNG scope; never restart after draws.
     if (.native && is.null(native_simulation_reason(object, mu, alpha, beta,
-                                                   all_rows_beta_equal))) {
+                                                   all_rows_beta_equal, eta, callbacks))) {
       mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimens)) else object@type_col_map
       mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
-      out <- hawkes_simulate_cpp(as.numeric(mu), alpha, beta, lambda_component0,
-        mapping, N, Nc, inter_arrival, type, mark)
+      if (is.null(eta) && is.null(object@impact) && is.null(object@rmark)) {
+        out <- hawkes_simulate_cpp(as.numeric(mu), alpha, beta, lambda_component0,
+          mapping, N, Nc, inter_arrival, type, mark)
+      } else {
+        # Keep argument selection, defaults and R replacement semantics in R.
+        # The original functions and their lexical environments are unchanged.
+        mark_callback <- if (is.null(object@rmark)) NULL else function() {
+          value <- numeric(1)
+          value[1] <- rmark_call(object@rmark)
+          if (!is.numeric(value)) value <- 0 + value
+          value
+        }
+        impact_callback <- if (is.null(object@impact)) NULL else function(lambda_component_n, event) {
+          value <- impact_call(object@impact, lambda_component_n = lambda_component_n)
+          addition <- matrix(0, dimens, ncol(beta))
+          columns <- if (is.null(object@type_col_map)) event else object@type_col_map[[event]]
+          addition[, columns] <- value[, columns]
+          if (!is.numeric(addition)) addition <- 0 + addition
+          addition
+        }
+        # The R recursion strips state attributes after each event; the product
+        # inherits beta's dimnames/attributes, including on the first event.
+        component_template <- lambda_component0 * exp(-beta * 0)
+        out <- hawkes_simulate_callbacks_cpp(as.numeric(mu), alpha, beta,
+          lambda_component0, mapping, N, Nc, inter_arrival, type, mark,
+          eta, mark_callback, impact_callback, component_template)
+      }
       colnames(out$lambda) <- paste0("lambda", seq_len(dimens))
       colnames(out$rambda) <- paste0("rambda", seq_len(dimens))
       component_names <- as.vector(t(outer(paste0("lambda", seq_len(dimens)),
@@ -435,13 +466,24 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
     realization
 }
 
-# Conservative support check. A function returning numeric parameters still uses R.
-native_simulation_reason <- function(object, mu, alpha, beta, equal) {
-  values <- list(object@mu, object@alpha, object@beta)
+# Check resolved parameters without evaluating user functions a second time.
+native_simulation_reason <- function(object, mu, alpha, beta, equal,
+                                     eta = object@eta, callbacks = NULL) {
+  values <- list(mu, alpha, beta, eta)
   if (any(vapply(values, is.function, logical(1)))) return("function_parameters")
+  if (any(vapply(values, function(x) !is.null(x) && !is.numeric(x), logical(1))))
+    return("nonnumeric_parameters")
   if (any(vapply(values, is.object, logical(1)))) return("classed_parameters")
-  if (!is.null(object@eta)) return("eta")
-  if (!is.null(object@impact) || !is.null(object@rmark)) return("event_callback")
+  hybrid <- !is.null(eta) || !is.null(object@impact) || !is.null(object@rmark)
+  if (hybrid) {
+    if (!equal) return("callback_unequal_decays")
+    if (is.null(callbacks)) callbacks <- model_callback_plans(object, simulation = TRUE)
+    # ... always requests the full context, even if its body ignores it.
+    if (length(callbacks$rmark) ||
+        length(setdiff(callbacks$impact, "lambda_component_n"))) return("event_context")
+    if (!is.null(eta) && (any(!is.finite(eta)) || !identical(dim(eta), dim(beta))))
+      return("invalid_eta")
+  }
   if (!is.null(object@rresidual) || !is.null(object@dresidual) ||
       !is.null(object@presidual) || !is.null(object@qresidual)) return("residual_distribution")
   if (any(!is.finite(mu)) || any(mu <= 0)) return("nonpositive_baseline")

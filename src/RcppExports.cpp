@@ -88,12 +88,36 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// hawkes_simulate_callbacks_cpp
+Rcpp::List hawkes_simulate_callbacks_cpp(Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha, Rcpp::NumericMatrix beta, Rcpp::NumericMatrix initial, Rcpp::List mapping, Rcpp::NumericMatrix N, Rcpp::NumericMatrix Nc, Rcpp::NumericVector dt, Rcpp::NumericVector type, Rcpp::NumericVector mark, SEXP eta, SEXP rmark, SEXP impact, SEXP component_template);
+RcppExport SEXP _emhawkes_hawkes_simulate_callbacks_cpp(SEXP muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP initialSEXP, SEXP mappingSEXP, SEXP NSEXP, SEXP NcSEXP, SEXP dtSEXP, SEXP typeSEXP, SEXP markSEXP, SEXP etaSEXP, SEXP rmarkSEXP, SEXP impactSEXP, SEXP component_templateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type initial(initialSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type mapping(mappingSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type N(NSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Nc(NcSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mark(markSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type rmark(rmarkSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type impact(impactSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type component_template(component_templateSEXP);
+    rcpp_result_gen = Rcpp::wrap(hawkes_simulate_callbacks_cpp(mu, alpha, beta, initial, mapping, N, Nc, dt, type, mark, eta, rmark, impact, component_template));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_emhawkes_hawkes_baseline_cpp", (DL_FUNC) &_emhawkes_hawkes_baseline_cpp, 7},
     {"_emhawkes_hawkes_jacobian_path_cpp", (DL_FUNC) &_emhawkes_hawkes_jacobian_path_cpp, 6},
     {"_emhawkes_hawkes_loglik_cpp", (DL_FUNC) &_emhawkes_hawkes_loglik_cpp, 19},
     {"_emhawkes_hawkes_simulate_cpp", (DL_FUNC) &_emhawkes_hawkes_simulate_cpp, 10},
+    {"_emhawkes_hawkes_simulate_callbacks_cpp", (DL_FUNC) &_emhawkes_hawkes_simulate_callbacks_cpp, 14},
     {NULL, NULL, 0}
 };
 

@@ -72,12 +72,18 @@ by decay rate, multiply each group sum by its rate, and check that cumulative
 sums in increasing rate order are nonnegative.
 
 Simulation automatically uses an Rcpp event loop for plain numeric \code{mu},
-\code{alpha}, and \code{beta} and positive baselines in every dimension. This includes
+\code{alpha}, and \code{beta}, including functions with exactly one \code{param} argument
+resolved to such values, and positive baselines in every dimension. This includes
 multivariate and mapped multi-kernel models with equal or unequal decay rates
 within a row. Equal-rate models use direct arrival sampling; unequal-rate
-models retain the R algorithm's thinning and rejected draws. Models with
-\code{eta}, component functions, event callbacks, custom residual distributions,
-or zero baselines use R. This selection is independent of \code{emhawkes.engine},
+models retain the R algorithm's thinning and rejected draws. Equal-rate models
+also support numeric \code{eta}, \code{rmark} functions requesting no event context, and
+\code{impact} functions requesting only \code{lambda_component_n} or no event context.
+Other optional arguments keep their defaults. Marks and impact components must
+be real numeric values. User functions still run in R; RNG state is synchronized
+before and after every call, including errors. Other event callbacks, \code{...},
+event-dependent baselines, custom residual distributions, zero baselines, and
+callback models with unequal rates use R. This selection is independent of \code{emhawkes.engine},
 which controls likelihood calculations. Both paths use R's RNG in the same order.
 Arrival calculations use the current component state.
 Callbacks receive the arguments they request; callbacks with \code{...} continue

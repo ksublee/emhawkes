@@ -1,0 +1,18 @@
+{
+  "baseline_commit": "36e79e50d89e270a4987c684697219ea52be3b78",
+  "source_archive_matches": true,
+  "checked_source_files": 76,
+  "numeric_code_sections_identical": true,
+  "numeric_code_sections": 59,
+  "exact_simulation_combinations": {
+    "numeric": 552,
+    "unequal": 408,
+    "callback": 744
+  },
+  "cross_version_fixtures": 40,
+  "timing_pairs": 57,
+  "memory_and_rss_pairs": 12,
+  "independent_replay_fixtures": 6,
+  "cpu": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "measured_implementation": "separate numeric and callback translation units"
+}
