@@ -108,6 +108,10 @@ supported and supplied with any required \code{jacobian}, independently of the
 optimizer's \code{gradient} choice. Otherwise use likelihood differences. The
 \code{"r"} engine retains likelihood differences. Failed score evaluations also
 fall back to likelihood differences; inspect \code{\link[=fit_diagnostics]{fit_diagnostics()}} for the reason.
+For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied \code{hess}
+or an explicit \code{finalHessian} override, skip maxLik's separate final Hessian.
+Set \code{finalHessian = TRUE} to retain that extra calculation. Newton methods
+and constrained fits retain it. Inspect \code{fit_diagnostics()} for the recorded choice.
 User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
 and residual-distribution likelihoods retain their calculation choices.}
 

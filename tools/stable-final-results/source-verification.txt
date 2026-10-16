@@ -1,0 +1,1 @@
+Final runtime differs only by the argument-prefix guard; timed-case eligibility unchanged. Rd checks passed.

@@ -60,6 +60,10 @@ NULL
 #' optimizer's `gradient` choice. Otherwise use likelihood differences. The
 #' `"r"` engine retains likelihood differences. Failed score evaluations also
 #' fall back to likelihood differences; inspect `fit_diagnostics()` for the reason.
+#' For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied `hess`
+#' or an explicit `finalHessian` override, skip maxLik's separate final Hessian.
+#' Set `finalHessian = TRUE` to retain that extra calculation. Newton methods
+#' and constrained fits retain it. Inspect `fit_diagnostics()` for the recorded choice.
 #' User-supplied `hess`, `finalHessian = FALSE`, BHHH curvature, custom likelihoods,
 #' and residual-distribution likelihoods retain their calculation choices.
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
@@ -595,6 +599,18 @@ setMethod(
       additional_argument
     )
 
+    # maxOptim computes this Hessian only after optimization. Stable curvature
+    # replaces it, so omit that pass unless the caller explicitly requested it.
+    # Honor maxLik's partial argument matching for explicit overrides too.
+    # Keep Newton methods and constrained or non-Hawkes fits unchanged.
+    skip_final_hessian <- identical(final_hessian, "stable") &&
+      is.null(mylogLik) && is.null(object@dresidual) && is.null(constraints) &&
+      is.null(hess) &&
+      !any(startsWith("finalHessian", as.character(names(additional_argument)))) &&
+      !isTRUE(additional_argument$bhhhHessian) &&
+      tolower(method) %in% c("bfgs", "cg", "conjugate-gradient", "nm", "nelder-mead", "sann")
+    if (skip_final_hessian) ml_args$finalHessian <- FALSE
+
     message_parameter_sharing(parameter_map)
     fit <- do.call(maxLik::maxLik, ml_args)
     if (!is.null(fit)) {
@@ -613,7 +629,8 @@ setMethod(
       }
       fit <- final$fit
       final$diagnostics$computation <- fit_computation(fit, execution, gradient,
-        gradient_used, final_hessian, hess, additional_argument, final$diagnostics)
+        gradient_used, final_hessian, hess, additional_argument, final$diagnostics,
+        maxLik_hessian_skipped = skip_final_hessian)
       attr(fit, "emhawkes") <- list(
         version = 1L,
         specification = object,

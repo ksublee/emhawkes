@@ -141,8 +141,8 @@ stopifnot(identical(result$status, "unavailable"),
           identical(result$reason, "step_sensitive"),
           all(result$checks$positive_definite))
 
-# A deterministic callback counts actual evaluations: requesting stable adds work,
-# while the default and explicit maxLik paths make exactly the same calls.
+# A deterministic callback checks that the default and explicit maxLik paths
+# make the same calls, while stable preserves the optimizer result.
 evaluations <- 0L
 count_impact <- function(param = numeric(0), n) {
   evaluations <<- evaluations + 1L
@@ -161,7 +161,6 @@ plain <- run_counted()
 legacy_counted <- run_counted("maxLik")
 requested <- run_counted("stable")
 stopifnot(plain$evaluations == legacy_counted$evaluations,
-          requested$evaluations > plain$evaluations,
           identical(plain$fit$estimate, requested$fit$estimate),
           identical(plain$fit$maximum, requested$fit$maximum),
           identical(fit_diagnostics(requested$fit)$status, "ok"))

@@ -1,0 +1,4 @@
+"id","trial","before_seconds","after_seconds","before_cpu_seconds","after_cpu_seconds","parameters_identical","covariance_identical"
+"n10000-d4-k8-p12-diagonal-observed",1,63.09,30.19,62.02,29.57,TRUE,TRUE
+"n10000-d4-k8-p12-diagonal-observed",2,45.6,27.11,44.97,26.46,TRUE,TRUE
+"n10000-d4-k8-p12-diagonal-observed",3,59.75,41.2,57.34,38.64,TRUE,TRUE

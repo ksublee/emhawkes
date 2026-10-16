@@ -1,5 +1,7 @@
 # emhawkes 0.9.9
 
+* Avoid a duplicate final Hessian for opt-in stable curvature in unconstrained BFGS, CG, Nelder-Mead and SANN Hawkes fits. Preserve explicit overrides, supplied Hessians, Newton methods and constrained fits; record the omitted pass in fit diagnostics.
+
 * Accelerate opt-in stable Hessians by centrally differentiating the built-in analytic score when available, including with a numerical optimizer gradient. Retain Richardson and step-stability checks, likelihood-difference fallback, optimizer results and default options. Record the curvature source and score fallback reason.
 
 * Extend opt-in analytic gradients to observed baselines and impacts that explicitly use `lambda_component_n`. Accept full-parameter baseline Jacobians and separate direct-parameter/state impact Jacobians; propagate decay, jump, parameter-sharing and initial-state derivatives in C++. Keep numerical defaults and full-history restrictions.

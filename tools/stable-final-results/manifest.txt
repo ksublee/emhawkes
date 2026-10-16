@@ -1,0 +1,26 @@
+baseline_repository_commit 2ac339b5ac9a3f7d8c0889e98af44b8137e82be4
+date 2026-10-16
+protocol one sequential worker per fit, affinity mask 4, 100-event warmup, no tracing or competing R jobs
+comparison full public hfit with 2500 events, original starting values, numeric gradient, auto C++ engine
+order alternates by model; one matched pair per model
+baseline prior isolated installation verified to have identical parsed runtime function bodies to HEAD
+baseline_library C:\Users\KSLee\AppData\Local\Temp\emhawkes-score-curvature-820ca148a8e548c39a2d29dd57f787f7\lib
+new_library C:\Users\KSLee\AppData\Local\Temp\emhawkes-stable-final-q2w675of\lib
+sha256 before R/hfit.R 93aa6995c2e7c6963d8e0f321ba66e3e46526f1b0a41dd0713cf432ae6bda884
+sha256 after R/hfit.R b42e9d7e0150c0b05e35727dfdf39329c675d5b6b20daa136342ac0a5c07a187
+sha256 before R/huncertainty.R fc21148b6e059fcc6c3f922a3df086d6288a8115faae6ed9093fa97df03f89c5
+sha256 after R/huncertainty.R 271505425cc1dd172e067a2c35812baa83601755a20f024c3dba4b54801054fe
+source_hash_note main timings use frozen sources; final changes are roxygen wording and the finalHessian-prefix eligibility guard; parsed bodies otherwise identical and timed-case eligibility unchanged
+unchanged_sources src/hawkes_loglik.cpp src/RcppExports.cpp R/hgradient.R R/hengine.R (byte-identical to baseline frozen sources)
+fixture_sha256 n10000-d4-k8-p12-dense-observed-coupled.rds 60f4fd27a2f3b1be3c5c96585d16229aa52bdc3d93147e63e45bb5a840568ae0
+fixture_sha256 n10000-d4-k8-p12-diagonal-observed.rds 41d6953cc675c0391303aefaa46d4218fdff277aead5f892a435b3df6be6dbc9
+fixture_sha256 n10000-d8-k16-p24-dense-observed.rds e1e0c2f1ddfe146c40e43b6f0201e650b5f68b61544797b85c293128faef5bd3
+fixture_sha256 n10000-d8-k16-p24-diagonal-constant.rds d3599108934d1d76a831aaa0bf5f1c987ff4e563a558ae95f287922ea6719908
+fixture_sha256 n10000-d8-k16-p24-diagonal-observed.rds baa46e1904ee0b2733546fddb21963206d35b7e6e4f8c4c549f1a0467f917322
+final_guard honours maxLik partial argument matching; no timed inputs supply a finalHessian prefix
+sha256 final R/hfit.R 8a96e18529c2017662eaecda1a869bfa400b35f82f1f99b48210e2096f9fc7d3
+sha256 final R/huncertainty.R 3d99bb2762fc932d3d1a50ab83d00b9243785f97b94cc7811b053f3f7a96be72
+repeat_protocol three additional fresh before/after pairs use the final source, alternating order
+native_sources_verified all cpp and h files byte-identical to frozen baseline sources
+validation R CMD check --no-manual Status OK, 26 test scripts, no errors/warnings/notes
+benchmark_script_sha256 ed91e1673d7c5819c23cc27ccbd901bda706e6ffa269750b07083216e07368db

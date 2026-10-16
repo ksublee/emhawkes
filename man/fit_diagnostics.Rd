@@ -33,7 +33,11 @@ score in stable curvature checks. \code{computation$hessian$used} is
 \code{"user"}, \code{"attribute"},
 \code{"BHHH"}, \code{"disabled"} or \code{"unavailable"}. The Hessian list also retains the
 requested \code{final_hessian} choice and any \code{finalHessian} override. Its \code{reason}
-explains a skipped stabilization or unavailable result. If both a derivative
+explains a skipped stabilization or unavailable result. \code{maxLik_skipped} records
+whether stable curvature omitted maxLik's separate final Hessian. In that case
+\code{original_hessian} is \code{NULL}. Numerical stable checks otherwise retain the
+matrix returned by maxLik.
+Older computation records may omit \code{maxLik_skipped}. If both a derivative
 function and likelihood derivative attributes were supplied, the source is
 \code{NA} with a reason because precedence depends on maxLik.
 

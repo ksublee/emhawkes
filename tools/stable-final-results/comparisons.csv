@@ -1,0 +1,6 @@
+"id","dimensions","kernel_columns","parameters","events","feedback","observed_baseline","alpha_coupled","before_seconds","after_seconds","before_cpu_seconds","after_cpu_seconds","speedup","reduction_percent","max_parameter_difference","loglik_difference","max_se_difference","covariance_identical","code","nonfinite_se"
+"n10000-d4-k8-p12-diagonal-observed",4,8,12,2500,"diagonal",TRUE,FALSE,63.07,40.19,62.2,39.98,1.5692958447375,36.2771523703821,0,0,0,TRUE,0,0
+"n10000-d4-k8-p12-dense-observed-coupled",4,8,12,2500,"dense",TRUE,TRUE,105.73,77.74,103.97,77.06,1.36004630820684,26.4730918376998,0,0,0,TRUE,0,0
+"n10000-d8-k16-p24-diagonal-constant",8,16,24,2500,"diagonal",FALSE,FALSE,335.51,219.7,332.16,217.36,1.52712790168411,34.5176000715329,0,0,0,TRUE,0,0
+"n10000-d8-k16-p24-diagonal-observed",8,16,24,2500,"diagonal",TRUE,FALSE,418.12,249.84,406.45,245.41,1.67355107268652,40.2468190949967,0,0,0,TRUE,0,0
+"n10000-d8-k16-p24-dense-observed",8,16,24,2500,"dense",TRUE,FALSE,676.97,487,658.88,468.61,1.39008213552361,28.0618048067123,0,0,0,TRUE,0,0

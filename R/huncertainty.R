@@ -308,7 +308,8 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
 
 # Summarize recorded execution without evaluating the model again.
 fit_computation <- function(fit, execution, gradient_requested, gradient_used,
-                            final_hessian, hess, additional, diagnostics) {
+                            final_hessian, hess, additional, diagnostics,
+                            maxLik_hessian_skipped = FALSE) {
   gradient_reason <- NULL
   if (isTRUE(execution$gradient_attribute)) {
     if (gradient_used == "user") {
@@ -343,7 +344,7 @@ fit_computation <- function(fit, execution, gradient_requested, gradient_used,
     gradient = list(requested = gradient_requested, used = gradient_used,
       reason = gradient_reason),
     hessian = list(requested = final_hessian, finalHessian = final,
-      used = used, reason = reason))
+      used = used, reason = reason, maxLik_skipped = maxLik_hessian_skipped))
 }
 
 unrecorded_fit_computation <- function(metadata) {
@@ -352,7 +353,7 @@ unrecorded_fit_computation <- function(metadata) {
     gradient = list(requested = NA_character_,
       used = if (is.null(metadata$gradient)) NA_character_ else metadata$gradient, reason = NULL),
     hessian = list(requested = NA_character_, finalHessian = NULL,
-      used = NA_character_, reason = "not_recorded"))
+      used = NA_character_, reason = "not_recorded", maxLik_skipped = NA))
 }
 
 #' Inspect Fit Computation and Curvature Diagnostics
@@ -378,7 +379,11 @@ unrecorded_fit_computation <- function(metadata) {
 #' `"user"`, `"attribute"`,
 #' `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian list also retains the
 #' requested `final_hessian` choice and any `finalHessian` override. Its `reason`
-#' explains a skipped stabilization or unavailable result. If both a derivative
+#' explains a skipped stabilization or unavailable result. `maxLik_skipped` records
+#' whether stable curvature omitted maxLik's separate final Hessian. In that case
+#' `original_hessian` is `NULL`. Numerical stable checks otherwise retain the
+#' matrix returned by maxLik.
+#' Older computation records may omit `maxLik_skipped`. If both a derivative
 #' function and likelihood derivative attributes were supplied, the source is
 #' `NA` with a reason because precedence depends on maxLik.
 #'
