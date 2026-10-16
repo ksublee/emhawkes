@@ -2,9 +2,10 @@
 
 ## emhawkes 0.9.9
 
-- Check the declared minimum R 4.0.0 in CI. Add native GC, memory-access
-  and interruption checks, including callback failures and subsequent
-  RNG recovery.
+- Check the declared minimum R 4.0.0 in CI and make sensitivity
+  parameter-name conversion explicit for older Rcpp versions. Add native
+  GC, memory-access and interruption checks, including callback failures
+  and subsequent RNG recovery.
 
 - Reuse each row’s exponential decay factor in native simulation when
   its kernel decay rates agree. Preserve component arithmetic, callback
