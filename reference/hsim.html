@@ -129,7 +129,11 @@ For equal decay rates within a row, this requires a nonnegative row sum.
 For unequal rates, the simulator uses a sufficient condition: group components
 by decay rate, multiply each group sum by its rate, and check that cumulative
 sums in increasing rate order are nonnegative.</p>
-<p>Simulation uses R. To simulate an estimated model, use <code><a href="fitted_hspec.html">fitted_hspec()</a></code> and
+<p>Simulation uses R. Arrival calculations use the current component state.
+Callbacks receive the arguments they request; callbacks with <code>...</code> continue
+to receive the full supported context. Requesting full histories can increase
+copying costs for long paths.</p>
+<p>To simulate an estimated model, use <code><a href="fitted_hspec.html">fitted_hspec()</a></code> and
 pass <code><a href="fit_initial_state.html">fit_initial_state()</a></code> to <code>hsim()</code> with <code><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call()</a></code>. These arguments describe
 the start of the fitted observation window. Continuing after its last event
 requires the state at that event.</p>

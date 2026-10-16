@@ -91,7 +91,12 @@ condition: group components by decay rate, multiply each group sum by
 its rate, and check that cumulative sums in increasing rate order are
 nonnegative.
 
-Simulation uses R. To simulate an estimated model, use
+Simulation uses R. Arrival calculations use the current component state.
+Callbacks receive the arguments they request; callbacks with `...`
+continue to receive the full supported context. Requesting full
+histories can increase copying costs for long paths.
+
+To simulate an estimated model, use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
 and pass
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)

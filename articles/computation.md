@@ -51,8 +51,11 @@ and observed or sequential state-dependent impacts also use C++.
 Baselines cannot depend on latent intensities. Unsupported function
 signatures use R. Mark densities, residual-distribution models, and
 numeric inputs with custom classes use R. Simulation continues to use R.
-The fitting adapters below also select C++ automatically for supported
-callback models.
+Its arrival calculations use the current component state rather than the
+stored history. Simulation callbacks receive their requested arguments;
+`...` retains the full supported context. Request only the state you
+need to reduce history copying on long paths. The fitting adapters below
+also select C++ automatically for supported callback models.
 
 The `emhawkes.engine` option controls the built-in likelihood:
 

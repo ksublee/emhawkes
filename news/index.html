@@ -41,7 +41,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
-<ul><li><p>Reduce observed-baseline Jacobian storage for analytic scores and opt-in stable Hessians. Retain event-row and integral projections with separate initial derivatives; preserve callback order, parameter names and the public Jacobian interface. Keep dense storage when its array payload is smaller.</p></li>
+<ul><li><p>Reduce simulation history copying by passing current components to arrival helpers and preparing only requested callback arguments. Preserve full-history and <code>...</code> callbacks, random draws, initial states and early termination.</p></li>
+<li><p>Reduce observed-baseline Jacobian storage for analytic scores and opt-in stable Hessians. Retain event-row and integral projections with separate initial derivatives; preserve callback order, parameter names and the public Jacobian interface. Keep dense storage when its array payload is smaller.</p></li>
 <li><p>Warn about optimizer nonconvergence when opt-in stable curvature is unavailable. Preserve estimates, covariances and numerical thresholds; add Hawkes stress checks for coincident decay rates, weak excitation, short samples, initial transients and constraint boundaries.</p></li>
 <li><p>Avoid a duplicate final Hessian for opt-in stable curvature in unconstrained BFGS, CG, Nelder-Mead and SANN Hawkes fits. Preserve explicit overrides, supplied Hessians, Newton methods and constrained fits; record the omitted pass in fit diagnostics.</p></li>
 <li><p>Accelerate opt-in stable Hessians by centrally differentiating the built-in analytic score when available, including with a numerical optimizer gradient. Retain Richardson and step-stability checks, likelihood-difference fallback, optimizer results and default options. Record the curvature source and score fallback reason.</p></li>

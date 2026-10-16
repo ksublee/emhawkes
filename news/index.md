@@ -2,6 +2,11 @@
 
 ## emhawkes 0.9.9
 
+- Reduce simulation history copying by passing current components to
+  arrival helpers and preparing only requested callback arguments.
+  Preserve full-history and `...` callbacks, random draws, initial
+  states and early termination.
+
 - Reduce observed-baseline Jacobian storage for analytic scores and
   opt-in stable Hessians. Retain event-row and integral projections with
   separate initial derivatives; preserve callback order, parameter names
