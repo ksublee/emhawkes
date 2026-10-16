@@ -38,6 +38,7 @@ jobs:
       - name: Check native memory with Valgrind
         run: |
           R -d "valgrind --tool=memcheck --track-origins=yes --leak-check=full --show-leak-kinds=definite --errors-for-leak-kinds=definite --error-exitcode=99 --log-file=native-safety-results/valgrind.log" --vanilla -f tools/check-native-safety.R --args basic native-safety-results/memcheck
+          tail -n 30 native-safety-results/valgrind.log
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4

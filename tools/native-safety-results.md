@@ -28,8 +28,14 @@ all four callback failure/interrupt cases. The full source-package check,
 including 34 test files and vignette rebuilding, completed with Status: OK.
 R 4.0.0, POSIX signals and Valgrind require the corresponding CI environments;
 their logs and the `native-safety` artifact provide the run-specific evidence.
+The [first Linux run](https://github.com/ksublee/emhawkes/actions/runs/38915442553)
+passed forced GC, callback unwinding, actual SIGINT and Valgrind. RNG replay
+matched 215,039 rejected exponential/uniform pairs before the interrupt.
 
-These checks change no simulation, likelihood, callback or RNG implementation.
+The first R 4.0.0 run used Rcpp 1.0.8.3 and found an ambiguous constructor for
+sensitivity parameter names. An explicit `Rcpp::as<Rcpp::CharacterVector>`
+conversion resolves the overload without changing the parameter values.
+The numerical simulation, likelihood, callback and RNG algorithms are unchanged.
 They exercise representative paths and do not prove the absence of all native
 memory defects.
 

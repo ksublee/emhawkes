@@ -32,7 +32,8 @@ public:
     bool stateful;
     StateSensitivity(Rcpp::List input, int dimensions, int kernels, int size, bool baseline,
                      bool impact) : dimensions_(dimensions), components_(dimensions * kernels),
-                     names_(input["names"]), has_baseline_(baseline), compact_baseline_(false) {
+                     names_(Rcpp::as<Rcpp::CharacterVector>(input["names"])),
+                     has_baseline_(baseline), compact_baseline_(false) {
         parameters_ = names_.size();
         if (parameters_ && components_ > INT_MAX / parameters_)
             Rcpp::stop("Native sensitivity dimensions are too large.");
