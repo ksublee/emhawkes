@@ -92,16 +92,18 @@ its rate, and check that cumulative sums in increasing rate order are
 nonnegative.
 
 Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
-`alpha`, and `beta`, positive baselines in every dimension, and equal
-decay rates within each row. This includes multivariate and mapped
-multi-kernel models. Models with `eta`, component functions, event
-callbacks, or custom residual distributions use R, as do zero baselines
-and unequal within-row decay rates. This selection is independent of
-`emhawkes.engine`, which controls likelihood calculations. Both paths
-use R's RNG in the same order. Arrival calculations use the current
-component state. Callbacks receive the arguments they request; callbacks
-with `...` continue to receive the full supported context. Requesting
-full histories can increase copying costs for long paths.
+`alpha`, and `beta` and positive baselines in every dimension. This
+includes multivariate and mapped multi-kernel models with equal or
+unequal decay rates within a row. Equal-rate models use direct arrival
+sampling; unequal-rate models retain the R algorithm's thinning and
+rejected draws. Models with `eta`, component functions, event callbacks,
+custom residual distributions, or zero baselines use R. This selection
+is independent of `emhawkes.engine`, which controls likelihood
+calculations. Both paths use R's RNG in the same order. Arrival
+calculations use the current component state. Callbacks receive the
+arguments they request; callbacks with `...` continue to receive the
+full supported context. Requesting full histories can increase copying
+costs for long paths.
 
 To simulate an estimated model, use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)

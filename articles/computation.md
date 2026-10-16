@@ -63,12 +63,13 @@ The `emhawkes.engine` option controls the built-in likelihood:
 
 Simulation selects its path separately.
 [`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) uses an
-Rcpp event loop for plain numeric `mu`, `alpha`, and `beta`, strictly
-positive baselines, and equal decay rates within each row. Multivariate
-and mapped multi-kernel models are supported. Models with component
-functions, event callbacks, `eta`, custom residual distributions, zero
-baselines, or unequal within-row decays continue to use R. The
-likelihood engine option does not force either simulation path.
+Rcpp event loop for plain numeric `mu`, `alpha`, and `beta` and strictly
+positive baselines. Multivariate and mapped multi-kernel models support
+both equal and unequal within-row decay rates. Unequal rates retain the
+R thinning algorithm, including rejected random draws. Models with
+component functions, event callbacks, `eta`, custom residual
+distributions, or zero baselines continue to use R. The likelihood
+engine option does not force either simulation path.
 
 Both simulation paths preserve the R random-draw order: all baseline
 exponential candidates are generated before all excitation uniforms.
