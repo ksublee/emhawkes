@@ -1,0 +1,8 @@
+"","total.time","total.pct","self.time","self.pct"
+"""hawkes_simulate_cpp""",0.016,100,0.013,81.25
+"""hsim""",0.016,100,0,0
+"""run""",0.016,100,0,0
+"""simulate_hawkes""",0.016,100,0,0
+"""tryCatch""",0.016,100,0,0
+"""tryCatchList""",0.016,100,0,0
+"""<GC>""",0.003,18.75,0.003,18.75

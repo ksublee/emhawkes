@@ -1,0 +1,19 @@
+Two local --as-cran checks reported exit status 1 for the second example
+process (--run-donttest), while its output file still contained a normal
+completed first run. Direct execution of the generated donttest script
+returned status 0. All package regression tests and vignette checks passed.
+
+A separate script loaded no package and ran Rterm six times to execute only:
+  cat('hello\n'); quit('no')
+using the same output file. Exit statuses were 0, 0, 1, 0, 0, 0.
+This reproduces a process failure without any emhawkes code.
+
+A subsequent isolation attempt (12 runs each with reused Dropbox output,
+fresh Dropbox output, and reused system-temp output) returned 0 in all cases.
+The precise operating-system/file-I/O trigger is not conclusively isolated.
+
+The final full check uses explicit --run-donttest, running normal and donttest
+examples together once. No examples, regression tests or vignettes are
+excluded, and numerical tolerances are unchanged. The diagnostic trace file
+in the second check directory caused an additional nonstandard-file warning;
+that trace is not part of the package or final check.

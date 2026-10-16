@@ -1,0 +1,7 @@
+baseline 53a5f83483146f8efb5363ac62a871c45a6cc7f6
+processor AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD
+Three alternating-order rounds, sequential fresh processes, three 100-event warm-ups.
+High-resolution wall time per complete hsim call, setup/installation excluded.
+Rprofmem: cumulative R allocation; use separate untraced rss workers for peak working set.
+rss peak working set includes process lifetime, package loading and warm-up.
+Profile percentages use samples; Windows sample seconds are not elapsed seconds.

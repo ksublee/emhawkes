@@ -91,7 +91,6 @@ for (h in models) {
 unsupported <- list(
   new("hspec",mu=0,alpha=.1,beta=1),
   new("hspec",mu=c(0,.4),alpha=matrix(.01,2,2),beta=matrix(1,2,2)),
-  new("hspec",mu=.4,alpha=matrix(.01,1,2),beta=matrix(c(1,2),1),type_col_map=list(1:2)),
   new("hspec",mu=.4,alpha=.1,beta=1,eta=.01),
   new("hspec",mu=function(param=c(level=.4))matrix(param[1]),alpha=.1,beta=1),
   new("hspec",mu=.4,alpha=.1,beta=1,impact=function(lambda_component_n) .01*lambda_component_n),

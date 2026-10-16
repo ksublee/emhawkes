@@ -1,0 +1,6 @@
+"case","events","dimension","exponential_draws","uniform_draws","rejected_candidates"
+"small_unequal",1000,1,1408,1408,408
+"multi_unequal",1000,4,5200,5200,1200
+"large_unequal",1000,8,9954,9954,1954
+"rejection",1000,2,399664,399664,397664
+"signed_unequal",1000,2,2363,2363,363

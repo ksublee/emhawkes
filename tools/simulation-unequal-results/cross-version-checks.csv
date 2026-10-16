@@ -1,0 +1,41 @@
+"case","identical"
+"Mersenne-Twister univariate",TRUE
+"Mersenne-Twister multivariate",TRUE
+"Mersenne-Twister multi_equal",TRUE
+"Mersenne-Twister multi_unequal",TRUE
+"Mersenne-Twister large_equal",TRUE
+"Mersenne-Twister large_unequal",TRUE
+"Mersenne-Twister marked",TRUE
+"Mersenne-Twister parameter_mu",TRUE
+"Mersenne-Twister state_current",TRUE
+"Mersenne-Twister state_dots",TRUE
+"Mersenne-Twister state_observed",TRUE
+"Mersenne-Twister signed",TRUE
+"L'Ecuyer-CMRG univariate",TRUE
+"L'Ecuyer-CMRG multivariate",TRUE
+"L'Ecuyer-CMRG multi_equal",TRUE
+"L'Ecuyer-CMRG multi_unequal",TRUE
+"L'Ecuyer-CMRG large_equal",TRUE
+"L'Ecuyer-CMRG large_unequal",TRUE
+"L'Ecuyer-CMRG marked",TRUE
+"L'Ecuyer-CMRG parameter_mu",TRUE
+"L'Ecuyer-CMRG state_current",TRUE
+"L'Ecuyer-CMRG state_dots",TRUE
+"L'Ecuyer-CMRG state_observed",TRUE
+"L'Ecuyer-CMRG signed",TRUE
+"initial automatic",TRUE
+"initial scalar",TRUE
+"initial matrix",TRUE
+"named_beta",TRUE
+"zero_mu TRUE 0:0",TRUE
+"gamma_residual 0:0",TRUE
+"zero_mu TRUE 0:0.4",TRUE
+"gamma_residual 0:0.4",TRUE
+"zero_mu FALSE 0:0",TRUE
+"zero_mu FALSE 0:0.4",TRUE
+"gamma_residual_positive",TRUE
+"signed_unequal",TRUE
+"retained_callbacks FALSE",TRUE
+"retained_callbacks TRUE",TRUE
+"no_event_no_seed",TRUE
+"no_event_existing_seed",TRUE

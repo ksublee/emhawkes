@@ -1,0 +1,2 @@
+Benchmark and final Windows DLL .text sections have identical SHA-256: fc1b84c0f75024ff7829b8195bb3a75a2b3b118103af5e6f5437d7a9f9bde89c
+The portability guard changes code only where long double has double precision.

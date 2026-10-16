@@ -1,6 +1,8 @@
 # emhawkes 0.9.9
 
-* Accelerate numeric Hawkes simulation with a complete Rcpp event loop for positive baselines and equal within-row decay rates, including mapped multivariate and multi-kernel models. Preserve output layout and R random-draw order. Models with callbacks, eta, custom residual distributions, zero baselines, or unequal within-row decays retain the R path; likelihood engine options are unchanged.
+* Extend the numeric Rcpp simulation loop to unequal within-row decay rates, including mapped multi-kernel models and admissible signed components. Preserve the R thinning algorithm, rejected random draws, warnings and error RNG state. Callback, eta, custom-residual and zero-baseline models retain the R path.
+
+* Accelerate numeric Hawkes simulation with a complete Rcpp event loop for positive baselines and equal within-row decay rates, including mapped multivariate and multi-kernel models. Preserve output layout and R random-draw order. Models with callbacks, eta, custom residual distributions, or zero baselines retain the R path; likelihood engine options are unchanged.
 
 * Reduce simulation history copying by passing current components to arrival helpers and preparing only requested callback arguments. Preserve full-history and `...` callbacks, random draws, initial states and early termination.
 

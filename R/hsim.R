@@ -42,12 +42,13 @@ NULL
 #' sums in increasing rate order are nonnegative.
 #'
 #' Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
-#' `alpha`, and `beta`, positive baselines in every dimension, and equal decay
-#' rates within each row. This includes multivariate and mapped multi-kernel
-#' models. Models with `eta`, component functions, event callbacks, or custom
-#' residual distributions use R, as do zero baselines and unequal within-row
-#' decay rates. This selection is independent of `emhawkes.engine`, which
-#' controls likelihood calculations. Both paths use R's RNG in the same order.
+#' `alpha`, and `beta` and positive baselines in every dimension. This includes
+#' multivariate and mapped multi-kernel models with equal or unequal decay rates
+#' within a row. Equal-rate models use direct arrival sampling; unequal-rate
+#' models retain the R algorithm's thinning and rejected draws. Models with
+#' `eta`, component functions, event callbacks, custom residual distributions,
+#' or zero baselines use R. This selection is independent of `emhawkes.engine`,
+#' which controls likelihood calculations. Both paths use R's RNG in the same order.
 #' Arrival calculations use the current component state.
 #' Callbacks receive the arguments they request; callbacks with `...` continue
 #' to receive the full supported context. Requesting full histories can increase
@@ -444,7 +445,6 @@ native_simulation_reason <- function(object, mu, alpha, beta, equal) {
   if (!is.null(object@rresidual) || !is.null(object@dresidual) ||
       !is.null(object@presidual) || !is.null(object@qresidual)) return("residual_distribution")
   if (any(!is.finite(mu)) || any(mu <= 0)) return("nonpositive_baseline")
-  if (!equal) return("unequal_decays")
   if (any(!is.finite(alpha)) || any(!is.finite(beta)) || any(beta <= 0)) return("invalid_parameters")
   if (is.object(object@type_col_map) || any(vapply(object@type_col_map, is.object, logical(1))))
     return("classed_mapping")

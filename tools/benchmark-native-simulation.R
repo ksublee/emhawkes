@@ -1,9 +1,9 @@
-# Worker: LIB RAW LABEL CASE EVENTS ROUND MODE
-# MODE is timing, memory, or profile. Never run these workers concurrently.
-a <- commandArgs(TRUE); stopifnot(length(a)==7L)
+# Worker: LIB RAW LABEL CASE EVENTS ROUND MODE [CASES_FILE]
+# MODE is timing, memory, rss, or profile. Never run these workers concurrently.
+a <- commandArgs(TRUE); stopifnot(length(a) %in% c(7L,8L))
 .libPaths(c(a[1],.libPaths())); library(emhawkes)
 stopifnot(identical(normalizePath(dirname(find.package("emhawkes"))),normalizePath(a[1])))
-source("tools/simulation-profile-cases.R")
+source(if(length(a)==8L) a[8] else "tools/simulation-profile-cases.R")
 x <- simulation_profile_case(a[4]); events <- as.integer(a[5]); round <- as.integer(a[6]); mode <- a[7]
 dir.create(a[2],recursive=TRUE,showWarnings=FALSE)
 RNGkind("Mersenne-Twister","Inversion","Rejection")
@@ -27,11 +27,13 @@ if(mode=="timing") {
   lines <- readLines(file,warn=FALSE);unlink(file)
   bytes <- suppressWarnings(as.numeric(sub(" .*","",lines)))
   allocated <- sum(bytes[is.finite(bytes)])
+} else if(mode=="rss") {
+  path <- run()
 } else if(mode=="profile") {
   file <- file.path(a[2],paste(a[3],a[4],"Rprof",sep="."))
   Rprof(file,interval=.001,line.profiling=TRUE,gc.profiling=TRUE)
   path <- tryCatch(run(),finally=Rprof(NULL))
-  profile <- summaryRprof(file,lines="show")
+  profile <- summaryRprof(file)
   write.csv(profile$by.self,file.path(a[2],paste0(a[3],".profile-self.csv")))
   write.csv(profile$by.total,file.path(a[2],paste0(a[3],".profile-total.csv")))
 } else stop("Unknown worker mode")
