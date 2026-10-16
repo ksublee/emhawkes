@@ -230,7 +230,8 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
       mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimens)) else object@type_col_map
       mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
       if (is.null(eta) && is.null(object@impact) && is.null(object@rmark)) {
-        out <- hawkes_simulate_cpp(as.numeric(mu), alpha, beta, lambda_component0,
+        simulate_numeric <- if (all_rows_beta_equal) hawkes_simulate_equal_cpp else hawkes_simulate_cpp
+        out <- simulate_numeric(as.numeric(mu), alpha, beta, lambda_component0,
           mapping, N, Nc, inter_arrival, type, mark)
       } else {
         # Keep argument selection, defaults and R replacement semantics in R.

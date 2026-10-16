@@ -100,8 +100,11 @@ unsupported[[length(unsupported)+1L]] <- set_residual(new("hspec",mu=.4,alpha=.1
   qresidual=function(p,shape)qgamma(p,shape))
 trace("hawkes_simulate_cpp", where=asNamespace("emhawkes"),
   tracer=quote(stop("unsupported model reached native simulation")),print=FALSE)
+trace("hawkes_simulate_equal_cpp", where=asNamespace("emhawkes"),
+  tracer=quote(stop("unsupported model reached native simulation")),print=FALSE)
 for (h in unsupported) same(h,31,.03,715)
 untrace("hawkes_simulate_cpp",where=asNamespace("emhawkes"))
+untrace("hawkes_simulate_equal_cpp",where=asNamespace("emhawkes"))
 
 # Initial validation failures do not consume RNG; callbacks remain covered by
 # simulation-dispatch.R, including snapshots retained until after simulation.

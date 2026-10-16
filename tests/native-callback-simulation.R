@@ -180,6 +180,8 @@ trace("hawkes_simulate_callbacks_cpp", where = asNamespace("emhawkes"), print = 
   tracer = quote(.GlobalEnv$.native_callbacks <- .GlobalEnv$.native_callbacks + 1L))
 trace("hawkes_simulate_cpp", where = asNamespace("emhawkes"), print = FALSE,
   tracer = quote(.GlobalEnv$.native_numeric <- .GlobalEnv$.native_numeric + 1L))
+trace("hawkes_simulate_equal_cpp", where = asNamespace("emhawkes"), print = FALSE,
+  tracer = quote(.GlobalEnv$.native_numeric <- .GlobalEnv$.native_numeric + 1L))
 compare(models[["2 4 combined"]])
 h <- new("hspec", mu = function(param = c(level = .4)) matrix(param[1]), alpha = .03, beta = 1)
 compare(h)
@@ -201,6 +203,7 @@ for (x in unsupported) compare(x)
 stopifnot(.native_callbacks == 1L, .native_numeric == 1L)
 untrace("hawkes_simulate_callbacks_cpp", where = asNamespace("emhawkes"))
 untrace("hawkes_simulate_cpp", where = asNamespace("emhawkes"))
+untrace("hawkes_simulate_equal_cpp", where = asNamespace("emhawkes"))
 
 # Deterministic callbacks permit independent R/C++ likelihood reconstruction.
 for (id in c("1 1 current", "2 4 marked", "4 8 combined")) {

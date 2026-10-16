@@ -1,0 +1,24 @@
+R version 4.5.1 (2025-06-13 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 26200)
+
+Matrix products: default
+  LAPACK version 3.12.1
+
+locale:
+[1] C
+system code page: 65001
+
+time zone: Asia/Seoul
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+other attached packages:
+[1] emhawkes_0.9.9
+
+loaded via a namespace (and not attached):
+ [1] zoo_1.8-14       compiler_4.5.1   generics_0.1.4   miscTools_0.6-28
+ [5] sandwich_3.1-1   Rcpp_1.0.14      maxLik_1.5-2.1   grid_4.5.1
+ [9] digest_0.6.37    ps_1.9.1         lattice_0.22-7

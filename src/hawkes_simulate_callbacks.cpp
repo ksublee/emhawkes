@@ -141,9 +141,14 @@ Rcpp::List hawkes_simulate_callbacks_cpp(Rcpp::NumericVector mu, Rcpp::NumericMa
                 mark[n] = Rcpp::as<double>(value);
             }
             Nc(n, event) += mark[n];
+            // This loop accepts equal within-row rates only. Reuse the factor
+            // without changing component products, summation or callback order.
+            // Arrival uniforms are no longer needed after choosing the event.
+            for (int i = 0; i < d; ++i)
+                uniforms[i] = std::exp(-beta(i, 0) * wait);
             for (int j = 0; j < k; ++j) for (int i = 0; i < d; ++i) {
                 const int index = i + d * j;
-                decayed[index] = state[index] * std::exp(-beta(i, j) * wait);
+                decayed[index] = state[index] * uniforms[i];
                 components(n, i * k + j) = decayed[index];
             }
             for (int i = 0; i < d; ++i) lambda(n, i) = mu[i] + row_sum(decayed, i, d, k);

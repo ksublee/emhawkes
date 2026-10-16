@@ -1,0 +1,13 @@
+"version","case","events","round","mode","iterations","elapsed","cpu","allocated_bytes","peak_process_rss_bytes","output_bytes"
+"base","multi_equal",10000,0,"memory",1,NA,NA,7443792,125485056,6734496
+"native","multi_equal",10000,0,"memory",1,NA,NA,7443792,124989440,6734496
+"base","wide128",10000,0,"memory",1,NA,NA,84354208,219295744,83619424
+"native","wide128",10000,0,"memory",1,NA,NA,84354208,218615808,83619424
+"base","state_current",10000,0,"memory",1,NA,NA,19604096,146882560,6737328
+"native","state_current",10000,0,"memory",1,NA,NA,19604096,146927616,6737328
+"base","multi_equal",10000,0,"rss",1,NA,NA,NA,125136896,6734496
+"native","multi_equal",10000,0,"rss",1,NA,NA,NA,125526016,6734496
+"base","wide128",10000,0,"rss",1,NA,NA,NA,218841088,83619424
+"native","wide128",10000,0,"rss",1,NA,NA,NA,218841088,83619424
+"base","state_current",10000,0,"rss",1,NA,NA,NA,145735680,6737328
+"native","state_current",10000,0,"rss",1,NA,NA,NA,146100224,6737328
