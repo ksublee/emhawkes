@@ -65,7 +65,7 @@ Lee</h4>
             
             <h4 data-toc-skip class="date">2026-10-16</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/ksublee/emhawkes/blob/main/vignettes/example.Rmd" class="external-link"><code>vignettes/example.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ksublee/emhawkes/blob/HEAD/vignettes/example.Rmd" class="external-link"><code>vignettes/example.Rmd</code></a></small>
       <div class="d-none name"><code>example.Rmd</code></div>
     </div>
 
@@ -250,9 +250,9 @@ BFGS.</p>
 <span><span class="co">#&gt; 3  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.33641    0.03486   9.651  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1  1.16654    0.09480  12.305  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1   1.52270    0.12323  12.357  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1     0.33641    0.03505   9.597  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1  1.16654    0.10400  11.217  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1   1.52270    0.13615  11.184  &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -274,9 +274,9 @@ provide the usual estimation results.</p>
 <span><span class="co">#&gt; [1,] 0.8873272</span></span>
 <span><span class="co">#&gt; [2,] 0.4606831</span></span>
 <span><span class="co">#&gt; [3,] 1.4247076</span></span>
-<span><span class="co">#&gt; [4,] 1.9993195</span></span>
+<span><span class="co">#&gt; [4,] 1.9993196</span></span>
 <span><span class="co">#&gt; [5,] 2.2929804</span></span>
-<span><span class="co">#&gt; [6,] 2.9468134</span></span>
+<span><span class="co">#&gt; [6,] 2.9468135</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">inferred</span><span class="op">$</span><span class="va">res_process1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413</span></span></code></pre></div>
 </div>
@@ -457,27 +457,27 @@ optimization.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
-<span><span class="co">#&gt; BFGS maximization, 33 iterations</span></span>
+<span><span class="co">#&gt; BFGS maximization, 35 iterations</span></span>
 <span><span class="co">#&gt; Return code 0: successful convergence </span></span>
 <span><span class="co">#&gt; Log-Likelihood: -970.1408 </span></span>
 <span><span class="co">#&gt; 4  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.19095    0.01638  11.656  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.48217    0.07430   6.489 8.64e-11 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.98625    0.09576  10.300  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   2.07987    0.17203  12.091  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1       0.19095    0.01635   11.68  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1.1  0.48217    0.07373    6.54 6.15e-11 ***</span></span>
+<span><span class="co">#&gt; alpha1.2  0.98625    0.09484   10.40  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1.1   2.07987    0.16728   12.43  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       mu1  alpha1.1  alpha1.2   beta1.1 </span></span>
-<span><span class="co">#&gt; 0.1909541 0.4821725 0.9862541 2.0798690</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.1909541 0.4821725 0.9862542 2.0798690</span></span></code></pre></div>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">miscTools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/miscTools/man/stdEr.html" class="external-link">stdEr</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
-<span><span class="co">#&gt; 0.01638200 0.07430500 0.09575744 0.17202504</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.01635080 0.07372719 0.09484410 0.16727659</span></span></code></pre></div>
 <p>The restored matrices retain the shared parameters from this fit. The
 diagonal entries of <code>alpha</code> remain equal, as do its
 off-diagonal entries.</p>
@@ -485,8 +485,8 @@ off-diagonal entries.</p>
 <code class="sourceCode R"><span><span class="va">estimated2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="va">estimated2</span><span class="op">@</span><span class="va">alpha</span></span>
 <span><span class="co">#&gt;           [,1]      [,2]</span></span>
-<span><span class="co">#&gt; [1,] 0.4821725 0.9862541</span></span>
-<span><span class="co">#&gt; [2,] 0.9862541 0.4821725</span></span>
+<span><span class="co">#&gt; [1,] 0.4821725 0.9862542</span></span>
+<span><span class="co">#&gt; [2,] 0.9862542 0.4821725</span></span>
 <span><span class="va">estimated2</span><span class="op">@</span><span class="va">beta</span></span>
 <span><span class="co">#&gt;          [,1]     [,2]</span></span>
 <span><span class="co">#&gt; [1,] 2.079869 2.079869</span></span>
@@ -529,13 +529,13 @@ contain the cumulative values after each event.</p>
 </h2>
 <ul>
 <li>
-<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
-examples</a>: marked, state-dependent, multi-kernel and flexible
-residual models.</li>
-<li>
 <a href="https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html">Fitting
 and inference</a>: parameter settings, initial states, fitted models,
 residual diagnostics and standard errors.</li>
+<li>
+<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
+examples</a>: marked, state-dependent, multi-kernel and flexible
+residual models.</li>
 <li>
 <a href="https://ksublee.github.io/emhawkes/articles/computation.html">Computation</a>:
 likelihood engines, analytic gradients, Jacobians and performance.</li>
