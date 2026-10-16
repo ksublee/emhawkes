@@ -91,10 +91,17 @@ condition: group components by decay rate, multiply each group sum by
 its rate, and check that cumulative sums in increasing rate order are
 nonnegative.
 
-Simulation uses R. Arrival calculations use the current component state.
-Callbacks receive the arguments they request; callbacks with `...`
-continue to receive the full supported context. Requesting full
-histories can increase copying costs for long paths.
+Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
+`alpha`, and `beta`, positive baselines in every dimension, and equal
+decay rates within each row. This includes multivariate and mapped
+multi-kernel models. Models with `eta`, component functions, event
+callbacks, or custom residual distributions use R, as do zero baselines
+and unequal within-row decay rates. This selection is independent of
+`emhawkes.engine`, which controls likelihood calculations. Both paths
+use R's RNG in the same order. Arrival calculations use the current
+component state. Callbacks receive the arguments they request; callbacks
+with `...` continue to receive the full supported context. Requesting
+full histories can increase copying costs for long paths.
 
 To simulate an estimated model, use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)

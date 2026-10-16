@@ -121,13 +121,8 @@ component functions returning plain numeric matrices. Observed baselines
 and observed or sequential state-dependent impacts also use C++.
 Baselines cannot depend on latent intensities. Unsupported function
 signatures use R. Mark densities, residual-distribution models, and
-numeric inputs with custom classes use R. Simulation continues to use R.
-Its arrival calculations use the current component state rather than the
-stored history. Simulation callbacks receive their requested arguments;
-<code>...</code> retains the full supported context. Request only the
-state you need to reduce history copying on long paths. The fitting
-adapters below also select C++ automatically for supported callback
-models.</p>
+numeric inputs with custom classes use R. The fitting adapters below
+also select C++ automatically for supported callback models.</p>
 <p>The <code>emhawkes.engine</code> option controls the built-in
 likelihood:</p>
 <table class="table">
@@ -156,6 +151,21 @@ adapters receive this acceleration automatically.</td>
 </tr>
 </tbody>
 </table>
+<p>Simulation selects its path separately. <code><a href="../reference/hsim.html">hsim()</a></code> uses an
+Rcpp event loop for plain numeric <code>mu</code>, <code>alpha</code>,
+and <code>beta</code>, strictly positive baselines, and equal decay
+rates within each row. Multivariate and mapped multi-kernel models are
+supported. Models with component functions, event callbacks,
+<code>eta</code>, custom residual distributions, zero baselines, or
+unequal within-row decays continue to use R. The likelihood engine
+option does not force either simulation path.</p>
+<p>Both simulation paths preserve the R random-draw order: all baseline
+exponential candidates are generated before all excitation uniforms.
+<code>size</code> includes the initial row; a one-row numeric simulation
+consumes no randomness. Simulation callbacks retain their requested
+arguments, and <code>...</code> retains the full supported context.
+Request only the state you need to reduce history copying on long R
+paths.</p>
 <p>Setting <code>"cpp"</code> is unnecessary to accelerate models
 already supported by <code>"auto"</code>. Inspect
 <code>fit_diagnostics(fit)$computation$engine</code> for the engines
