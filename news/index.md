@@ -2,6 +2,10 @@
 
 ## emhawkes 0.9.9
 
+- Reuse each row’s exponential decay factor in native simulation when
+  its kernel decay rates agree. Preserve component arithmetic, callback
+  order, output and random draws; other simulation paths are unchanged.
+
 - Accelerate simulation for resolved parameter-only functions and, with
   positive baselines and equal within-row decay rates, numeric mark
   effects, context-free mark generators and current-component impacts.
