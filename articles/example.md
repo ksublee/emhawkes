@@ -1,4 +1,9 @@
-# Examples for the emhawkes package
+# Get started with emhawkes
+
+This vignette introduces model specification, simulation, estimation and
+a first residual check. It is included in the R package and also
+published on the website. For more models, see [Extended
+examples](https://ksublee.github.io/emhawkes/articles/extended_example.html).
 
 ## Basic Hawkes model
 
@@ -209,36 +214,13 @@ summary(mle)
 
 Use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
-to reconstruct the model with the estimated parameters. By default,
-[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
-the final Hessian and standard errors from `maxLik`. Additional
-stabilization is optional. Request `final_hessian = "stable"` to check
-numerical Hawkes curvature across scaled difference steps without
-changing the optimizer’s estimates. For this requested calculation,
-[`summary()`](https://rdrr.io/r/base/summary.html) uses the checked
-covariance and `NA` standard errors indicate failed checks.
-
-``` r
-
-mle_checked <- hfit(hspec0, inter_arrival = res1$inter_arrival,
-                    final_hessian = "stable")
-fit_diagnostics(mle_checked)[c("status", "scaled_condition", "newton_decrement")]
-#> $status
-#> [1] "ok"
-#> 
-#> $scaled_condition
-#> [1] 20.3342
-#> 
-#> $newton_decrement
-#> [1] 0.001305333
-```
-
-A stable Hessian does not establish reliable confidence intervals. Check
-convergence, score, and multiple starting values. The fit retains its
-original parameter map, including shared parameters and fixed constants
-in component functions.
+to reconstruct the estimated model and
 [`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
-retrieves the initial counts and initial intensity setting.
+to reuse its initial-state settings. The fit remains a `maxLik` object.
+[`coef()`](https://rdrr.io/r/stats/coef.html),
+[`summary()`](https://rdrr.io/r/base/summary.html), and
+[`vcov()`](https://rdrr.io/r/stats/vcov.html) provide the usual
+estimation results.
 
 ``` r
 
@@ -261,37 +243,29 @@ head(inferred$res_process1)
 #> [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413
 ```
 
-When the initial intensity was omitted, its saved setting remains `NULL`
-and is recalculated using the restored parameters. The restored
-specification also retains the mark and residual generators for
-subsequent simulation.
+### A first residual check
 
-Pass the restored model and initial-state arguments to
-[`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) to
-generate a new path. These arguments describe the start of the fitted
-observation window. They do not continue the path after its last event.
-Check the fit’s convergence and the model’s suitability for simulation
-first.
+For an ordinary Hawkes model, integrated-intensity residuals should
+follow an exponential distribution with rate 1 when the model is
+adequate. Compare their quantiles with the reference distribution.
 
 ``` r
 
-set.seed(1108)
-simulated <- do.call(hsim, c(list(object = estimated, size = 100), initial))
-head(simulated$arrival)
-#> [1] 0.000000 1.434237 1.782855 3.231614 3.984735 4.465780
+p <- ppoints(100)
+q <- quantile(inferred$res_process1, probs = p)
+plot(qexp(p), q, xlab = "Theoretical quantiles", ylab = "Sample quantiles")
+abline(0, 1, col = "blue", lty = 2)
 ```
 
-The saved fit retains the information needed to reconstruct the model
-later. Keep the observed data separately when re-evaluating the
-likelihood.
+![](example_files/figure-html/residual-check-1.png)
 
-``` r
-
-saveRDS(mle, "hawkes-fit.rds")
-saved_fit <- readRDS("hawkes-fit.rds")
-estimated <- fitted_hspec(saved_fit)
-initial <- fit_initial_state(saved_fit)
-```
+By default,
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
+the final Hessian and standard errors from `maxLik`. For saved fits, new
+simulations, fuller residual diagnostics and optional
+`final_hessian = "stable"` checks, see [Fitting and
+inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html).
+A stable Hessian alone does not establish reliable confidence intervals.
 
 ### Bivariate Hawkes model
 
@@ -569,5 +543,16 @@ have one row per input row and one column per dimension, and must agree
 with the events and initial counts. Their rows contain the cumulative
 values after each event.
 
-Also see the [extended vignette on
-GitHub](https://ksublee.github.io/emhawkes/articles/extended_example.html).
+## Next steps
+
+- [Extended
+  examples](https://ksublee.github.io/emhawkes/articles/extended_example.html):
+  marked, state-dependent, multi-kernel and flexible residual models.
+- [Fitting and
+  inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html):
+  parameter settings, initial states, fitted models, residual
+  diagnostics and standard errors.
+- [Computation](https://ksublee.github.io/emhawkes/articles/computation.html):
+  likelihood engines, analytic gradients, Jacobians and performance.
+- [Reference](https://ksublee.github.io/emhawkes/reference/index.html):
+  function arguments and return values.
