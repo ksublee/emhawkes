@@ -2,6 +2,14 @@
 
 ## emhawkes 0.9.9
 
+- Accelerate simulation for resolved parameter-only functions and, with
+  positive baselines and equal within-row decay rates, numeric mark
+  effects, context-free mark generators and current-component impacts.
+  Keep user functions and their defaults in R, synchronize RNG around
+  callbacks and errors, and preserve retained component snapshots. Other
+  event contexts and `...` retain the R path; the existing numeric fast
+  path and likelihood options are unchanged.
+
 - Extend the numeric Rcpp simulation loop to unequal within-row decay
   rates, including mapped multi-kernel models and admissible signed
   components. Preserve the R thinning algorithm, rejected random draws,

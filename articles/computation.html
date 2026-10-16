@@ -153,13 +153,25 @@ adapters receive this acceleration automatically.</td>
 </table>
 <p>Simulation selects its path separately. <code><a href="../reference/hsim.html">hsim()</a></code> uses an
 Rcpp event loop for plain numeric <code>mu</code>, <code>alpha</code>,
-and <code>beta</code> and strictly positive baselines. Multivariate and
+and <code>beta</code> and strictly positive baselines. Functions with
+exactly one <code>param</code> argument can also use this loop after the
+existing setup resolves them to plain numeric values. Multivariate and
 mapped multi-kernel models support both equal and unequal within-row
 decay rates. Unequal rates retain the R thinning algorithm, including
-rejected random draws. Models with component functions, event callbacks,
-<code>eta</code>, custom residual distributions, or zero baselines
-continue to use R. The likelihood engine option does not force either
-simulation path.</p>
+rejected random draws. The likelihood engine option does not force
+either simulation path.</p>
+<p>With equal rates within each row, simulation also supports numeric
+<code>eta</code>, mark generators requesting no event context, and
+impacts requesting only <code>lambda_component_n</code> (or no context).
+Optional parameter defaults stay in the original R functions; these
+functions must return real numeric marks or components. The event loop
+runs in C++, calls the user functions in R, and synchronizes RNG state
+around each call, including errors and nested simulations. Each impact
+receives a fresh component snapshot with its original attributes. Models
+requiring other event context, <code>...</code>, event-dependent
+baselines, custom residual distributions, zero baselines, or unequal
+rates with callbacks continue to use R. The existing numeric loop
+remains a separate compiled path.</p>
 <p>Both simulation paths preserve the R random-draw order: all baseline
 exponential candidates are generated before all excitation uniforms.
 <code>size</code> includes the initial row; a one-row numeric simulation

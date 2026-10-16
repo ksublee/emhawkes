@@ -64,12 +64,24 @@ The `emhawkes.engine` option controls the built-in likelihood:
 Simulation selects its path separately.
 [`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) uses an
 Rcpp event loop for plain numeric `mu`, `alpha`, and `beta` and strictly
-positive baselines. Multivariate and mapped multi-kernel models support
-both equal and unequal within-row decay rates. Unequal rates retain the
-R thinning algorithm, including rejected random draws. Models with
-component functions, event callbacks, `eta`, custom residual
-distributions, or zero baselines continue to use R. The likelihood
-engine option does not force either simulation path.
+positive baselines. Functions with exactly one `param` argument can also
+use this loop after the existing setup resolves them to plain numeric
+values. Multivariate and mapped multi-kernel models support both equal
+and unequal within-row decay rates. Unequal rates retain the R thinning
+algorithm, including rejected random draws. The likelihood engine option
+does not force either simulation path.
+
+With equal rates within each row, simulation also supports numeric
+`eta`, mark generators requesting no event context, and impacts
+requesting only `lambda_component_n` (or no context). Optional parameter
+defaults stay in the original R functions; these functions must return
+real numeric marks or components. The event loop runs in C++, calls the
+user functions in R, and synchronizes RNG state around each call,
+including errors and nested simulations. Each impact receives a fresh
+component snapshot with its original attributes. Models requiring other
+event context, `...`, event-dependent baselines, custom residual
+distributions, zero baselines, or unequal rates with callbacks continue
+to use R. The existing numeric loop remains a separate compiled path.
 
 Both simulation paths preserve the R random-draw order: all baseline
 exponential candidates are generated before all excitation uniforms.
