@@ -364,6 +364,14 @@ inversion is unavailable. Inspect `fit_diagnostics(fit)` for the
 requested checks. Supplied Hessians, disabled final curvature, BHHH,
 custom objectives, and residual models retain their calculation choices.
 
+For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied
+`hess` or `finalHessian`, stable curvature omits maxLik’s separate final
+Hessian. Inspect
+`fit_diagnostics(fit)$computation$hessian$maxLik_skipped`; the omitted
+matrix is not stored in `original_hessian`. Use `finalHessian = TRUE` to
+retain that extra calculation. The default `final_hessian = "maxLik"` is
+unchanged.
+
 A stable Hessian does not guarantee reliable Wald intervals. Nearby
 kernel decay rates, weak excitation, boundaries, short samples, and
 nonsmooth callbacks can still make inference unreliable. The [Hawkes

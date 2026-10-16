@@ -42,9 +42,13 @@ from a recalculated score in stable curvature checks.
 `"attribute"`, `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian
 list also retains the requested `final_hessian` choice and any
 `finalHessian` override. Its `reason` explains a skipped stabilization
-or unavailable result. If both a derivative function and likelihood
-derivative attributes were supplied, the source is `NA` with a reason
-because precedence depends on maxLik.
+or unavailable result. `maxLik_skipped` records whether stable curvature
+omitted maxLik's separate final Hessian. In that case `original_hessian`
+is `NULL`. Numerical stable checks otherwise retain the matrix returned
+by maxLik. Older computation records may omit `maxLik_skipped`. If both
+a derivative function and likelihood derivative attributes were
+supplied, the source is `NA` with a reason because precedence depends on
+maxLik.
 
 Stable curvature records `curvature_source = "analytic_score"` when it
 differentiates the built-in analytic score, including with a numerical
@@ -130,6 +134,9 @@ fit_diagnostics(fit)$computation
 #> 
 #> $hessian$reason
 #> NULL
+#> 
+#> $hessian$maxLik_skipped
+#> [1] TRUE
 #> 
 #> 
 ```

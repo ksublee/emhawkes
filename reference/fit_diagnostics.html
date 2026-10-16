@@ -79,7 +79,11 @@ score in stable curvature checks. <code>computation$hessian$used</code> is
 <code>"user"</code>, <code>"attribute"</code>,
 <code>"BHHH"</code>, <code>"disabled"</code> or <code>"unavailable"</code>. The Hessian list also retains the
 requested <code>final_hessian</code> choice and any <code>finalHessian</code> override. Its <code>reason</code>
-explains a skipped stabilization or unavailable result. If both a derivative
+explains a skipped stabilization or unavailable result. <code>maxLik_skipped</code> records
+whether stable curvature omitted maxLik's separate final Hessian. In that case
+<code>original_hessian</code> is <code>NULL</code>. Numerical stable checks otherwise retain the
+matrix returned by maxLik.
+Older computation records may omit <code>maxLik_skipped</code>. If both a derivative
 function and likelihood derivative attributes were supplied, the source is
 <code>NA</code> with a reason because precedence depends on maxLik.</p>
 <p>Stable curvature records <code>curvature_source = "analytic_score"</code> when it
@@ -158,6 +162,9 @@ to run them. Earlier fits without these checks also have status <code>"not_check
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $hessian$reason</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $hessian$maxLik_skipped</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

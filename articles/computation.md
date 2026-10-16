@@ -132,6 +132,9 @@ calculation$hessian # Requested and applied final-Hessian methods.
 #> 
 #> $reason
 #> NULL
+#> 
+#> $maxLik_skipped
+#> [1] FALSE
 ```
 
 An auto fit can record both `"cpp"` and `"r"` if it switches during
@@ -148,6 +151,14 @@ same component `jacobian` list as for analytic optimization to enable
 score-based curvature for function models.
 `fit_diagnostics(fit)$score_fallback_reason` explains a failed score
 attempt. The explicit `r` engine uses likelihood differences.
+
+For unconstrained BFGS, CG, Nelder-Mead, and SANN fits, stable curvature
+skips maxLik’s separate final Hessian when neither `hess` nor
+`finalHessian` is supplied. `computation$hessian$maxLik_skipped` records
+this choice. The stable checks and standard errors are unchanged;
+`original_hessian` is `NULL` when the extra pass is omitted. Set
+`finalHessian = TRUE` to retain that pass. Newton methods, constrained
+fits, and the default `final_hessian = "maxLik"` retain their handling.
 
 ## Analytic gradients
 

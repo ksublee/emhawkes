@@ -386,6 +386,13 @@ the checked covariance; free-parameter standard errors are
 <code>fit_diagnostics(fit)</code> for the requested checks. Supplied
 Hessians, disabled final curvature, BHHH, custom objectives, and
 residual models retain their calculation choices.</p>
+<p>For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without
+supplied <code>hess</code> or <code>finalHessian</code>, stable
+curvature omits maxLik’s separate final Hessian. Inspect
+<code>fit_diagnostics(fit)$computation$hessian$maxLik_skipped</code>;
+the omitted matrix is not stored in <code>original_hessian</code>. Use
+<code>finalHessian = TRUE</code> to retain that extra calculation. The
+default <code>final_hessian = "maxLik"</code> is unchanged.</p>
 <p>A stable Hessian does not guarantee reliable Wald intervals. Nearby
 kernel decay rates, weak excitation, boundaries, short samples, and
 nonsmooth callbacks can still make inference unreliable. The <a href="https://github.com/ksublee/emhawkes/blob/main/tools/hawkes-standard-errors.md" class="external-link">Hawkes

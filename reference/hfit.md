@@ -167,9 +167,15 @@ hfit(
   likelihood differences. Failed score evaluations also fall back to
   likelihood differences; inspect
   [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
-  for the reason. User-supplied `hess`, `finalHessian = FALSE`, BHHH
-  curvature, custom likelihoods, and residual-distribution likelihoods
-  retain their calculation choices.
+  for the reason. For unconstrained BFGS, CG, Nelder-Mead, and SANN fits
+  without supplied `hess` or an explicit `finalHessian` override, skip
+  maxLik's separate final Hessian. Set `finalHessian = TRUE` to retain
+  that extra calculation. Newton methods and constrained fits retain it.
+  Inspect
+  [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
+  for the recorded choice. User-supplied `hess`, `finalHessian = FALSE`,
+  BHHH curvature, custom likelihoods, and residual-distribution
+  likelihoods retain their calculation choices.
 
 - gradient:
 

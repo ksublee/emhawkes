@@ -213,7 +213,10 @@ calculations.</p>
 <span><span class="co">#&gt; [1] "maxLik_numeric"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $reason</span></span>
-<span><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span><span class="co">#&gt; NULL</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $maxLik_skipped</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 <p>An auto fit can record both <code>"cpp"</code> and <code>"r"</code>
 if it switches during estimation. The record includes final curvature
 evaluations and survives <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code>. Older fits without this
@@ -230,6 +233,15 @@ optimization to enable score-based curvature for function models.
 <code>fit_diagnostics(fit)$score_fallback_reason</code> explains a
 failed score attempt. The explicit <code>r</code> engine uses likelihood
 differences.</p>
+<p>For unconstrained BFGS, CG, Nelder-Mead, and SANN fits, stable
+curvature skips maxLik’s separate final Hessian when neither
+<code>hess</code> nor <code>finalHessian</code> is supplied.
+<code>computation$hessian$maxLik_skipped</code> records this choice. The
+stable checks and standard errors are unchanged;
+<code>original_hessian</code> is <code>NULL</code> when the extra pass
+is omitted. Set <code>finalHessian = TRUE</code> to retain that pass.
+Newton methods, constrained fits, and the default
+<code>final_hessian = "maxLik"</code> retain their handling.</p>
 </div>
 <div class="section level2">
 <h2 id="analytic-gradients">Analytic gradients<a class="anchor" aria-label="anchor" href="#analytic-gradients"></a>
