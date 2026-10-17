@@ -54,7 +54,9 @@ Pass `stability_check = TRUE` to `new("hspec", ...)` to check the
 spectral radius for constant, nonnegative Hawkes kernels without
 state-dependent, mark-dependent, or residual-distribution effects. For
 other specifications, the constructor reports that this stability check
-is unavailable.
+is unavailable. The `initialize` method converts numeric components to
+matrices, infers dimensions and validates the specification. The `show`
+method displays the model dimension and its components.
 
 ## Slots
 

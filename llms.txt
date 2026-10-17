@@ -96,6 +96,8 @@ identifies the documented package.
 - [`hsim()`](https://ksublee.github.io/emhawkes/reference/hsim.md) :
   Simulate an Exponential Hawkes Process
 - [`hspec-class`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
+  [`initialize,hspec-method`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
+  [`show,hspec-method`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
   : An S4 Class Representing an Exponential Marked Hawkes Model
 - [`hvol()`](https://ksublee.github.io/emhawkes/reference/hvol.md) :
   Compute Hawkes volatility

@@ -83,7 +83,10 @@ and updates named defaults that match estimated coefficient names.</p>
 <p>Pass <code>stability_check = TRUE</code> to <code>new("hspec", ...)</code> to check the spectral
 radius for constant, nonnegative Hawkes kernels without state-dependent,
 mark-dependent, or residual-distribution effects. For other specifications,
-the constructor reports that this stability check is unavailable.</p>
+the constructor reports that this stability check is unavailable.
+The <code>initialize</code> method converts numeric components to matrices, infers
+dimensions and validates the specification. The <code>show</code> method displays
+the model dimension and its components.</p>
     </div>
     <div class="section level2">
     <h2 id="slots">Slots<a class="anchor" aria-label="anchor" href="#slots"></a></h2>

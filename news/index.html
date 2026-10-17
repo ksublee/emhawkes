@@ -59,7 +59,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="corrections-and-diagnostics-1-0-0">Corrections and diagnostics<a class="anchor" aria-label="anchor" href="#corrections-and-diagnostics-1-0-0"></a></h3>
-<ul><li>Validate observations, initial components, decay rates, mappings, counting processes and callback parameters consistently. Correct multi-kernel event types, univariate multi-kernel likelihoods and constant-model stability checks. Preserve admissible signed components and stop when no further event occurs.</li>
+<ul><li>Register S4 initialization and display methods through the package namespace. Preserve construction and saved-fit restoration in sessions where methods is installed but not attached, including isolated stats-optimizer sessions.</li>
+<li>Validate observations, initial components, decay rates, mappings, counting processes and callback parameters consistently. Correct multi-kernel event types, univariate multi-kernel likelihoods and constant-model stability checks. Preserve admissible signed components and stop when no further event occurs.</li>
 <li>Correct event-side baseline recording and return empty residuals for event types with fewer than two events. Use stable exponential integrals and log-scale residual distributions. Correct trapezoid-exponential generation and add log/tail distribution options. Paths can change where event selection or random generation was corrected.</li>
 <li>Correct <code><a href="../reference/expected_tau.html">expected_tau()</a></code> for widely separated time scales and a positive probability of no further event. Correct mark handling in <code><a href="../reference/hvol.html">hvol()</a></code> and reject models outside the bivariate moment formula’s scope.</li>
 <li>Preserve display options when printing paths, honor zero displayed rows and retain single-row matrix formatting. Make initialization, callback, dimension, early-stopping and unavailable-curvature messages actionable.</li>
