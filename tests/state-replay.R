@@ -33,7 +33,7 @@ for (initial in list(0, NULL)) for (infer in c(FALSE, TRUE)) for (engine in c("r
   mu_calls <- integer(); native_calls <- 0L
   value <- evaluate(engine, h, dt, infer, initial, type = types, N0 = c(2, 3))
   close(as.numeric(if (infer) value$loglikelihood else value), expected)
-  stopifnot(identical(as.integer(mu_calls), c(1L, if (is.null(initial)) 1L, seq.int(2L, length(dt) + 1L))))
+  stopifnot(identical(as.integer(mu_calls), c(1L, seq.int(2L, length(dt) + 1L))))
   stopifnot(native_calls == if (engine == "r") 0L else 1L)
   if (infer) {
     close(unname(value$lambda), unname(pre))

@@ -159,10 +159,6 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
     mu_arguments <- if (observed_mu) standalone_baseline_arguments(object, observation, values) else NULL
     mu0 <- if (observed_mu) validate_standalone_mu(do.call(values$mu, mu_arguments), dimensions) else values$mu
     if (is.null(lambda_component0)) {
-      if (length(object@type_col_map)) stop_missing_initial(dimensions, ncol(values$beta))
-      if (show_initial_message) {
-        message_automatic_initial()
-      }
       lambda_component0 <- get_lambda0(object,
         mark = observation$mark, type = observation$type,
         inter_arrival = observation$inter_arrival, N = observation$N, Nc = observation$Nc,
@@ -371,10 +367,8 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
                                     dim(plan$start$beta), derivatives)
   dimensions <- object@dimens
   kernels <- ncol(plan$start$beta)
-  initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
-  if (is.null(initial) && length(object@type_col_map)) {
-    stop_missing_initial(dimensions, kernels)
-  }
+  initial <- select_hawkes_initial(object, lambda_component0, kernels)$value
+  mean_mapping <- object@type_col_map
   mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
   mapping <- lapply(mapping, function(x) as.integer(x) - 1L)
   types <- observation$type
@@ -395,28 +389,9 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
         any(values$beta <= 0) || any(values$mu < 0)) return(invalid)
     current_initial <- initial
     if (is.null(current_initial)) {
-      if (dimensions == 1L) {
-        gap <- values$beta[1] - values$alpha[1]
-        current_initial <- matrix((values$mu[1] * values$beta[1] / gap - values$mu[1]) / 2)
-        if (!all(is.finite(current_initial))) {
-          if (!derivatives) return(invalid)
-          stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
-        }
-      } else {
-        branching <- values$alpha / values$beta
-        inverse <- tryCatch(solve(diag(dimensions) - branching), error = function(e) NULL)
-        if (is.null(inverse)) {
-          if (derivatives) {
-            stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
-          }
-          # Match get_lambda0() when its multivariate solve is singular.
-          warn_zero_initial()
-          current_initial <- matrix(0, dimensions, dimensions)
-        } else {
-          stationary <- inverse %*% values$mu
-          current_initial <- matrix(rep(stationary, dimensions), nrow = dimensions, byrow = TRUE) * values$alpha / values$beta
-        }
-      }
+      mean <- hawkes_mean_state(values, mean_mapping)
+      if (is.null(mean)) return(invalid)
+      current_initial <- mean$value
     }
     # Finite component values can still overflow the automatic initializer.
     if (any(!is.finite(current_initial))) return(invalid)
@@ -445,20 +420,14 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
     }
     score <- result$score
     if (is.null(initial) && is.finite(result$loglikelihood)) {
-      if (dimensions == 1L) {
-        q <- score$initial[1]
-        score$mu <- score$mu + q * values$alpha[1] / (2 * gap)
-        score$alpha <- score$alpha + q * values$mu[1] * values$beta[1] / (2 * gap^2)
-        score$beta <- score$beta - q * values$mu[1] * values$alpha[1] / (2 * gap^2)
-      } else {
-        # C_ij = (alpha_ij / beta_ij) * stationary_j. This adjoint applies
-        # the initial-state chain rule without a components-by-parameters array.
-        w <- as.vector(crossprod(inverse, colSums(score$initial * branching)))
-        g_branching <- sweep(score$initial + w, 2, as.vector(stationary), "*")
-        score$mu <- score$mu + w
-        score$alpha <- score$alpha + g_branching / values$beta
-        score$beta <- score$beta - g_branching * branching / values$beta
-      }
+      # Adjoint through C_ik = (alpha_ik / beta_ik) * sum_j M_kj m_j.
+      source_score <- as.vector(crossprod(mean$incidence,
+        colSums(score$initial * mean$branching)))
+      w <- as.vector(crossprod(mean$inverse, source_score))
+      g_branching <- sweep(score$initial + w, 2, mean$rates, "*")
+      score$mu <- score$mu + w
+      score$alpha <- score$alpha + g_branching / values$beta
+      score$beta <- score$beta - g_branching * mean$branching / values$beta
     }
     gradient <- stats::setNames(numeric(length(param)), parameter_names)
     for (name in c("mu", "alpha", "beta", "eta")) {

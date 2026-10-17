@@ -12,9 +12,15 @@ NULL
 #' @param N Optional cumulative event-count matrix, with one row per input row
 #' and one column per event type. Each row contains counts after that event.
 #' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
 #' A finite scalar is expanded to every kernel component. A matrix must match
-#' the shape of `alpha` and `beta`. Supply this argument when `type_col_map` is set.
+#' the shape of `alpha` and `beta`. `"auto"` (also `NULL`) selects unconditional
+#' component means for supported stable constant numeric linear models, and zero
+#' otherwise. `"mean"` requires supported finite means; `"zero"` fixes zero
+#' components. The selected rule is reported once.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
 #' @param N0 Initial event counts: a finite scalar or one value per event type.
 #' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
 #' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
@@ -88,7 +94,7 @@ setMethod(
   f="logLik",
   signature(object="hspec"),
   function(object, inter_arrival, type = NULL, mark = NULL, N = NULL, Nc = NULL,
-           N0 = NULL, Nc0 = NULL, lambda_component0 = NULL,
+           N0 = NULL, Nc0 = NULL, lambda_component0 = "auto",
            infer = FALSE, ...){
 
     additional_argument <- list(...)
@@ -102,8 +108,13 @@ setMethod(
 
     callbacks <- model_callback_plans(object)
     observation <- normalize_observation(object, inter_arrival, type, mark, N, Nc, N0, Nc0)
-    loglik_hspec(object, observation, lambda_component0, infer, callbacks,
-                 show_initial_message = !("showWarning" %in% names(additional_argument)))
+    # The selected engine resolves function-valued beta once. A zero scalar or
+    # explicit state can be normalized there without an extra callback/RNG draw.
+    kernels <- if (is.function(object@beta)) NULL else ncol(object@beta)
+    initialization <- select_hawkes_initial(object, lambda_component0, kernels)
+    if (!("showWarning" %in% names(additional_argument))) message_hawkes_initial(initialization)
+    loglik_hspec(object, observation, initialization$value, infer, callbacks,
+                 show_initial_message = FALSE)
   }
 )
 
@@ -189,14 +200,6 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
 
     # ---- Lambda component0 check & setup ----
     if (is.null(lambda_component0)) {
-      if (length(object@type_col_map) > 0) {
-        stop_missing_initial(object@dimens, ncol(beta))
-      }
-
-      if (show_initial_message) {
-        message_automatic_initial()
-      }
-
       lambda_component0 <- get_lambda0(
         object,
         mark = mark,

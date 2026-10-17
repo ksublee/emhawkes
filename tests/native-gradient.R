@@ -150,9 +150,11 @@ check_mapped <- function(object, dt, type = NULL, mark = NULL, initial = NULL) {
       values <- restore(map, param)
       init <- initial
       if (is.null(init)) {
-        if (object@dimens == 1L) {
+        if (!is.null(object@eta) && any(object@eta != 0)) {
+          init <- matrix(0, nrow(values$beta), ncol(values$beta))
+        } else if (object@dimens == 1L) {
           init <- matrix(values$mu[1] * values$alpha[1] /
-                           (2 * (values$beta[1] - values$alpha[1])))
+                           (values$beta[1] - values$alpha[1]))
         } else {
           branching <- values$alpha / values$beta
           stationary <- as.vector(solve(diag(object@dimens) - branching, values$mu))
@@ -262,7 +264,7 @@ fails(suppressMessages(hfit(residual, dt, lambda_component0 = 0,
                             gradient = "analytic")), "residual|analytic|gradient")
 singular <- new("hspec", mu = c(.4, .5), alpha = diag(2), beta = matrix(1, 2, 2))
 fails(suppressMessages(hfit(singular, c(0, .3, .2), type = c(0, 1, 2),
-                            gradient = "analytic")), "lambda_component0|singular")
+                            lambda_component0 = "mean", gradient = "analytic")), "Mean initialization is unavailable")
 options(previous)
 
 }

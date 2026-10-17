@@ -13,7 +13,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -38,7 +38,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -70,10 +70,18 @@ and one column per event type. Each row contains counts after that event.}
 
 \item{Nc}{Optional cumulative mark-total matrix with the same shape as \code{N}.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
 A finite scalar is expanded to every kernel component. A matrix must match
-the shape of \code{alpha} and \code{beta}. For the built-in likelihood, supply this
-argument when \code{type_col_map} is set.}
+the shape of \code{alpha} and \code{beta}. For the built-in likelihood, \code{"auto"}
+(also \code{NULL}) selects unconditional component means for supported stable
+constant numeric linear models, and zero otherwise. \code{"mean"} requires supported
+finite means; \code{"zero"} fixes zero components. Selection is reported once
+and held throughout optimization. Mean values vary with fitted parameters;
+invalid mean proposals have likelihood \code{-Inf}, without switching to zero.
+For \code{mylogLik}, \code{"auto"} passes \code{NULL} without automatic initialization.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
 \item{N0}{Initial event counts: a finite scalar or one value per event type.
 If omitted, use the first row of supplied \code{N}, or zero when \code{N} is absent.}
@@ -220,9 +228,9 @@ for actual engines and fallback reasons. A custom \code{mylogLik} bypasses this
 selection. Standalone \code{\link[=logLik]{logLik()}} supports fewer C++ models than \code{hfit()}.
 With \code{gradient = "analytic"}, Rcpp computes the likelihood and its gradient
 using native recursions and cached results at the same parameter vector. Matrix scores are
-summed according to the saved parameter map. Automatic initial states include
-their parameter derivatives; a singular automatic initialization requires an
-explicit \code{lambda_component0}. Observed baselines and current-component impacts
+summed according to the saved parameter map. Mean initial states include
+their parameter derivatives; zero and explicit initial components are fixed.
+Observed baselines and current-component impacts
 are supported with Jacobians as described below. Full intensity histories,
 mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.

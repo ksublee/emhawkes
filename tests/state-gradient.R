@@ -189,10 +189,11 @@ changing@impact <- function(param=c(q=.02),lambda_component_n) {
 }
 f <- objective(changing,normalize(changing,dt),.1,build(changing,TRUE),jacobian=uj)
 fails(f$gradient(build(changing,TRUE)$start),'changed between value and gradient')
-# A singular automatic initializer requires explicit initial components.
+# An unsupported mean uses fixed zero components, including singular core starts.
 singular <- u; singular@alpha <- singular@beta
-fails(objective(singular, normalize(singular, dt), NULL, build(singular,TRUE),
-  jacobian=uj)$loglik(build(singular,TRUE)$start), 'singular automatic')
+auto_zero <- objective(singular, normalize(singular, dt), NULL, build(singular,TRUE), jacobian=uj)
+fixed_zero <- objective(singular, normalize(singular, dt), 0, build(singular,TRUE), jacobian=uj)
+close(auto_zero$loglik(build(singular,TRUE)$start), fixed_zero$loglik(build(singular,TRUE)$start), 0)
 # The nested derivative contract is retained in a fitted current-state model.
 state_fit <- suppressMessages(hfit(u, dt, lambda_component0=.1, method='NR',
   fixed=c(FALSE,TRUE,TRUE,TRUE), gradient='analytic', jacobian=uj))

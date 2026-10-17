@@ -36,7 +36,7 @@ close(as.matrix(simulated), as.matrix(manual))
 # Omitted intensity remains a parameter-dependent initialization policy.
 h <- new("hspec", mu = .3, alpha = .2, beta = 1)
 fit <- fit_quiet(h, dt, fixed = c(FALSE, TRUE, TRUE))
-stopifnot(is.null(fit_initial_state(fit)$lambda_component0))
+stopifnot(identical(fit_initial_state(fit)$lambda_component0, "mean"))
 close(as.numeric(logLik(fit)), as.numeric(suppressMessages(do.call(logLik,
   c(list(object = fitted_hspec(fit), inter_arrival = dt), fit_initial_state(fit))))))
 

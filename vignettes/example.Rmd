@@ -61,7 +61,7 @@ $$
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
 $$
 
-If `lambda_component0` is omitted, the function determines the initial intensity components internally.
+The default `lambda_component0 = "auto"` uses unconditional component means for supported stable constant numeric linear models, and zero components otherwise. The selected rule is reported in a message; zero initialization recommends supplying components explicitly. Use `"mean"` to require supported finite means, `"zero"` to start from baseline intensities, or a scalar/matrix to specify the components directly. Mean initialization is deterministic and does not sample a stationary initial state.
 For a sufficiently long simulation of a stable model, the effect of the initial intensity diminishes over time.
 The default initial value of the counting process, `N0`, is zero.
 

@@ -96,8 +96,10 @@ full_history <- function(values, initial) {
   }
   result
 }
-fails(objective(model, obs, NULL, build_map(model, TRUE), derivatives = FALSE),
-  "lambda_component0 is required when type_col_map is supplied.*scalar.*2 x 3")
+zero_objective <- objective(model, obs, NULL, build_map(model, TRUE), derivatives = FALSE)
+explicit_zero <- objective(model, obs, 0, build_map(model, TRUE), derivatives = FALSE)
+close(zero_objective$loglik(build_map(model, TRUE)$start),
+      explicit_zero$loglik(build_map(model, TRUE)$start), 0)
 for (reduced in c(TRUE, FALSE)) {
   map <- build_map(model, reduced)
   fun <- objective(model, obs, initial, map, derivatives = FALSE)

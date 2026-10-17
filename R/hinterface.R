@@ -116,23 +116,6 @@ required_count_paths <- function(object, extra = NULL) {
   }), use.names = FALSE))
 }
 
-# Shared diagnostics keep the R, native and fitting entry points consistent.
-stop_missing_initial <- function(dimens, kernels) {
-  stop("lambda_component0 is required when type_col_map is supplied. ",
-       "Supply a scalar (e.g. 0 for zero initial excitation) or a ",
-       dimens, " x ", kernels, " matrix.", call. = FALSE)
-}
-
-message_automatic_initial <- function() {
-  message("lambda_component0 was not supplied; automatic initial excitation will be used.")
-}
-
-warn_zero_initial <- function() {
-  warning("Automatic initial-state calculation could not invert diag(dimens) - alpha / beta; ",
-          "using zero initial excitation. Supply lambda_component0 to set it explicitly.",
-          call. = FALSE)
-}
-
 normalize_count_initial <- function(value, dimens, name) {
   if (is.null(value)) return(rep(0, dimens))
   if (!is.numeric(value) || !(length(value) %in% c(1L, dimens)) || any(!is.finite(value))) {

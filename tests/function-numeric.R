@@ -142,14 +142,15 @@ point <- singular_map$start
 point["a"] <- 1
 close(suppressWarnings(singular_fun$loglik(point)), reference(singular, singular_map, point, NULL), 1e-12)
 
-# A singular univariate automatic state is an invalid numeric proposal.
+# Function-valued models have a fixed zero initial state, even at alpha = beta.
 unary <- new("hspec", mu = function(param = c(m = .4)) matrix(param),
   alpha = function(param = c(a = .5)) matrix(param), beta = 1)
 unary_map <- map_for(unary, TRUE)
 unary_point <- unary_map$start
 unary_point["a"] <- 1
 unary_fun <- objective(unary, normalize(unary, dt), NULL, unary_map, derivatives = FALSE)
-stopifnot(identical(as.numeric(unary_fun$loglik(unary_point)), -Inf))
+unary_zero <- objective(unary, normalize(unary, dt), 0, unary_map, derivatives = FALSE)
+close(unary_fun$loglik(unary_point), unary_zero$loglik(unary_point), 0)
 unary_explicit <- objective(unary, normalize(unary, dt), .1, unary_map, derivatives = FALSE)
 stopifnot(is.finite(unary_explicit$loglik(unary_point)))
 

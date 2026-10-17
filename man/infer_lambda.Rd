@@ -45,7 +45,8 @@ infer_lambda(
 
 \item{Nc}{Optional cumulative mark-total matrix consistent with \code{type} and \code{mark}.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
 A scalar is expanded to every kernel component. A matrix must match the
 shape of \code{alpha} and \code{beta}.}
 

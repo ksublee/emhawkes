@@ -30,7 +30,8 @@ Baselines are finite and nonnegative; decay rates are finite and positive.
 Use \code{type_col_map} when \code{K} differs from \code{D}. Its \code{D} entries contain nonempty
 vectors of distinct, one-based kernel column indices. Intensity rows identify
 event types; the mapping selects columns updated after each event. Supply
-\code{lambda_component0} for simulation and likelihood evaluation when a mapping is set.
+\code{lambda_component0} to specify initial intensity components explicitly;
+automatic mean or zero initialization also supports mapped kernels.
 
 Functions whose sole argument is \code{param} can reparameterize numeric components.
 A state-dependent \code{mu} or \code{impact} function declares the event context it needs.

@@ -13,22 +13,16 @@ text <- function(conditions) vapply(conditions, conditionMessage, character(1))
 has <- function(string, ...) all(vapply(list(...), grepl, logical(1), x = string, fixed = TRUE))
 old <- options(emhawkes.engine = "auto")
 
-# Missing mapped initialization has the same remedy at every public entry point,
-# fails before RNG draws, and omits internal helper calls from the condition.
+# Mapped numeric models now support mean initialization before RNG draws.
 h <- new("hspec", mu = c(.2, .3), alpha = matrix(.01, 2, 4), beta = matrix(1, 2, 4),
   type_col_map = list(c(1, 3), c(2, 4)))
 set.seed(508)
 rng <- .Random.seed
 for (engine in c("r", "cpp")) {
   options(emhawkes.engine = engine)
-  for (run in list(function() hsim(h, 3),
-      function() logLik(h, c(0, .2), c(0, 1)),
-      function() hfit(h, c(0, .2), c(0, 1), iterlim = 0))) {
-    out <- capture_conditions(run())
-    stopifnot(inherits(out$value, "error"), is.null(conditionCall(out$value)),
-      has(conditionMessage(out$value), "type_col_map", "lambda_component0", "scalar", "2 x 4"),
-      identical(rng, .Random.seed), !length(out$messages), !length(out$warnings))
-  }
+  out <- capture_conditions(hsim(h, 1))
+  stopifnot(!inherits(out$value, "error"), identical(rng, .Random.seed),
+    length(out$messages) == 1L, has(text(out$messages), "auto -> mean"), !length(out$warnings))
 }
 out <- capture_conditions(logLik(h, c(0, .2), c(0, 1), lambda_component0 = matrix(.1, 4, 2)))
 stopifnot(has(conditionMessage(out$value), "2 x 4", "received 4 x 2"))
@@ -46,7 +40,7 @@ stopifnot(length(out$warnings) == 1L, has(text(out$warnings), "spectral radius =
 out <- capture_conditions(new("hspec", mu = .2, alpha = .1, beta = 1, eta = .01, stability_check = TRUE))
 stopifnot(length(out$warnings) == 1L, has(text(out$warnings), "Stability was not checked"))
 
-# The singular-initializer warning must describe the zero state actually used.
+# Singular starting parameters select zero and explain the actual state once.
 singular <- new("hspec", mu = c(.2, .3), alpha = diag(2), beta = matrix(1, 2, 2))
 args <- list(inter_arrival = c(0, .2, .3), type = c(0, 1, 2), infer = TRUE)
 for (engine in c("r", "cpp")) {
@@ -54,8 +48,8 @@ for (engine in c("r", "cpp")) {
   automatic <- capture_conditions(do.call(logLik, c(list(object = singular), args)))
   explicit <- do.call(logLik, c(list(object = singular, lambda_component0 = 0), args))
   stopifnot(identical(automatic$value, explicit), length(automatic$messages) == 1L,
-    length(automatic$warnings) == 1L, is.null(conditionCall(automatic$warnings[[1]])),
-    has(text(automatic$warnings), "zero initial excitation", "lambda_component0"))
+    !length(automatic$warnings),
+    has(text(automatic$messages), "auto -> zero", "lambda_component0", "explicitly is recommended"))
 }
 functions <- singular
 functions@alpha <- function(param = c(a = 1)) diag(param[1], 2)
@@ -64,7 +58,7 @@ observation <- emhawkes:::normalize_observation(functions, args$inter_arrival, a
 objective <- emhawkes:::make_hawkes_objective(functions, observation, NULL, map, FALSE,
   derivatives = FALSE)
 out <- capture_conditions(objective$loglik(map$start))
-stopifnot(length(out$warnings) == 1L, has(text(out$warnings), "zero initial excitation"),
+stopifnot(!length(out$warnings),
   identical(as.numeric(out$value), as.numeric(explicit$loglikelihood)))
 
 # Verbose custom or invalid fits must not claim automatic Hawkes initialization.
@@ -76,7 +70,7 @@ out <- capture_conditions(hfit(poisson, c(0, -1), verbose = TRUE))
 stopifnot(inherits(out$value, "error"), !length(out$messages))
 printed <- capture.output(out <- capture_conditions(hfit(poisson, c(0, .2, .3), verbose = TRUE,
   fixed = c(FALSE, TRUE, TRUE), iterlim = 0)))
-stopifnot(length(out$messages) == 1L, has(text(out$messages), "automatic initial excitation"))
+stopifnot(length(out$messages) == 1L, has(text(out$messages), "auto -> mean"))
 
 # Deprecations keep their warning class and point to the replacement API.
 out <- capture_conditions(hsim(poisson, 1, lambda0 = 0))

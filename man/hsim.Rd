@@ -9,7 +9,7 @@
 hsim(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -19,7 +19,7 @@ hsim(
 \S4method{hsim}{hspec}(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -32,11 +32,18 @@ hsim(
 \item{size}{Positive integer giving the number of output rows, including the
 initial state. At most \code{size - 1} events are simulated.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
 A finite scalar is expanded to every kernel component. A matrix must match
-the shape of \code{alpha} and \code{beta}. Supply this argument when \code{type_col_map} is set.
+the shape of \code{alpha} and \code{beta}. The default \code{"auto"} (also \code{NULL}) uses
+unconditional component means for supported stable constant numeric linear models,
+and zero components otherwise. \code{"mean"} requires supported finite means;
+\code{"zero"} starts from baseline intensities. Selection is reported once, and
+zero initialization recommends supplying components explicitly.
 Other size adjustments are
-deprecated and produce a warning.}
+deprecated and produce a warning.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
 \item{N0}{Initial event counts: a finite scalar or one value per event type.
 The default is zero.}
@@ -44,7 +51,8 @@ The default is zero.}
 \item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
 The default is zero.}
 
-\item{verbose}{Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.}
+\item{verbose}{Logical. Controls additional progress output; initialization
+selection is reported independently. Default is \code{FALSE}.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

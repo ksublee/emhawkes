@@ -171,10 +171,23 @@ run_stats_fit <- function(fn, start, grad, hess, constraints, method, additional
     result <- numeric(length(x))
     for (j in seq_along(x)) {
       above <- below <- x
-      above[j] <- above[j] + step[j]; below[j] <- below[j] - step[j]
+      h <- step[j]
+      if (constrained) {
+        # constrOptim's barrier is defined strictly inside ui %*% x > ci.
+        # Keep central differences there too, including near active boundaries.
+        direction <- abs(linear$ui[, j])
+        moving <- direction > 0
+        if (any(moving)) {
+          slack <- drop(linear$ui %*% x) - linear$ci
+          h <- min(h, .5 * min(slack[moving] / direction[moving]))
+        }
+      }
+      above[j] <- above[j] + h; below[j] <- below[j] - h
       # Stay inside box bounds when numerical derivatives are needed at a bound.
       above[j] <- min(above[j], upper[active][j])
       below[j] <- max(below[j], lower[active][j])
+      if (above[j] == below[j])
+        stop("Numerical differentiation has no representable feasible step; supply an analytic gradient or rescale the parameters.", call. = FALSE)
       result[j] <- (objective(above) - objective(below)) / (above[j] - below[j])
     }
     result

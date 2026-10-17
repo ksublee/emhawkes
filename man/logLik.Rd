@@ -15,7 +15,7 @@
   Nc = NULL,
   N0 = NULL,
   Nc0 = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   infer = FALSE,
   ...
 )
@@ -40,9 +40,15 @@ If omitted, use the first row of supplied \code{N}, or zero when \code{N} is abs
 \item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
 If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
 A finite scalar is expanded to every kernel component. A matrix must match
-the shape of \code{alpha} and \code{beta}. Supply this argument when \code{type_col_map} is set.}
+the shape of \code{alpha} and \code{beta}. \code{"auto"} (also \code{NULL}) selects unconditional
+component means for supported stable constant numeric linear models, and zero
+otherwise. \code{"mean"} requires supported finite means; \code{"zero"} fixes zero
+components. The selected rule is reported once.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
 \item{infer}{Logical; if \code{TRUE}, return intensity paths and residual processes
 together with the likelihood.}

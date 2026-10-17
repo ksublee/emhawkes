@@ -120,14 +120,18 @@ native_calls <- 0L
 close(evaluate("auto", poisson, classed_dt), evaluate("r", poisson, classed_dt))
 stopifnot(native_calls == 0L)
 fails(evaluate("cpp", poisson, classed_dt), "does not support")
-# Preserve the multivariate singular initializer's warning and zero-state result.
+# Function-valued models use zero components when no mean formula is supported.
 singular <- new("hspec", mu = wrap(matrix(.2, 2)),
   alpha = wrap(matrix(.5, 2, 2)), beta = wrap(matrix(1, 2, 2)))
 reference <- suppressWarnings(evaluate("r", singular, c(0, .2, .3), c(0, 1, 2), initial = NULL, infer = TRUE))
 close(suppressWarnings(evaluate("cpp", singular, c(0, .2, .3), c(0, 1, 2), initial = NULL, infer = TRUE)), reference)
 invalid_initial <- poisson
 invalid_initial@alpha <- function(param = numeric(0)) matrix(1)
-for (engine in c("r", "auto", "cpp")) fails(evaluate(engine, invalid_initial, dt, initial = NULL), "finite")
+for (engine in c("r", "auto", "cpp")) {
+  close(evaluate(engine, invalid_initial, dt, initial = NULL),
+        evaluate(engine, invalid_initial, dt, initial = 0))
+  fails(evaluate(engine, invalid_initial, dt, initial = "mean"), "Mean initialization is unavailable")
+}
 # Fitted defaults and saved initial-state arguments replay with the native engine.
 fit <- suppressMessages(hfit(poisson, dt, lambda_component0 = 0, method = "NR"))
 fitted <- fitted_hspec(fit)

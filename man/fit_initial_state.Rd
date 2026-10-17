@@ -17,10 +17,15 @@ to \code{\link[=logLik]{logLik()}} or \code{\link[=hsim]{hsim()}} with \code{do.
 Retrieve the normalized initial-state arguments saved by \code{\link[=hfit]{hfit()}}.
 }
 \details{
-A supplied initial intensity component is stored as a matrix. If it was
-omitted, \code{lambda_component0} remains \code{NULL}, preserving automatic
-initialization with the restored model's parameters. It is not a fixed matrix
+Supplied initial intensity components exclude the baseline \code{mu} and are stored
+as a matrix. If the argument was
+omitted, the selected mean rule is stored as \code{"mean"}, or the selected zero
+state as a matrix. Mean components are recomputed with the restored model's
+parameters; the automatic selection is not repeated. This is not a matrix
 evaluated at the original starting values.
+Older saved fits without an initialization-policy record return a matrix
+evaluated under their original initialization rule at the fitted parameters.
+Their retained objective supplies any observation context needed by callbacks.
 
 Initial counts are normalized per dimension and include values inferred from
 supplied \code{N} and \code{Nc} paths. With a custom likelihood and no event observations,

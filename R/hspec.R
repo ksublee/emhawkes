@@ -31,7 +31,8 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #' Use `type_col_map` when `K` differs from `D`. Its `D` entries contain nonempty
 #' vectors of distinct, one-based kernel column indices. Intensity rows identify
 #' event types; the mapping selects columns updated after each event. Supply
-#' `lambda_component0` for simulation and likelihood evaluation when a mapping is set.
+#' `lambda_component0` to specify initial intensity components explicitly;
+#' automatic mean or zero initialization also supports mapped kernels.
 #'
 #' Functions whose sole argument is `param` can reparameterize numeric components.
 #' A state-dependent `mu` or `impact` function declares the event context it needs.

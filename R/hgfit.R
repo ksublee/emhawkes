@@ -12,7 +12,8 @@ NULL
 #' @param mark a vector of mark (jump) sizes. Start with zero.
 #' @param N Optional cumulative event-count matrix consistent with `type`.
 #' @param Nc Optional cumulative mark-total matrix consistent with `type` and `mark`.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
 #' A scalar is expanded to every kernel component. A matrix must match the
 #' shape of `alpha` and `beta`.
 #' @param N0 Initial event counts: a scalar or one value per event type.
@@ -374,7 +375,8 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' @param mark A vector of realized mark (jump) sizes. Start with zero.
 #' @param N A matrix of counting processes.
 #' @param Nc A matrix of counting processes weighted by mark.
-#' @param lambda_component0 The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
+#' @param lambda_component0 Initial intensity components, excluding the baseline
+#' `mu`. Must have the same matrix dimensions as the model's kernel parameters.
 #' @param N0 The initial value of N
 #' @param ... Further arguments passed to or from other methods.
 #'

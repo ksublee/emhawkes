@@ -41,7 +41,8 @@ observed events have unit marks. At least one event of each type is required.}
 
 \item{dependence}{Dependence between mark and previous sigma-algebra.}
 
-\item{lambda_component0}{A matrix of the starting values of lambda component.}
+\item{lambda_component0}{A matrix of initial intensity components, excluding
+the baseline \code{mu}.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

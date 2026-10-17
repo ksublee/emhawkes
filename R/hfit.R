@@ -14,10 +14,18 @@ NULL
 #' @param N Optional cumulative event-count matrix, with one row per input row
 #' and one column per event type. Each row contains counts after that event.
 #' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
 #' A finite scalar is expanded to every kernel component. A matrix must match
-#' the shape of `alpha` and `beta`. For the built-in likelihood, supply this
-#' argument when `type_col_map` is set.
+#' the shape of `alpha` and `beta`. For the built-in likelihood, `"auto"`
+#' (also `NULL`) selects unconditional component means for supported stable
+#' constant numeric linear models, and zero otherwise. `"mean"` requires supported
+#' finite means; `"zero"` fixes zero components. Selection is reported once
+#' and held throughout optimization. Mean values vary with fitted parameters;
+#' invalid mean proposals have likelihood `-Inf`, without switching to zero.
+#' For `mylogLik`, `"auto"` passes `NULL` without automatic initialization.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
 #' @param N0 Initial event counts: a finite scalar or one value per event type.
 #' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
 #' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
@@ -143,9 +151,9 @@ NULL
 #' selection. Standalone [logLik()] supports fewer C++ models than `hfit()`.
 #' With `gradient = "analytic"`, Rcpp computes the likelihood and its gradient
 #' using native recursions and cached results at the same parameter vector. Matrix scores are
-#' summed according to the saved parameter map. Automatic initial states include
-#' their parameter derivatives; a singular automatic initialization requires an
-#' explicit `lambda_component0`. Observed baselines and current-component impacts
+#' summed according to the saved parameter map. Mean initial states include
+#' their parameter derivatives; zero and explicit initial components are fixed.
+#' Observed baselines and current-component impacts
 #' are supported with Jacobians as described below. Full intensity histories,
 #' mark densities, residual distributions, and custom likelihoods are not supported
 #' by this option. Equality-constrained optimization is also excluded.
@@ -422,7 +430,7 @@ NULL
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
-                            lambda_component0 = NULL, N0 = NULL,
+                            lambda_component0 = "auto", N0 = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
@@ -439,7 +447,7 @@ setMethod(
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
            N = NULL, Nc = NULL,
-           lambda_component0 = NULL, N0 = NULL,
+           lambda_component0 = "auto", N0 = NULL,
            mylogLik = NULL,
            reduced = TRUE,
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
@@ -490,9 +498,13 @@ setMethod(
                                            needs = required_count_paths(object, mylogLik))
     }
     kernel_cols <- ncol(eval_param(object@beta))
-    lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, kernel_cols)
-    if (is.null(mylogLik) && is.null(lambda_component0) && length(object@type_col_map)) {
-      stop_missing_initial(object@dimens, kernel_cols)
+    initialization <- NULL
+    if (is.null(mylogLik)) {
+      initialization <- select_hawkes_initial(object, lambda_component0, kernel_cols)
+      lambda_component0 <- initialization$value
+    } else {
+      if (identical(lambda_component0, "auto")) lambda_component0 <- NULL
+      lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, kernel_cols)
     }
     custom_plan <- callback_plan(mylogLik,
       c("object", names(observation), "lambda_component0", "param", "reduced"), "mylogLik")
@@ -539,7 +551,8 @@ setMethod(
 
 
       if (is.null(mylogLik)){
-
+        if (is.null(lambda_component0) && is.null(hawkes_mean_state(
+          list(mu = hspec0@mu, alpha = hspec0@alpha, beta = hspec0@beta), object@type_col_map))) return(-Inf)
         logl <- loglik_hspec(hspec0, observation, lambda_component0,
                             callbacks = callbacks, show_initial_message = FALSE, execution = execution,
                             replay = FALSE)
@@ -646,7 +659,7 @@ setMethod(
       tolower(method) %in% c("bfgs", "cg", "conjugate-gradient", "nm", "nelder-mead", "sann")
     if (skip_final_hessian) ml_args$finalHessian <- FALSE
 
-    if (isTRUE(verbose) && is.null(mylogLik) && is.null(lambda_component0)) message_automatic_initial()
+    if (is.null(mylogLik)) message_hawkes_initial(initialization)
     message_parameter_sharing(parameter_map)
     fit <- if (optimizer == "maxLik") do.call(maxLik::maxLik, ml_args) else
       run_stats_fit(llh_function, starting_point, grad, hess, constraints, method,
@@ -684,11 +697,20 @@ setMethod(
         maxLik_hessian_skipped = skip_final_hessian)
       final$diagnostics$computation$optimizer <- list(requested = optimizer,
         used = if (optimizer == "stats") fit$optimizer else "maxLik", method = method)
+      if (!is.null(initialization)) {
+        initialization$components <- if (initialization$used == "mean") {
+          values <- restore_parameters(parameter_map, stats::coef(fit))
+          state <- hawkes_mean_state(values, object@type_col_map)
+          state$value
+        } else initialization$value
+        final$diagnostics$initialization <- initialization[c("requested", "used", "reason", "components")]
+      }
       attr(fit, "emhawkes") <- list(
         version = 1L,
         specification = object,
         parameter_map = parameter_map,
-        initial_state = list(lambda_component0 = lambda_component0,
+        initialization = initialization,
+        initial_state = list(lambda_component0 = if (!is.null(initialization) && initialization$used == "mean") "mean" else lambda_component0,
                              N0 = observation$N0, Nc0 = observation$Nc0),
         reduced = reduced,
         gradient = gradient_used,

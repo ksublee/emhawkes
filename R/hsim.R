@@ -11,16 +11,24 @@ NULL
 #' @param object \code{\link{hspec-class}}. S4 object that specifies the parameter values.
 #' @param size Positive integer giving the number of output rows, including the
 #' initial state. At most `size - 1` events are simulated.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
 #' A finite scalar is expanded to every kernel component. A matrix must match
-#' the shape of `alpha` and `beta`. Supply this argument when `type_col_map` is set.
+#' the shape of `alpha` and `beta`. The default `"auto"` (also `NULL`) uses
+#' unconditional component means for supported stable constant numeric linear models,
+#' and zero components otherwise. `"mean"` requires supported finite means;
+#' `"zero"` starts from baseline intensities. Selection is reported once, and
+#' zero initialization recommends supplying components explicitly.
 #' Other size adjustments are
 #' deprecated and produce a warning.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
 #' @param N0 Initial event counts: a finite scalar or one value per event type.
 #' The default is zero.
 #' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
 #' The default is zero.
-#' @param verbose Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.
+#' @param verbose Logical. Controls additional progress output; initialization
+#' selection is reported independently. Default is \code{FALSE}.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @return An S3 \code{\link{hreal}} object containing the simulated path,
@@ -87,24 +95,24 @@ NULL
 #'
 #' @export
 setGeneric("hsim", function(object, size = 100,
-                            lambda_component0 = NULL,  N0 = NULL, Nc0 = NULL,
+                            lambda_component0 = "auto",  N0 = NULL, Nc0 = NULL,
                             verbose = FALSE, ...)
   standardGeneric("hsim"))
 
 #' @rdname hsim
 setMethod("hsim", "hspec", function(object, size = 100,
-    lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
+    lambda_component0 = "auto", N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
   simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...)
 })
 
 # Internal reference selector: independent of the likelihood engine option.
-simulate_hawkes_r <- function(object, size = 100, lambda_component0 = NULL,
+simulate_hawkes_r <- function(object, size = 100, lambda_component0 = "auto",
     N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
   simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...,
                   .native = FALSE)
 }
 
-simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
+simulate_hawkes <- function(object, size = 100, lambda_component0 = "auto",
     N0 = NULL, Nc0 = NULL, verbose = FALSE, ..., .native = TRUE) {
     # Process additional arguments passed through '...'
     additional_argument <- list(...)
@@ -193,34 +201,14 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
       mu0 <- mu
     }
 
-    # default lambda_component0
-    if(!is.null(object@type_col_map)){
-      if(length(object@type_col_map) > 0 & is.null(lambda_component0)){
-        stop_missing_initial(dimens, ncol(beta))
-        }
-    }
-
-
-    if(!is.null(lambda_component0)){
-
-      lambda_component0 <- normalize_lambda_initial(lambda_component0, dimens, ncol(beta), legacy = TRUE)
-
-    } else {
-      # default lambda_component0
-      if(verbose == TRUE){
-        message_automatic_initial()
-      }
-
-      lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
-                             N = N, Nc = Nc,
-                             mu, alpha = alpha, beta = beta)
-    }
-
-    lambda_component0 <- normalize_lambda_initial(lambda_component0, dimens, ncol(beta))
+    initialization <- select_hawkes_initial(object, lambda_component0, ncol(beta), legacy = TRUE)
+    lambda_component0 <- if (initialization$used == "mean")
+      hawkes_mean_state(list(mu = mu0, alpha = alpha, beta = beta), object@type_col_map)$value else initialization$value
     lambda_component_n <- lambda_component0
     if (!valid_components(lambda_component0)) {
       stop("Initial kernel components must define nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
     }
+    message_hawkes_initial(initialization)
 
     # Decide support before entering any RNG scope; never restart after draws.
     if (.native && is.null(native_simulation_reason(object, mu, alpha, beta,

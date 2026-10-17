@@ -31,33 +31,21 @@ full_component_jacobian <- function(name, param, plan, parameter_map, rows) {
 
 # Explicit initial components are constants. Automatic components also depend
 # on the observed baseline at n = 1 and on alpha/beta through stationarity.
-state_initial_sensitivity <- function(values, jac, initial, dimensions, kernels) {
+state_initial_sensitivity <- function(values, jac, initial, dimensions, kernels, mapping = NULL) {
   parameters <- ncol(jac$mu)
   if (!is.null(initial)) return(list(value = initial, jacobian = matrix(0, dimensions * kernels, parameters)))
-  mu <- values$mu; alpha <- values$alpha; beta <- values$beta
-  if (dimensions == 1L) {
-    gap <- beta[1] - alpha[1]
-    if (!is.finite(gap) || gap == 0)
-      stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
-    value <- matrix((mu[1] * beta[1] / gap - mu[1]) / 2)
-    derivative <- alpha[1] / (2 * gap) * jac$mu +
-      mu[1] * beta[1] / (2 * gap^2) * jac$alpha -
-      mu[1] * alpha[1] / (2 * gap^2) * jac$beta
-  } else {
-    branching <- alpha / beta
-    inverse <- tryCatch(solve(diag(dimensions) - branching), error = function(e) NULL)
-    if (is.null(inverse)) stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
-    stationary <- inverse %*% mu
-    value <- matrix(rep(stationary, dimensions), dimensions, byrow = TRUE) * branching
-    derivative <- matrix(0, dimensions * kernels, parameters)
-    for (p in seq_len(parameters)) {
-      db <- (matrix(jac$alpha[, p], dimensions) - branching * matrix(jac$beta[, p], dimensions)) / beta
-      ds <- inverse %*% (jac$mu[, p] + db %*% stationary)
-      derivative[, p] <- as.vector(sweep(db, 2, as.vector(stationary), "*") +
-        sweep(branching, 2, as.vector(ds), "*"))
-    }
+  mean <- hawkes_mean_state(values, mapping)
+  if (is.null(mean)) return(list(value = matrix(NA_real_, dimensions, kernels),
+    jacobian = matrix(NA_real_, dimensions * kernels, parameters)))
+  derivative <- matrix(0, dimensions * kernels, parameters)
+  for (p in seq_len(parameters)) {
+    db <- (matrix(jac$alpha[, p], dimensions) - mean$branching * matrix(jac$beta[, p], dimensions)) / values$beta
+    ds <- mean$inverse %*% (jac$mu[, p] + db %*% mean$incidence %*% mean$stationary)
+    dr <- as.vector(mean$incidence %*% ds)
+    derivative[, p] <- as.vector(sweep(db, 2, mean$rates, "*") +
+      sweep(mean$branching, 2, dr, "*"))
   }
-  list(value = value, jacobian = derivative)
+  list(value = mean$value, jacobian = derivative)
 }
 
 make_state_gradient_objective <- function(object, observation, lambda_component0,
@@ -74,9 +62,7 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     stop("Current latent intensity feedback for analytic gradients requires jacobian$impact = list(param = ..., state = ...).", call. = FALSE)
   plan <- hawkes_component_plan(object, observation, parameter_map, jacobian, TRUE)
   dimensions <- object@dimens; kernels <- ncol(plan$start$beta); components <- dimensions * kernels
-  initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
-  if (is.null(initial) && length(object@type_col_map))
-    stop("Analytic gradient requires lambda_component0 for a multi-kernel mapping.", call. = FALSE)
+  initial <- select_hawkes_initial(object, lambda_component0, kernels)$value
   mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
   mapping <- lapply(mapping, function(x) as.integer(x) - 1L)
   types <- as.integer(observation$type); types[1] <- 0L
@@ -122,7 +108,7 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     if (any(!is.finite(unlist(values, use.names = FALSE))) || any(values$beta <= 0) || any(values$mu < 0)) return(invalid)
     # Compute only values for line searches. Derivatives are deferred until asked.
     base_initial <- state_initial_sensitivity(values, list(mu = matrix(0, dimensions, 0),
-      alpha = matrix(0, components, 0), beta = matrix(0, components, 0)), initial, dimensions, kernels)$value
+      alpha = matrix(0, components, 0), beta = matrix(0, components, 0)), initial, dimensions, kernels, object@type_col_map)$value
     if (any(!is.finite(base_initial))) return(invalid)
     baseline <- if (plan$observed_mu) plan$baseline(param, values) else NULL
     if (plan$observed_mu && is.null(baseline)) return(invalid)
@@ -158,7 +144,7 @@ make_state_gradient_objective <- function(object, observation, lambda_component0
     baseline_jac <- if (plan$observed_mu) plan$baseline_jacobian(p, values) else NULL
     if (plan$observed_mu) core$mu <- if (is.list(baseline_jac)) baseline_jac$initial else
       matrix(baseline_jac[, 1L], dimensions, length(p))
-    init <- state_initial_sensitivity(values, core, initial, dimensions, kernels)
+    init <- state_initial_sensitivity(values, core, initial, dimensions, kernels, object@type_col_map)
     if (any(!is.finite(init$jacobian))) stop("Nonfinite automatic initial-state derivative; supply lambda_component0.", call. = FALSE)
     context <- result$context
     full_context <- context; full_context$param <- stats::setNames(p, parameter_names)

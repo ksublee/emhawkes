@@ -2,10 +2,7 @@
 NULL
 
 setGeneric("get_lambda0", function(object, ...) standardGeneric("get_lambda0"))
-# Get the long-run expectation of intensities - lambda matrix
-#
-# This function is not crucial but useful when you want to set lambda0 by default.
-#
+# Compute component means after a mean policy has already been selected.
 setMethod(
   f = "get_lambda0",
   signature(object = "hspec"),
@@ -13,7 +10,7 @@ setMethod(
                         N = N, Nc = Nc,
                         mu = mu, alpha = alpha, beta = beta,
                         lambda = NULL, lambda_component = NULL, lambda_component_n = NULL,
-                        ...){
+                        ..., .legacy = FALSE){
 
     dimens <- object@dimens
 
@@ -42,26 +39,84 @@ setMethod(
     }
 
 
-    if (dimens == 1){
-      lamb0 <- (mu0[1]*beta[1]/(beta[1]- alpha[1]) - mu0[1])/2
-      LAMBDA0 <- matrix(lamb0, nrow=1)
-
-    } else {
-      # need to handle when the matrix is singular
-      LAMBDA0 <- matrix(rep(0, dimens^2), nrow=dimens)
-      LAMBDA0 <- tryCatch({
-          LAMBDA_st <- solve(diag(dimens) - alpha / beta) %*% mu0
-          matrix(rep(LAMBDA_st, dimens), nrow=dimens, byrow=T) * alpha / beta
-        },
-        error = function(e){
-          warn_zero_initial()
-          matrix(rep(0, dimens^2), nrow=dimens)
-        }
-      )
+    # Only replay of saved fits from before explicit initialization policies uses
+    # the old half-mean and core-only approximation. New auto fits never use it.
+    if (.legacy) {
+      if (dimens == 1L) return(matrix((mu0[1] * beta[1] / (beta[1] - alpha[1]) - mu0[1]) / 2))
+      stationary <- tryCatch(solve(diag(dimens) - alpha / beta) %*% mu0,
+        error = function(e) NULL)
+      if (is.null(stationary)) return(matrix(0, dimens, dimens))
+      return(matrix(rep(stationary, dimens), dimens, byrow = TRUE) * alpha / beta)
     }
-    LAMBDA0
+    result <- hawkes_mean_state(list(mu = mu0, alpha = alpha, beta = beta),
+                                object@type_col_map)
+    if (is.null(result)) stop("Mean initial intensity components require a stable nonnegative linear Hawkes model with finite component means; supply lambda_component0 explicitly or use 'zero'.", call. = FALSE)
+    result$value
   }
 )
+
+# Mean values and the quantities needed for their analytic chain rule.
+# A kernel column may receive events from several mapped event types.
+hawkes_mean_state <- function(values, mapping = NULL) {
+  mu <- values$mu; alpha <- values$alpha; beta <- values$beta
+  if (any(!is.finite(c(mu, alpha, beta))) || any(mu < 0) ||
+      any(alpha < 0) || any(beta <= 0)) return(NULL)
+  dimensions <- nrow(beta); kernels <- ncol(beta)
+  if (is.null(mapping)) mapping <- as.list(seq_len(dimensions))
+  incidence <- matrix(0, kernels, dimensions)
+  for (j in seq_len(dimensions)) incidence[mapping[[j]], j] <- 1
+  branching <- alpha / beta
+  integrated <- branching %*% incidence
+  if (any(!is.finite(c(branching, integrated)))) return(NULL)
+  radius <- if (dimensions == 1L) integrated[1] else
+    max(Mod(eigen(integrated, only.values = TRUE)$values))
+  if (!is.finite(radius) || radius >= 1) return(NULL)
+  inverse <- tryCatch(solve(diag(dimensions) - integrated), error = function(e) NULL)
+  if (is.null(inverse)) return(NULL)
+  stationary <- inverse %*% mu
+  rates <- as.vector(incidence %*% stationary)
+  value <- matrix(rep(rates, dimensions), dimensions, byrow = TRUE) * branching
+  if (any(!is.finite(value)) || any(value < 0)) return(NULL)
+  list(value = value, inverse = inverse, stationary = stationary,
+       rates = rates, branching = branching, incidence = incidence)
+}
+
+# Select once, before simulation draws or optimization. In internal objectives,
+# NULL denotes parameter-dependent mean components; a matrix is a fixed state.
+select_hawkes_initial <- function(object, initial, kernels, legacy = FALSE) {
+  if (is.null(initial)) initial <- "auto"
+  if (!is.character(initial)) return(list(requested = "explicit", used = "explicit",
+    value = if (is.null(kernels)) initial else normalize_lambda_initial(initial, object@dimens, kernels, legacy), reason = NULL))
+  if (length(initial) != 1L || is.na(initial) || !initial %in% c("auto", "mean", "zero"))
+    stop("lambda_component0 must be 'auto', 'mean', 'zero', a finite scalar, or a kernel-shaped matrix.", call. = FALSE)
+  requested <- initial
+  values <- list(mu = object@mu, alpha = object@alpha, beta = object@beta)
+  constant <- all(vapply(values, function(x) is.numeric(x) && !is.object(x), logical(1)))
+  extra <- is.function(object@eta) || (!is.null(object@eta) && any(object@eta != 0)) ||
+    !is.null(object@impact) || any(vapply(list(object@rresidual, object@dresidual,
+      object@presidual, object@qresidual), function(x) !is.null(x), logical(1)))
+  reason <- if (!constant || extra) "no supported unconditional mean formula for this model" else NULL
+  mean <- if (initial != "zero" && is.null(reason)) hawkes_mean_state(values, object@type_col_map) else NULL
+  if (initial != "zero" && is.null(reason) && is.null(mean))
+    reason <- "finite stationary component means are unavailable at the starting parameters"
+  if (initial == "mean" && !is.null(reason))
+    stop("Mean initialization is unavailable: ", reason,
+      ". Supply lambda_component0 explicitly or use 'zero'.", call. = FALSE)
+  used <- if (initial != "zero" && !is.null(mean)) "mean" else "zero"
+  list(requested = requested, used = used,
+       value = if (used == "mean") NULL else if (is.null(kernels)) 0 else matrix(0, object@dimens, kernels),
+       reason = if (used == "zero" && requested == "auto") reason else NULL)
+}
+
+message_hawkes_initial <- function(plan) {
+  if (plan$used == "explicit") return(invisible(NULL))
+  selection <- if (plan$requested == "auto") paste0("auto -> ", plan$used) else plan$used
+  message("Initial intensity components: ", selection,
+    if (plan$used == "mean") " (unconditional component means)." else
+      paste0(if (!is.null(plan$reason)) paste0(" (", plan$reason, ")") else "", ". ",
+        "Supplying lambda_component0 explicitly is recommended for this model."))
+  invisible(NULL)
+}
 
 
 #' Compute Hawkes volatility
@@ -76,7 +131,8 @@ setMethod(
 #' @param mark A vector of mark (jump) sizes. Start with zero. If omitted, all
 #' observed events have unit marks. At least one event of each type is required.
 #' @param dependence Dependence between mark and previous sigma-algebra.
-#' @param lambda_component0 A matrix of the starting values of lambda component.
+#' @param lambda_component0 A matrix of initial intensity components, excluding
+#' the baseline `mu`.
 #' @param ... Further arguments passed to or from other methods.
 #' @details
 #' Numeric `mu`, `alpha`, and `beta` are required. A missing `eta` is treated as

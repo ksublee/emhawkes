@@ -41,7 +41,8 @@ residual_process(
 
 \item{Nc}{A matrix of counting processes weighted by mark.}
 
-\item{lambda_component0}{The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.}
+\item{lambda_component0}{Initial intensity components, excluding the baseline
+\code{mu}. Must have the same matrix dimensions as the model's kernel parameters.}
 
 \item{N0}{The initial value of N}
 

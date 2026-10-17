@@ -1,12 +1,16 @@
 # emhawkes 0.9.9
 
+* Default simulation, likelihood and fitting initialization to `lambda_component0 = "auto"` (`NULL` is an alias). Use unconditional component means only for supported stable constant numeric linear models, including mapped kernels; otherwise use zero components and recommend explicit initialization. Report the selected rule once. Correct the univariate half-mean rule, retain explicit states, and hold the selected fitting rule fixed while differentiating mean components. Store the selected rule for fitted-model replay; recover the actual legacy initial components for older saved fits.
+
+* Keep numerical score steps inside linear inequality constraints in the stats optimizer, avoiding invalid mean-initialization proposals when a fitted excitation parameter approaches zero.
+
 * Add `hfit(optimizer = "stats")` to call R's `optim()` or `constrOptim()` directly, without maxLik. Preserve the default maxLik provider and make its dependency optional. Support fixed/shared parameters, analytic or supplied derivatives, linear inequalities and L-BFGS-B bounds; reject unsupported controls, equality constraints and provider-specific methods. Add independent result methods and reconstruction, default to stable final curvature, protect boundary inference, and record optimizer selection in diagnostics.
 
 * Accept both `hfit(constraint = ...)` and `hfit(constraints = ...)` without deprecation warnings. Normalize either spelling to maxLik's `constraints` argument and reject simultaneous non-NULL values. Preserve existing positional arguments.
 
 * Preserve native simulation RNG state when an internal warning is promoted to an error or its handler draws random numbers, simulates a nested path, or aborts. Signal internal warnings through protected R evaluation and synchronize RNG state around their handlers.
 
-* Make initial-state, dimension, callback and volatility errors actionable. Correct the singular-initializer warning to describe zero excitation, report returned/requested simulation rows on early stopping, and explain unavailable Wald curvature without changing diagnostic reason codes. Keep R and C++ messages consistent and clarify deprecation replacements.
+* Make initial-state, dimension, callback and volatility errors actionable. Describe `lambda_component0` as initial intensity components excluding the baseline, and identify the zero components used when automatic initialization fails. Report returned/requested simulation rows on early stopping, and explain unavailable Wald curvature without changing diagnostic reason codes. Keep R and C++ messages consistent and clarify deprecation replacements.
 
 * Correct `expected_tau()` when the next event may never occur. Resolve short excitation and long baseline time scales in ordinary Hawkes expectations, retain finite-limit truncated moments, and validate the scalar equal-rate calculation.
 

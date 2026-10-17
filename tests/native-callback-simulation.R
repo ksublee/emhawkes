@@ -62,7 +62,7 @@ for (automatic in c(FALSE, TRUE)) local({
   set.seed(95); calls <- character()
   new <- hsim(h, 31, lambda_component0 = initial)
   stopifnot(identical(old, new), identical(count, calls), identical(rng, .Random.seed),
-    identical(calls, rep(c("mu", "alpha", "beta"), if (automatic) 2L else 1L)),
+    identical(calls, c("mu", "alpha", "beta")),
     identical(new$hspec, h))
 })
 h <- models[["2 4 combined"]]

@@ -119,7 +119,7 @@ shared_numeric <- new("hspec", mu = .4,
   alpha = function(param = c(mu1 = .4)) matrix(param["mu1"] / 2), beta = 1.3)
 check(shared_numeric, list(alpha = matrix(.5, dimnames = list(NULL, "mu1"))), .1,
       type = rep(1, length(dt)))
-# Large finite function values can overflow the automatic initial state.
+# Unknown function means use zero, avoiding an unrelated mean approximation.
 overflow_model <- new("hspec",
   mu = function(param = c(s = -1)) matrix(exp(param), 2),
   alpha = function(param = c(a = -2)) diag(rep(exp(param), 2)),
@@ -129,8 +129,10 @@ overflow_jac <- list(mu = function(param) matrix(rep(exp(param), 2), dimnames = 
   beta = function(param) matrix(rep(exp(param), 4), dimnames = list(NULL, "s")))
 overflow <- objective(overflow_model, normalize(overflow_model, dt, type), NULL,
   build_map(overflow_model, TRUE), jacobian = overflow_jac)
-stopifnot(identical(as.numeric(overflow$loglik(c(s = 599, a = 158))), -Inf),
-          all(is.na(overflow$gradient(c(s = 599, a = 158)))))
+overflow_zero <- objective(overflow_model, normalize(overflow_model, dt, type), 0,
+  build_map(overflow_model, TRUE), jacobian = overflow_jac)
+close(overflow$loglik(c(s = 599, a = 158)), overflow_zero$loglik(c(s = 599, a = 158)), 0)
+close(overflow$gradient(c(s = 599, a = 158)), overflow_zero$gradient(c(s = 599, a = 158)), 0)
 # No-event data have zero horizon and therefore zero likelihood and score.
 empty <- objective(unary, normalize(unary, 0), 0, build_map(unary, TRUE), jacobian = uj)
 close(empty$loglik(build_map(unary, TRUE)$start), 0, 0)

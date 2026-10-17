@@ -100,10 +100,15 @@ fitted_hspec <- function(fit) {
 #' @return A list with `lambda_component0`, `N0`, and `Nc0`, suitable for passing
 #' to [logLik()] or [hsim()] with `do.call()`.
 #' @details
-#' A supplied initial intensity component is stored as a matrix. If it was
-#' omitted, `lambda_component0` remains `NULL`, preserving automatic
-#' initialization with the restored model's parameters. It is not a fixed matrix
+#' Supplied initial intensity components exclude the baseline `mu` and are stored
+#' as a matrix. If the argument was
+#' omitted, the selected mean rule is stored as `"mean"`, or the selected zero
+#' state as a matrix. Mean components are recomputed with the restored model's
+#' parameters; the automatic selection is not repeated. This is not a matrix
 #' evaluated at the original starting values.
+#' Older saved fits without an initialization-policy record return a matrix
+#' evaluated under their original initialization rule at the fitted parameters.
+#' Their retained objective supplies any observation context needed by callbacks.
 #'
 #' Initial counts are normalized per dimension and include values inferred from
 #' supplied `N` and `Nc` paths. With a custom likelihood and no event observations,
@@ -112,5 +117,18 @@ fitted_hspec <- function(fit) {
 #' @seealso [fitted_hspec()], [hfit()], [logLik()], [hsim()]
 #' @export
 fit_initial_state <- function(fit) {
-  fit_metadata(fit)$initial_state
+  metadata <- fit_metadata(fit)
+  initial <- metadata$initial_state
+  if (!("initialization" %in% names(metadata)) && is.null(initial$lambda_component0) &&
+      !isTRUE(metadata$custom_loglik)) {
+    object <- fitted_hspec(fit)
+    observation <- get0("observation", envir = environment(fit_objective(fit)), inherits = TRUE)
+    if (!is.list(observation)) observation <- list()
+    values <- setting(object)
+    context <- observation[intersect(names(observation), c("inter_arrival", "type", "mark", "N", "Nc"))]
+    args <- c(list(object = object), context, values[c("mu", "alpha", "beta")], list(.legacy = TRUE))
+    initial$lambda_component0 <- normalize_lambda_initial(do.call(get_lambda0, args),
+      object@dimens, ncol(values$beta))
+  }
+  initial
 }
