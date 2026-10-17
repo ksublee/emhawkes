@@ -1,53 +1,42 @@
-## Resubmission
+## Update from emhawkes 0.9.8 to 0.9.9
 
-Fixed some bugs, improved efficiency in this version and several features have been added.
+This release adds registered Rcpp likelihood, inference and simulation engines,
+an independent optional stats optimizer, fitted-model reconstruction and
+curvature diagnostics. Unsupported models retain the R implementation. Rcpp
+and a C++ compiler are now required for source installation; maxLik is optional
+and remains the default optimizer provider.
 
--   Slot `eta` is introduced which represents the constant part of `impact`.
+Automatic initial intensity components now use unconditional means only for
+supported stable constant linear models, otherwise zero. The selected rule is
+reported. This corrects the previous univariate half-mean rule and can change
+results; explicit initial states are preserved. NEWS documents this behavior
+and the other numerical corrections. Stable Hessians do not imply nominal
+finite-sample confidence-interval coverage.
 
--   The concepts of `rambda` and `rambda_component` are introduced. They are closely related to the right-continuous version of the intensity process.
+## Checks
 
--   For inference of intensity and goodness of fit, `infer_lambda` and `residual_process` functions are implemented.
+The implementation in commit 4737f96 passed:
 
--   The method `vol` to measure the volatility is introduced and this feature is currently experimental.
+- Windows, R 4.5.1: `R CMD check --as-cran --run-donttest`, including PDF/HTML
+  manuals and rebuilt vignettes, with 0 errors, 0 warnings and 0 notes.
+- GitHub Actions: Windows release and R 4.0.0; macOS release; Ubuntu release,
+  oldrel-1 and devel. Release was R 4.6.1 and devel was R 4.7.0 (2026-10-15).
+- Additional native garbage-collection, interruption and Valgrind checks.
 
-## Test environment
+The release-preparation source archive was checked again on Windows/R 4.5.1
+with `--as-cran --run-donttest`, including rebuilt vignettes and PDF/HTML manuals:
+0 errors, 0 warnings and 0 notes, both with and without maxLik installed.
+For the latter check, `_R_CHECK_FORCE_SUGGESTS_=false` allowed the intentionally
+missing suggestion; maxLik-specific sections were skipped. Independent stats,
+likelihood, simulation and saved-result checks passed. The README example also
+converged in a separate session with only emhawkes, Rcpp and R's own packages.
 
--   local Windows install, R 4.2.1
--   windows-x86_64-devel (r-devel)
--   ubuntu-gcc-release (r-release)
--   fedora-clang-devel (r-devel)
+GitHub checks now run donttest examples and retain successful check results.
+The Ubuntu release job additionally retains the checked source archive, SHA-256,
+source commit and build session as the `cran-source-package` artifact.
 
-## R CMD check results
+## Reverse dependencies and URLs
 
-The following is the result of R CMD check performed via `devtools:check()` in local machine:
-
-─ using R version 4.2.1 (2022-06-23 ucrt)\
-─ using platform: x86_64-w64-mingw32 (64-bit)\
-─ using session charset: UTF-8\
-─ using options '--no-manual --as-cran'
-
-── R CMD check results ──────── emhawkes 0.9.7 ──── Duration: 2m 10.2s
-
-0 errors ✔ \| 0 warnings ✔ \| 0 notes ✔
-
-R CMD check succeeded
-
-In addition, `rhub::check_for_cran()` is also performed with the following summary:
-
-\## Test environments
-
--   R-hub windows-x86_64-devel (r-devel)
--   R-hub ubuntu-gcc-release (r-release)
--   R-hub fedora-clang-devel (r-devel)
-
-\## R CMD check results
-
-❯ On windows-x86_64-devel (r-devel) checking for detritus in the temp directory ... NOTE Found the following files/directories: 'lastMiKTeXException'
-
-❯ On fedora-clang-devel (r-devel) checking HTML version of manual ... NOTE Skipping checking HTML validation: no command 'tidy' found
-
-0 errors ✔ \| 0 warnings ✔ \| 2 notes ✖
-
-First, according to R-hub [issue #503](https://github.com/r-hub/rhub/issues/503), this could be a bug in R-hub and can be disregarded.
-
-Second note might also seem from the problem in R-hub test platform of Fedora [issue #548](https://github.com/r-hub/rhub/issues/548).
+CRAN's source package index was checked on 2026-10-17, including Depends,
+Imports, LinkingTo, Suggests and Enhances. No reverse dependencies were found.
+Package URLs were checked with urlchecker.

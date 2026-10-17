@@ -21,18 +21,28 @@ Source installation requires a C++ compiler and Rcpp; on Windows, install Rtools
 
 ## Quick start
 
+This example requires version 0.9.9 or later.
+
 ```r
 library(emhawkes)
 
 h <- new("hspec", mu = 0.3, alpha = 1.2, beta = 1.5)
 set.seed(1107)
 path <- hsim(h, size = 1000)
-fit <- hfit(h, inter_arrival = path$inter_arrival)
+fit <- hfit(h, inter_arrival = path$inter_arrival, optimizer = "stats")
 summary(fit)
 ```
 
-`hsim()` returns an `hreal` path; `hfit()` returns a `maxLik` fit.
+`hsim()` returns an `hreal` path. The example uses R's optimizers and returns
+an `emhawkes_stats_fit`. By default, `hfit()` uses the optional `maxLik` package
+and returns a `maxLik` fit; install it with `install.packages("maxLik")` to use
+that provider.
 The first path row is the initial state, so `size` includes that row.
+
+Simulation and fitting default to `lambda_component0 = "auto"` and report the
+selected initialization. Supported stable constant linear models use mean
+intensity components; other models use zero components and recommend supplying
+an initial state. These components exclude the baseline intensity.
 
 ## Documentation
 

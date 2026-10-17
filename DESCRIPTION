@@ -12,7 +12,6 @@ Description: Simulate and fit multivariate Hawkes models with exponential
 Depends: R (>= 4.0.0)
 License: GPL (>= 2)
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.3
 Imports: methods, Rcpp, stats
 LinkingTo: Rcpp
@@ -46,3 +45,4 @@ Suggests:
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/ksublee/emhawkes, https://ksublee.github.io/emhawkes/
+BugReports: https://github.com/ksublee/emhawkes/issues

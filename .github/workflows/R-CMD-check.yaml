@@ -42,5 +42,31 @@ jobs:
           needs: check
       - uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--no-manual", "--as-cran")'
+          args: 'c("--no-manual", "--as-cran", "--run-donttest")'
           error-on: '"warning"'
+          upload-results: 'true'
+      - name: Record release source provenance
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+        shell: bash
+        run: |
+          cd check
+          set -- emhawkes_*.tar.gz
+          test "$#" -eq 1
+          test -f "$1"
+          sha256sum "$1" > SHA256SUMS
+          cat SHA256SUMS
+          git -C .. rev-parse HEAD > SOURCE-COMMIT
+          Rscript -e 'writeLines(c(R.version.string, capture.output(sessionInfo())), "BUILD-SESSION.txt")'
+      - name: Retain release source package
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cran-source-package
+          path: |
+            check/emhawkes_*.tar.gz
+            check/SHA256SUMS
+            check/SOURCE-COMMIT
+            check/BUILD-SESSION.txt
+            check/emhawkes.Rcheck/00check.log
+          if-no-files-found: error
+          retention-days: 30

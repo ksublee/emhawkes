@@ -2,6 +2,10 @@
 
 Date: 2026-10-17. Reference: `0a88f47` on `main`.
 
+This document records successive validation stages. Earlier references to
+uncommitted changes or pending CI describe those stages. See the final section
+for the current release-preparation results.
+
 ## Confirmed defects
 
 1. `print.hreal()` and `summary.hreal()` overwrote the caller's `digits` option.
@@ -170,3 +174,46 @@ The final archive SHA-256 is
 Validation logs are in the task's `stats-optimizer/verified` and
 `stats-optimizer/verified-without-maxLik` artifact directories. Cross-platform
 GitHub checks have not run for these uncommitted changes.
+
+## CRAN release preparation (2026-10-17)
+
+The package implementation remains `4737f96`; this preparation changes release
+metadata, documentation and CI artifact retention only.
+
+- Confirmed CRAN's published version is 0.9.8. A complete CRAN source index query,
+  without R-version/platform filtering, found no reverse Depends, Imports,
+  LinkingTo, Suggests or Enhances dependencies.
+- Removed unused `LazyData`, added the bug-report URL and checked all nine URLs.
+  Updated README for optional maxLik and the independent stats provider;
+  consolidated NEWS around final behavior and corrected the duplicate historical
+  version heading using the published 0.9.8 source archive.
+- Built `emhawkes_0.9.9.tar.gz` on Windows/R 4.5.1. Compared 93 included tracked
+  files and all original DESCRIPTION fields with the working source; no
+  differences. Build-added DESCRIPTION fields are expected. The 106 archive
+  entries exclude developer tools, the website, CI files, submission notes and
+  compiled/log/session artifacts.
+- The same archive passed `R CMD check --as-cran --run-donttest --timings` with
+  maxLik present and absent: **Status: OK**, zero errors, warnings and notes.
+  Both checks ran all 42 test files, rebuilt vignettes and PDF/HTML manuals.
+  In the absent-provider check, maxLik-specific sections were skipped and
+  `_R_CHECK_FORCE_SUGGESTS_=false` permitted the intentionally missing suggestion.
+- The exact README quick start converged normally in an isolated session with
+  only emhawkes, Rcpp and R's own packages. maxLik was neither available nor
+  loaded. The longest package example took 2.16 seconds in the full check.
+- Existing implementation CI passed Windows release/R 4.0.0, macOS release and
+  Ubuntu release/devel/oldrel-1, plus native GC/interruption/Valgrind checks.
+  The observed current release was R 4.6.1 and devel was R 4.7.0 (2026-10-15).
+- CI now runs donttest examples, retains successful check logs and exports the
+  Ubuntu release source archive with its SHA-256, source commit and session.
+  This supplies a candidate built with current R rather than local R 4.5.1.
+
+Local archive SHA-256:
+`852efad2598b5f9983e5ba9ee87983e0dd43053432a766cfe8bca79be5be3341`.
+Logs, the CRAN package-index snapshot, archive comparison and isolated README
+check are in the task's `cran-preflight` artifact directory.
+
+Before actual submission, confirm the latest main CI and retained release
+artifact, then upload that checked source archive and complete the maintainer's
+CRAN confirmation email. No CRAN or win-builder upload was made in this audit.
+Stable-curvature checks remain distinct from finite-sample Wald coverage;
+weak-excitation interval calibration is not claimed by this release.
