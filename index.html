@@ -74,15 +74,17 @@
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
+<p>This example requires version 0.9.9 or later.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ksublee/emhawkes" class="external-link">emhawkes</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">0.3</span>, alpha <span class="op">=</span> <span class="fl">1.2</span>, beta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, inter_arrival <span class="op">=</span> <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, inter_arrival <span class="op">=</span> <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, optimizer <span class="op">=</span> <span class="st">"stats"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/hsim.html">hsim()</a></code> returns an <code>hreal</code> path; <code><a href="reference/hfit.html">hfit()</a></code> returns a <code>maxLik</code> fit. The first path row is the initial state, so <code>size</code> includes that row.</p>
+<p><code><a href="reference/hsim.html">hsim()</a></code> returns an <code>hreal</code> path. The example uses R’s optimizers and returns an <code>emhawkes_stats_fit</code>. By default, <code><a href="reference/hfit.html">hfit()</a></code> uses the optional <code>maxLik</code> package and returns a <code>maxLik</code> fit; install it with <code>install.packages("maxLik")</code> to use that provider. The first path row is the initial state, so <code>size</code> includes that row.</p>
+<p>Simulation and fitting default to <code>lambda_component0 = "auto"</code> and report the selected initialization. Supported stable constant linear models use mean intensity components; other models use zero components and recommend supplying an initial state. These components exclude the baseline intensity.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
@@ -107,6 +109,7 @@
 <ul class="list-unstyled">
 <li><a href="https://cloud.r-project.org/package=emhawkes" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/ksublee/emhawkes/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/ksublee/emhawkes/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
