@@ -51,6 +51,9 @@
 
 ## Corrections and diagnostics
 
+* Register S4 initialization and display methods through the package namespace.
+  Preserve construction and saved-fit restoration in sessions where methods
+  is installed but not attached, including isolated stats-optimizer sessions.
 * Validate observations, initial components, decay rates, mappings, counting
   processes and callback parameters consistently. Correct multi-kernel event
   types, univariate multi-kernel likelihoods and constant-model stability checks.

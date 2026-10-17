@@ -13,7 +13,7 @@ check_rds_session <- function() {
   previous_options <- options(emhawkes.engine = "cpp")
   on.exit(options(previous_options), add = TRUE)
   inter_arrival <- c(0, .2, .3, .5, 1)
-  specification <- new("hspec", mu = .3, alpha = 0, beta = 1)
+  specification <- methods::new("hspec", mu = .3, alpha = 0, beta = 1)
   fit <- suppressMessages(hfit(specification, inter_arrival,
     lambda_component0 = 0, N0 = 3, Nc0 = 7,
     fixed = c(FALSE, TRUE, TRUE)))
@@ -24,7 +24,9 @@ check_rds_session <- function() {
   writeLines(c(
     "args <- commandArgs(TRUE)",
     ".libPaths(readRDS(args[1]))",
+    "stopifnot(!('package:methods' %in% search()))",
     "library(emhawkes)",
+    "stopifnot(!('package:methods' %in% search()))",
     "fit <- readRDS(args[2])",
     "options(emhawkes.engine = 'r')",
     "calculation <- fit_diagnostics(fit)$computation",
@@ -46,6 +48,8 @@ check_rds_session <- function() {
     "estimated <- fitted_hspec(fit)",
     "initial <- fit_initial_state(fit)",
     "stopifnot(methods::is(estimated, 'hspec'),",
+    "          length(estimated@dimens) == 1L, estimated@dimens == 1,",
+    "          identical(dim(estimated@mu), c(1L, 1L)),",
     "          isTRUE(all.equal(initial,",
     "            list(lambda_component0 = matrix(0), N0 = 3, Nc0 = 7))))",
     "replayed <- do.call(logLik, c(list(object = estimated,",
@@ -57,7 +61,8 @@ check_rds_session <- function() {
   executable <- if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript"
   rscript <- file.path(R.home("bin"), executable)
   output <- suppressWarnings(system2(rscript,
-    args = c("--vanilla", shQuote(script_path), shQuote(libraries_path),
+    args = c("--vanilla", "--default-packages=datasets,utils,grDevices,graphics,stats",
+             shQuote(script_path), shQuote(libraries_path),
              shQuote(fit_path)), stdout = TRUE, stderr = TRUE))
   status <- attr(output, "status")
   if (!is.null(status) && status != 0L) {

@@ -3,6 +3,8 @@
 \docType{class}
 \name{hspec-class}
 \alias{hspec-class}
+\alias{initialize,hspec-method}
+\alias{show,hspec-method}
 \title{An S4 Class Representing an Exponential Marked Hawkes Model}
 \description{
 This class defines a marked Hawkes model with an exponential kernel.
@@ -48,6 +50,9 @@ Pass \code{stability_check = TRUE} to \code{new("hspec", ...)} to check the spec
 radius for constant, nonnegative Hawkes kernels without state-dependent,
 mark-dependent, or residual-distribution effects. For other specifications,
 the constructor reports that this stability check is unavailable.
+The \code{initialize} method converts numeric components to matrices, infers
+dimensions and validates the specification. The \code{show} method displays
+the model dimension and its components.
 }
 \section{Slots}{
 

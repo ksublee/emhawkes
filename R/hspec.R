@@ -49,6 +49,9 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #' radius for constant, nonnegative Hawkes kernels without state-dependent,
 #' mark-dependent, or residual-distribution effects. For other specifications,
 #' the constructor reports that this stability check is unavailable.
+#' The `initialize` method converts numeric components to matrices, infers
+#' dimensions and validates the specification. The `show` method displays
+#' the model dimension and its components.
 #' @seealso [hfit()], [hsim()], [logLik()], [fitted_hspec()], [set_residual()]
 #'
 #' @slot mu A numeric value, matrix, or function. If numeric, it is automatically converted to a matrix.
@@ -76,6 +79,10 @@ setClassUnion("matrixORnumericORfunctionORNULL", c("matrix", "numeric", "functio
 #' mhspec2 <- new("hspec", mu=MU, alpha=ALPHA, beta=BETA)
 #' mhspec2
 #'
+#' @import methods
+#' @rawNamespace exportMethods(initialize)
+#' @rawNamespace exportMethods(show)
+#' @aliases initialize,hspec-method show,hspec-method
 #' @export
 setClass("hspec",
   slots = list(

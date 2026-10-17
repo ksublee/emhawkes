@@ -14,10 +14,13 @@ isolated_stats_session <- function() {
   writeLines(c(
     "args <- commandArgs(TRUE)",
     ".libPaths(c(args[1], .Library))",
+    "stopifnot(!('package:methods' %in% search()))",
     "stopifnot(!requireNamespace('maxLik', quietly = TRUE))",
     "library(emhawkes)",
+    "stopifnot(!('package:methods' %in% search()))",
     "stopifnot(!'maxLik' %in% loadedNamespaces())",
-    "h <- new('hspec', mu = .5, alpha = 0, beta = 1)",
+    "h <- methods::new('hspec', mu = .5, alpha = 0, beta = 1)",
+    "stopifnot(length(h@dimens) == 1L, h@dimens == 1, identical(dim(h@mu), c(1L, 1L)))",
     "dt <- c(0,.2,.3,.5)",
     "fit <- hfit(h, dt, optimizer = 'stats', lambda_component0 = 0,",
     "  fixed = c(FALSE,TRUE,TRUE), gradient = 'analytic',",
@@ -29,6 +32,7 @@ isolated_stats_session <- function() {
     "invisible(capture.output(print(fit)))",
     "stopifnot(fit_diagnostics(fit)$status == 'ok')",
     "restored <- fitted_hspec(fit)",
+    "stopifnot(length(restored@dimens) == 1L, restored@dimens == 1, identical(dim(restored@mu), c(1L, 1L)))",
     "replayed <- do.call(logLik, c(list(object = restored, inter_arrival = dt), fit_initial_state(fit)))",
     "stopifnot(abs(as.numeric(replayed)-as.numeric(logLik(fit))) < 1e-12)",
     "error <- tryCatch(hfit(h, dt), error = identity)",
@@ -37,7 +41,9 @@ isolated_stats_session <- function() {
     "cat('Isolated stats fit and saved-result round trip: OK\\n')"
   ), script)
   executable <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
-  output <- system2(executable, c("--vanilla", shQuote(script), shQuote(isolated),
+  output <- system2(executable, c("--vanilla",
+    "--default-packages=datasets,utils,grDevices,graphics,stats",
+    shQuote(script), shQuote(isolated),
     shQuote(file.path(root, "fit.rds"))), stdout = TRUE, stderr = TRUE)
   cat(output, sep = "\n")
   stopifnot(is.null(attr(output, "status")))

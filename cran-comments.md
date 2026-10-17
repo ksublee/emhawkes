@@ -1,3 +1,24 @@
+## Resubmission of emhawkes 1.0.0
+
+The Windows R-devel pretest reported failures in fit-rds-session.R and
+stats-isolated-session.R. Fresh sessions without methods attached could skip
+hspec's S4 initializer, leaving its dimension unset; the isolated optimizer
+test also used an unqualified new().
+
+Import methods in the namespace and export the initialize and show methods.
+Use methods::new() in isolated tests. Force methods to remain unattached in
+the subprocess regression tests, covering construction, display, validation,
+R/C++ likelihoods and saved-fit restoration with both optimizer providers.
+Add Windows R-devel to the GitHub Actions check matrix.
+
+The corrected source passed `R CMD check --as-cran --run-donttest` on
+Windows/R 4.5.1 with 0 errors, 0 warnings and 0 notes, including all 43 test
+files, rebuilt vignettes and PDF/HTML manuals. Saved fits from the original
+1.0.0 candidate were restored and their likelihoods reproduced in fresh
+sessions with methods unattached. The isolated stats test excludes maxLik.
+Twelve simulation comparisons against the original candidate preserved all
+outputs and final RNG states exactly.
+
 ## Update from emhawkes 0.9.8 to 1.0.0
 
 This release adds registered Rcpp likelihood, inference and simulation engines,
