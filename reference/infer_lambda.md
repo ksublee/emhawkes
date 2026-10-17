@@ -134,7 +134,7 @@ summary(res)
 #> -------------------------------------------------------
 inferred <- logLik(h, inter_arrival = res$inter_arrival,
                    type = res$type, infer = TRUE)
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 head(inferred$lambda)
 #>        lambda1   lambda2
 #> [1,] 0.1500000 0.1500000

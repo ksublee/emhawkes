@@ -2,6 +2,53 @@
 
 ## emhawkes 0.9.9
 
+- Add `hfit(optimizer = "stats")` to call R’s
+  [`optim()`](https://rdrr.io/r/stats/optim.html) or
+  [`constrOptim()`](https://rdrr.io/r/stats/constrOptim.html) directly,
+  without maxLik. Preserve the default maxLik provider and make its
+  dependency optional. Support fixed/shared parameters, analytic or
+  supplied derivatives, linear inequalities and L-BFGS-B bounds; reject
+  unsupported controls, equality constraints and provider-specific
+  methods. Add independent result methods and reconstruction, default to
+  stable final curvature, protect boundary inference, and record
+  optimizer selection in diagnostics.
+
+- Accept both `hfit(constraint = ...)` and `hfit(constraints = ...)`
+  without deprecation warnings. Normalize either spelling to maxLik’s
+  `constraints` argument and reject simultaneous non-NULL values.
+  Preserve existing positional arguments.
+
+- Preserve native simulation RNG state when an internal warning is
+  promoted to an error or its handler draws random numbers, simulates a
+  nested path, or aborts. Signal internal warnings through protected R
+  evaluation and synchronize RNG state around their handlers.
+
+- Make initial-state, dimension, callback and volatility errors
+  actionable. Correct the singular-initializer warning to describe zero
+  excitation, report returned/requested simulation rows on early
+  stopping, and explain unavailable Wald curvature without changing
+  diagnostic reason codes. Keep R and C++ messages consistent and
+  clarify deprecation replacements.
+
+- Correct
+  [`expected_tau()`](https://ksublee.github.io/emhawkes/reference/expected_tau.md)
+  when the next event may never occur. Resolve short excitation and long
+  baseline time scales in ordinary Hawkes expectations, retain
+  finite-limit truncated moments, and validate the scalar equal-rate
+  calculation.
+
+- Correct
+  [`hvol()`](https://ksublee.github.io/emhawkes/reference/hvol.md) for
+  omitted mark effects and unit marks. Validate the bivariate moment
+  formula’s scope and reject unsupported kernels or callbacks rather
+  than silently ignoring them. Use current likelihood inference without
+  an internal deprecation warning.
+
+- Preserve the caller’s numeric display options when printing or
+  summarizing simulated paths, including on error. Honor zero displayed
+  rows, validate row limits, and retain matrix formatting for a single
+  row.
+
 - Check the declared minimum R 4.0.0 in CI. Make sensitivity
   parameter-name conversion explicit and enable Rcpp unwind protection
   for older Rcpp versions, preserving callback conditions and RNG

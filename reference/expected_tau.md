@@ -25,7 +25,8 @@ expected_tau(
 
 - rambda_component:
 
-  Rambda component.
+  Finite nonnegative scalar: the current total excitation for the
+  selected process dimension (sum its kernel components first).
 
 - type:
 
@@ -54,3 +55,12 @@ expected_tau(
 ## Value
 
 Expected value of next inter-arrival time.
+
+## Details
+
+This calculation assumes a constant baseline and a common decay rate
+within the selected row. With zero baseline, the result is `Inf` if
+there is positive probability of no further event. A custom residual law
+then requires `presidual` to determine this probability. A finite
+`max_upper` instead returns the truncated first moment, excluding
+waiting times above that limit.

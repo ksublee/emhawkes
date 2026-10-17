@@ -32,8 +32,11 @@ constants remain fixed. The original kernel mapping, `rmark`, and
 are updated when they match coefficient names; other generator
 parameters keep their original defaults.
 
-The fit keeps its `maxLik` classes and methods. Its `emhawkes` attribute
-stores a versioned list with `specification`, `parameter_map`,
+With `optimizer = "maxLik"`, the fit keeps its `maxLik` classes and
+methods; reading these fits requires maxLik. The `"stats"` optimizer
+returns an `emhawkes_stats_fit` with its own coefficient, likelihood,
+covariance and summary methods, requiring no maxLik API. Its `emhawkes`
+attribute stores a versioned list with `specification`, `parameter_map`,
 `initial_state`, `reduced`, and `custom_loglik`. New fits also retain
 `constraints` and final `diagnostics`, available through
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md).

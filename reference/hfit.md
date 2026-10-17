@@ -4,7 +4,8 @@ Estimate exponential Hawkes model parameters by maximum likelihood. The
 supplied
 [`hspec-class`](https://ksublee.github.io/emhawkes/reference/hspec-class.md)
 object defines the model and the starting values for optimization with
-[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html).
+[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) or R's stats
+functions.
 
 ## Usage
 
@@ -27,9 +28,11 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable"),
+  final_hessian = c("maxLik", "stable", "optimizer"),
   gradient = c("numeric", "analytic"),
-  jacobian = NULL
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 
 # S4 method for class 'hspec'
@@ -51,9 +54,11 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable"),
+  final_hessian = c("maxLik", "stable", "optimizer"),
   gradient = c("numeric", "analytic"),
-  jacobian = NULL
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 ```
 
@@ -131,6 +136,8 @@ hfit(
 
   `NULL` or a constraint list passed to
   [`maxLik::maxLik()`](https://rdrr.io/pkg/maxLik/man/maxLik.html).
+  `constraint` is an equivalent named-only alias. Supply a non-`NULL`
+  value through only one of these arguments.
 
 - method:
 
@@ -156,7 +163,10 @@ hfit(
 
 - final_hessian:
 
-  Named-only choice, `"maxLik"` (default) or `"stable"`. The default
+  Named-only choice, `"maxLik"`, `"stable"` or `"optimizer"`. The
+  default is `"maxLik"` with the maxLik provider and `"stable"` with
+  stats. `"optimizer"` retains the selected provider's final Hessian;
+  `"maxLik"` is accepted only with the maxLik provider. The default
   retains the final Hessian and covariance calculation from `maxLik`.
   Request `"stable"` to recalculate numerical final curvature for the
   built-in Hawkes likelihood using scaled central differences and
@@ -204,11 +214,31 @@ hfit(
   differentiation or a supplied `grad`; otherwise unused with those
   choices.
 
+- constraint:
+
+  Named-only alias for `constraints`, accepted without a warning.
+
+- optimizer:
+
+  Named-only optimizer provider. `"maxLik"` (default) requires the
+  optional maxLik package. `"stats"` directly uses R's
+  [`stats::optim()`](https://rdrr.io/r/stats/optim.html) or, for linear
+  inequalities,
+  [`stats::constrOptim()`](https://rdrr.io/r/stats/constrOptim.html). It
+  works without maxLik.
+
 ## Value
 
-A [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object with an
-`emhawkes` attribute containing the original specification, parameter
-map, normalized initial-state arguments, constraints, `reduced` setting,
+With `optimizer = "maxLik"`, a
+[`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html) object; with
+`optimizer = "stats"`, an `emhawkes_stats_fit` supporting
+[`coef()`](https://rdrr.io/r/stats/coef.html),
+[`logLik()`](https://ksublee.github.io/emhawkes/reference/logLik.md),
+[`vcov()`](https://rdrr.io/r/stats/vcov.html),
+[`summary()`](https://rdrr.io/r/base/summary.html) and
+[`print()`](https://rdrr.io/r/base/print.html). Both have an `emhawkes`
+attribute containing the original specification, parameter map,
+normalized initial-state arguments, constraints, `reduced` setting,
 supplied analytic Jacobians, and final curvature diagnostics and
 recorded calculation methods. Use
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
@@ -219,6 +249,35 @@ to restore the estimated specification and
 to retrieve its initial-state arguments.
 
 ## Details
+
+Optimizer selection is independent of `emhawkes.engine`. The stats
+provider supports `BFGS`, `Nelder-Mead`, `CG` and `L-BFGS-B`. Linear
+inequalities (`ineqA %*% param + ineqB >= 0`) use
+[`constrOptim()`](https://rdrr.io/r/stats/constrOptim.html) with BFGS or
+Nelder-Mead; the start must be strictly inside every inequality
+involving free parameters. Equality constraints and maxLik-only methods
+are rejected. Both constraint spellings have the same meaning. Fixed
+parameters may be specified by a full logical vector, positions or
+names; constraints are reduced accordingly.
+
+With stats, `...` accepts `fixed`, `control`, `finalHessian`, `lower`,
+`upper`, `outer.iterations` and `outer.eps`. Use
+`control = list(maxit = 500)` rather than maxLik's `iterlim`.
+`control$parscale` and `control$ndeps` refer to free parameters. Bounds
+are scalars or full-parameter vectors, require L-BFGS-B, and cannot be
+combined with linear constraints. L-BFGS-B requires finite likelihoods
+throughout the search. Unsupported arguments are errors.
+
+Stats results retain convergence codes and evaluation counts from R.
+Explicit derivatives take precedence over likelihood derivative
+attributes. Numerical final curvature uses
+[`optimHess()`](https://rdrr.io/r/stats/optim.html); stable curvature
+reuses the same checks as maxLik fits. Near a constraint boundary, Wald
+covariance is unavailable. Different optimizers and stopping rules need
+not give identical estimates. The default maxLik path and its result
+classes are preserved; there is no automatic retry with another
+provider. Without maxLik installed, select `optimizer = "stats"`
+explicitly. Saved stats fits remain usable without it.
 
 Observations are checked once before optimization. The first row is the
 initial state, and supplied counting processes contain values after each
@@ -484,7 +543,7 @@ estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 #>    fitted  restored 
 #> -245.0405 -245.0405 

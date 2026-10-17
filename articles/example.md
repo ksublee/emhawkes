@@ -176,7 +176,7 @@ and observed inter-arrival times.
 ``` r
 
 logLik(hspec1, inter_arrival = res1$inter_arrival)
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 #> loglikelihood 
 #>     -214.2385
 ```
@@ -437,7 +437,7 @@ Use `logLik` to evaluate the log-likelihood.
 ``` r
 
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 #> loglikelihood 
 #>     -974.2809
 ```
@@ -543,7 +543,57 @@ have one row per input row and one column per dimension, and must agree
 with the events and initial counts. Their rows contain the cumulative
 values after each event.
 
-## Next steps
+## Choosing the optimizer
+
+[`hfit()`](https://ksublee.github.io/emhawkes/reference/hfit.md) uses
+the optional maxLik package by default. To use R’s optimization
+functions directly, select `optimizer = "stats"`; likelihood engine
+selection and model specification are unchanged. This route also works
+without maxLik. The earlier fitting examples require maxLik and are not
+evaluated when it is unavailable.
+
+``` r
+
+library(emhawkes)
+poisson <- new("hspec", mu = 0.5, alpha = 0, beta = 1)
+fit_stats <- hfit(poisson, c(0, 0.2, 0.3, 0.5), optimizer = "stats",
+                  lambda_component0 = 0, fixed = c(FALSE, TRUE, TRUE),
+                  control = list(maxit = 500, reltol = 1e-12))
+summary(fit_stats)
+#> Hawkes maximum likelihood fit (stats::optim, BFGS)
+#> Log likelihood: 0.2958369
+#> Convergence code: 0 (Normal convergence.)
+#>        Estimate Std. Error z value Pr(>|z|)  
+#> mu1      3.0000     1.7321  1.7321  0.08326 .
+#> alpha1   0.0000     0.0000      NA       NA  
+#> beta1    1.0000     0.0000      NA       NA  
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> Fixed parameters: alpha1, beta1
+fit_diagnostics(fit_stats)$computation$optimizer
+#> $requested
+#> [1] "stats"
+#> 
+#> $used
+#> [1] "optim"
+#> 
+#> $method
+#> [1] "BFGS"
+```
+
+The stats route supports BFGS, Nelder-Mead, CG and L-BFGS-B. Linear
+inequality constraints use
+[`constrOptim()`](https://rdrr.io/r/stats/constrOptim.html) and require
+an interior starting point; equality constraints are not supported. Use
+`control$maxit` rather than maxLik’s `iterlim`. It defaults to stable
+final curvature; boundary estimates have no Wald covariance. Use
+[`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
+and
+[`fit_initial_state()`](https://ksublee.github.io/emhawkes/reference/fit_initial_state.md)
+with either provider. Changing providers does not guarantee identical
+estimates or cure convergence and identification problems.
+
+## Further reading
 
 - [Fitting and
   inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html):

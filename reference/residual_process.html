@@ -151,7 +151,7 @@ and preserve initialization with <code><a href="fit_initial_state.html">fit_init
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="logLik.html">logLik</a></span><span class="op">(</span><span class="va">h</span>, inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>,</span></span>
 <span class="r-in"><span>                   type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The initial values for intensity processes are not provided. Internally determined initial values are used.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> lambda_component0 was not supplied; automatic initial excitation will be used.</span>
 <span class="r-in"><span><span class="va">rp</span> <span class="op">&lt;-</span> <span class="va">inferred</span><span class="op">$</span><span class="va">res_process1</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

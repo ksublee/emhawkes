@@ -210,7 +210,7 @@ including entries with equal initial values.
 ``` r
 
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
-#> hfit: some standard errors are NaN. Try final_hessian = "stable" for Hawkes Hessian stabilization.
+#> hfit: some standard errors are NaN. Try final_hessian = "stable" for Hawkes Hessian diagnostics, then inspect fit_diagnostics().
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 51 iterations
@@ -296,7 +296,7 @@ initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = path$inter_arrival, type = path$type, mark = path$mark,
   infer = TRUE), initial))
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 ```
 
 The result remains a `maxLik` object, so

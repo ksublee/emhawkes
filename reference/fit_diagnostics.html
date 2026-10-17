@@ -76,7 +76,7 @@ requested built-in engine. Recording includes final curvature evaluations.</p>
 <code>"attribute"</code>. It describes the returned optimizer score, separately from a recalculated
 score in stable curvature checks. <code>computation$hessian$used</code> is
 <code>"maxLik_numeric"</code>, <code>"scaled_central_Richardson"</code>, <code>"scaled_score_Richardson"</code>,
-<code>"user"</code>, <code>"attribute"</code>,
+<code>"stats_numeric"</code>, <code>"user"</code>, <code>"attribute"</code>,
 <code>"BHHH"</code>, <code>"disabled"</code> or <code>"unavailable"</code>. The Hessian list also retains the
 requested <code>final_hessian</code> choice and any <code>finalHessian</code> override. Its <code>reason</code>
 explains a skipped stabilization or unavailable result. <code>maxLik_skipped</code> records
@@ -113,7 +113,10 @@ eigenvalues at or below <code>1e-10</code> times the largest absolute eigenvalue
 support numerical inversion. These thresholds are numerical diagnostics.
 With the default <code>final_hessian = "maxLik"</code>, these additional checks are not
 performed and the status is <code>"not_checked"</code>. Request <code>final_hessian = "stable"</code>
-to run them. Earlier fits without these checks also have status <code>"not_checked"</code>.</p>
+to run them. Earlier fits without these checks also have status <code>"not_checked"</code>.
+New computation records include <code>optimizer</code> with the requested provider,
+actual R optimizer and method. The stats provider defaults to stable curvature;
+<code>final_hessian = "optimizer"</code> retains its numerical or supplied Hessian.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -168,6 +171,17 @@ to run them. Earlier fits without these checks also have status <code>"not_check
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $hessian$maxLik_skipped</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $optimizer</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $optimizer$requested</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "maxLik"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $optimizer$used</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "maxLik"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $optimizer$method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "BFGS"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

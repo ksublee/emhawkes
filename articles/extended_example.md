@@ -399,7 +399,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55ac8162f6e8>
+#> <bytecode: 0x55d1feba28b0>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -409,7 +409,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55ac7ea421d0>
+#> <bytecode: 0x55d200c16658>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -419,7 +419,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55ac82680b48>
+#> <bytecode: 0x55d201014858>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -915,7 +915,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55ac85807ae8>
+#> <bytecode: 0x55d200c74770>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1030,7 +1030,7 @@ arguments.
 replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
   inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
   fit_initial_state(fit_fl)))
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
 #>    fitted  replayed 
 #> -3050.319 -3050.319
@@ -1228,7 +1228,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55ac7ef68ff8>
+#> <bytecode: 0x55d2016c7758>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1517,7 +1517,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55ac8314d030>
+#> <environment: 0x55d2012cee60>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -1525,7 +1525,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55ac8314d030>
+#> <environment: 0x55d2012cee60>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1534,7 +1534,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55ac8314d030>
+#> <environment: 0x55d2012cee60>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1544,7 +1544,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55ac8314d030>
+#> <environment: 0x55d2012cee60>
 ```
 
 The following histogram shows inter-arrival times from a model with

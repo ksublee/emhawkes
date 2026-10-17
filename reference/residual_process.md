@@ -118,6 +118,6 @@ h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=1000)
 inferred <- logLik(h, inter_arrival = res$inter_arrival,
                    type = res$type, infer = TRUE)
-#> The initial values for intensity processes are not provided. Internally determined initial values are used.
+#> lambda_component0 was not supplied; automatic initial excitation will be used.
 rp <- inferred$res_process1
 ```

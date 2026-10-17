@@ -38,17 +38,17 @@ Recording includes final curvature evaluations.
 `"attribute"`. It describes the returned optimizer score, separately
 from a recalculated score in stable curvature checks.
 `computation$hessian$used` is `"maxLik_numeric"`,
-`"scaled_central_Richardson"`, `"scaled_score_Richardson"`, `"user"`,
-`"attribute"`, `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian
-list also retains the requested `final_hessian` choice and any
-`finalHessian` override. Its `reason` explains a skipped stabilization
-or unavailable result. `maxLik_skipped` records whether stable curvature
-omitted maxLik's separate final Hessian. In that case `original_hessian`
-is `NULL`. Numerical stable checks otherwise retain the matrix returned
-by maxLik. Older computation records may omit `maxLik_skipped`. If both
-a derivative function and likelihood derivative attributes were
-supplied, the source is `NA` with a reason because precedence depends on
-maxLik.
+`"scaled_central_Richardson"`, `"scaled_score_Richardson"`,
+`"stats_numeric"`, `"user"`, `"attribute"`, `"BHHH"`, `"disabled"` or
+`"unavailable"`. The Hessian list also retains the requested
+`final_hessian` choice and any `finalHessian` override. Its `reason`
+explains a skipped stabilization or unavailable result. `maxLik_skipped`
+records whether stable curvature omitted maxLik's separate final
+Hessian. In that case `original_hessian` is `NULL`. Numerical stable
+checks otherwise retain the matrix returned by maxLik. Older computation
+records may omit `maxLik_skipped`. If both a derivative function and
+likelihood derivative attributes were supplied, the source is `NA` with
+a reason because precedence depends on maxLik.
 
 Stable curvature records `curvature_source = "analytic_score"` when it
 differentiates the built-in analytic score, including with a numerical
@@ -84,7 +84,11 @@ eigenvalue do not support numerical inversion. These thresholds are
 numerical diagnostics. With the default `final_hessian = "maxLik"`,
 these additional checks are not performed and the status is
 `"not_checked"`. Request `final_hessian = "stable"` to run them. Earlier
-fits without these checks also have status `"not_checked"`.
+fits without these checks also have status `"not_checked"`. New
+computation records include `optimizer` with the requested provider,
+actual R optimizer and method. The stats provider defaults to stable
+curvature; `final_hessian = "optimizer"` retains its numerical or
+supplied Hessian.
 
 ## See also
 
@@ -140,6 +144,17 @@ fit_diagnostics(fit)$computation
 #> 
 #> $hessian$maxLik_skipped
 #> [1] TRUE
+#> 
+#> 
+#> $optimizer
+#> $optimizer$requested
+#> [1] "maxLik"
+#> 
+#> $optimizer$used
+#> [1] "maxLik"
+#> 
+#> $optimizer$method
+#> [1] "BFGS"
 #> 
 #> 
 ```

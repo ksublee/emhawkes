@@ -1,7 +1,8 @@
 # Compute Hawkes volatility
 
-This function computes Hawkes volatility. Only works for bi-variate
-Hawkes process.
+This function computes Hawkes volatility for a constant bivariate Hawkes
+model with one kernel per event type and a common decay rate within each
+row.
 
 ## Usage
 
@@ -38,7 +39,7 @@ hvol(
 
 - horizon:
 
-  Time horizon for volatility.
+  Time horizon used to scale the stationary long-run variance rate.
 
 - inter_arrival:
 
@@ -52,7 +53,9 @@ hvol(
 
 - mark:
 
-  A vector of mark (jump) sizes. Start with zero.
+  A vector of mark (jump) sizes. Start with zero. If omitted, all
+  observed events have unit marks. At least one event of each type is
+  required.
 
 - dependence:
 
@@ -65,3 +68,12 @@ hvol(
 - ...:
 
   Further arguments passed to or from other methods.
+
+## Details
+
+Numeric `mu`, `alpha`, and `beta` are required. A missing `eta` is
+treated as zero. Custom impact functions, residual distributions, and
+noncanonical kernel mappings are not supported by this moment formula.
+The result is the square root of `horizon` times the stationary long-run
+variance rate of the difference between the two marked counting
+processes.

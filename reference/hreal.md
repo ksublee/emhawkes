@@ -54,7 +54,7 @@ as.matrix(x, ...)
 
 - n:
 
-  The number of rows to display.
+  The number of rows to display: a nonnegative integer or `Inf`.
 
 - ...:
 
