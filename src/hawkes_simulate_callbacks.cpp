@@ -1,15 +1,6 @@
 #include "simulation_state.h"
 
 namespace {
-// R callbacks can invoke RNG-using native routines with their own scopes.
-class CallbackRNGScope {
-public:
-    CallbackRNGScope() { GetRNGstate(); }
-    ~CallbackRNGScope() { PutRNGstate(); }
-    CallbackRNGScope(const CallbackRNGScope&) = delete;
-    CallbackRNGScope& operator=(const CallbackRNGScope&) = delete;
-};
-
 template <typename Call>
 Rcpp::RObject invoke_simulation_callback(Call call) {
     PutRNGstate();
@@ -98,7 +89,7 @@ Rcpp::List hawkes_simulate_callbacks_cpp(Rcpp::NumericVector mu, Rcpp::NumericMa
     }
     int generated = 1;
     if (size > 1) {
-        CallbackRNGScope scope;
+        SimulationRNGScope scope;
         std::vector<double> candidates(d), uniforms(d), decayed(d * k);
         for (int n = 1; n < size; ++n) {
             if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
@@ -125,7 +116,8 @@ Rcpp::List hawkes_simulate_callbacks_cpp(Rcpp::NumericVector mu, Rcpp::NumericMa
                 }
             }
             if (!R_FINITE(wait)) {
-                Rcpp::warning("Simulation stopped early: no further event occurs on this path.");
+                simulation_warning("Simulation stopped early: no further event occurs on this path. Returned " +
+                    std::to_string(n) + " of " + std::to_string(size) + " requested rows (including the initial row).");
                 break;
             }
             dt[n] = wait; type[n] = event + 1;

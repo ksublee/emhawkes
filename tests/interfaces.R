@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 close <- function(x, y, tol = 1e-9) {
@@ -210,3 +212,5 @@ tied <- logLik(state, c(0, 0, .2), mark = c(0, 2, 1), Nc0 = 5,
                lambda_component0 = 0, infer = TRUE)
 close(tied$lambda[-1, ], c(.7, .9))
 close(tied$loglikelihood, log(.7) + log(.9) - .9 * .2)
+
+}

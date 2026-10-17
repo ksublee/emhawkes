@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 h <- new("hspec", mu = 1, alpha = 0, beta = 1)
 dt <- c(0, .5, 1.5, .25)
@@ -106,3 +108,5 @@ restored <- readRDS(file); unlink(file)
 stopifnot(identical(fit_diagnostics(b), fit_diagnostics(restored)),
   is.null(fit_diagnostics(restored)$original_hessian))
 options(previous)
+
+}

@@ -78,6 +78,9 @@ rarrival <- function(...){
           # This is where the impact from past events (stored in current_lambda_component)
           # and the decay of this influence over time by beta are applied.
           f <- mu[i] + sum(rambda_component_n_miuns_1[i, ] * exp((- beta[i, ] * s)))
+          if (is.na(U) || is.na(f)) {
+            stop("Simulation encountered NaN during thinning; rescale time units to keep rates and waiting times representable.", call. = FALSE)
+          }
 
           # If the random value U is less than (f + mu),
           # accept s as the next event time and exit the loop.
@@ -216,7 +219,8 @@ darrival <- function(...){
 #' @title Expected Inter-Arrival Time
 #' @description Computes the conditional expected time until the next event.
 #' @param object An object of class \code{hspec}.
-#' @param rambda_component Rambda component.
+#' @param rambda_component Finite nonnegative scalar: the current total excitation
+#' for the selected process dimension (sum its kernel components first).
 #' @param type Process dimension index (default is 1).
 #' @param mu Optional mu value (overrides object@mu if provided).
 #' @param beta Optional beta value (overrides object@beta if provided).
@@ -224,6 +228,12 @@ darrival <- function(...){
 #' @param max_upper Upper integration limit.
 #' @param subdivisions Number of subdivisions for numerical integration.
 #' @return Expected value of next inter-arrival time.
+#' @details
+#' This calculation assumes a constant baseline and a common decay rate within
+#' the selected row. With zero baseline, the result is `Inf` if there is positive
+#' probability of no further event. A custom residual law then requires
+#' `presidual` to determine this probability. A finite `max_upper` instead returns
+#' the truncated first moment, excluding waiting times above that limit.
 #'
 #' @rdname expected_tau
 #' @aliases expected_tau expected_tau,hspec-method
@@ -242,23 +252,67 @@ setMethod("expected_tau", signature(object = "hspec"),
                    max_upper = Inf,
                    subdivisions = 400L) {
 
-            # Use slot values if mu or beta not provided
+            if (!is.numeric(type) || is.complex(type) || length(type) != 1L ||
+                !is.finite(type) || type != floor(type) || type < 1 || type > object@dimens) {
+              stop("type must identify one process dimension.")
+            }
+            if (is.null(beta) && (is.function(object@beta) ||
+                any(object@beta[type, ] != object@beta[type, 1]))) {
+              stop("Provide a scalar beta or use equal decay rates within the selected row.")
+            }
+            if (is.null(mu) && is.function(object@mu)) stop("Provide a numeric scalar mu for a function-valued baseline.")
+            # Use slot values if mu or beta not provided.
             mu <- if (is.null(mu)) object@mu[type] else mu
             beta <- if (is.null(beta)) object@beta[type, 1] else beta
+            scalar <- function(x) is.numeric(x) && !is.complex(x) &&
+              length(x) == 1L && is.finite(x)
+            if (!scalar(mu) || mu < 0 || !scalar(beta) || beta <= 0 ||
+                !scalar(rambda_component) || rambda_component < 0) {
+              stop("mu and total excitation must be finite nonnegative scalars; beta must be finite and positive.")
+            }
+            if (!is.numeric(max_upper) || is.complex(max_upper) || length(max_upper) != 1L ||
+                is.na(max_upper) || max_upper < 0) stop("max_upper must be nonnegative or Inf.")
+            if (max_upper == 0) return(0)
+            if (is.infinite(max_upper) && mu == 0) {
+              if (is.null(object@dresidual)) return(Inf)
+              if (is.null(object@presidual)) stop("Zero-baseline expectations require presidual for a custom residual law.")
+              survival <- residual_cdf(object@presidual, rambda_component / beta,
+                                       lower.tail = FALSE, log.p = TRUE)
+              if (length(survival) != 1L || is.na(survival) || survival > 0)
+                stop("presidual must return a valid scalar probability.")
+              if (is.finite(survival)) return(Inf)
+            }
 
-            # Handle residual density
-            if (is.null(object@dresidual)) {
-              dresidual_fn <- function(x, param = NULL) stats::dexp(x)
-              default_param <- NULL
-            } else {
-              dresidual_fn <- object@dresidual
-              default_param <- formals(dresidual_fn)$param
+            # E[T] = integral S(t) dt. Log-time coordinates resolve both the
+            # short excitation scale and a long baseline tail without trying
+            # to integrate a broad density on the original time scale.
+            if (is.infinite(max_upper) &&
+                (is.null(object@dresidual) || !is.null(object@presidual))) {
+              if (is.null(object@dresidual) && rambda_component == 0) return(1 / mu)
+              if (is.null(object@dresidual) &&
+                  -rambda_component / beta - log(mu) > log(.Machine$double.xmax)) return(Inf)
+              breaks <- sort(unique(c(-Inf, -log(mu), -log(beta),
+                -log(max(mu, rambda_component)) - log1p(min(mu, rambda_component) / max(mu, rambda_component)), Inf)))
+              survival_integrand <- function(log_time) {
+                scaled_time <- exp(log(beta) + log_time)
+                log_weight <- log(-expm1(-scaled_time)) - log(beta)
+                log_weight[scaled_time == 0] <- log_time[scaled_time == 0]
+                hazard <- exp(log(mu) + log_time) + exp(log(rambda_component) + log_weight)
+                log_survival <- if (is.null(object@dresidual)) -hazard else
+                  residual_cdf(object@presidual, hazard, lower.tail = FALSE, log.p = TRUE)
+                exp(log_time + log_survival)
+              }
+              pieces <- vapply(seq_len(length(breaks) - 1L), function(i)
+                stats::integrate(survival_integrand, breaks[i], breaks[i + 1L],
+                  rel.tol = tol, abs.tol = 0, subdivisions = subdivisions)$value, numeric(1))
+              return(sum(pieces))
             }
 
             # Define integrand
             integrand <- function(s) {
-              phi_val <- phi(s, rambda_component, mu, beta)
-              dens_val <- dresidual_fn(phi_val, param = default_param)
+              phi_val <- mu * s + integrate_exp_kernel(rambda_component, beta, s)
+              dens_val <- if (is.null(object@dresidual)) stats::dexp(phi_val) else
+                residual_density(object@dresidual, phi_val)
               s * dens_val * psi(s, rambda_component, mu, beta)
             }
 

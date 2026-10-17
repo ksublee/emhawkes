@@ -5,7 +5,7 @@ NULL
 #'
 #' Estimate exponential Hawkes model parameters by maximum likelihood.
 #' The supplied \code{\link{hspec-class}} object defines the model and the starting
-#' values for optimization with \code{\link[maxLik]{maxLik}}.
+#' values for optimization with \code{\link[maxLik]{maxLik}} or R's stats functions.
 #'
 #' @param object An \code{\link{hspec-class}} object containing the parameter values.
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
@@ -29,6 +29,12 @@ NULL
 #' Function components share parameters by name. Conflicting starting values for
 #' a shared name produce a warning; the first value is used.
 #' @param constraints `NULL` or a constraint list passed to [maxLik::maxLik()].
+#' `constraint` is an equivalent named-only alias. Supply a non-`NULL` value
+#' through only one of these arguments.
+#' @param constraint Named-only alias for `constraints`, accepted without a warning.
+#' @param optimizer Named-only optimizer provider. `"maxLik"` (default) requires
+#' the optional maxLik package. `"stats"` directly uses R's [stats::optim()] or,
+#' for linear inequalities, [stats::constrOptim()]. It works without maxLik.
 #' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #' @param grad Optional gradient function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. Takes precedence over `gradient`.
@@ -51,7 +57,10 @@ NULL
 #' differentiation or a supplied `grad`; otherwise unused with those choices.
 #' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
 #' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
-#' @param final_hessian Named-only choice, `"maxLik"` (default) or `"stable"`.
+#' @param final_hessian Named-only choice, `"maxLik"`, `"stable"` or `"optimizer"`.
+#' The default is `"maxLik"` with the maxLik provider and `"stable"` with stats.
+#' `"optimizer"` retains the selected provider's final Hessian; `"maxLik"` is
+#' accepted only with the maxLik provider.
 #' The default retains the final Hessian and covariance calculation from `maxLik`.
 #' Request `"stable"` to recalculate numerical final curvature for the built-in
 #' Hawkes likelihood using scaled central differences and Richardson extrapolation.
@@ -69,7 +78,9 @@ NULL
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
-#' @return A \code{\link[maxLik]{maxLik}} object with an `emhawkes` attribute
+#' @return With `optimizer = "maxLik"`, a \code{\link[maxLik]{maxLik}} object;
+#' with `optimizer = "stats"`, an `emhawkes_stats_fit` supporting `coef()`,
+#' `logLik()`, `vcov()`, `summary()` and `print()`. Both have an `emhawkes` attribute
 #' containing the original specification, parameter map, normalized initial-state
 #' arguments, constraints, `reduced` setting, supplied analytic Jacobians, and final
 #' curvature diagnostics and recorded calculation methods.
@@ -77,6 +88,30 @@ NULL
 #' specification and [fit_initial_state()] to retrieve its initial-state arguments.
 #'
 #' @details
+#' Optimizer selection is independent of `emhawkes.engine`. The stats provider
+#' supports `BFGS`, `Nelder-Mead`, `CG` and `L-BFGS-B`. Linear inequalities
+#' (`ineqA %*% param + ineqB >= 0`) use `constrOptim()` with BFGS or Nelder-Mead;
+#' the start must be strictly inside every inequality involving free parameters.
+#' Equality constraints and maxLik-only methods are rejected. Both constraint
+#' spellings have the same meaning. Fixed parameters may be specified by a full
+#' logical vector, positions or names; constraints are reduced accordingly.
+#'
+#' With stats, `...` accepts `fixed`, `control`, `finalHessian`, `lower`, `upper`,
+#' `outer.iterations` and `outer.eps`. Use `control = list(maxit = 500)` rather
+#' than maxLik's `iterlim`. `control$parscale` and `control$ndeps` refer to free
+#' parameters. Bounds are scalars or full-parameter vectors, require L-BFGS-B,
+#' and cannot be combined with linear constraints. L-BFGS-B requires finite
+#' likelihoods throughout the search. Unsupported arguments are errors.
+#'
+#' Stats results retain convergence codes and evaluation counts from R. Explicit
+#' derivatives take precedence over likelihood derivative attributes. Numerical
+#' final curvature uses `optimHess()`; stable curvature reuses the same checks
+#' as maxLik fits. Near a constraint boundary, Wald covariance is unavailable.
+#' Different optimizers and stopping rules need not give identical estimates.
+#' The default maxLik path and its result classes are preserved; there is no
+#' automatic retry with another provider. Without maxLik installed, select
+#' `optimizer = "stats"` explicitly. Saved stats fits remain usable without it.
+#'
 #' Observations are checked once before optimization. The first row is the initial
 #' state, and supplied counting processes contain values after each event.
 #' Omit `type` for a univariate model and `mark` for unit marks. The observation
@@ -268,13 +303,12 @@ NULL
 #'
 #' @docType methods
 #' @rdname hfit
-#' @importFrom maxLik maxLik
 #' @export
 #'
 #' @seealso [fit_diagnostics()], [fitted_hspec()], [fit_initial_state()], [logLik()],
 #' \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 #'
-#' @examples
+#' @examplesIf requireNamespace("maxLik", quietly = TRUE)
 #'
 #' # example 1
 #' mu <- c(0.1, 0.1)
@@ -393,8 +427,10 @@ setGeneric("hfit", function(object, inter_arrival = NULL,
                             reduced = TRUE,
                             grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
                             verbose = FALSE, ..., Nc0 = NULL,
-                            final_hessian = c("maxLik", "stable"),
-                            gradient = c("numeric", "analytic"), jacobian = NULL) standardGeneric("hfit"))
+                            final_hessian = c("maxLik", "stable", "optimizer"),
+                            gradient = c("numeric", "analytic"), jacobian = NULL,
+                            constraint = NULL,
+                            optimizer = c("maxLik", "stats")) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -408,15 +444,23 @@ setMethod(
            reduced = TRUE,
            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
            verbose = FALSE, ..., Nc0 = NULL,
-           final_hessian = c("maxLik", "stable"),
-           gradient = c("numeric", "analytic"), jacobian = NULL){
+           final_hessian = c("maxLik", "stable", "optimizer"),
+           gradient = c("numeric", "analytic"), jacobian = NULL,
+           constraint = NULL,
+           optimizer = c("maxLik", "stats")){
 
+    optimizer <- match.arg(optimizer)
+    if (optimizer == "maxLik" && !requireNamespace("maxLik", quietly = TRUE))
+      stop("optimizer = 'maxLik' requires the optional maxLik package. Install it or use optimizer = 'stats'.", call. = FALSE)
+    if (optimizer == "stats" && missing(final_hessian)) final_hessian <- "stable"
     final_hessian <- match.arg(final_hessian)
+    if (optimizer == "stats" && final_hessian == "maxLik")
+      stop("Use final_hessian = 'stable' or 'optimizer' with optimizer = 'stats'.", call. = FALSE)
     gradient <- match.arg(gradient)
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
-      warning("lambda0 is deprecated; instead use lambda_component0")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       lambda_component0 <- additional_argument[["lambda0"]]
       additional_argument[["lambda0"]] <- NULL
@@ -424,22 +468,13 @@ setMethod(
     }
 
     # legacy argument 泥섎━
-    if ("constraint" %in% names(additional_argument)) {
+    if (!is.null(constraint)) {
 
       if (!is.null(constraints)) {
-        stop("Use only one of 'constraints' or 'constraint'.")
+        stop("Supply a non-NULL value through only one of 'constraint' or 'constraints'.", call. = FALSE)
       }
 
-      constraints <- additional_argument[["constraint"]]
-      additional_argument[["constraint"]] <- NULL
-
-      warning("'constraint' is deprecated; use 'constraints' instead.")
-    }
-
-
-    if(verbose == TRUE && is.null(lambda_component0)){
-      message("Initial values for intensity processes were not provided.
-              Using internally determined default values for estimation.\n")
+      constraints <- constraint
     }
 
 
@@ -457,7 +492,7 @@ setMethod(
     kernel_cols <- ncol(eval_param(object@beta))
     lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, kernel_cols)
     if (is.null(mylogLik) && is.null(lambda_component0) && length(object@type_col_map)) {
-      stop("In this model, please provide lambda_component0.")
+      stop_missing_initial(object@dimens, kernel_cols)
     }
     custom_plan <- callback_plan(mylogLik,
       c("object", names(observation), "lambda_component0", "param", "reduced"), "mylogLik")
@@ -603,7 +638,7 @@ setMethod(
     # replaces it, so omit that pass unless the caller explicitly requested it.
     # Honor maxLik's partial argument matching for explicit overrides too.
     # Keep Newton methods and constrained or non-Hawkes fits unchanged.
-    skip_final_hessian <- identical(final_hessian, "stable") &&
+    skip_final_hessian <- optimizer == "maxLik" && identical(final_hessian, "stable") &&
       is.null(mylogLik) && is.null(object@dresidual) && is.null(constraints) &&
       is.null(hess) &&
       !any(startsWith("finalHessian", as.character(names(additional_argument)))) &&
@@ -611,11 +646,17 @@ setMethod(
       tolower(method) %in% c("bfgs", "cg", "conjugate-gradient", "nm", "nelder-mead", "sann")
     if (skip_final_hessian) ml_args$finalHessian <- FALSE
 
+    if (isTRUE(verbose) && is.null(mylogLik) && is.null(lambda_component0)) message_automatic_initial()
     message_parameter_sharing(parameter_map)
-    fit <- do.call(maxLik::maxLik, ml_args)
+    fit <- if (optimizer == "maxLik") do.call(maxLik::maxLik, ml_args) else
+      run_stats_fit(llh_function, starting_point, grad, hess, constraints, method,
+        additional_argument, stable = final_hessian == "stable" &&
+          is.null(mylogLik) && is.null(object@dresidual))
     if (!is.null(fit)) {
       final <- if (is.null(mylogLik)) {
-        finalize_hawkes_fit(fit, object, constraints, hess, additional_argument,
+        finalize_hawkes_fit(fit, object,
+                           if (optimizer == "stats") fit$curvature_constraints else constraints,
+                           hess, additional_argument,
                            method, final_hessian,
                            score_factory = if (engine %in% c("auto", "cpp") &&
                              is.null(execution$fallback_reason) &&
@@ -628,9 +669,21 @@ setMethod(
         list(fit = fit, diagnostics = list(status = "not_checked", reason = "custom_likelihood"))
       }
       fit <- final$fit
+      if (optimizer == "stats") {
+        final$diagnostics$optimizer_code <- fit$code
+        final$diagnostics$optimizer_message <- fit$message
+        final$diagnostics$optimizer_success <- fit$code == 0L
+        if (fit$code != 0L && !"optimizer_not_converged" %in% final$diagnostics$warnings) {
+          final$diagnostics$warnings <- c(final$diagnostics$warnings, "optimizer_not_converged")
+          warning("The stats optimizer did not report normal convergence (code ", fit$code,
+                  "). See fit_diagnostics().", call. = FALSE)
+        }
+      }
       final$diagnostics$computation <- fit_computation(fit, execution, gradient,
         gradient_used, final_hessian, hess, additional_argument, final$diagnostics,
         maxLik_hessian_skipped = skip_final_hessian)
+      final$diagnostics$computation$optimizer <- list(requested = optimizer,
+        used = if (optimizer == "stats") fit$optimizer else "maxLik", method = method)
       attr(fit, "emhawkes") <- list(
         version = 1L,
         specification = object,
@@ -642,6 +695,7 @@ setMethod(
         jacobian = if (gradient_used == "analytic" || final_hessian == "stable") jacobian else NULL,
         custom_loglik = !is.null(mylogLik),
         constraints = constraints,
+        optimizer = optimizer,
         diagnostics = final$diagnostics
       )
     }

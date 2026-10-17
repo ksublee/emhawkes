@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 fit_engine <- function(engine, ...) {
@@ -178,3 +180,5 @@ fails(fun$loglik(c(log_rate = .5)), "constant dimensions")
 custom <- fit_engine("cpp", poisson, mylogLik = function(object, param) -(param[1] - .2)^2,
   method = "NR")
 stopifnot(abs(coef(custom) - .2) < 1e-6, attr(custom, "emhawkes")$custom_loglik)
+
+}

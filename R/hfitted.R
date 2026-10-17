@@ -2,8 +2,10 @@
 NULL
 
 fit_metadata <- function(fit) {
+  if (inherits(fit, "maxLik") && !requireNamespace("maxLik", quietly = TRUE))
+    stop("Reading this legacy maxLik fit requires the optional maxLik package. New fits can use optimizer = 'stats'.", call. = FALSE)
   metadata <- attr(fit, "emhawkes", exact = TRUE)
-  if (!inherits(fit, "maxLik") || !is.list(metadata) ||
+  if (!(inherits(fit, "maxLik") || inherits(fit, "emhawkes_stats_fit")) || !is.list(metadata) ||
       !identical(metadata$version, 1L) ||
       !methods::is(metadata$specification, "hspec") ||
       !is.list(metadata$parameter_map) || !is.list(metadata$initial_state)) {
@@ -42,7 +44,10 @@ bind_fitted_generator <- function(fun, coefficients) {
 #' parameters in these generators are updated when they match coefficient names;
 #' other generator parameters keep their original defaults.
 #'
-#' The fit keeps its `maxLik` classes and methods. Its `emhawkes` attribute stores
+#' With `optimizer = "maxLik"`, the fit keeps its `maxLik` classes and methods;
+#' reading these fits requires maxLik. The `"stats"` optimizer returns an
+#' `emhawkes_stats_fit` with its own coefficient, likelihood, covariance and
+#' summary methods, requiring no maxLik API. Its `emhawkes` attribute stores
 #' a versioned list with `specification`, `parameter_map`, `initial_state`,
 #' `reduced`, and `custom_loglik`. New fits also retain `constraints` and final
 #' `diagnostics`, available through [fit_diagnostics()]. New calculation records
@@ -59,7 +64,7 @@ bind_fitted_generator <- function(fun, coefficients) {
 #' A custom `mylogLik` is not part of the restored `hspec`.
 #' @seealso [fit_initial_state()], [hfit()], [logLik()], [hsim()]
 #' @export
-#' @examples
+#' @examplesIf requireNamespace("maxLik", quietly = TRUE)
 #' h <- new("hspec", mu = 0.3, alpha = 0, beta = 1)
 #' fit <- hfit(h, c(0, 0.2, 0.3, 0.5, 1), lambda_component0 = 0,
 #'             fixed = c(FALSE, TRUE, TRUE))

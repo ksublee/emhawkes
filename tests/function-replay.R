@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 old <- options(emhawkes.engine = "auto")
 evaluate <- function(engine, object, dt, type = NULL, mark = NULL, initial = .1, infer = FALSE) {
@@ -144,3 +146,5 @@ invisible(evaluate("cpp", fitted, dt, initial = 0))
 stopifnot(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
 assignInNamespace("hawkes_loglik_cpp", native, "emhawkes")
 options(old)
+
+}

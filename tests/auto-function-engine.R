@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 old_options <- options(emhawkes.engine = "auto")
 native <- emhawkes:::hawkes_loglik_cpp
@@ -78,3 +80,5 @@ error <- tryCatch(fit(h), error = identity)
 stopifnot(inherits(error, "error"), grepl("callback failure", conditionMessage(error)), failures == 1L)
 assignInNamespace("hawkes_loglik_cpp", native, "emhawkes")
 options(old_options)
+
+}

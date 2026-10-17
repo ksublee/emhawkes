@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+knitr::opts_chunk$set(eval = requireNamespace("maxLik", quietly = TRUE))
 
 ```
 
@@ -326,7 +327,33 @@ Pass `Nc0` by name in `hfit`, and use the same initial state when comparing simu
 If supplied, `N` and `Nc` must have one row per input row and one column per dimension, and must agree with the events and initial counts.
 Their rows contain the cumulative values after each event.
 
-## Next steps
+## Choosing the optimizer
+
+`hfit()` uses the optional maxLik package by default. To use R's optimization
+functions directly, select `optimizer = "stats"`; likelihood engine selection
+and model specification are unchanged. This route also works without maxLik.
+The earlier fitting examples require maxLik and are not evaluated when it is
+unavailable.
+
+```{r stats-optimizer, eval=TRUE}
+library(emhawkes)
+poisson <- new("hspec", mu = 0.5, alpha = 0, beta = 1)
+fit_stats <- hfit(poisson, c(0, 0.2, 0.3, 0.5), optimizer = "stats",
+                  lambda_component0 = 0, fixed = c(FALSE, TRUE, TRUE),
+                  control = list(maxit = 500, reltol = 1e-12))
+summary(fit_stats)
+fit_diagnostics(fit_stats)$computation$optimizer
+```
+
+The stats route supports BFGS, Nelder-Mead, CG and L-BFGS-B. Linear inequality
+constraints use `constrOptim()` and require an interior starting point; equality
+constraints are not supported. Use `control$maxit` rather than maxLik's
+`iterlim`. It defaults to stable final curvature; boundary estimates have no
+Wald covariance. Use `fitted_hspec()` and `fit_initial_state()` with either
+provider. Changing providers does not guarantee identical estimates or cure
+convergence and identification problems.
+
+## Further reading
 
 - [Fitting and inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html): parameter settings, initial states, fitted models, residual diagnostics and standard errors.
 - [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent, multi-kernel and flexible residual models.

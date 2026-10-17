@@ -116,7 +116,7 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
     if ("lambda0" %in% names(additional_argument)) {
 
       # Issue a warning to inform the user that "lambda0" is deprecated
-      warning("lambda0 is deprecated; instead use lambda_component0.")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       # Assign the value of "lambda0" to the new parameter name "lambda_component0"
       lambda_component0 <- additional_argument[["lambda0"]]
@@ -196,9 +196,7 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
     # default lambda_component0
     if(!is.null(object@type_col_map)){
       if(length(object@type_col_map) > 0 & is.null(lambda_component0)){
-        stop("Initialization Error: 'lambda_component0' must be specified.
-             This ensures the model starts with a valid configuration.
-             Please review the input parameters and provide valid initial values for 'lambda_component0'.")
+        stop_missing_initial(dimens, ncol(beta))
         }
     }
 
@@ -210,7 +208,7 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
     } else {
       # default lambda_component0
       if(verbose == TRUE){
-        message("Default initial values for 'lambda_component0' will be internally calculated and used for the simulation.")
+        message_automatic_initial()
       }
 
       lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
@@ -358,7 +356,8 @@ simulate_hawkes <- function(object, size = 100, lambda_component0 = NULL,
                             presidual = object@presidual, all_rows_beta_equal = all_rows_beta_equal)
 
       if (is.infinite(res["inter_arrival"])) {
-        warning("Simulation stopped early: no further event occurs on this path.")
+        warning(sprintf("Simulation stopped early: no further event occurs on this path. Returned %d of %.0f requested rows (including the initial row).",
+                        generated, size), call. = FALSE)
         break
       }
 

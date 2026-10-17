@@ -94,7 +94,7 @@ setMethod(
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
-      warning("lambda0 is deprecated; instead use lambda_component0.")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       lambda_component0 <- additional_argument[["lambda0"]]
 
@@ -190,11 +190,11 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
     # ---- Lambda component0 check & setup ----
     if (is.null(lambda_component0)) {
       if (length(object@type_col_map) > 0) {
-        stop("In this model, please provide lambda_component0.")
+        stop_missing_initial(object@dimens, ncol(beta))
       }
 
       if (show_initial_message) {
-        message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+        message_automatic_initial()
       }
 
       lambda_component0 <- get_lambda0(

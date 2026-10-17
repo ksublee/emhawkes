@@ -16,7 +16,7 @@
 \arguments{
 \item{x}{An S3 object of class \code{hreal}.}
 
-\item{n}{The number of rows to display.}
+\item{n}{The number of rows to display: a nonnegative integer or \code{Inf}.}
 
 \item{...}{Additional arguments passed to or from other methods.}
 

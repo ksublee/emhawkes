@@ -70,8 +70,31 @@ native_safety_cases <- function() {
       c(.3, .5), matrix(.01, 2, 2), matrix(1, 2, 2), NULL, matrix(.02, 2, 2),
       list(0L, 1L), infer = TRUE, gradient = TRUE)
   }
+  warning_path <- function() {
+    old <- options(warn = 0)
+    on.exit(options(old))
+    h <- new("hspec", mu = 1e-308, alpha = 0, beta = 1)
+    nested <- NULL
+    draws <- numeric()
+    set.seed(2)
+    value <- withCallingHandlers(hsim(h, 3, lambda_component0 = 0), warning = function(w) {
+      draws <<- runif(2)
+      nested <<- hsim(new("hspec", mu = .4, alpha = .01, beta = 1), 3, lambda_component0 = 0)
+      gc(FALSE)
+      invokeRestart("muffleWarning")
+    })
+    options(warn = 2)
+    set.seed(2)
+    reference <- tryCatch(emhawkes:::simulate_hawkes_r(h, 3, lambda_component0 = 0), error = identity)
+    expected_seed <- .Random.seed
+    set.seed(2)
+    error <- tryCatch(hsim(h, 3, lambda_component0 = 0), error = identity)
+    stopifnot(inherits(error, "error"), identical(error, reference), identical(expected_seed, .Random.seed))
+    list(value = value, nested = nested, draws = draws, error = conditionMessage(error), following = runif(2))
+  }
   list(simulation_equal = function() numeric_case(TRUE),
     simulation_general = function() numeric_case(FALSE), simulation_callbacks = callbacks,
+    simulation_warning = warning_path,
     observed_baseline = baseline, baseline_jacobian = jacobian,
     state_likelihood = function() likelihood(FALSE),
     observed_likelihood = function() likelihood(TRUE), numeric_gradient = gradient)

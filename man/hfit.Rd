@@ -24,9 +24,11 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable"),
+  final_hessian = c("maxLik", "stable", "optimizer"),
   gradient = c("numeric", "analytic"),
-  jacobian = NULL
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 
 \S4method{hfit}{hspec}(
@@ -47,9 +49,11 @@ hfit(
   verbose = FALSE,
   ...,
   Nc0 = NULL,
-  final_hessian = c("maxLik", "stable"),
+  final_hessian = c("maxLik", "stable", "optimizer"),
   gradient = c("numeric", "analytic"),
-  jacobian = NULL
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 }
 \arguments{
@@ -87,7 +91,9 @@ argument is the optimization parameter vector. Takes precedence over \code{gradi
 \item{hess}{Optional Hessian function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
 argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
 
-\item{constraints}{\code{NULL} or a constraint list passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}.}
+\item{constraints}{\code{NULL} or a constraint list passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}.
+\code{constraint} is an equivalent named-only alias. Supply a non-\code{NULL} value
+through only one of these arguments.}
 
 \item{method}{The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
@@ -99,7 +105,10 @@ argument is the optimization parameter vector. If \code{NULL}, use numerical dif
 If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.
 This argument must be named.}
 
-\item{final_hessian}{Named-only choice, \code{"maxLik"} (default) or \code{"stable"}.
+\item{final_hessian}{Named-only choice, \code{"maxLik"}, \code{"stable"} or \code{"optimizer"}.
+The default is \code{"maxLik"} with the maxLik provider and \code{"stable"} with stats.
+\code{"optimizer"} retains the selected provider's final Hessian; \code{"maxLik"} is
+accepted only with the maxLik provider.
 The default retains the final Hessian and covariance calculation from \code{maxLik}.
 Request \code{"stable"} to recalculate numerical final curvature for the built-in
 Hawkes likelihood using scaled central differences and Richardson extrapolation.
@@ -107,7 +116,7 @@ With the \code{"auto"} or \code{"cpp"} engine, use the built-in analytic score w
 supported and supplied with any required \code{jacobian}, independently of the
 optimizer's \code{gradient} choice. Otherwise use likelihood differences. The
 \code{"r"} engine retains likelihood differences. Failed score evaluations also
-fall back to likelihood differences; inspect \code{\link[=fit_diagnostics]{fit_diagnostics()}} for the reason.
+fall back to likelihood differences; inspect \code{fit_diagnostics()} for the reason.
 For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied \code{hess}
 or an explicit \code{finalHessian} override, skip maxLik's separate final Hessian.
 Set \code{finalHessian = TRUE} to retain that extra calculation. Newton methods
@@ -133,9 +142,17 @@ also supply \code{jacobian$impact}. Observed baselines use a full-parameter
 See Details for these conventions.
 Also used by \code{final_hessian = "stable"} when optimization uses numerical
 differentiation or a supplied \code{grad}; otherwise unused with those choices.}
+
+\item{constraint}{Named-only alias for \code{constraints}, accepted without a warning.}
+
+\item{optimizer}{Named-only optimizer provider. \code{"maxLik"} (default) requires
+the optional maxLik package. \code{"stats"} directly uses R's \code{\link[stats:optim]{stats::optim()}} or,
+for linear inequalities, \code{\link[stats:constrOptim]{stats::constrOptim()}}. It works without maxLik.}
 }
 \value{
-A \code{\link[maxLik]{maxLik}} object with an \code{emhawkes} attribute
+With \code{optimizer = "maxLik"}, a \code{\link[maxLik]{maxLik}} object;
+with \code{optimizer = "stats"}, an \code{emhawkes_stats_fit} supporting \code{coef()},
+\code{logLik()}, \code{vcov()}, \code{summary()} and \code{print()}. Both have an \code{emhawkes} attribute
 containing the original specification, parameter map, normalized initial-state
 arguments, constraints, \code{reduced} setting, supplied analytic Jacobians, and final
 curvature diagnostics and recorded calculation methods.
@@ -145,9 +162,33 @@ specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retri
 \description{
 Estimate exponential Hawkes model parameters by maximum likelihood.
 The supplied \code{\link{hspec-class}} object defines the model and the starting
-values for optimization with \code{\link[maxLik]{maxLik}}.
+values for optimization with \code{\link[maxLik]{maxLik}} or R's stats functions.
 }
 \details{
+Optimizer selection is independent of \code{emhawkes.engine}. The stats provider
+supports \code{BFGS}, \code{Nelder-Mead}, \code{CG} and \code{L-BFGS-B}. Linear inequalities
+(\code{ineqA \%*\% param + ineqB >= 0}) use \code{constrOptim()} with BFGS or Nelder-Mead;
+the start must be strictly inside every inequality involving free parameters.
+Equality constraints and maxLik-only methods are rejected. Both constraint
+spellings have the same meaning. Fixed parameters may be specified by a full
+logical vector, positions or names; constraints are reduced accordingly.
+
+With stats, \code{...} accepts \code{fixed}, \code{control}, \code{finalHessian}, \code{lower}, \code{upper},
+\code{outer.iterations} and \code{outer.eps}. Use \code{control = list(maxit = 500)} rather
+than maxLik's \code{iterlim}. \code{control$parscale} and \code{control$ndeps} refer to free
+parameters. Bounds are scalars or full-parameter vectors, require L-BFGS-B,
+and cannot be combined with linear constraints. L-BFGS-B requires finite
+likelihoods throughout the search. Unsupported arguments are errors.
+
+Stats results retain convergence codes and evaluation counts from R. Explicit
+derivatives take precedence over likelihood derivative attributes. Numerical
+final curvature uses \code{optimHess()}; stable curvature reuses the same checks
+as maxLik fits. Near a constraint boundary, Wald covariance is unavailable.
+Different optimizers and stopping rules need not give identical estimates.
+The default maxLik path and its result classes are preserved; there is no
+automatic retry with another provider. Without maxLik installed, select
+\code{optimizer = "stats"} explicitly. Saved stats fits remain usable without it.
+
 Observations are checked once before optimization. The first row is the initial
 state, and supplied counting processes contain values after each event.
 Omit \code{type} for a univariate model and \code{mark} for unit marks. The observation
@@ -338,6 +379,7 @@ optimization objective can retain data in its function environment.
 Save the fit with \code{saveRDS()} to retain its model, parameter map, and initial-state information.
 }
 \examples{
+\dontshow{if (requireNamespace("maxLik", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
 # example 1
 mu <- c(0.1, 0.1)
@@ -448,6 +490,7 @@ fit <- hfit(h1,
 summary(fit)
 }
 # For more information, please see vignettes.
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fit_diagnostics]{fit_diagnostics()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}},

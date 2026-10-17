@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 # Reading a fit in a new session must register the maxLik S3 methods before
@@ -65,3 +67,5 @@ check_rds_session <- function() {
 }
 
 check_rds_session()
+
+}

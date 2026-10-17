@@ -79,7 +79,8 @@ callback_plan <- function(FUN, available, label) {
   required <- names(fmls)[vapply(fmls, function(x) identical(x, quote(expr = )), logical(1))]
   missing <- setdiff(required, c(available, "..."))
   if (length(missing)) {
-    stop(label, " requires unsupported argument(s): ", paste(missing, collapse = ", "), call. = FALSE)
+    stop(label, " requires unsupported argument(s): ", paste(missing, collapse = ", "),
+         ". Give extra arguments defaults or capture their values in the function's environment.", call. = FALSE)
   }
   if ("..." %in% names(fmls)) available else intersect(names(fmls), available)
 }
@@ -115,6 +116,23 @@ required_count_paths <- function(object, extra = NULL) {
   }), use.names = FALSE))
 }
 
+# Shared diagnostics keep the R, native and fitting entry points consistent.
+stop_missing_initial <- function(dimens, kernels) {
+  stop("lambda_component0 is required when type_col_map is supplied. ",
+       "Supply a scalar (e.g. 0 for zero initial excitation) or a ",
+       dimens, " x ", kernels, " matrix.", call. = FALSE)
+}
+
+message_automatic_initial <- function() {
+  message("lambda_component0 was not supplied; automatic initial excitation will be used.")
+}
+
+warn_zero_initial <- function() {
+  warning("Automatic initial-state calculation could not invert diag(dimens) - alpha / beta; ",
+          "using zero initial excitation. Supply lambda_component0 to set it explicitly.",
+          call. = FALSE)
+}
+
 normalize_count_initial <- function(value, dimens, name) {
   if (is.null(value)) return(rep(0, dimens))
   if (!is.numeric(value) || !(length(value) %in% c(1L, dimens)) || any(!is.finite(value))) {
@@ -133,13 +151,14 @@ normalize_observation <- function(object, inter_arrival, type = NULL, mark = NUL
     stop("inter_arrival must be a finite, nonnegative vector starting with an initial zero.")
   }
   if (is.null(type)) {
-    if (dimens != 1L) stop("The argument type should be provided.")
+    if (dimens != 1L) stop("type is required for a multivariate model; supply one event type per row of inter_arrival, including the initial row.", call. = FALSE)
     type <- c(0, rep(1, size - 1L))
   }
   if (is.null(mark)) mark <- c(0, rep(1, size - 1L))
   if (!is.numeric(type) || !is.null(dim(type)) || length(type) != size || any(!is.finite(type)) ||
       any(type[-1] < 1 | type[-1] > dimens | type[-1] != floor(type[-1]))) {
-    stop("type must match inter_arrival and contain integer event types from 1 to dimens.")
+    stop("type must match inter_arrival (", size, " rows) and contain integer event types from 1 to ",
+         dimens, " after the initial row.", call. = FALSE)
   }
   if (!is.numeric(mark) || !is.null(dim(mark)) || length(mark) != size || any(!is.finite(mark))) {
     stop("mark must be finite and match inter_arrival.")
@@ -180,8 +199,12 @@ normalize_lambda_initial <- function(value, dimens, kernel_cols, legacy = FALSE)
   if (length(value) == 1L) return(matrix(value, dimens, kernel_cols))
   shape_ok <- is.null(dim(value)) || identical(dim(value), c(as.integer(dimens), as.integer(kernel_cols)))
   if (length(value) != size || !shape_ok) {
-    if (!legacy) stop("lambda_component0 must be a scalar or match the kernel matrix dimensions.")
-    warning("lambda_component0 does not match the kernel dimensions; recycling or truncating it is deprecated. Supply a scalar or a matrix with the correct dimensions.", call. = FALSE)
+    expected <- paste0(dimens, " x ", kernel_cols)
+    received <- if (is.null(dim(value))) paste0("length ", length(value)) else paste(dim(value), collapse = " x ")
+    if (!legacy) stop("lambda_component0 must be a scalar or match the kernel matrix dimensions (",
+                      expected, "; received ", received, ").", call. = FALSE)
+    warning("lambda_component0 does not match the kernel dimensions (", expected, "; received ",
+            received, "); recycling or truncating it is deprecated. Supply a scalar or a matrix with the correct dimensions.", call. = FALSE)
     value <- rep_len(as.numeric(value), size)
   }
   matrix(value, dimens, kernel_cols)

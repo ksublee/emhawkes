@@ -7,13 +7,14 @@ Description: Simulate and fit multivariate Hawkes models with exponential
     kernels, introduced by Hawkes (1971) <doi:10.2307/2334319>.
     Includes marked, state-dependent, and multi-kernel specifications.
     Parameter estimation uses maximum likelihood, following Ozaki (1979)
-    <doi:10.1007/BF02480272>, through the 'maxLik' package.
+    <doi:10.1007/BF02480272>, through the optional 'maxLik' package or
+    the optimization functions supplied with R.
 Depends: R (>= 4.0.0)
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
-Imports: methods, maxLik, Rcpp, stats
+Imports: methods, Rcpp, stats
 LinkingTo: Rcpp
 NeedsCompilation: yes
 Collate: 
@@ -27,6 +28,7 @@ Collate:
     'hengine.R'
     'hgradient.R'
     'hllf.R'
+    'hoptimizer.R'
     'huncertainty.R'
     'hfit.R'
     'hfitted.R'
@@ -37,6 +39,7 @@ Collate:
     'tzexp.R'
     'zzz.R'
 Suggests: 
+    maxLik,
     knitr,
     rmarkdown,
     miscTools

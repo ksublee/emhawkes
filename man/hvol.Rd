@@ -30,13 +30,14 @@ hvol(
 \arguments{
 \item{object}{\code{\link{hspec-class}}}
 
-\item{horizon}{Time horizon for volatility.}
+\item{horizon}{Time horizon used to scale the stationary long-run variance rate.}
 
 \item{inter_arrival}{Inter-arrival times of events which includes inter-arrival for events that occur in all dimensions. Start with zero.}
 
 \item{type}{A vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.}
 
-\item{mark}{A vector of mark (jump) sizes. Start with zero.}
+\item{mark}{A vector of mark (jump) sizes. Start with zero. If omitted, all
+observed events have unit marks. At least one event of each type is required.}
 
 \item{dependence}{Dependence between mark and previous sigma-algebra.}
 
@@ -45,5 +46,13 @@ hvol(
 \item{...}{Further arguments passed to or from other methods.}
 }
 \description{
-This function computes Hawkes volatility. Only works for bi-variate Hawkes process.
+This function computes Hawkes volatility for a constant bivariate Hawkes model
+with one kernel per event type and a common decay rate within each row.
+}
+\details{
+Numeric \code{mu}, \code{alpha}, and \code{beta} are required. A missing \code{eta} is treated as
+zero. Custom impact functions, residual distributions, and noncanonical kernel
+mappings are not supported by this moment formula.
+The result is the square root of \code{horizon} times the stationary long-run
+variance rate of the difference between the two marked counting processes.
 }

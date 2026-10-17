@@ -19,7 +19,8 @@ expected_tau(
 \arguments{
 \item{object}{An object of class \code{hspec}.}
 
-\item{rambda_component}{Rambda component.}
+\item{rambda_component}{Finite nonnegative scalar: the current total excitation
+for the selected process dimension (sum its kernel components first).}
 
 \item{type}{Process dimension index (default is 1).}
 
@@ -38,4 +39,11 @@ Expected value of next inter-arrival time.
 }
 \description{
 Computes the conditional expected time until the next event.
+}
+\details{
+This calculation assumes a constant baseline and a common decay rate within
+the selected row. With zero baseline, the result is \code{Inf} if there is positive
+probability of no further event. A custom residual law then requires
+\code{presidual} to determine this probability. A finite \code{max_upper} instead returns
+the truncated first moment, excluding waiting times above that limit.
 }

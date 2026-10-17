@@ -29,7 +29,7 @@
 #' Functions for printing `hreal` objects are provided.
 #'
 #' @param x An S3 object of class `hreal`.
-#' @param n The number of rows to display.
+#' @param n The number of rows to display: a nonnegative integer or `Inf`.
 #' @param object An S3 object of class `hreal`.
 #' @param ... Additional arguments passed to or from other methods.
 #'
@@ -38,7 +38,9 @@
 #'
 #' @export
 print.hreal <- function(x, n=20, ...){
-  options(digits=4)
+  rows <- hreal_display_rows(n, length(x$arrival))
+  old_options <- options(digits=4)
+  on.exit(options(old_options), add = TRUE)
   cat("-------------------------------------------------------\n")
   cat("Simulation result of exponential (marked) Hawkes model.\n")
   print(x$hspec)
@@ -50,12 +52,12 @@ print.hreal <- function(x, n=20, ...){
   name_lambda  <- paste0("lambda", 1:dimens)
   name_lambda_component <- colnames(x$lambda_component)
 
-  len <- min(n, length(mtrx[,"arrival"]))
+  len <- length(rows)
 
   if(is.null(x$mark)) {
-    print(mtrx[1:len, c("arrival", name_N, name_lambda, name_lambda_component)])
+    print(mtrx[rows, c("arrival", name_N, name_lambda, name_lambda_component), drop = FALSE])
   } else {
-    print(mtrx[1:len, c("arrival", name_N, "mark", name_lambda, name_lambda_component)])
+    print(mtrx[rows, c("arrival", name_N, "mark", name_lambda, name_lambda_component), drop = FALSE])
   }
 
   if ( length(mtrx[,"arrival"]) > len){
@@ -68,7 +70,7 @@ print.hreal <- function(x, n=20, ...){
   }
 
   cat("-------------------------------------------------------\n")
-  options(digits=7)
+  invisible(x)
 }
 
 
@@ -78,7 +80,9 @@ print.hreal <- function(x, n=20, ...){
 #' @export
 summary.hreal <- function(object, n=20, ...){
 
-  options(digits=5)
+  rows <- hreal_display_rows(n, length(object$arrival))
+  old_options <- options(digits=5)
+  on.exit(options(old_options), add = TRUE)
   cat("-------------------------------------------------------\n")
   cat("Simulation result of exponential (marked) Hawkes model.\n")
   cat("Realized path :\n")
@@ -87,12 +91,12 @@ summary.hreal <- function(object, n=20, ...){
   name_N  <- paste0("N", 1:dimens)
   name_lambda  <- paste0("lambda", 1:dimens)
 
-  len <- min(n, length(mtrx[,"arrival"]))
+  len <- length(rows)
 
   if(is.null(object$mark)) {
-    print(mtrx[1:len, c("arrival", name_N, name_lambda)])
+    print(mtrx[rows, c("arrival", name_N, name_lambda), drop = FALSE])
   } else {
-    print(mtrx[1:len, c("arrival", name_N, "mark", name_lambda)])
+    print(mtrx[rows, c("arrival", name_N, "mark", name_lambda), drop = FALSE])
   }
 
   if ( length(mtrx[,"arrival"]) > len){
@@ -105,7 +109,15 @@ summary.hreal <- function(object, n=20, ...){
   }
 
   cat("-------------------------------------------------------\n")
-  options(digits=7)
+  invisible(object)
+}
+
+hreal_display_rows <- function(n, size) {
+  if (!is.numeric(n) || is.complex(n) || length(n) != 1L ||
+      is.na(n) || n < 0 || n != floor(n)) {
+    stop("n must be a nonnegative integer or Inf.")
+  }
+  seq_len(min(n, size))
 }
 
 #'

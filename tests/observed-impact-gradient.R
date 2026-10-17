@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 # JIT compilation mutates closure bytecode; exclude it from serialization checks.
 old_jit <- compiler::enableJIT(0)
@@ -291,3 +293,5 @@ overridden <- suppressMessages(hfit(amplitude, path$inter_arrival, lambda_compon
 close(coef(overridden), root, 2e-7)
 options(previous)
 invisible(compiler::enableJIT(old_jit))
+
+}

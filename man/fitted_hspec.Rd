@@ -24,7 +24,10 @@ The original kernel mapping, \code{rmark}, and \code{rresidual} are retained. Na
 parameters in these generators are updated when they match coefficient names;
 other generator parameters keep their original defaults.
 
-The fit keeps its \code{maxLik} classes and methods. Its \code{emhawkes} attribute stores
+With \code{optimizer = "maxLik"}, the fit keeps its \code{maxLik} classes and methods;
+reading these fits requires maxLik. The \code{"stats"} optimizer returns an
+\code{emhawkes_stats_fit} with its own coefficient, likelihood, covariance and
+summary methods, requiring no maxLik API. Its \code{emhawkes} attribute stores
 a versioned list with \code{specification}, \code{parameter_map}, \code{initial_state},
 \code{reduced}, and \code{custom_loglik}. New fits also retain \code{constraints} and final
 \code{diagnostics}, available through \code{\link[=fit_diagnostics]{fit_diagnostics()}}. New calculation records
@@ -41,6 +44,7 @@ convergence information and whether the model is suitable for simulation.
 A custom \code{mylogLik} is not part of the restored \code{hspec}.
 }
 \examples{
+\dontshow{if (requireNamespace("maxLik", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 h <- new("hspec", mu = 0.3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, 0.2, 0.3, 0.5, 1), lambda_component0 = 0,
             fixed = c(FALSE, TRUE, TRUE))
@@ -48,6 +52,7 @@ estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 do.call(logLik, c(list(object = estimated,
                       inter_arrival = c(0, 0.2, 0.3, 0.5, 1)), initial))
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=hfit]{hfit()}}, \code{\link[=logLik]{logLik()}}, \code{\link[=hsim]{hsim()}}

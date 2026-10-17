@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 old <- options(emhawkes.engine="auto")
 jit <- compiler::enableJIT(0)
@@ -91,3 +93,5 @@ options(emhawkes.engine="r")
 r <- suppressWarnings(suppressMessages(hfit(h,dt,lambda_component0=.1,control=list(iterlim=2))))
 for(field in c("estimate","maximum","gradient","hessian","code","iterations"))stopifnot(identical(auto[[field]],r[[field]]))
 options(old);invisible(compiler::enableJIT(jit))
+
+}

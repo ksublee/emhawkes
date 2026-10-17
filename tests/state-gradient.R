@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 # JIT compilation changes serialized closures even when their values are intact.
 previous_jit <- compiler::enableJIT(0)
@@ -232,3 +234,5 @@ stopifnot(fit_diagnostics(fit)$computation$gradient$used == 'analytic', identica
 close(as.numeric(logLik(fitted_hspec(fit),a$inter_arrival,lambda_component0=0)),as.numeric(logLik(fit)),1e-10)
 options(old)
 invisible(compiler::enableJIT(previous_jit))
+
+}

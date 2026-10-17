@@ -57,7 +57,7 @@ Rcpp::List hawkes_simulate_cpp(Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha
     }
     int generated = 1;
     if (size > 1) {
-        Rcpp::RNGScope scope;
+        SimulationRNGScope scope;
         std::vector<double> candidates(d), uniforms(d), decayed(d * k);
         for (int n = 1; n < size; ++n) {
             if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
@@ -93,23 +93,24 @@ Rcpp::List hawkes_simulate_cpp(Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha
                     for (;;) {
                         if ((++attempts & 1023) == 0) Rcpp::checkUserInterrupt();
                         const double increment = R::rexp(1.0 / bound);
-                        if (ISNAN(increment)) Rcpp::warning("NAs produced");
+                        if (ISNAN(increment)) simulation_warning("NAs produced");
                         time = time + increment;
                         const double uniform = R::runif(0.0, bound);
-                        if (ISNAN(uniform)) Rcpp::warning("NAs produced");
+                        if (ISNAN(uniform)) simulation_warning("NAs produced");
                         long double excitation = 0.0L;
                         for (int j = 0; j < k; ++j)
                             excitation += rounded_product(state[i + d * j], std::exp(-beta(i, j) * time));
                         const double intensity = mu[i] + static_cast<double>(excitation);
                         if (ISNAN(uniform) || ISNAN(intensity))
-                            Rcpp::stop("missing value where TRUE/FALSE needed");
+                            Rcpp::stop("Simulation encountered NaN during thinning; rescale time units to keep rates and waiting times representable.");
                         if (uniform < intensity) break;
                     }
                     if (time < wait) { wait = time; event = i; }
                 }
             }
             if (!R_FINITE(wait)) {
-                Rcpp::warning("Simulation stopped early: no further event occurs on this path.");
+                simulation_warning("Simulation stopped early: no further event occurs on this path. Returned " +
+                    std::to_string(n) + " of " + std::to_string(size) + " requested rows (including the initial row).");
                 break;
             }
             dt[n] = wait; type[n] = event + 1;

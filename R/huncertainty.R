@@ -93,10 +93,10 @@ fit_curvature_change <- function(first, second) {
 
 stable_fit_curvature <- function(fit, score = NULL) {
   parameters <- stats::coef(fit)
-  active <- maxLik::activePar(fit)
+  active <- fit_active(fit)
   free <- parameters[active]
   scale <- pmax(abs(free), .1)
-  objective <- maxLik::objectiveFn(fit)
+  objective <- fit_objective(fit)
   fn <- function(candidate) {
     proposal <- parameters
     proposal[active] <- candidate
@@ -152,7 +152,7 @@ stable_fit_curvature <- function(fit, score = NULL) {
   }
   common <- list(curvature_source = if (is.null(score)) "likelihood" else "analytic_score",
                  scale = scale, checks = do.call(rbind, checks),
-                 change = change, original_hessian = maxLik::hessian(fit))
+                 change = change, original_hessian = fit_hessian(fit))
   if (is.null(chosen)) {
     reason <- if (any(vapply(derivatives, function(item) item$information$positive,
                              logical(1)))) "step_sensitive" else
@@ -195,6 +195,16 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   unchecked <- function(reason) {
     list(fit = fit, diagnostics = list(status = "not_checked", reason = reason))
   }
+  if (final_hessian == "optimizer" || (final_hessian == "maxLik" && inherits(fit, "emhawkes_stats_fit"))) {
+    if (inherits(fit, "emhawkes_stats_fit")) {
+      if (!is.null(fit$boundary)) {
+        warning("Wald standard errors are unavailable: the estimate is near a constraint boundary. See fit_diagnostics().", call. = FALSE)
+        return(list(fit = fit, diagnostics = list(status = "unavailable", reason = fit$boundary)))
+      }
+      return(unchecked("optimizer_requested"))
+    }
+    final_hessian <- "maxLik"
+  }
   if (final_hessian == "maxLik") {
     # Inspect the stored curvature without re-evaluating the likelihood.
     final <- additional[["finalHessian"]]
@@ -205,7 +215,7 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
                                   error = function(e) numeric(0))
       if (any(is.nan(standard_errors))) {
         message('hfit: some standard errors are NaN. Try final_hessian = "stable" ',
-                'for Hawkes Hessian stabilization.')
+                'for Hawkes Hessian diagnostics, then inspect fit_diagnostics().')
       }
     }
     return(unchecked("maxLik_requested"))
@@ -220,7 +230,7 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
       identical(additional[["bhhhHessian"]], TRUE) ||
       identical(toupper(method), "BHHH")) return(unchecked("BHHH_requested"))
   parameters <- stats::coef(fit)
-  active <- maxLik::activePar(fit)
+  active <- fit_active(fit)
   if (!is.numeric(parameters) || any(!is.finite(parameters)) || !any(active) ||
       !is.finite(as.numeric(stats::logLik(fit)))) return(unchecked("fit_unavailable"))
   scale <- pmax(abs(parameters[active]), .1)
@@ -228,7 +238,7 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   if (!is.null(boundary)) {
     diagnostics <- list(status = "unavailable", reason = boundary, scale = scale)
   } else if (!is.null(hess)) {
-    H <- maxLik::hessian(fit)[active, active, drop = FALSE]
+    H <- fit_hessian(fit)[active, active, drop = FALSE]
     information <- fit_information(H * outer(scale, scale))
     diagnostics <- list(status = if (information$positive) "ok" else "unavailable",
       reason = if (information$positive) NULL else information$reason,
@@ -253,7 +263,7 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
     diagnostics$score_fallback_reason <- score_reason
   }
   if (identical(diagnostics$status, "ok") && identical(diagnostics$method, "supplied")) {
-    gradient <- maxLik::gradient(fit)[active]
+    gradient <- fit_gradient(fit)[active]
     diagnostics$gradient <- gradient
     usable_gradient <- is.numeric(gradient) && length(gradient) == sum(active) &&
       all(is.finite(gradient))
@@ -265,8 +275,8 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
   }
   covariance <- matrix(0, length(parameters), length(parameters),
                         dimnames = list(names(parameters), names(parameters)))
-  diagnostics$optimizer_code <- maxLik::returnCode(fit)
-  diagnostics$optimizer_message <- maxLik::returnMessage(fit)
+  diagnostics$optimizer_code <- fit_code(fit)
+  diagnostics$optimizer_message <- fit_message(fit)
   numerical_methods <- c("nr", "newton-raphson", "bfgsr", "bfgs-r", "bhhh")
   diagnostics$optimizer_success <- if (tolower(method) == "sann") NA else if (
     tolower(method) %in% numerical_methods) diagnostics$optimizer_code %in% c(1L, 2L, 8L) else
@@ -299,7 +309,16 @@ finalize_hawkes_fit <- function(fit, object, constraints, hess, additional, meth
     }
   } else {
     covariance[active, active] <- NA_real_
-    warning("Wald standard errors are unavailable (", diagnostics$reason,
+    explanation <- switch(diagnostics$reason,
+      nonfinite = "the curvature contains nonfinite values",
+      not_positive_definite = "the information matrix is not positive definite",
+      rank_deficient = "the information matrix has insufficient numerical rank",
+      step_sensitive = "the curvature changes with the differentiation step",
+      objective_changed = "the fitted likelihood could not be reproduced",
+      unsupported_constraints = "the supplied constraints are not supported by this curvature check",
+      constraint_near_boundary = "the estimate is near a constraint boundary",
+      "the curvature check failed")
+    warning("Wald standard errors are unavailable: ", explanation, " (", diagnostics$reason,
             "). See fit_diagnostics(); consider profile likelihood or bootstrap.", call. = FALSE)
   }
   fit$varcovar <- covariance
@@ -317,7 +336,7 @@ fit_computation <- function(fit, execution, gradient_requested, gradient_used,
       gradient_reason <- "Both grad and likelihood gradient attributes were supplied; maxLik controls precedence."
     } else gradient_used <- "attribute"
   }
-  H <- maxLik::hessian(fit)
+  H <- fit_hessian(fit)
   final <- additional[["finalHessian"]]
   disabled <- !is.null(final) && length(final) == 1L && !is.na(final) &&
     (is.logical(final) || is.numeric(final)) && !as.logical(final)
@@ -333,10 +352,19 @@ fit_computation <- function(fit, execution, gradient_requested, gradient_used,
   } else if (isTRUE(execution$hessian_attribute)) {
     if (is.null(hess)) "attribute" else NA_character_
   } else if (!is.null(hess)) "user" else "maxLik_numeric"
+  if (inherits(fit, "emhawkes_stats_fit")) {
+    gradient_used <- if (identical(gradient_used, "analytic")) "analytic" else fit$gradient_source
+    gradient_reason <- NULL
+    if (!isTRUE(diagnostics$method %in% c("scaled_central_Richardson", "scaled_score_Richardson", "supplied"))) {
+      used <- fit$hessian_source
+      if (is.null(H) && !disabled && final_hessian == "stable") used <- "unavailable"
+    }
+  }
   if (is.na(used)) {
     reason <- "Both hess and likelihood Hessian attributes were supplied; maxLik controls precedence."
   } else if (used == "unavailable" && is.null(reason)) {
-    reason <- "maxLik did not return a final Hessian."
+    reason <- if (inherits(fit, "emhawkes_stats_fit")) "The stats provider did not return a final Hessian." else
+      "maxLik did not return a final Hessian."
   }
   list(recorded = TRUE,
     engine = list(requested = execution$requested, used = execution$used,
@@ -376,7 +404,7 @@ unrecorded_fit_computation <- function(metadata) {
 #' `"attribute"`. It describes the returned optimizer score, separately from a recalculated
 #' score in stable curvature checks. `computation$hessian$used` is
 #' `"maxLik_numeric"`, `"scaled_central_Richardson"`, `"scaled_score_Richardson"`,
-#' `"user"`, `"attribute"`,
+#' `"stats_numeric"`, `"user"`, `"attribute"`,
 #' `"BHHH"`, `"disabled"` or `"unavailable"`. The Hessian list also retains the
 #' requested `final_hessian` choice and any `finalHessian` override. Its `reason`
 #' explains a skipped stabilization or unavailable result. `maxLik_skipped` records
@@ -417,9 +445,12 @@ unrecorded_fit_computation <- function(metadata) {
 #' With the default `final_hessian = "maxLik"`, these additional checks are not
 #' performed and the status is `"not_checked"`. Request `final_hessian = "stable"`
 #' to run them. Earlier fits without these checks also have status `"not_checked"`.
+#' New computation records include `optimizer` with the requested provider,
+#' actual R optimizer and method. The stats provider defaults to stable curvature;
+#' `final_hessian = "optimizer"` retains its numerical or supplied Hessian.
 #' @seealso [hfit()], [fitted_hspec()]
 #' @export
-#' @examples
+#' @examplesIf requireNamespace("maxLik", quietly = TRUE)
 #' h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 #' fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
 #'             fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")

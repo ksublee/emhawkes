@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 fit_engine <- function(engine, ...) {
@@ -42,3 +44,5 @@ poisson <- new("hspec", mu = 1, alpha = 0, beta = 1)
 fit <- fit_engine("cpp", poisson, c(0, .2, .3, .5, 1, 1), lambda_component0 = 0,
                    fixed = c(FALSE, TRUE, TRUE), grad = gradient, hess = hessian, method = "NR")
 stopifnot(all(calls > 0), abs(coef(fit)[1] - 5 / 3) < 1e-7)
+
+}

@@ -96,6 +96,7 @@ fun <- objective(h, obs, initial, map, derivatives = FALSE)
 close(fun$loglik(map$start), independent(), 1e-12)
 
 # Public hfit dispatch: keep only q free to make the short fit well specified.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 a <- list(object = h, inter_arrival = dt, type = type, mark = mark,
   N0 = c(2, 3), Nc0 = c(4, 5), lambda_component0 = initial,
   fixed = names(map$start) != "q", control = list(iterlim = 3))
@@ -111,6 +112,7 @@ close(cpp$hessian, r$hessian, 1e-3)
 stopifnot(attr(cpp, "emhawkes")$gradient == "numeric", is.null(attr(cpp, "emhawkes")$jacobian))
 options(emhawkes.engine = "r")
 close(suppressMessages(do.call(logLik, c(list(object = fitted_hspec(cpp), inter_arrival = dt, type = type, mark = mark), fit_initial_state(cpp)))), logLik(cpp), 1e-11)
+}
 
 # Current-state-only callbacks do not allocate histories. Also exercise automatic
 # initialization and observed baselines without impacts.

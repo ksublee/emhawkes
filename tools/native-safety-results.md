@@ -7,9 +7,10 @@ and runs the package tests and vignettes.
 
 The separate Native safety workflow runs on Linux and checks:
 
-- Forced garbage collection during eight native fixtures: both numeric
+- Forced garbage collection during nine native fixtures: both numeric
   simulation paths, callback simulation, observed baseline, baseline Jacobian,
-  state-dependent likelihood, observed-baseline likelihood and numeric score.
+  state-dependent likelihood, observed-baseline likelihood, numeric score and
+  internal simulation warnings with nested RNG-using handlers or `warn = 2`.
   Collection occurs at every allocation for the small direct calls and every
   tenth allocation for the two public likelihood calls. Each result and final
   RNG state must exactly match execution without forced collection.
@@ -43,9 +44,23 @@ Newer Rcpp versions already enable that mechanism by default; the R and Rcpp
 version requirements are unchanged. See the
 [Rcpp 1.0.8.3 headers](https://github.com/cran/Rcpp/blob/1.0.8.3/inst/include/Rcpp/r/headers.h)
 and [evaluation implementation](https://github.com/cran/Rcpp/blob/1.0.8.3/inst/include/Rcpp/api/meat/Rcpp_eval.h).
-The numerical simulation, likelihood, callback and RNG algorithms are unchanged.
+The minimum-version compatibility fixes above leave the numerical simulation,
+likelihood, callback and RNG algorithms unchanged.
 They exercise representative paths and do not prove the absence of all native
 memory defects.
+
+The pre-release diagnostic follow-up found an additional existing failure:
+direct `Rcpp::warning()` calls can jump past RNG cleanup when a warning becomes
+an error. Simulation warnings now use protected R evaluation with explicit RNG
+synchronization. Shared explicit simulation scopes also preserve nested handler
+draws. Local R 4.5.1 passed all nine forced-GC fixtures, including warning
+unwinding, and the existing callback failure/interrupt recovery cases.
+`tests/user-diagnostics.R` checks all three simulation loops with warnings
+promoted to errors, RNG-using/nested handlers and original handler errors,
+including Box-Muller normal-cache recovery. These follow-up changes still need
+their own cross-platform, POSIX-signal and Valgrind CI run.
+The follow-up source package also passed the full local R CMD check with
+38 test files, vignette rebuilding and PDF/HTML manuals: Status: OK.
 
 Run from the repository root after installing the package:
 

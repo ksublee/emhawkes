@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 build_map <- getFromNamespace("build_parameter_map", "emhawkes")
@@ -237,3 +239,5 @@ options(emhawkes.engine = "r")
 overridden <- fit_one(gradient = "analytic", grad = function(param) 5 - 3 * exp(param))
 close(coef(overridden), coef(analytic_fit), 1e-8)
 options(previous)
+
+}

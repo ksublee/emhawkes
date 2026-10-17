@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 capture_messages <- function(expr) {
@@ -92,3 +94,5 @@ custom <- capture_messages(hfit(poisson, fixed = fixed,
   hess = function(param) diag(c(2, 0, 0))))
 stopifnot(is.nan(suppressWarnings(miscTools::stdEr(custom$value)[1])),
           length(custom$messages) == 0L)
+
+}

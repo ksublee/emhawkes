@@ -6,9 +6,35 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <string>
 #include <vector>
 
 namespace {
+// Simulation may be nested inside an R warning handler or callback. Always
+// synchronize explicitly rather than relying on Rcpp's global scope counter.
+class SimulationRNGScope {
+public:
+    SimulationRNGScope() { GetRNGstate(); }
+    ~SimulationRNGScope() { PutRNGstate(); }
+    SimulationRNGScope(const SimulationRNGScope&) = delete;
+    SimulationRNGScope& operator=(const SimulationRNGScope&) = delete;
+};
+
+// Direct Rcpp::warning() can long-jump over destructors under warn=2. Protected
+// R evaluation preserves conditions and unwinds C++ state. Handlers may draw
+// random numbers or simulate another path, so publish and reload RNG state.
+inline void simulation_warning(const std::string& message) {
+    PutRNGstate();
+    try {
+        Rcpp::Function warn = Rcpp::Environment::base_env()["warning"];
+        warn(message, Rcpp::Named("call.") = false);
+        GetRNGstate();
+    } catch (...) {
+        GetRNGstate();
+        throw;
+    }
+}
+
 // R materializes double vector products before sum(). On platforms where
 // long double is double, prevent contraction into a fused multiply-add.
 #if LDBL_MANT_DIG == DBL_MANT_DIG

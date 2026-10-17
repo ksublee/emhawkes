@@ -30,7 +30,7 @@ requested built-in engine. Recording includes final curvature evaluations.
 \code{"attribute"}. It describes the returned optimizer score, separately from a recalculated
 score in stable curvature checks. \code{computation$hessian$used} is
 \code{"maxLik_numeric"}, \code{"scaled_central_Richardson"}, \code{"scaled_score_Richardson"},
-\code{"user"}, \code{"attribute"},
+\code{"stats_numeric"}, \code{"user"}, \code{"attribute"},
 \code{"BHHH"}, \code{"disabled"} or \code{"unavailable"}. The Hessian list also retains the
 requested \code{final_hessian} choice and any \code{finalHessian} override. Its \code{reason}
 explains a skipped stabilization or unavailable result. \code{maxLik_skipped} records
@@ -71,13 +71,18 @@ support numerical inversion. These thresholds are numerical diagnostics.
 With the default \code{final_hessian = "maxLik"}, these additional checks are not
 performed and the status is \code{"not_checked"}. Request \code{final_hessian = "stable"}
 to run them. Earlier fits without these checks also have status \code{"not_checked"}.
+New computation records include \code{optimizer} with the requested provider,
+actual R optimizer and method. The stats provider defaults to stable curvature;
+\code{final_hessian = "optimizer"} retains its numerical or supplied Hessian.
 }
 \examples{
+\dontshow{if (requireNamespace("maxLik", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 h <- new("hspec", mu = .3, alpha = 0, beta = 1)
 fit <- hfit(h, c(0, .2, .3, .5, 1), lambda_component0 = 0,
             fixed = c(FALSE, TRUE, TRUE), final_hessian = "stable")
 fit_diagnostics(fit)$status
 fit_diagnostics(fit)$computation
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=hfit]{hfit()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}

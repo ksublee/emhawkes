@@ -158,7 +158,7 @@ setMethod(
       nrow_mu <- nrow(.Object@mu)
       ncol_mu <- ncol(.Object@mu)
 
-      if (ncol_mu != 1) stop("The number of column in mu should be one.")
+      if (ncol_mu != 1) stop("mu must have one column (received ", ncol_mu, ").", call. = FALSE)
 
 
     } else if( is.function(.Object@mu) && length(formals(.Object@mu)) == 1 && names(formals(.Object@mu)[1]) == "param"){
@@ -170,7 +170,8 @@ setMethod(
       nrow_mu <- nrow(evalf(.Object@mu))
       ncol_mu <- ncol(evalf(.Object@mu))
 
-      if (ncol_mu != 1) stop("The number of column in mu should be one.")
+      if (length(ncol_mu) != 1L || ncol_mu != 1)
+        stop("mu(param) must return a matrix with one column and one row per event type.", call. = FALSE)
 
     }
 
@@ -217,7 +218,7 @@ setMethod(
 
     # Check if dimens is provided or determinable
     if (is.null(dimens) & is.null(nrow_mu) & is.null(nrow_alpha) & is.null(nrow_beta) & is.null(nrow_eta)) {
-      stop("dimens should be provided in this model.")
+      stop("dimens is required when parameter dimensions cannot be inferred; supply the number of event types.", call. = FALSE)
     }
 
 
@@ -225,17 +226,22 @@ setMethod(
     if (length(unique(c(dimens, nrow_mu, nrow_alpha, nrow_beta, nrow_eta))) == 1) {
       .Object@dimens <- unique(c(dimens, nrow_mu, nrow_alpha, nrow_beta, nrow_eta))
     } else {
-      stop("The number of rows in parameters and given dimens should all be the same.")
+      rows <- c(dimens = dimens, mu = nrow_mu, alpha = nrow_alpha, beta = nrow_beta, eta = nrow_eta)
+      stop("Parameter rows and dimens must all be the same (",
+           paste(names(rows), rows, sep = "=", collapse = ", "), ").", call. = FALSE)
     }
 
     # Check consistency of column numbers in alpha, beta, and eta
     if (length(unique(c(ncol_alpha, ncol_beta, ncol_eta))) != 1) {
-      stop("The number of columns in alpha, beta, and eta should all be the same.")
+      columns <- c(alpha = ncol_alpha, beta = ncol_beta, eta = ncol_eta)
+      stop("The number of columns in alpha, beta, and eta must all be the same (",
+           paste(names(columns), columns, sep = "=", collapse = ", "), ").", call. = FALSE)
     }
 
     kernel_cols <- unique(c(ncol_alpha, ncol_beta, ncol_eta))[1]
     if (is.null(type_col_map) && kernel_cols != .Object@dimens) {
-      stop("type_col_map must be provided when the kernel column count differs from dimens.")
+      stop("type_col_map must be provided for ", .Object@dimens, " event types and ", kernel_cols,
+           " kernel columns; supply one list element per event type.", call. = FALSE)
     }
     if (!is.null(type_col_map)) {
       valid_map <- length(type_col_map) == .Object@dimens &&
@@ -243,7 +249,9 @@ setMethod(
           is.numeric(x) && length(x) > 0 && all(is.finite(x)) &&
             all(x == floor(x) & x >= 1 & x <= kernel_cols) && !anyDuplicated(x)
         }, logical(1)))
-      if (!valid_map) stop("type_col_map must contain valid, nonduplicated kernel column indices for each type.")
+      if (!valid_map) stop("type_col_map must contain one nonempty list element per event type (",
+                           .Object@dimens, "), with nonduplicated integer kernel column indices from 1 to ",
+                           kernel_cols, " within each element.", call. = FALSE)
     }
     values <- setting(.Object)
     for (name in names(values)) {
@@ -267,11 +275,13 @@ setMethod(
           rowSums(integrated[, columns, drop = FALSE])
         }, numeric(.Object@dimens))
         dim(branching) <- c(.Object@dimens, .Object@dimens)
-        if (max(abs(eigen(branching, only.values = TRUE)$values)) >= 1) {
-          warning("This model does not satisfy the stability condition (spectral radius < 1).")
+        radius <- max(abs(eigen(branching, only.values = TRUE)$values))
+        if (radius >= 1) {
+          warning("This model does not satisfy the stability condition (spectral radius = ",
+                  format(radius, digits = 6), "; must be < 1).", call. = FALSE)
         }
       } else {
-        warning("Stability checking is only available for constant, nonnegative Hawkes kernels without state-dependent or residual effects.")
+        warning("Stability was not checked: this check supports only constant, nonnegative Hawkes kernels without state-dependent or residual effects.", call. = FALSE)
       }
     }
     methods::validObject(.Object)

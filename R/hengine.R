@@ -159,9 +159,9 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
     mu_arguments <- if (observed_mu) standalone_baseline_arguments(object, observation, values) else NULL
     mu0 <- if (observed_mu) validate_standalone_mu(do.call(values$mu, mu_arguments), dimensions) else values$mu
     if (is.null(lambda_component0)) {
-      if (length(object@type_col_map)) stop("In this model, please provide lambda_component0.")
+      if (length(object@type_col_map)) stop_missing_initial(dimensions, ncol(values$beta))
       if (show_initial_message) {
-        message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
+        message_automatic_initial()
       }
       lambda_component0 <- get_lambda0(object,
         mark = observation$mark, type = observation$type,
@@ -373,8 +373,7 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
   kernels <- ncol(plan$start$beta)
   initial <- normalize_lambda_initial(lambda_component0, dimensions, kernels)
   if (is.null(initial) && length(object@type_col_map)) {
-    stop(if (derivatives) "Analytic gradient" else "C++ likelihood",
-         " requires lambda_component0 for a multi-kernel mapping.")
+    stop_missing_initial(dimensions, kernels)
   }
   mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimensions)) else object@type_col_map
   mapping <- lapply(mapping, function(x) as.integer(x) - 1L)
@@ -411,7 +410,7 @@ make_hawkes_objective <- function(object, observation, lambda_component0,
             stop("Analytic gradient cannot differentiate a singular automatic initial state; supply lambda_component0.", call. = FALSE)
           }
           # Match get_lambda0() when its multivariate solve is singular.
-          warning("Due to the singualr martrix in caculcation, set initial value of lambda to mu.")
+          warn_zero_initial()
           current_initial <- matrix(0, dimensions, dimensions)
         } else {
           stationary <- inverse %*% values$mu

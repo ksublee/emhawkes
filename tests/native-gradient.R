@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 native <- getFromNamespace("hawkes_loglik_cpp", "emhawkes")
@@ -262,3 +264,5 @@ singular <- new("hspec", mu = c(.4, .5), alpha = diag(2), beta = matrix(1, 2, 2)
 fails(suppressMessages(hfit(singular, c(0, .3, .2), type = c(0, 1, 2),
                             gradient = "analytic")), "lambda_component0|singular")
 options(previous)
+
+}

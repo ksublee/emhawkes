@@ -52,7 +52,7 @@ setMethod(
            N = NULL, Nc = NULL,
            lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, ...){
 
-    warning("The 'infer_lambda' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+    warning("infer_lambda() is deprecated; use logLik(..., infer = TRUE) instead.", call. = FALSE)
 
 
     infered_res <- logLik(object, inter_arrival = inter_arrival, type = type,
@@ -403,13 +403,13 @@ residual_process <- function(component, inter_arrival, type, rambda_component, m
                              N = NULL, Nc = NULL,
                              lambda_component0 = NULL, N0 = NULL, ...){
 
-  warning("The 'residual_process' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+  warning("residual_process() is deprecated; use logLik(..., infer = TRUE) and its res_process fields instead.", call. = FALSE)
 
 
   additional_argument <- list(...)
   if ("lambda0" %in% names(additional_argument)) {
 
-    warning("lambda0 is deprecated; instead use lambda_component0.")
+    warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
     lambda_component0 <- additional_argument[["lambda0"]]
 

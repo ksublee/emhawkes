@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 previous <- options(emhawkes.engine = "auto")
 h <- new("hspec", mu = 1, alpha = 0, beta = 1)
@@ -135,3 +137,5 @@ stopifnot(!unknown$recorded, is.na(unknown$engine$used),
   unknown$gradient$used == "numeric", is.na(unknown$hessian$used),
   identical(bytes, serialize(old, NULL)))
 options(previous)
+
+}

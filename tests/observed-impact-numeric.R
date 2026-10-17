@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 previous <- options(emhawkes.engine = "r")
 old_jit <- compiler::enableJIT(0)
@@ -95,7 +97,7 @@ full_history <- function(values, initial) {
   result
 }
 fails(objective(model, obs, NULL, build_map(model, TRUE), derivatives = FALSE),
-  "C[+][+] likelihood requires lambda_component0")
+  "lambda_component0 is required when type_col_map is supplied.*scalar.*2 x 3")
 for (reduced in c(TRUE, FALSE)) {
   map <- build_map(model, reduced)
   fun <- objective(model, obs, initial, map, derivatives = FALSE)
@@ -166,3 +168,5 @@ fun <- objective(bad, normalize(bad, dt), .1, map, derivatives = FALSE)
 stopifnot(identical(as.numeric(fun$loglik(map$start)), -Inf))
 options(previous)
 compiler::enableJIT(old_jit)
+
+}

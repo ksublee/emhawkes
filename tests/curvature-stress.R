@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 previous <- options(emhawkes.engine = "auto")
 fit_case <- function(h, dt, engine = "auto", initial = 0, ...) {
@@ -87,3 +89,5 @@ stopifnot(early$diagnostics$status == "unavailable", !early$diagnostics$optimize
   any(grepl("normal convergence", early$notices, fixed = TRUE)),
   any(grepl("standard errors are unavailable", early$notices, fixed = TRUE)))
 options(previous)
+
+}

@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 quiet_fit <- function(..., final_hessian = "stable") {
@@ -222,3 +224,5 @@ for (bad in list(function(p) stop("score failed"), function(p) rep(NA_real_, len
 }
 failed <- curvature(kink, score = function(p) c(-sign(p[1] - .5), -(p[2] - 1)))
 stopifnot(failed$status == "unavailable", failed$reason == "step_sensitive")
+
+}

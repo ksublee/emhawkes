@@ -1,3 +1,5 @@
+# Legacy optimizer checks require the optional maxLik package.
+if (requireNamespace("maxLik", quietly = TRUE)) {
 library(emhawkes)
 
 close <- function(x, y, tolerance = 1e-8) {
@@ -190,3 +192,5 @@ fails(fitted_hspec(bad), "not finite")
 bad <- fit
 names(bad$estimate)[1] <- "unknown"
 fails(fitted_hspec(bad), "saved parameter map")
+
+}

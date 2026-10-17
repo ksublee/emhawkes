@@ -61,7 +61,7 @@ Rcpp::List hawkes_simulate_equal_cpp(Rcpp::NumericVector mu, Rcpp::NumericMatrix
     }
     int generated = 1;
     if (size > 1) {
-        Rcpp::RNGScope scope;
+        SimulationRNGScope scope;
         std::vector<double> candidates(d), uniforms(d), decayed(d * k);
         for (int n = 1; n < size; ++n) {
             if ((n & 1023) == 0) Rcpp::checkUserInterrupt();
@@ -88,7 +88,8 @@ Rcpp::List hawkes_simulate_equal_cpp(Rcpp::NumericVector mu, Rcpp::NumericMatrix
                 }
             }
             if (!R_FINITE(wait)) {
-                Rcpp::warning("Simulation stopped early: no further event occurs on this path.");
+                simulation_warning("Simulation stopped early: no further event occurs on this path. Returned " +
+                    std::to_string(n) + " of " + std::to_string(size) + " requested rows (including the initial row).");
                 break;
             }
             dt[n] = wait; type[n] = event + 1;
