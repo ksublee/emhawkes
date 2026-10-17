@@ -1,4 +1,4 @@
-# emhawkes 0.9.9
+# emhawkes 1.0.0
 
 ## Initialization and estimation
 

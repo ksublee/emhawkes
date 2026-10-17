@@ -21,7 +21,7 @@ Source installation requires a C++ compiler and Rcpp; on Windows, install Rtools
 
 ## Quick start
 
-This example requires version 0.9.9 or later.
+This example requires version 1.0.0 or later.
 
 ```r
 library(emhawkes)

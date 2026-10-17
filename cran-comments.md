@@ -1,4 +1,4 @@
-## Update from emhawkes 0.9.8 to 0.9.9
+## Update from emhawkes 0.9.8 to 1.0.0
 
 This release adds registered Rcpp likelihood, inference and simulation engines,
 an independent optional stats optimizer, fitted-model reconstruction and
@@ -40,3 +40,13 @@ source commit and build session as the `cran-source-package` artifact.
 CRAN's source package index was checked on 2026-10-17, including Depends,
 Imports, LinkingTo, Suggests and Enhances. No reverse dependencies were found.
 Package URLs were checked with urlchecker.
+
+## Minimum-version CI note
+
+The 0.9.9 development candidate (commit 94ea371) passed all six GitHub check
+jobs. Windows/R 4.0.0 returned 0 errors, 0 warnings and 1 NOTE for generated
+multi-architecture check outputs: emhawkes-Ex_i386.Rout, emhawkes-Ex_x64.Rout,
+examples_i386, examples_x64, tests_i386 and tests_x64. Examples and tests passed
+on both i386 and x64. These files are absent from the source archive. The other
+five environments, including current release and devel, returned Status: OK.
+The 1.0.0 version change preserves the checked R and C++ implementation.
