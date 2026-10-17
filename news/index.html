@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">emhawkes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,9 +40,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.9" id="emhawkes-099">emhawkes 0.9.9<a class="anchor" aria-label="anchor" href="#emhawkes-099"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="emhawkes-100">emhawkes 1.0.0<a class="anchor" aria-label="anchor" href="#emhawkes-100"></a></h2>
 <div class="section level3">
-<h3 id="initialization-and-estimation-0-9-9">Initialization and estimation<a class="anchor" aria-label="anchor" href="#initialization-and-estimation-0-9-9"></a></h3>
+<h3 id="initialization-and-estimation-1-0-0">Initialization and estimation<a class="anchor" aria-label="anchor" href="#initialization-and-estimation-1-0-0"></a></h3>
 <ul><li>Default simulation, likelihood and fitting to <code>lambda_component0 = "auto"</code> (<code>NULL</code> is an alias). Report whether mean or zero intensity components were selected. Mean initialization applies to supported stable constant linear models, including mapped kernels; other models use zero and recommend an explicit initial state. Components exclude the baseline intensity.</li>
 <li>Correct the univariate half-mean initialization. Preserve explicit initial states, hold the selected fitting rule fixed and differentiate mean components. Store the rule and actual components in fit diagnostics; recover the actual initial states when replaying older saved fits. Automatic initialization can change simulated paths and fitted estimates relative to previous releases.</li>
 <li>Add <code>hfit(optimizer = "stats")</code>, using R’s <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim()</a></code> or <code><a href="https://rdrr.io/r/stats/constrOptim.html" class="external-link">constrOptim()</a></code> without maxLik. Support fixed/shared parameters, derivatives, linear inequalities and box bounds, with separate result methods and fitted-model reconstruction. Make maxLik optional while retaining it as the default provider; install it explicitly when using the default. Keep numerical score steps within linear constraints and reject unsupported controls and equality constraints.</li>
@@ -51,14 +51,14 @@
 <li>Add <code>final_hessian = "stable"</code>, with scaled differences, analytic-score differentiation where available and step-stability checks. Withhold Wald covariance when curvature or constraint checks fail. Stable curvature is optional for maxLik and the default for stats fits; it does not establish finite-sample confidence-interval coverage.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="computation-0-9-9">Computation<a class="anchor" aria-label="anchor" href="#computation-0-9-9"></a></h3>
+<h3 id="computation-1-0-0">Computation<a class="anchor" aria-label="anchor" href="#computation-1-0-0"></a></h3>
 <ul><li>Add registered Rcpp likelihood and intensity/residual inference engines for supported numeric, parameter-only and observed-state specifications. Preserve callback defaults and event timing; unsupported models retain R evaluation. <code>emhawkes.engine</code> selects automatic, reference R or required C++ likelihoods. Source installation now requires Rcpp and a C++ compiler.</li>
 <li>Add opt-in analytic scores for numeric models and supported component functions through <code>gradient = "analytic"</code> and <code>jacobian</code>. Preserve shared/fixed parameters and initial-state derivatives; reduce observed-baseline Jacobian storage. Numerical optimizer differentiation remains the default.</li>
 <li>Add a complete native simulation event loop for supported numeric and callback specifications, including multivariate and mapped multi-kernel models. Reduce history copying and reuse equal decay factors within each row. Preserve R fallback, explicit initial states, callback behavior and random-draw order when comparing the engines. The likelihood engine option does not select the simulation path.</li>
 <li>Preserve native RNG state around callback and warning handlers, including errors, nested simulation and handlers that draw random numbers. Add checks for older R/Rcpp versions, garbage collection, interruption and memory access.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="corrections-and-diagnostics-0-9-9">Corrections and diagnostics<a class="anchor" aria-label="anchor" href="#corrections-and-diagnostics-0-9-9"></a></h3>
+<h3 id="corrections-and-diagnostics-1-0-0">Corrections and diagnostics<a class="anchor" aria-label="anchor" href="#corrections-and-diagnostics-1-0-0"></a></h3>
 <ul><li>Validate observations, initial components, decay rates, mappings, counting processes and callback parameters consistently. Correct multi-kernel event types, univariate multi-kernel likelihoods and constant-model stability checks. Preserve admissible signed components and stop when no further event occurs.</li>
 <li>Correct event-side baseline recording and return empty residuals for event types with fewer than two events. Use stable exponential integrals and log-scale residual distributions. Correct trapezoid-exponential generation and add log/tail distribution options. Paths can change where event selection or random generation was corrected.</li>
 <li>Correct <code><a href="../reference/expected_tau.html">expected_tau()</a></code> for widely separated time scales and a positive probability of no further event. Correct mark handling in <code><a href="../reference/hvol.html">hvol()</a></code> and reject models outside the bivariate moment formula’s scope.</li>
