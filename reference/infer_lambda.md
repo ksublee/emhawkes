@@ -70,9 +70,9 @@ infer_lambda(
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. A scalar is
-  expanded to every kernel component. A matrix must match the shape of
-  `alpha` and `beta`.
+  Initial intensity components \\\lambda\_{ij}(0)\\, excluding the
+  baseline `mu`. A scalar is expanded to every kernel component. A
+  matrix must match the shape of `alpha` and `beta`.
 
 - N0:
 
@@ -105,6 +105,7 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
+#> Initial intensity components: auto -> mean (unconditional component means).
 summary(res)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
@@ -134,7 +135,7 @@ summary(res)
 #> -------------------------------------------------------
 inferred <- logLik(h, inter_arrival = res$inter_arrival,
                    type = res$type, infer = TRUE)
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
+#> Initial intensity components: auto -> mean (unconditional component means).
 head(inferred$lambda)
 #>        lambda1   lambda2
 #> [1,] 0.1500000 0.1500000

@@ -122,39 +122,46 @@ the basic univariate Hawkes model is</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mi>c</mi></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mo>∫</mo><mrow><mi>−</mi><mi>∞</mi></mrow><mn>0</mn></msubsup><mi>α</mi><msup><mi>e</mi><mrow><mi>β</mi><mi>s</mi></mrow></msup><mi>d</mi><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
 </annotation></semantics></math></p>
-<p>If <code>lambda_component0</code> is omitted, the function determines
-the initial intensity components internally. For a sufficiently long
-simulation of a stable model, the effect of the initial intensity
-diminishes over time. The default initial value of the counting process,
-<code>N0</code>, is zero.</p>
+<p>The default <code>lambda_component0 = "auto"</code> uses
+unconditional component means for supported stable constant numeric
+linear models, and zero components otherwise. The selected rule is
+reported in a message; zero initialization recommends supplying
+components explicitly. Use <code>"mean"</code> to require supported
+finite means, <code>"zero"</code> to start from baseline intensities, or
+a scalar/matrix to specify the components directly. Mean initialization
+is deterministic and does not sample a stationary initial state. For a
+sufficiently long simulation of a stable model, the effect of the
+initial intensity diminishes over time. The default initial value of the
+counting process, <code>N0</code>, is zero.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec1</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span>
 <span><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
 <span><span class="co">#&gt; Realized path :</span></span>
 <span><span class="co">#&gt;        arrival N1 mark lambda1</span></span>
-<span><span class="co">#&gt;  [1,]  0.00000  0    0 0.90000</span></span>
-<span><span class="co">#&gt;  [2,]  0.97794  1    1 0.43838</span></span>
-<span><span class="co">#&gt;  [3,]  1.09001  2    1 1.43128</span></span>
-<span><span class="co">#&gt;  [4,]  1.28999  3    1 2.02711</span></span>
-<span><span class="co">#&gt;  [5,]  1.53225  4    1 2.33527</span></span>
-<span><span class="co">#&gt;  [6,]  1.65001  5    1 3.01139</span></span>
-<span><span class="co">#&gt;  [7,]  2.51807  6    1 1.36377</span></span>
-<span><span class="co">#&gt;  [8,]  2.81710  7    1 1.74553</span></span>
-<span><span class="co">#&gt;  [9,]  2.87547  8    1 2.72378</span></span>
-<span><span class="co">#&gt; [10,]  3.16415  9    1 2.65016</span></span>
-<span><span class="co">#&gt; [11,]  3.51378 10    1 2.40131</span></span>
-<span><span class="co">#&gt; [12,]  4.22355 11    1 1.43843</span></span>
-<span><span class="co">#&gt; [13,] 16.96752 12    1 0.30000</span></span>
-<span><span class="co">#&gt; [14,] 17.71654 13    1 0.69015</span></span>
-<span><span class="co">#&gt; [15,] 19.10293 14    1 0.49874</span></span>
-<span><span class="co">#&gt; [16,] 24.06354 15    1 0.30082</span></span>
-<span><span class="co">#&gt; [17,] 24.09256 16    1 1.44967</span></span>
-<span><span class="co">#&gt; [18,] 28.40173 17    1 0.30366</span></span>
-<span><span class="co">#&gt; [19,] 28.53743 18    1 1.28198</span></span>
-<span><span class="co">#&gt; [20,] 28.56702 19    1 2.38725</span></span>
+<span><span class="co">#&gt;  [1,]  0.00000  0    0 1.50000</span></span>
+<span><span class="co">#&gt;  [2,]  0.68807  1    1 0.72751</span></span>
+<span><span class="co">#&gt;  [3,]  0.80014  2    1 1.67567</span></span>
+<span><span class="co">#&gt;  [4,]  0.97835  3    1 2.27150</span></span>
+<span><span class="co">#&gt;  [5,]  1.19847  4    1 2.57966</span></span>
+<span><span class="co">#&gt;  [6,]  1.30725  5    1 3.25578</span></span>
+<span><span class="co">#&gt;  [7,]  2.17530  6    1 1.43023</span></span>
+<span><span class="co">#&gt;  [8,]  2.47434  7    1 1.78797</span></span>
+<span><span class="co">#&gt;  [9,]  2.53174  8    1 2.76622</span></span>
+<span><span class="co">#&gt; [10,]  2.81626  9    1 2.69260</span></span>
+<span><span class="co">#&gt; [11,]  3.16047 10    1 2.44375</span></span>
+<span><span class="co">#&gt; [12,]  3.85436 11    1 1.48087</span></span>
+<span><span class="co">#&gt; [13,] 16.59833 12    1 0.30000</span></span>
+<span><span class="co">#&gt; [14,] 17.34735 13    1 0.69015</span></span>
+<span><span class="co">#&gt; [15,] 18.73374 14    1 0.49874</span></span>
+<span><span class="co">#&gt; [16,] 23.69435 15    1 0.30082</span></span>
+<span><span class="co">#&gt; [17,] 23.72337 16    1 1.44967</span></span>
+<span><span class="co">#&gt; [18,] 28.03254 17    1 0.30366</span></span>
+<span><span class="co">#&gt; [19,] 28.16824 18    1 1.28198</span></span>
+<span><span class="co">#&gt; [20,] 28.19783 19    1 2.38725</span></span>
 <span><span class="co">#&gt; ... with 980 more rows </span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
 <p>The <code>hsim</code> function returns an S3 object of class
@@ -196,38 +203,38 @@ intensity components.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The first and third columns are equal.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">res1</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="va">res1</span><span class="op">$</span><span class="va">lambda_component</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="va">mu1</span> <span class="op">+</span> <span class="va">res1</span><span class="op">$</span><span class="va">lambda_component</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          [,1]     [,2]     [,3]</span></span>
-<span><span class="co">#&gt; [1,] 0.900000 0.600000 0.900000</span></span>
-<span><span class="co">#&gt; [2,] 0.438383 0.138383 0.438383</span></span>
-<span><span class="co">#&gt; [3,] 1.431282 1.131282 1.431282</span></span>
-<span><span class="co">#&gt; [4,] 2.027111 1.727111 2.027111</span></span>
-<span><span class="co">#&gt; [5,] 2.335269 2.035269 2.335269</span></span></code></pre></div>
+<span><span class="co">#&gt;           [,1]      [,2]      [,3]</span></span>
+<span><span class="co">#&gt; [1,] 1.5000000 1.2000000 1.5000000</span></span>
+<span><span class="co">#&gt; [2,] 0.7275103 0.4275103 0.7275103</span></span>
+<span><span class="co">#&gt; [3,] 1.6756694 1.3756694 1.6756694</span></span>
+<span><span class="co">#&gt; [4,] 2.2714992 1.9714992 2.2714992</span></span>
+<span><span class="co">#&gt; [5,] 2.5796567 2.2796567 2.5796567</span></span></code></pre></div>
 <p>For all rows except the first, <code>rambda</code> equals
 <code>lambda + alpha</code> in this model.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The second and third columns are equal except in the initial row.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">res1</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="va">res1</span><span class="op">$</span><span class="va">rambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="va">res1</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">+</span> <span class="va">alpha1</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          [,1]     [,2]     [,3]</span></span>
-<span><span class="co">#&gt; [1,] 0.900000 0.900000 2.100000</span></span>
-<span><span class="co">#&gt; [2,] 0.438383 1.638383 1.638383</span></span>
-<span><span class="co">#&gt; [3,] 1.431282 2.631282 2.631282</span></span>
-<span><span class="co">#&gt; [4,] 2.027111 3.227111 3.227111</span></span>
-<span><span class="co">#&gt; [5,] 2.335269 3.535269 3.535269</span></span></code></pre></div>
+<span><span class="co">#&gt;           [,1]     [,2]     [,3]</span></span>
+<span><span class="co">#&gt; [1,] 1.5000000 1.500000 2.700000</span></span>
+<span><span class="co">#&gt; [2,] 0.7275103 1.927510 1.927510</span></span>
+<span><span class="co">#&gt; [3,] 1.6756694 2.875669 2.875669</span></span>
+<span><span class="co">#&gt; [4,] 2.2714992 3.471499 3.471499</span></span>
+<span><span class="co">#&gt; [5,] 2.5796567 3.779657 3.779657</span></span></code></pre></div>
 <p>The following calculation verifies the exponential decay between
 events.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># By definition, the following two are equal:</span></span>
 <span><span class="va">res1</span><span class="op">$</span><span class="va">lambda</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 0.438383 1.431282 2.027111 2.335269 3.011391</span></span>
+<span><span class="co">#&gt; [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793</span></span>
 <span><span class="va">mu1</span> <span class="op">+</span> <span class="op">(</span><span class="va">res1</span><span class="op">$</span><span class="va">rambda</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">-</span> <span class="va">mu1</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">beta1</span> <span class="op">*</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.438383 1.431282 2.027111 2.335269 3.011391</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793</span></span></code></pre></div>
 <p>Use <code>logLik</code> to evaluate the log-likelihood from the model
 specification and observed inter-arrival times.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec1</span>, inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">)</span></span>
-<span><span class="co">#&gt; lambda_component0 was not supplied; automatic initial excitation will be used.</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; loglikelihood </span></span>
-<span><span class="co">#&gt;     -214.2385</span></span></code></pre></div>
+<span><span class="co">#&gt;     -213.4226</span></span></code></pre></div>
 <p>Use <code>hfit</code> for maximum likelihood estimation. The
 <code>hspec0</code> object supplies the initial parameter values for
 optimization. For this univariate model, <code>inter_arrival</code> is
@@ -241,18 +248,19 @@ BFGS.</p>
 <span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu0</span>, alpha <span class="op">=</span> <span class="va">alpha0</span>, beta <span class="op">=</span> <span class="va">beta0</span><span class="op">)</span></span>
 <span><span class="co"># Supply the initial values through hspec0.</span></span>
 <span><span class="va">mle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
 <span><span class="co">#&gt; BFGS maximization, 24 iterations</span></span>
 <span><span class="co">#&gt; Return code 0: successful convergence </span></span>
-<span><span class="co">#&gt; Log-Likelihood: -213.4658 </span></span>
+<span><span class="co">#&gt; Log-Likelihood: -212.6902 </span></span>
 <span><span class="co">#&gt; 3  free parameters</span></span>
 <span><span class="co">#&gt; Estimates:</span></span>
 <span><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1     0.33641    0.03486   9.651  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1  1.16654    0.09480  12.305  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1   1.52270    0.12323  12.357  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; mu1     0.33554    0.03494   9.604  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha1  1.16515    0.09938  11.725  &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; beta1   1.51820    0.12947  11.727  &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
@@ -268,17 +276,17 @@ provide the usual estimation results.</p>
 <span>  inter_arrival <span class="op">=</span> <span class="va">res1</span><span class="op">$</span><span class="va">inter_arrival</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">initial</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>fitted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span><span class="op">)</span>, restored <span class="op">=</span> <span class="va">inferred</span><span class="op">$</span><span class="va">loglikelihood</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    fitted  restored </span></span>
-<span><span class="co">#&gt; -213.4658 -213.4658</span></span>
+<span><span class="co">#&gt; -212.6902 -212.6902</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">inferred</span><span class="op">$</span><span class="va">lambda</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        lambda1</span></span>
-<span><span class="co">#&gt; [1,] 0.8873272</span></span>
-<span><span class="co">#&gt; [2,] 0.4606831</span></span>
-<span><span class="co">#&gt; [3,] 1.4247076</span></span>
-<span><span class="co">#&gt; [4,] 1.9993195</span></span>
-<span><span class="co">#&gt; [5,] 2.2929804</span></span>
-<span><span class="co">#&gt; [6,] 2.9468134</span></span>
+<span><span class="co">#&gt; [1,] 1.4429344</span></span>
+<span><span class="co">#&gt; [2,] 0.7251523</span></span>
+<span><span class="co">#&gt; [3,] 1.6470433</span></span>
+<span><span class="co">#&gt; [4,] 2.2251136</span></span>
+<span><span class="co">#&gt; [5,] 2.5224834</span></span>
+<span><span class="co">#&gt; [6,] 3.1773322</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">inferred</span><span class="op">$</span><span class="va">res_process1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.1978360 0.4464937 0.6454466 0.3726250 2.2239999 0.6382222</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="a-first-residual-check">A first residual check<a class="anchor" aria-label="anchor" href="#a-first-residual-check"></a>
@@ -358,6 +366,7 @@ these values internally.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2</span>,  size<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; -------------------------------------------------------</span></span>
 <span><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
@@ -432,7 +441,7 @@ model.</p>
 <p>Use <code>logLik</code> to evaluate the log-likelihood.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival2</span>, type <span class="op">=</span> <span class="va">type2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; lambda_component0 was not supplied; automatic initial excitation will be used.</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; loglikelihood </span></span>
 <span><span class="co">#&gt;     -974.2809</span></span></code></pre></div>
 <p>Use <code>hfit</code> to estimate the parameters from
@@ -452,6 +461,7 @@ optimization.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="va">hspec2</span></span>
 <span><span class="va">mle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival2</span>, type <span class="op">=</span> <span class="va">type2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle</span><span class="op">)</span></span>

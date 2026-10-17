@@ -2,6 +2,20 @@
 
 ## emhawkes 0.9.9
 
+- Default simulation, likelihood and fitting initialization to
+  `lambda_component0 = "auto"` (`NULL` is an alias). Use unconditional
+  component means only for supported stable constant numeric linear
+  models, including mapped kernels; otherwise use zero components and
+  recommend explicit initialization. Report the selected rule once.
+  Correct the univariate half-mean rule, retain explicit states, and
+  hold the selected fitting rule fixed while differentiating mean
+  components. Store the selected rule for fitted-model replay; recover
+  the actual legacy initial components for older saved fits.
+
+- Keep numerical score steps inside linear inequality constraints in the
+  stats optimizer, avoiding invalid mean-initialization proposals when a
+  fitted excitation parameter approaches zero.
+
 - Add `hfit(optimizer = "stats")` to call R’s
   [`optim()`](https://rdrr.io/r/stats/optim.html) or
   [`constrOptim()`](https://rdrr.io/r/stats/constrOptim.html) directly,
@@ -24,11 +38,12 @@
   evaluation and synchronize RNG state around their handlers.
 
 - Make initial-state, dimension, callback and volatility errors
-  actionable. Correct the singular-initializer warning to describe zero
-  excitation, report returned/requested simulation rows on early
-  stopping, and explain unavailable Wald curvature without changing
-  diagnostic reason codes. Keep R and C++ messages consistent and
-  clarify deprecation replacements.
+  actionable. Describe `lambda_component0` as initial intensity
+  components excluding the baseline, and identify the zero components
+  used when automatic initialization fails. Report returned/requested
+  simulation rows on early stopping, and explain unavailable Wald
+  curvature without changing diagnostic reason codes. Keep R and C++
+  messages consistent and clarify deprecation replacements.
 
 - Correct
   [`expected_tau()`](https://ksublee.github.io/emhawkes/reference/expected_tau.md)

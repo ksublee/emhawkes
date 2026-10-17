@@ -19,7 +19,9 @@ h <- new("hspec",
 )
 set.seed(1107)
 path <- hsim(h, size = 1000)
+#> Initial intensity components: auto -> mean (unconditional component means).
 fit <- hfit(h, path$inter_arrival, path$type)
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
@@ -198,6 +200,7 @@ analytic gradient:
 ``` r
 
 fit <- hfit(h, path$inter_arrival, path$type, gradient = "analytic")
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 ```
@@ -231,6 +234,7 @@ alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
 h_fun <- new("hspec", mu = h@mu, alpha = alpha_fun, beta = h@beta)
 fit_fun <- hfit(h_fun, path$inter_arrival, path$type,
   gradient = "analytic", jacobian = list(alpha = alpha_jac))
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 ```
@@ -251,6 +255,7 @@ with numerical differentiation, without Jacobians:
 ``` r
 
 fit_numeric <- hfit(h_fun, path$inter_arrival, path$type)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 ```

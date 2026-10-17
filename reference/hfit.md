@@ -17,7 +17,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -43,7 +43,7 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
@@ -95,10 +95,19 @@ hfit(
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. A finite
-  scalar is expanded to every kernel component. A matrix must match the
-  shape of `alpha` and `beta`. For the built-in likelihood, supply this
-  argument when `type_col_map` is set.
+  Initial intensity components \\\lambda\_{ij}(0)\\, excluding the
+  baseline `mu`. A finite scalar is expanded to every kernel component.
+  A matrix must match the shape of `alpha` and `beta`. For the built-in
+  likelihood, `"auto"` (also `NULL`) selects unconditional component
+  means for supported stable constant numeric linear models, and zero
+  otherwise. `"mean"` requires supported finite means; `"zero"` fixes
+  zero components. Selection is reported once and held throughout
+  optimization. Mean values vary with fitted parameters; invalid mean
+  proposals have likelihood `-Inf`, without switching to zero. For
+  `mylogLik`, `"auto"` passes `NULL` without automatic initialization.
+  Mean initialization excludes nonzero `eta`, impact callbacks and
+  custom residual distributions. Function-valued core parameters use
+  zero in `"auto"`.
 
 - N0:
 
@@ -317,18 +326,17 @@ Standalone
 supports fewer C++ models than `hfit()`. With `gradient = "analytic"`,
 Rcpp computes the likelihood and its gradient using native recursions
 and cached results at the same parameter vector. Matrix scores are
-summed according to the saved parameter map. Automatic initial states
-include their parameter derivatives; a singular automatic initialization
-requires an explicit `lambda_component0`. Observed baselines and
-current-component impacts are supported with Jacobians as described
-below. Full intensity histories, mark densities, residual distributions,
-and custom likelihoods are not supported by this option.
-Equality-constrained optimization is also excluded. BHHH requires event
-scores and cannot use this total score. A supplied `grad` takes
-precedence. A supplied `hess` is retained; otherwise `maxLik` can
-calculate curvature by differentiating the analytic gradient.
-Optimization paths and last digits can differ from numerical
-differentiation.
+summed according to the saved parameter map. Mean initial states include
+their parameter derivatives; zero and explicit initial components are
+fixed. Observed baselines and current-component impacts are supported
+with Jacobians as described below. Full intensity histories, mark
+densities, residual distributions, and custom likelihoods are not
+supported by this option. Equality-constrained optimization is also
+excluded. BHHH requires event scores and cannot use this total score. A
+supplied `grad` takes precedence. A supplied `hess` is retained;
+otherwise `maxLik` can calculate curvature by differentiating the
+analytic gradient. Optimization paths and last digits can differ from
+numerical differentiation.
 
 Analytic function components must have the single argument `param` and
 return plain numeric matrices with constant dimensions. Their values and
@@ -516,7 +524,9 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
+#> Initial intensity components: auto -> mean (unconditional component means).
 fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
@@ -543,7 +553,7 @@ estimated <- fitted_hspec(fit)
 initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
+#> Initial intensity components: mean (unconditional component means).
 c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 #>    fitted  restored 
 #> -245.0405 -245.0405 
@@ -609,33 +619,35 @@ impact <- function(param = c(alpha1n=0, alpha1w=0.2, alpha2n=0.001, alpha2w=0.1)
 h <- new("hspec",
          mu = mu, alpha = alpha, beta = beta, impact = impact)
 hr <- hsim(h, size=100)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 plot(hr$arrival, hr$N[,'N1'] - hr$N[,'N2'], type='s')
 lines(hr$N[,'N3'] - hr$N[,'N4'], type='s', col='red')
 
 fit <- hfit(h, hr$inter_arrival, hr$type)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 146 iterations
+#> BFGS maximization, 93 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -158.4592 
+#> Log-Likelihood: -161.4402 
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1      0.69221    0.42494   1.629   0.1033    
-#> mu3      0.07379    0.03508   2.104   0.0354 *  
-#> alpha11 -0.12632    0.06533  -1.934   0.0532 .  
-#> alpha12  0.01429    0.04916   0.291   0.7712    
-#> alpha33  0.96110    0.21477   4.475 7.64e-06 ***
-#> alpha34  0.29568    0.11634   2.542   0.0110 *  
-#> beta1.1  0.10275    0.08833   1.163   0.2447    
-#> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***
-#> alpha1n  0.03456    0.06731   0.513   0.6077    
-#> alpha1w  0.04976    0.06831   0.728   0.4664    
-#> alpha2n -2.47298    0.27579  -8.967  < 2e-16 ***
-#> alpha2w  1.00872    0.11327   8.906  < 2e-16 ***
+#> mu1      0.05505    0.08553   0.644   0.5199    
+#> mu3      0.13574    0.05728   2.370   0.0178 *  
+#> alpha11 -0.08439    0.06304  -1.339   0.1807    
+#> alpha12  0.15298    0.09786   1.563   0.1180    
+#> alpha33  0.15324    0.09535   1.607   0.1080    
+#> alpha34  0.20791    0.09997   2.080   0.0376 *  
+#> beta1.1  0.19707    0.11743   1.678   0.0933 .  
+#> beta3.1  0.48965    0.06734   7.271 3.56e-13 ***
+#> alpha1n  0.10963    0.12084   0.907   0.3643    
+#> alpha1w  0.13428    0.08339   1.610   0.1073    
+#> alpha2n -1.46464    0.29218  -5.013 5.36e-07 ***
+#> alpha2w  1.19704    0.29707   4.030 5.59e-05 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> --------------------------------------------

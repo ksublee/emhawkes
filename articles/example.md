@@ -59,40 +59,47 @@ where `lambda_component0` denotes
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
 ```
 
-If `lambda_component0` is omitted, the function determines the initial
-intensity components internally. For a sufficiently long simulation of a
-stable model, the effect of the initial intensity diminishes over time.
-The default initial value of the counting process, `N0`, is zero.
+The default `lambda_component0 = "auto"` uses unconditional component
+means for supported stable constant numeric linear models, and zero
+components otherwise. The selected rule is reported in a message; zero
+initialization recommends supplying components explicitly. Use `"mean"`
+to require supported finite means, `"zero"` to start from baseline
+intensities, or a scalar/matrix to specify the components directly. Mean
+initialization is deterministic and does not sample a stationary initial
+state. For a sufficiently long simulation of a stable model, the effect
+of the initial intensity diminishes over time. The default initial value
+of the counting process, `N0`, is zero.
 
 ``` r
 
 set.seed(1107)
 res1 <- hsim(hspec1, size = 1000)
+#> Initial intensity components: auto -> mean (unconditional component means).
 summary(res1)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
 #> Realized path :
 #>        arrival N1 mark lambda1
-#>  [1,]  0.00000  0    0 0.90000
-#>  [2,]  0.97794  1    1 0.43838
-#>  [3,]  1.09001  2    1 1.43128
-#>  [4,]  1.28999  3    1 2.02711
-#>  [5,]  1.53225  4    1 2.33527
-#>  [6,]  1.65001  5    1 3.01139
-#>  [7,]  2.51807  6    1 1.36377
-#>  [8,]  2.81710  7    1 1.74553
-#>  [9,]  2.87547  8    1 2.72378
-#> [10,]  3.16415  9    1 2.65016
-#> [11,]  3.51378 10    1 2.40131
-#> [12,]  4.22355 11    1 1.43843
-#> [13,] 16.96752 12    1 0.30000
-#> [14,] 17.71654 13    1 0.69015
-#> [15,] 19.10293 14    1 0.49874
-#> [16,] 24.06354 15    1 0.30082
-#> [17,] 24.09256 16    1 1.44967
-#> [18,] 28.40173 17    1 0.30366
-#> [19,] 28.53743 18    1 1.28198
-#> [20,] 28.56702 19    1 2.38725
+#>  [1,]  0.00000  0    0 1.50000
+#>  [2,]  0.68807  1    1 0.72751
+#>  [3,]  0.80014  2    1 1.67567
+#>  [4,]  0.97835  3    1 2.27150
+#>  [5,]  1.19847  4    1 2.57966
+#>  [6,]  1.30725  5    1 3.25578
+#>  [7,]  2.17530  6    1 1.43023
+#>  [8,]  2.47434  7    1 1.78797
+#>  [9,]  2.53174  8    1 2.76622
+#> [10,]  2.81626  9    1 2.69260
+#> [11,]  3.16047 10    1 2.44375
+#> [12,]  3.85436 11    1 1.48087
+#> [13,] 16.59833 12    1 0.30000
+#> [14,] 17.34735 13    1 0.69015
+#> [15,] 18.73374 14    1 0.49874
+#> [16,] 23.69435 15    1 0.30082
+#> [17,] 23.72337 16    1 1.44967
+#> [18,] 28.03254 17    1 0.30366
+#> [19,] 28.16824 18    1 1.28198
+#> [20,] 28.19783 19    1 2.38725
 #> ... with 980 more rows 
 #> -------------------------------------------------------
 ```
@@ -136,12 +143,12 @@ In this univariate model, `lambda == mu + lambda_component`.
 
 # The first and third columns are equal.
 cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
-#>          [,1]     [,2]     [,3]
-#> [1,] 0.900000 0.600000 0.900000
-#> [2,] 0.438383 0.138383 0.438383
-#> [3,] 1.431282 1.131282 1.431282
-#> [4,] 2.027111 1.727111 2.027111
-#> [5,] 2.335269 2.035269 2.335269
+#>           [,1]      [,2]      [,3]
+#> [1,] 1.5000000 1.2000000 1.5000000
+#> [2,] 0.7275103 0.4275103 0.7275103
+#> [3,] 1.6756694 1.3756694 1.6756694
+#> [4,] 2.2714992 1.9714992 2.2714992
+#> [5,] 2.5796567 2.2796567 2.5796567
 ```
 
 For all rows except the first, `rambda` equals `lambda + alpha` in this
@@ -151,12 +158,12 @@ model.
 
 # The second and third columns are equal except in the initial row.
 cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
-#>          [,1]     [,2]     [,3]
-#> [1,] 0.900000 0.900000 2.100000
-#> [2,] 0.438383 1.638383 1.638383
-#> [3,] 1.431282 2.631282 2.631282
-#> [4,] 2.027111 3.227111 3.227111
-#> [5,] 2.335269 3.535269 3.535269
+#>           [,1]     [,2]     [,3]
+#> [1,] 1.5000000 1.500000 2.700000
+#> [2,] 0.7275103 1.927510 1.927510
+#> [3,] 1.6756694 2.875669 2.875669
+#> [4,] 2.2714992 3.471499 3.471499
+#> [5,] 2.5796567 3.779657 3.779657
 ```
 
 The following calculation verifies the exponential decay between events.
@@ -165,9 +172,9 @@ The following calculation verifies the exponential decay between events.
 
 # By definition, the following two are equal:
 res1$lambda[2:6]
-#> [1] 0.438383 1.431282 2.027111 2.335269 3.011391
+#> [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793
 mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
-#> [1] 0.438383 1.431282 2.027111 2.335269 3.011391
+#> [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793
 ```
 
 Use `logLik` to evaluate the log-likelihood from the model specification
@@ -176,9 +183,9 @@ and observed inter-arrival times.
 ``` r
 
 logLik(hspec1, inter_arrival = res1$inter_arrival)
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> loglikelihood 
-#>     -214.2385
+#>     -213.4226
 ```
 
 Use `hfit` for maximum likelihood estimation. The `hspec0` object
@@ -195,18 +202,19 @@ mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
 hspec0 <- new("hspec", mu = mu0, alpha = alpha0, beta = beta0)
 # Supply the initial values through hspec0.
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
+#> Initial intensity components: auto -> mean (unconditional component means).
 summary(mle)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 24 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -213.4658 
+#> Log-Likelihood: -212.6902 
 #> 3  free parameters
 #> Estimates:
 #>        Estimate Std. error t value Pr(> t)    
-#> mu1     0.33641    0.03486   9.651  <2e-16 ***
-#> alpha1  1.16654    0.09480  12.305  <2e-16 ***
-#> beta1   1.52270    0.12323  12.357  <2e-16 ***
+#> mu1     0.33554    0.03494   9.604  <2e-16 ***
+#> alpha1  1.16515    0.09938  11.725  <2e-16 ***
+#> beta1   1.51820    0.12947  11.727  <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -230,17 +238,17 @@ inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = res1$inter_arrival, infer = TRUE), initial))
 c(fitted = as.numeric(logLik(mle)), restored = inferred$loglikelihood)
 #>    fitted  restored 
-#> -213.4658 -213.4658
+#> -212.6902 -212.6902
 head(inferred$lambda)
 #>        lambda1
-#> [1,] 0.8873272
-#> [2,] 0.4606831
-#> [3,] 1.4247076
-#> [4,] 1.9993195
-#> [5,] 2.2929804
-#> [6,] 2.9468134
+#> [1,] 1.4429344
+#> [2,] 0.7251523
+#> [3,] 1.6470433
+#> [4,] 2.2251136
+#> [5,] 2.5224834
+#> [6,] 3.1773322
 head(inferred$res_process1)
-#> [1] 0.1706982 0.4560080 0.6547397 0.3763245 2.1110149 0.6227413
+#> [1] 0.1978360 0.4464937 0.6454466 0.3726250 2.2239999 0.6382222
 ```
 
 ### A first residual check
@@ -338,6 +346,7 @@ Use `hsim` to simulate the model.
 
 set.seed(1107)
 res2 <- hsim(hspec2,  size=1000)
+#> Initial intensity components: auto -> mean (unconditional component means).
 summary(res2)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
@@ -437,7 +446,7 @@ Use `logLik` to evaluate the log-likelihood.
 ``` r
 
 logLik(hspec2, inter_arrival = inter_arrival2, type = type2)
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> loglikelihood 
 #>     -974.2809
 ```
@@ -459,6 +468,7 @@ optimization.
 
 hspec0 <- hspec2
 mle <- hfit(hspec0, inter_arrival = inter_arrival2, type = type2)
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(mle)

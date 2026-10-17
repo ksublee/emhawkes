@@ -10,7 +10,7 @@ specification, including marked and multi-kernel models.
 hsim(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -21,7 +21,7 @@ hsim(
 hsim(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -43,10 +43,17 @@ hsim(
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. A finite
-  scalar is expanded to every kernel component. A matrix must match the
-  shape of `alpha` and `beta`. Supply this argument when `type_col_map`
-  is set. Other size adjustments are deprecated and produce a warning.
+  Initial intensity components \\\lambda\_{ij}(0)\\, excluding the
+  baseline `mu`. A finite scalar is expanded to every kernel component.
+  A matrix must match the shape of `alpha` and `beta`. The default
+  `"auto"` (also `NULL`) uses unconditional component means for
+  supported stable constant numeric linear models, and zero components
+  otherwise. `"mean"` requires supported finite means; `"zero"` starts
+  from baseline intensities. Selection is reported once, and zero
+  initialization recommends supplying components explicitly. Other size
+  adjustments are deprecated and produce a warning. Mean initialization
+  excludes nonzero `eta`, impact callbacks and custom residual
+  distributions. Function-valued core parameters use zero in `"auto"`.
 
 - N0:
 
@@ -60,8 +67,8 @@ hsim(
 
 - verbose:
 
-  Logical. If `TRUE`, print progress messages during the simulation.
-  Default is `FALSE`.
+  Logical. Controls additional progress output; initialization selection
+  is reported independently. Default is `FALSE`.
 
 - ...:
 
@@ -135,6 +142,7 @@ Continuing after its last event requires the state at that event.
 mu <- 1; alpha <- 1; beta <- 2
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 hsim(h, size=100)
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
 #> An object of class "hspec" of 1-dimensional Hawkes process
@@ -153,26 +161,26 @@ hsim(h, size=100)
 #> 
 #> Realized path :
 #>       arrival N1 mark lambda1 lambda11
-#>  [1,]  0.0000  0    0   1.500   0.5000
-#>  [2,]  0.6689  1    1   1.131   0.1312
-#>  [3,]  1.3586  2    1   1.285   0.2848
-#>  [4,]  1.4812  3    1   2.005   1.0054
-#>  [5,]  1.4846  4    1   2.992   1.9920
-#>  [6,]  1.5126  5    1   3.829   2.8290
-#>  [7,]  1.9171  6    1   2.705   1.7049
-#>  [8,]  2.0790  7    1   2.957   1.9567
-#>  [9,]  3.3016  8    1   1.256   0.2564
-#> [10,]  3.3701  9    1   2.095   1.0954
-#> [11,]  4.1209 10    1   1.467   0.4669
-#> [12,]  4.2309 11    1   2.177   1.1771
-#> [13,]  4.2464 12    1   3.111   2.1107
-#> [14,]  4.6010 13    1   2.531   1.5307
-#> [15,]  4.8651 14    1   2.492   1.4923
-#> [16,]  4.9816 15    1   2.974   1.9743
-#> [17,]  5.0106 16    1   3.807   2.8067
-#> [18,]  5.3251 17    1   3.029   2.0295
-#> [19,]  5.3578 18    1   3.837   2.8372
-#> [20,]  5.9318 19    1   2.217   1.2174
+#>  [1,]  0.0000  0    0   2.000   1.0000
+#>  [2,]  0.2301  1    1   1.631   0.6312
+#>  [3,]  0.9198  2    1   1.411   0.4106
+#>  [4,]  1.0301  3    1   2.131   1.1313
+#>  [5,]  1.0333  4    1   3.118   2.1178
+#>  [6,]  1.0601  5    1   3.955   2.9549
+#>  [7,]  1.4452  6    1   2.831   1.8307
+#>  [8,]  1.5987  7    1   3.083   2.0826
+#>  [9,]  2.8213  8    1   1.267   0.2673
+#> [10,]  2.8898  9    1   2.105   1.1049
+#> [11,]  3.6405 10    1   1.469   0.4690
+#> [12,]  3.7504 11    1   2.179   1.1792
+#> [13,]  3.7659 12    1   3.113   2.1128
+#> [14,]  4.1201 13    1   2.533   1.5327
+#> [15,]  4.3839 14    1   2.494   1.4943
+#> [16,]  4.5004 15    1   2.976   1.9759
+#> [17,]  4.5294 16    1   3.808   2.8083
+#> [18,]  4.8439 17    1   3.030   2.0303
+#> [19,]  4.8767 18    1   3.838   2.8381
+#> [20,]  5.4507 19    1   2.218   1.2177
 #> ... with 80 more rows 
 #> -------------------------------------------------------
 
@@ -183,6 +191,7 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
+#> Initial intensity components: auto -> mean (unconditional component means).
 print(res)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.

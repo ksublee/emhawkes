@@ -59,7 +59,7 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  mark <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Nc <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lambda_component0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lambda_component0 <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  N0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mylogLik <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reduced <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -85,7 +85,7 @@ values for optimization with <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 <span>  mark <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Nc <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lambda_component0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lambda_component0 <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  N0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mylogLik <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reduced <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -134,10 +134,18 @@ and one column per event type. Each row contains counts after that event.</p></d
 
 
 <dt id="arg-lambda-component-">lambda_component0<a class="anchor" aria-label="anchor" href="#arg-lambda-component-"></a></dt>
-<dd><p>Initial values for the lambda component \(\lambda_{ij}\).
+<dd><p>Initial intensity components \(\lambda_{ij}(0)\),
+excluding the baseline <code>mu</code>.
 A finite scalar is expanded to every kernel component. A matrix must match
-the shape of <code>alpha</code> and <code>beta</code>. For the built-in likelihood, supply this
-argument when <code>type_col_map</code> is set.</p></dd>
+the shape of <code>alpha</code> and <code>beta</code>. For the built-in likelihood, <code>"auto"</code>
+(also <code>NULL</code>) selects unconditional component means for supported stable
+constant numeric linear models, and zero otherwise. <code>"mean"</code> requires supported
+finite means; <code>"zero"</code> fixes zero components. Selection is reported once
+and held throughout optimization. Mean values vary with fitted parameters;
+invalid mean proposals have likelihood <code>-Inf</code>, without switching to zero.
+For <code>mylogLik</code>, <code>"auto"</code> passes <code>NULL</code> without automatic initialization.
+Mean initialization excludes nonzero <code>eta</code>, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in <code>"auto"</code>.</p></dd>
 
 
 <dt id="arg-n-">N0<a class="anchor" aria-label="anchor" href="#arg-n-"></a></dt>
@@ -306,9 +314,9 @@ for actual engines and fallback reasons. A custom <code>mylogLik</code> bypasses
 selection. Standalone <code><a href="logLik.html">logLik()</a></code> supports fewer C++ models than <code>hfit()</code>.
 With <code>gradient = "analytic"</code>, Rcpp computes the likelihood and its gradient
 using native recursions and cached results at the same parameter vector. Matrix scores are
-summed according to the saved parameter map. Automatic initial states include
-their parameter derivatives; a singular automatic initialization requires an
-explicit <code>lambda_component0</code>. Observed baselines and current-component impacts
+summed according to the saved parameter map. Mean initial states include
+their parameter derivatives; zero and explicit initial components are fixed.
+Observed baselines and current-component impacts
 are supported with Jacobians as described below. Full intensity histories,
 mark densities, residual distributions, and custom likelihoods are not supported
 by this option. Equality-constrained optimization is also excluded.
@@ -468,7 +476,9 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-in"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">2</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu</span>, alpha<span class="op">=</span><span class="va">alpha</span>, beta<span class="op">=</span><span class="va">beta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size<span class="op">=</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initial intensity components: auto -&gt; mean (unconditional component means).</span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">hfit</span><span class="op">(</span><span class="va">h</span>, inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initial intensity components: auto -&gt; mean (unconditional component means).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Use reduced = FALSE to estimate matrix entries separately.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
@@ -495,7 +505,7 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-in"><span><span class="va">initial</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>,</span></span>
 <span class="r-in"><span>  inter_arrival <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">initial</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> lambda_component0 was not supplied; automatic initial excitation will be used.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initial intensity components: mean (unconditional component means).</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>fitted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="logLik.html">logLik</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span>, restored <span class="op">=</span> <span class="va">inferred</span><span class="op">$</span><span class="va">loglikelihood</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    fitted  restored </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -245.0405 -245.0405 </span>
@@ -561,33 +571,35 @@ Save the fit with <code><a href="https://rdrr.io/r/base/readRDS.html" class="ext
 <span class="r-in"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>,</span></span>
 <span class="r-in"><span>         mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha</span>, beta <span class="op">=</span> <span class="va">beta</span>, impact <span class="op">=</span> <span class="va">impact</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">hr</span> <span class="op">&lt;-</span> <span class="fu"><a href="hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size<span class="op">=</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initial intensity components: auto -&gt; zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">hr</span><span class="op">$</span><span class="va">arrival</span>, <span class="va">hr</span><span class="op">$</span><span class="va">N</span><span class="op">[</span>,<span class="st">'N1'</span><span class="op">]</span> <span class="op">-</span> <span class="va">hr</span><span class="op">$</span><span class="va">N</span><span class="op">[</span>,<span class="st">'N2'</span><span class="op">]</span>, type<span class="op">=</span><span class="st">'s'</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">hr</span><span class="op">$</span><span class="va">N</span><span class="op">[</span>,<span class="st">'N3'</span><span class="op">]</span> <span class="op">-</span> <span class="va">hr</span><span class="op">$</span><span class="va">N</span><span class="op">[</span>,<span class="st">'N4'</span><span class="op">]</span>, type<span class="op">=</span><span class="st">'s'</span>, col<span class="op">=</span><span class="st">'red'</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="hfit-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">hfit</span><span class="op">(</span><span class="va">h</span>, <span class="va">hr</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">hr</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initial intensity components: auto -&gt; zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Use reduced = FALSE to estimate matrix entries separately.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BFGS maximization, 146 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BFGS maximization, 93 iterations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -158.4592 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -161.4402 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  free parameters</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.69221    0.42494   1.629   0.1033    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.07379    0.03508   2.104   0.0354 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.12632    0.06533  -1.934   0.0532 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.01429    0.04916   0.291   0.7712    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.96110    0.21477   4.475 7.64e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.29568    0.11634   2.542   0.0110 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.10275    0.08833   1.163   0.2447    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  1.33410    0.22837   5.842 5.16e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.03456    0.06731   0.513   0.6077    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.04976    0.06831   0.728   0.4664    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -2.47298    0.27579  -8.967  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.00872    0.11327   8.906  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu1      0.05505    0.08553   0.644   0.5199    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mu3      0.13574    0.05728   2.370   0.0178 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha11 -0.08439    0.06304  -1.339   0.1807    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha12  0.15298    0.09786   1.563   0.1180    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha33  0.15324    0.09535   1.607   0.1080    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha34  0.20791    0.09997   2.080   0.0376 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1.1  0.19707    0.11743   1.678   0.0933 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta3.1  0.48965    0.06734   7.271 3.56e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1n  0.10963    0.12084   0.907   0.3643    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha1w  0.13428    0.08339   1.610   0.1073    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2n -1.46464    0.29218  -5.013 5.36e-07 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha2w  1.19704    0.29707   4.030 5.59e-05 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------</span>

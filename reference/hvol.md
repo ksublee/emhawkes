@@ -63,7 +63,7 @@ hvol(
 
 - lambda_component0:
 
-  A matrix of the starting values of lambda component.
+  A matrix of initial intensity components, excluding the baseline `mu`.
 
 - ...:
 

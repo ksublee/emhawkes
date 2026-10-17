@@ -23,7 +23,9 @@ h <- new("hspec",
 )
 set.seed(1107)
 path <- hsim(h, size = 1000)
+#> Initial intensity components: auto -> mean (unconditional component means).
 fit <- hfit(h, path$inter_arrival, path$type)
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit)
@@ -104,6 +106,7 @@ print(hspec2)
 
 set.seed(1107)
 res2 <- hsim(hspec2, size = 1000)
+#> Initial intensity components: auto -> mean (unconditional component means).
 ```
 
 In the first example, all entries of `alpha0` are set to 0.75. This
@@ -119,6 +122,7 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
@@ -154,6 +158,7 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
@@ -184,6 +189,7 @@ beta0 <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow = 2, byrow=TRUE)
 
 hspec0 <- new("hspec", mu=mu0, alpha=alpha0, beta=beta0)
 summary(hfit(hspec0, inter_arrival = res2$inter_arrival, type = res2$type))
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 #> --------------------------------------------
@@ -210,6 +216,7 @@ including entries with equal initial values.
 ``` r
 
 summary(hfit(hspec2, inter_arrival = res2$inter_arrival, type = res2$type, reduced=FALSE))
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: some standard errors are NaN. Try final_hessian = "stable" for Hawkes Hessian diagnostics, then inspect fit_diagnostics().
 #> --------------------------------------------
 #> Maximum Likelihood estimation
@@ -296,7 +303,7 @@ initial <- fit_initial_state(fit)
 inferred <- do.call(logLik, c(list(object = estimated,
   inter_arrival = path$inter_arrival, type = path$type, mark = path$mark,
   infer = TRUE), initial))
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
+#> Initial intensity components: mean (unconditional component means).
 ```
 
 The result remains a `maxLik` object, so
@@ -400,6 +407,7 @@ curvature `status` and `reason`.
 ``` r
 
 fit_checked <- hfit(h, path$inter_arrival, path$type, final_hessian = "stable")
+#> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 fit_diagnostics(fit_checked)[c("status", "scaled_condition", "newton_decrement")]

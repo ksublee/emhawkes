@@ -16,7 +16,7 @@ logLik(
   Nc = NULL,
   N0 = NULL,
   Nc0 = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   infer = FALSE,
   ...
 )
@@ -67,10 +67,15 @@ logLik(
 
 - lambda_component0:
 
-  Initial values for the lambda component \\\lambda\_{ij}\\. A finite
-  scalar is expanded to every kernel component. A matrix must match the
-  shape of `alpha` and `beta`. Supply this argument when `type_col_map`
-  is set.
+  Initial intensity components \\\lambda\_{ij}(0)\\, excluding the
+  baseline `mu`. A finite scalar is expanded to every kernel component.
+  A matrix must match the shape of `alpha` and `beta`. `"auto"` (also
+  `NULL`) selects unconditional component means for supported stable
+  constant numeric linear models, and zero otherwise. `"mean"` requires
+  supported finite means; `"zero"` fixes zero components. The selected
+  rule is reported once. Mean initialization excludes nonzero `eta`,
+  impact callbacks and custom residual distributions. Function-valued
+  core parameters use zero in `"auto"`.
 
 - infer:
 

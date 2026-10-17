@@ -399,7 +399,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x55d1feba28b0>
+#> <bytecode: 0x55814496f8d8>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -409,7 +409,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55d200c16658>
+#> <bytecode: 0x558144da1d88>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -419,7 +419,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x55d201014858>
+#> <bytecode: 0x558145587fe8>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -721,31 +721,32 @@ h
 
 set.seed(1107)
 res <- hsim(h, size = 1000)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 summary(res)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
 #> Realized path :
 #>       arrival N1 mark lambda1
-#>  [1,]  0.0000  0    0 0.20833
-#>  [2,]  1.9559  1    1 0.15255
-#>  [3,]  3.2143  2    1 0.24381
-#>  [4,]  3.9750  3    1 0.38501
-#>  [5,]  4.5731  4    1 0.50912
-#>  [6,]  7.7740  5    1 0.15632
-#>  [7,] 11.9290  6    2 0.15092
-#>  [8,] 13.4270  7    1 0.24108
-#>  [9,] 23.3482  8    1 0.15000
-#> [10,] 31.9666  9    3 0.15000
-#> [11,] 32.0257 10    2 1.33257
-#> [12,] 32.1598 11    1 1.91124
-#> [13,] 36.9851 12    1 0.15109
-#> [14,] 37.1167 13    2 0.71795
-#> [15,] 38.4261 14    1 0.34298
-#> [16,] 38.9803 15    1 0.51792
-#> [17,] 42.9827 16    2 0.15177
-#> [18,] 48.4580 17    1 0.15016
-#> [19,] 48.7737 18    1 0.57247
-#> [20,] 48.7910 19    2 1.24194
+#>  [1,]  0.0000  0    0 0.15000
+#>  [2,]  1.9559  1    1 0.15000
+#>  [3,]  3.2143  2    1 0.24347
+#>  [4,]  3.9757  3    1 0.38467
+#>  [5,]  4.5737  4    1 0.50898
+#>  [6,]  7.7746  5    1 0.15632
+#>  [7,] 11.9296  6    2 0.15092
+#>  [8,] 13.4276  7    1 0.24108
+#>  [9,] 23.3489  8    1 0.15000
+#> [10,] 31.9672  9    3 0.15000
+#> [11,] 32.0264 10    2 1.33257
+#> [12,] 32.1604 11    1 1.91124
+#> [13,] 36.9857 12    1 0.15109
+#> [14,] 37.1174 13    2 0.71795
+#> [15,] 38.4267 14    1 0.34298
+#> [16,] 38.9809 15    1 0.51792
+#> [17,] 42.9833 16    2 0.15177
+#> [18,] 48.4586 17    1 0.15016
+#> [19,] 48.7744 18    1 0.57247
+#> [20,] 48.7916 19    2 1.24194
 #> ... with 980 more rows 
 #> -------------------------------------------------------
 ```
@@ -756,19 +757,20 @@ fit <- hfit(h,
             inter_arrival = res$inter_arrival,
             type = res$type,
             mark = res$mark)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 summary(fit)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 35 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -1684.238 
+#> Log-Likelihood: -1684.224 
 #> 4  free parameters
 #> Estimates:
-#>        Estimate Std. error t value Pr(> t)    
-#> mu1     0.14557    0.00846  17.207 < 2e-16 ***
-#> alpha1  0.63917    0.06978   9.159 < 2e-16 ***
-#> beta1   1.48983    0.12334  12.079 < 2e-16 ***
-#> eta1    0.33626    0.07713   4.360 1.3e-05 ***
+#>        Estimate Std. error t value  Pr(> t)    
+#> mu1    0.145592   0.008433  17.264  < 2e-16 ***
+#> alpha1 0.639384   0.066797   9.572  < 2e-16 ***
+#> beta1  1.490181   0.116725  12.767  < 2e-16 ***
+#> eta1   0.336223   0.077077   4.362 1.29e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -787,20 +789,21 @@ h_md@dmark <- function(param = c(p = 0.1), n=n, mark=mark, ...){
 
 mle_md <- hfit(h_md, 
                inter_arrival = res$inter_arrival, type = res$type, mark = res$mark)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 summary(mle_md)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
 #> BFGS maximization, 45 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -2657.079 
+#> Log-Likelihood: -2657.065 
 #> 5  free parameters
 #> Estimates:
-#>        Estimate Std. error t value Pr(> t)    
-#> mu1    0.145574   0.008468  17.191 < 2e-16 ***
-#> alpha1 0.639168   0.069878   9.147 < 2e-16 ***
-#> beta1  1.489843   0.126225  11.803 < 2e-16 ***
-#> eta1   0.336259   0.076805   4.378 1.2e-05 ***
-#> p      0.658970   0.012235  53.859 < 2e-16 ***
+#>        Estimate Std. error t value  Pr(> t)    
+#> mu1     0.14559    0.00844  17.251  < 2e-16 ***
+#> alpha1  0.63939    0.06858   9.323  < 2e-16 ***
+#> beta1   1.49020    0.11944  12.476  < 2e-16 ***
+#> eta1    0.33622    0.07583   4.434 9.27e-06 ***
+#> p       0.65897    0.01214  54.259  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -818,7 +821,7 @@ estimated_md <- fitted_hspec(mle_md)
 c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
   generator = eval(formals(estimated_md@rmark)$param)[["p"]])
 #>   density generator 
-#>   0.65897   0.65897
+#> 0.6589701 0.6589701
 ```
 
 ### Hawkes flocking model
@@ -915,7 +918,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x55d200c74770>
+#> <bytecode: 0x558143283278>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -944,31 +947,32 @@ hspec_fl
 
 set.seed(1107)
 hr_fl <- hsim(hspec_fl, size=2000)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 summary(hr_fl)
 #> -------------------------------------------------------
 #> Simulation result of exponential (marked) Hawkes model.
 #> Realized path :
-#>        arrival N1 N2 N3 N4 mark  lambda1  lambda2  lambda3  lambda4
-#>  [1,]  0.00000  0  0  0  0    0 0.070000 0.070000 0.110000 0.110000
-#>  [2,]  0.84055  0  0  1  0    1 0.047761 0.047761 0.067768 0.067768
-#>  [3,]  7.35095  0  0  2  0    1 0.021340 0.020291 0.040254 0.040332
-#>  [4,]  8.74603  1  0  2  0    1 0.058165 0.020110 0.104718 0.126289
-#>  [5,] 29.54186  2  0  2  0    1 0.020000 0.020000 0.040000 0.040000
-#>  [6,] 30.90333  2  1  2  0    1 0.097114 0.135671 0.040000 0.062366
-#>  [7,] 31.08275  3  1  2  0    1 0.352605 0.298414 0.040000 0.222539
-#>  [8,] 33.42583  4  1  2  0    1 0.123299 0.132184 0.040000 0.061465
-#>  [9,] 33.75532  5  1  2  0    1 0.260826 0.347283 0.179195 0.054939
-#> [10,] 34.28018  6  1  2  0    1 0.325287 0.454414 0.230420 0.048387
-#> [11,] 35.06698  6  2  2  0    1 0.311303 0.443397 0.204307 0.043530
-#> [12,] 35.31209  6  3  2  0    1 0.518076 0.545110 0.241844 0.042695
-#> [13,] 35.91748  6  4  2  0    1 0.542398 0.494637 0.195086 0.041385
-#> [14,] 36.30025  7  4  2  0    1 0.649096 0.536065 0.141792 0.172180
-#> [15,] 36.96094  7  5  2  0    1 0.542096 0.533891 0.185908 0.103906
-#> [16,] 36.99520  7  5  2  1    1 0.822615 0.716974 0.180512 0.294145
-#> [17,] 37.01805  8  5  2  1    1 0.809878 0.804326 0.567094 0.580389
-#> [18,] 37.57785  9  5  2  1    1 0.688962 0.752790 0.432793 0.331931
-#> [19,] 39.12437  9  5  2  2    1 0.314339 0.369832 0.148166 0.093268
-#> [20,] 40.15404 10  5  2  2    1 0.163160 0.238789 0.203723 0.153817
+#>        arrival N1 N2 N3 N4 mark  lambda1 lambda2  lambda3  lambda4
+#>  [1,]  0.00000  0  0  0  0    0 0.020000 0.02000 0.040000 0.040000
+#>  [2,]  0.84055  0  0  1  0    1 0.020000 0.02000 0.040000 0.040000
+#>  [3,]  7.35095  0  0  2  0    1 0.021049 0.02000 0.040233 0.040310
+#>  [4,]  8.75286  1  0  2  0    1 0.057874 0.02000 0.104229 0.125638
+#>  [5,] 29.54869  2  0  2  0    1 0.020000 0.02000 0.040000 0.040000
+#>  [6,] 30.91017  2  1  2  0    1 0.097114 0.13567 0.040000 0.062366
+#>  [7,] 31.08958  3  1  2  0    1 0.352605 0.29841 0.040000 0.222539
+#>  [8,] 33.43266  4  1  2  0    1 0.123299 0.13218 0.040000 0.061465
+#>  [9,] 33.76215  5  1  2  0    1 0.260826 0.34728 0.179195 0.054939
+#> [10,] 34.28701  6  1  2  0    1 0.325287 0.45441 0.230420 0.048387
+#> [11,] 35.07381  6  2  2  0    1 0.311303 0.44340 0.204307 0.043530
+#> [12,] 35.31892  6  3  2  0    1 0.518076 0.54511 0.241844 0.042695
+#> [13,] 35.92431  6  4  2  0    1 0.542398 0.49464 0.195086 0.041385
+#> [14,] 36.30708  7  4  2  0    1 0.649096 0.53607 0.141792 0.172180
+#> [15,] 36.96777  7  5  2  0    1 0.542096 0.53389 0.185908 0.103906
+#> [16,] 37.00203  7  5  2  1    1 0.822615 0.71697 0.180512 0.294145
+#> [17,] 37.02489  8  5  2  1    1 0.809878 0.80433 0.567094 0.580389
+#> [18,] 37.58468  9  5  2  1    1 0.688962 0.75279 0.432793 0.331931
+#> [19,] 39.13120  9  5  2  2    1 0.314339 0.36983 0.148166 0.093268
+#> [20,] 40.16087 10  5  2  2    1 0.163160 0.23879 0.203723 0.153817
 #> ... with 1980 more rows 
 #> -------------------------------------------------------
 ```
@@ -976,29 +980,30 @@ summary(hr_fl)
 ``` r
 
 fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_fl)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 84 iterations
+#> BFGS maximization, 83 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -3050.319 
+#> Log-Likelihood: -3050.707 
 #> 12  free parameters
 #> Estimates:
 #>         Estimate Std. error t value  Pr(> t)    
-#> mu1     0.028055   0.004303   6.520 7.05e-11 ***
-#> mu3     0.033179   0.004269   7.772 7.72e-15 ***
-#> alpha11 0.199720   0.029033   6.879 6.02e-12 ***
-#> alpha12 0.312236   0.030478  10.245  < 2e-16 ***
-#> alpha33 0.283861   0.037351   7.600 2.97e-14 ***
-#> alpha34 0.341250   0.040022   8.526  < 2e-16 ***
-#> beta1.1 0.734703   0.053393  13.760  < 2e-16 ***
-#> beta3.1 0.899924   0.078003  11.537  < 2e-16 ***
-#> alpha1n 0.250338   0.044940   5.571 2.54e-08 ***
-#> alpha1w 0.107483   0.029917   3.593 0.000327 ***
-#> alpha2n 0.083683   0.037982   2.203 0.027580 *  
-#> alpha2w 0.172788   0.034472   5.012 5.37e-07 ***
+#> mu1     0.028131   0.004309   6.528 6.65e-11 ***
+#> mu3     0.033344   0.004265   7.818 5.39e-15 ***
+#> alpha11 0.199823   0.028718   6.958 3.45e-12 ***
+#> alpha12 0.312352   0.030265  10.320  < 2e-16 ***
+#> alpha33 0.283701   0.036342   7.806 5.89e-15 ***
+#> alpha34 0.341242   0.038529   8.857  < 2e-16 ***
+#> beta1.1 0.734287   0.052146  14.081  < 2e-16 ***
+#> beta3.1 0.902526   0.072865  12.386  < 2e-16 ***
+#> alpha1n 0.249943   0.044270   5.646 1.64e-08 ***
+#> alpha1w 0.107222   0.029765   3.602 0.000315 ***
+#> alpha2n 0.084355   0.037596   2.244 0.024852 *  
+#> alpha2w 0.173571   0.034026   5.101 3.38e-07 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> --------------------------------------------
@@ -1030,10 +1035,9 @@ arguments.
 replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
   inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
   fit_initial_state(fit_fl)))
-#> lambda_component0 was not supplied; automatic initial excitation will be used.
 c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
 #>    fitted  replayed 
-#> -3050.319 -3050.319
+#> -3050.707 -3050.707
 ```
 
 ### Bid-ask price model
@@ -1228,7 +1232,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x55d2016c7758>
+#> <bytecode: 0x558143124700>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1429,6 +1433,7 @@ hspec1_d <- set_residual(
 ``` r
 
 dh1_real <- hsim(hspec1_d, size = 3000)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 hist(
   dh1_real$inter_arrival[dh1_real$inter_arrival < 3],
   breaks = 50,
@@ -1517,7 +1522,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x55d2012cee60>
+#> <environment: 0x5581489723b8>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -1525,7 +1530,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x55d2012cee60>
+#> <environment: 0x5581489723b8>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1534,7 +1539,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x55d2012cee60>
+#> <environment: 0x5581489723b8>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1544,7 +1549,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x55d2012cee60>
+#> <environment: 0x5581489723b8>
 ```
 
 The following histogram shows inter-arrival times from a model with
@@ -1554,6 +1559,7 @@ The following histogram shows inter-arrival times from a model with
 
 set.seed(1107)
 duh2_real <- hsim(hspec2_du, size = 10000)
+#> Initial intensity components: auto -> zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.
 # Plot a histogram of the inter-arrival times less than 5
 hist(
   duh2_real$inter_arrival[duh2_real$inter_arrival < 5],
@@ -1668,24 +1674,24 @@ mle_dh <- hfit(hspec2_du,
 summary(mle_dh)
 #> --------------------------------------------
 #> Maximum Likelihood estimation
-#> BFGS maximization, 56 iterations
+#> BFGS maximization, 55 iterations
 #> Return code 0: successful convergence 
-#> Log-Likelihood: -12407.47 
+#> Log-Likelihood: -12411.11 
 #> 6  free parameters
 #> Estimates:
 #>          Estimate Std. error t value Pr(> t)    
-#> mu1       0.30572    0.00920   33.23  <2e-16 ***
-#> alpha1.1  0.53359    0.02487   21.46  <2e-16 ***
-#> alpha1.2  0.84366    0.02778   30.37  <2e-16 ***
-#> beta1.1   1.59041    0.05863   27.13  <2e-16 ***
-#> a         0.71814        NaN     NaN     NaN    
-#> ell       1.63789        NaN     NaN     NaN    
+#> mu1       0.30362    0.01044   29.07  <2e-16 ***
+#> alpha1.1  0.54127    0.04150   13.04  <2e-16 ***
+#> alpha1.2  0.85251    0.05482   15.55  <2e-16 ***
+#> beta1.1   1.59760    0.10875   14.69  <2e-16 ***
+#> a         0.72382        NaN     NaN     NaN    
+#> ell       1.64785        NaN     NaN     NaN    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Warning: constrained likelihood estimation. Inference is probably wrong
 #> Constrained optimization based on constrOptim 
-#> 1  outer iterations, barrier value -0.0002565707 
+#> 1  outer iterations, barrier value -0.0002567612 
 #> --------------------------------------------
 ```
 
@@ -1714,12 +1720,12 @@ estimated_dh <- fitted_hspec(mle_dh)
 initial_dh <- fit_initial_state(mle_dh)
 formals(estimated_dh@rresidual)$param
 #>         a       ell 
-#> 0.7181419 1.6378856
+#> 0.7238195 1.6478538
 inferred_dh <- do.call(logLik, c(list(object = estimated_dh,
   inter_arrival = duh2_real$inter_arrival, type = duh2_real$type, infer = TRUE), initial_dh))
 c(fitted = as.numeric(logLik(mle_dh)), restored = inferred_dh$loglikelihood)
 #>    fitted  restored 
-#> -12407.47 -12407.47
+#> -12411.11 -12411.11
 ```
 
 The following example uses a uniform residual distribution on

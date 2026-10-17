@@ -91,7 +91,9 @@ for engines, gradients and Jacobians.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
 <span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">path</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
@@ -160,7 +162,8 @@ are equal.</p>
 <span><span class="co">#&gt; [2,] 2.25 2.25</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
-<span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span></code></pre></div>
 <p>In the first example, all entries of <code>alpha0</code> are set to
 0.75. This constrains <code>alpha11</code>, <code>alpha12</code>,
 <code>alpha21</code>, and <code>alpha22</code> to share one estimated
@@ -173,6 +176,7 @@ within <code>mu0</code> and <code>beta0</code>.</p>
 <span></span>
 <span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu0</span>, alpha<span class="op">=</span><span class="va">alpha0</span>, beta<span class="op">=</span><span class="va">beta0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
@@ -203,6 +207,7 @@ two excitation parameters to estimate.</p>
 <span></span>
 <span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu0</span>, alpha<span class="op">=</span><span class="va">alpha0</span>, beta<span class="op">=</span><span class="va">beta0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
@@ -229,6 +234,7 @@ differ, even though they are equal in the simulation model.</p>
 <span></span>
 <span><span class="va">hspec0</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu0</span>, alpha<span class="op">=</span><span class="va">alpha0</span>, beta<span class="op">=</span><span class="va">beta0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec0</span>, inter_arrival <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
@@ -251,6 +257,7 @@ differ, even though they are equal in the simulation model.</p>
 separately, including entries with equal initial values.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec2</span>, inter_arrival <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">type</span>, reduced<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: some standard errors are NaN. Try final_hessian = "stable" for Hawkes Hessian diagnostics, then inspect fit_diagnostics().</span></span>
 <span><span class="co">#&gt; --------------------------------------------</span></span>
 <span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
@@ -330,7 +337,7 @@ arguments:</p>
 <span><span class="va">inferred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated</span>,</span>
 <span>  inter_arrival <span class="op">=</span> <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">path</span><span class="op">$</span><span class="va">type</span>, mark <span class="op">=</span> <span class="va">path</span><span class="op">$</span><span class="va">mark</span>,</span>
 <span>  infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">initial</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; lambda_component0 was not supplied; automatic initial excitation will be used.</span></span></code></pre></div>
+<span><span class="co">#&gt; Initial intensity components: mean (unconditional component means).</span></span></code></pre></div>
 <p>The result remains a <code>maxLik</code> object, so
 <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>
 keep their existing behavior. The saved parameter map preserves shared
@@ -413,6 +420,7 @@ when stable curvature is unavailable. Inspect
 curvature <code>status</code> and <code>reason</code>.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_checked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">path</span><span class="op">$</span><span class="va">type</span>, final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="../reference/fit_diagnostics.html">fit_diagnostics</a></span><span class="op">(</span><span class="va">fit_checked</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"status"</span>, <span class="st">"scaled_condition"</span>, <span class="st">"newton_decrement"</span><span class="op">)</span><span class="op">]</span></span>
