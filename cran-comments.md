@@ -1,3 +1,33 @@
+## emhawkes 1.0.1: CRAN check correction
+
+The r-devel-linux-x86_64-fedora-gcc check of 1.0.0 failed in
+tests/stats-isolated-session.R before fitting. The test assumed that replacing
+the child's library paths hid maxLik, but R retains its standard/site libraries.
+An installed maxLik there invalidated the test's absence assertion.
+
+The revised test always checks stats fitting, covariance, saved-result
+restoration and likelihood replay without loading maxLik, whether or not maxLik
+is installed. It checks the missing default optimizer error only when maxLik
+is genuinely unavailable. No test of the stats computation is skipped.
+Temporary files are removed on subprocess failures as well as on success.
+
+CI now includes default checks with _R_CHECK_SUGGESTS_ONLY_=false and maxLik in
+a site library, alongside --as-cran checks. A separate hard-dependencies-only
+job requires genuine absence. Package calculation code is unchanged.
+
+Local checks on Windows 11 / R 4.5.1:
+
+- Default R CMD check with _R_CHECK_SUGGESTS_ONLY_=false and maxLik visible
+  through R_LIBS_SITE: Status: OK, including all 43 tests, rebuilt vignette
+  and PDF manual.
+- R CMD check --as-cran --run-donttest: 0 errors, 0 warnings, 1 NOTE, including
+  all 43 tests, rebuilt vignette and PDF/HTML manuals. The only NOTE reports
+  one day since the previous CRAN update. This maintenance release responds
+  directly to CRAN's request to correct the check failure before 2026-11-07.
+- The stats subprocess test passed both with maxLik in a site library and
+  with it genuinely absent. Its strict absence guard correctly rejected the
+  deliberately visible installation.
+
 ## Resubmission of emhawkes 1.0.0
 
 The Windows R-devel pretest reported failures in fit-rds-session.R and

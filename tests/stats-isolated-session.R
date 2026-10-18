@@ -1,10 +1,14 @@
 library(emhawkes)
 
-# Copy only the package and its compiled dependency into an isolated library.
-# The new R process must not find maxLik anywhere in its library search path.
+# Give the child its own emhawkes/Rcpp library, retaining R's standard/site
+# libraries. maxLik may legitimately be installed there. Always test the stats
+# path without loading maxLik; test its absence only when it is actually absent.
 isolated_stats_session <- function() {
   root <- tempfile("stats-without-maxLik-")
   dir.create(root)
+  stopifnot(startsWith(normalizePath(root, winslash = "/"),
+                       paste0(normalizePath(tempdir(), winslash = "/"), "/")))
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
   isolated <- file.path(root, "library")
   dir.create(isolated)
   for (package in c("emhawkes", "Rcpp")) {
@@ -15,7 +19,8 @@ isolated_stats_session <- function() {
     "args <- commandArgs(TRUE)",
     ".libPaths(c(args[1], .Library))",
     "stopifnot(!('package:methods' %in% search()))",
-    "stopifnot(!requireNamespace('maxLik', quietly = TRUE))",
+    "maxlik_available <- length(find.package('maxLik', quiet = TRUE)) > 0L",
+    "if (identical(args[3], 'true')) stopifnot(!maxlik_available)",
     "library(emhawkes)",
     "stopifnot(!('package:methods' %in% search()))",
     "stopifnot(!'maxLik' %in% loadedNamespaces())",
@@ -35,21 +40,22 @@ isolated_stats_session <- function() {
     "stopifnot(length(restored@dimens) == 1L, restored@dimens == 1, identical(dim(restored@mu), c(1L, 1L)))",
     "replayed <- do.call(logLik, c(list(object = restored, inter_arrival = dt), fit_initial_state(fit)))",
     "stopifnot(abs(as.numeric(replayed)-as.numeric(logLik(fit))) < 1e-12)",
-    "error <- tryCatch(hfit(h, dt), error = identity)",
-    "stopifnot(inherits(error,'error'), grepl(\"optimizer = 'stats'\", conditionMessage(error), fixed=TRUE))",
+    "if (!maxlik_available) {",
+    "  error <- tryCatch(hfit(h, dt), error = identity)",
+    "  stopifnot(inherits(error,'error'), grepl(\"optimizer = 'stats'\", conditionMessage(error), fixed=TRUE))",
+    "}",
     "stopifnot(!'maxLik' %in% loadedNamespaces())",
-    "cat('Isolated stats fit and saved-result round trip: OK\\n')"
+    "cat('Stats fit and saved-result round trip: OK; maxLik visible:', maxlik_available, '\\n')"
   ), script)
   executable <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
-  output <- system2(executable, c("--vanilla",
+  require_missing <- identical(Sys.getenv("EMHAWKES_TEST_REQUIRE_NO_MAXLIK"), "true")
+  output <- suppressWarnings(system2(executable, c("--vanilla",
     "--default-packages=datasets,utils,grDevices,graphics,stats",
     shQuote(script), shQuote(isolated),
-    shQuote(file.path(root, "fit.rds"))), stdout = TRUE, stderr = TRUE)
+    shQuote(file.path(root, "fit.rds")), if (require_missing) "true" else "false"),
+    stdout = TRUE, stderr = TRUE))
   cat(output, sep = "\n")
-  stopifnot(is.null(attr(output, "status")))
-  # Every removed file is contained in this test's own temporary directory.
-  stopifnot(startsWith(normalizePath(root, winslash = "/"),
-                       paste0(normalizePath(tempdir(), winslash = "/"), "/")))
-  unlink(root, recursive = TRUE)
+  if (!is.null(attr(output, "status")))
+    stop("Fresh-session stats validation failed; see the subprocess output above.", call. = FALSE)
 }
 isolated_stats_session()

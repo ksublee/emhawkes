@@ -12,7 +12,7 @@ permissions:
 jobs:
   check:
     runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} / R ${{ matrix.config.r }}
+    name: ${{ matrix.config.os }} / R ${{ matrix.config.r }} / ${{ matrix.config.check || 'as-cran' }}
     strategy:
       fail-fast: false
       matrix:
@@ -24,8 +24,11 @@ jobs:
           - {os: ubuntu-latest, r: release}
           - {os: ubuntu-latest, r: devel}
           - {os: ubuntu-latest, r: oldrel-1}
+          - {os: ubuntu-latest, r: devel, check: default}
+          - {os: windows-latest, r: release, check: default}
     env:
       R_KEEP_PKG_SOURCE: yes
+      _R_CHECK_SUGGESTS_ONLY_: ${{ matrix.config.check == 'default' && 'false' || 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-pandoc@v2
@@ -41,11 +44,20 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+      - name: Expose installed packages through the site library
+        if: matrix.config.check == 'default'
+        shell: Rscript {0}
+        run: |
+          stopifnot(length(find.package("maxLik", quiet = TRUE)) == 1L)
+          paths <- paste(.libPaths(), collapse = .Platform$path.sep)
+          cat("R_LIBS_SITE=", paths, "\n", file = Sys.getenv("GITHUB_ENV"),
+              append = TRUE, sep = "")
       - uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--no-manual", "--as-cran", "--run-donttest")'
+          args: ${{ matrix.config.check == 'default' && 'c("--no-manual", "--run-donttest")' || 'c("--no-manual", "--as-cran", "--run-donttest")' }}
           error-on: '"warning"'
           upload-results: 'true'
+          artifact-name: check-${{ matrix.config.os }}-r${{ matrix.config.r }}-${{ matrix.config.check || 'as-cran' }}
       - name: Record release source provenance
         if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
         shell: bash
@@ -71,3 +83,22 @@ jobs:
             check/emhawkes.Rcheck/00check.log
           if-no-files-found: error
           retention-days: 30
+
+  stats-only:
+    name: Stats optimizer without maxLik
+    runs-on: ubuntu-latest
+    env:
+      EMHAWKES_TEST_REQUIRE_NO_MAXLIK: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+      - name: Install with hard dependencies only
+        run: R CMD INSTALL --preclean .
+      - name: Require genuine absence and replay the saved stats fit
+        run: Rscript --vanilla tests/stats-isolated-session.R
