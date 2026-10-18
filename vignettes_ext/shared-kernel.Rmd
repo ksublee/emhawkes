@@ -1,0 +1,108 @@
+---
+title: "Shared exponential kernel calculations"
+description: "Replay numeric exponential states through a public, baseline-independent API."
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(emhawkes)
+```
+
+## Purpose and availability
+
+The GitHub development version 1.0.1.9000 exports `exp_kernel_spec()`,
+`as_exp_kernel()` and `exp_kernel_replay()`. These experimental functions provide
+a shared calculation boundary inside emhawkes. The separate
+[frpp package](https://ksublee.github.io/frpp/) uses it for its numeric `state`
+likelihood. The dependency is frpp -> emhawkes.
+
+The API supplies kernel states and integrals. The calling model owns its
+baseline, initialization policy, residual distribution, likelihood and random
+draws. Existing Hawkes event loops and `emhawkes.engine` selection are unchanged.
+Publication on GitHub does not update an already installed CRAN version.
+
+## Specification and mapping
+
+Numeric alpha and beta are D by K matrices; eta is optional with the same shape.
+Beta must be positive and equal within each row. Rows are event types and
+columns are kernels. `type_col_map[[i]]` selects the columns updated by type i;
+entries can overlap across event types. Signed components and jumps are retained.
+These shape rules alone do not guarantee a valid simulator or stationarity.
+Function-valued kernel parameters and impact callbacks are outside this first
+interface; conversion rejects them without executing them.
+
+```{r kernel}
+h <- new("hspec", mu = c(.3, .4),
+  alpha = matrix(c(.04, .03, .02, .05, .01, .02, .03, .01), 2, 4),
+  beta = matrix(rep(c(1.2, 1.7), 4), 2),
+  type_col_map = list(c(3L, 1L), c(2L, 4L)))
+kernel <- as_exp_kernel(h)
+```
+
+`as_exp_kernel()` reads kernel slots only. Baselines, mark generators, mark
+densities and residual laws are not copied or evaluated. The specification
+contains no evolving state, so replaying it twice does not accumulate events.
+
+## Replay contract
+
+Supply observed intervals, types, optional marks and explicit initial components.
+The first row is the initial state: its interval is zero and it causes no event
+update. Subsequent zero intervals update events in input order. Replay adds no
+terminal observation interval and consumes no random numbers.
+
+```{r replay}
+dt <- c(0, .2, .4, 0, .3)
+type <- c(0, 1, 2, 1, 2)
+initial <- matrix(.05, 2, 4)
+x <- exp_kernel_replay(kernel, dt, type, lambda_component0 = initial)
+x$kernel_integral
+x$kernel_before
+x$final_component
+```
+
+For M input rows, the ordinary output is:
+
+| Output | Shape | Meaning |
+|---|---|---|
+| `kernel_integral` | M by D | Kernel-only integral over each interval; initial row is zero |
+| `kernel_before` | M by D | Pre-event component sums; initial row is the initial row sums |
+| `final_component` | D by K | State after the final event, or unchanged initial state for M = 1 |
+
+A scalar initial value expands over all components. A matrix must match D by K;
+a matching vector follows R's column-major matrix order. Automatic mean/zero
+policies and count paths belong to the calling model.
+
+With `history = TRUE`, `component_before` and `component_after` are additionally
+returned as M by (D times K). Within each row, components are flattened row by
+row. Histories are allocated only when requested. Ordinary output still stores
+M by D interval integrals and sums; it is not constant-memory streaming.
+
+```{r history}
+full <- exp_kernel_replay(kernel, dt, type, lambda_component0 = initial,
+  history = TRUE)
+stopifnot(identical(x, full[names(x)]))
+```
+
+## Using the result in another model
+
+For a numeric baseline mu, the caller forms pre-event drivers and integrated
+drivers as follows:
+
+```{r baseline}
+mu <- as.vector(h@mu)
+driver_before <- sweep(x$kernel_before, 2, mu, "+")
+integrated_driver <- x$kernel_integral + outer(dt, mu)
+driver_before
+integrated_driver
+```
+
+FRPP combines these with residual density and survival terms. A non-exponential
+residual law changes the conditional hazard: the kernel driver by itself is
+not automatically the FRPP conditional intensity. Hawkes-specific stationary
+means, gradients and Hessian adjustments are not supplied by this API.
+
+Use the exported functions rather than `emhawkes:::`. The implementation is an
+R reference path, independent of the likelihood engine option. Internal
+advance/update helpers and C++ implementation details are not part of this
+public contract. Callback support and independent FRPP event generation remain
+later work.

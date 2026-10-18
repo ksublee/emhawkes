@@ -19,6 +19,8 @@ navbar:
         href: articles/fitting-and-inference.html
       - text: Computation
         href: articles/computation.html
+      - text: Shared exponential kernel
+        href: articles/shared-kernel.html
     news:
       text: News
       href: news/index.html
@@ -36,3 +38,4 @@ articles:
   contents:
   - articles/fitting-and-inference
   - articles/computation
+  - articles/shared-kernel

@@ -1,8 +1,14 @@
-# emhawkes (development version)
+# emhawkes 1.0.1.9000
 
 * Move detailed FRPP examples to the frpp package documentation. Retain a
   short compatibility example and describe the planned functionality migration;
   existing residual-law functions and Hawkes residual diagnostics are unchanged.
+
+* Add experimental numeric `exp_kernel_spec()`, `as_exp_kernel()` and
+  `exp_kernel_replay()` interfaces for shared state calculations. Replay returns
+  kernel-only interval integrals and pre-event sums, with optional component
+  histories. Numeric marks, mapped kernels and signed states are supported;
+  row-wise equal decay rates are required. Existing event loops are unchanged.
 
 # emhawkes 1.0.1
 
