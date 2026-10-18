@@ -1,0 +1,6 @@
+Date: 2026-10-18 Asia/Seoul
+Reference commit: e1a50b5d23a15a773f3e5bfb947922c3ffe5ac8b
+R CMD check --no-manual --as-cran: Status OK; 46 test files
+_R_CHECK_CRAN_INCOMING_REMOTE_=false
+Full extended vignette: rendered; all chunks executed
+New spread plot: visually inspected

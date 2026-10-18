@@ -393,6 +393,104 @@ c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
   generator = eval(formals(estimated_md@rmark)$param)[["p"]])
 ```
 
+### Fosset's state-dependent spread model {#fosset-spread-model}
+
+Fosset, Bouchaud and Benzaquen (2020),
+[Endogenous Liquidity Crises](https://doi.org/10.1088/1742-5468/ab7c64),
+Section 4.1, equations (8a)--(8b), model spread widening and narrowing as two
+event types. Let $N_+$ and $N_-$ count these events and let the spread, in ticks, be
+
+$$
+S(t) = S_0 + N_+(t) - N_-(t).
+$$
+
+Their linear model has predictable intensities
+
+$$
+\lambda_+(t) = \nu_+ + a\int_{[0,t)} b e^{-b(t-s)}\,dN_+(s),
+\qquad
+\lambda_-(t) = \nu_-\,\mathbf{1}_{\{S(t-)\ge 2\}}.
+$$
+
+Only widening events excite future widening. Narrowing is disabled at a one-tick
+spread. We use $\nu_+,\nu_-$ for the paper's $\lambda_0^+,\lambda_0^-$ and
+$a,b$ for its $\alpha,\beta$. The package's `alpha[1, 1]` is therefore $ab$;
+$a$ is the integrated excitation, not the jump size. The other `alpha` entries
+are fixed zeros. Both event types have unit marks.
+
+The example uses positive rates, $0<a<1$, and an explicit zero initial excitation.
+This restricts the example to a Hawkes-stable widening process. A stationary
+spread additionally requires $\nu_+/(1-a)<\nu_-$. The values below are chosen
+for a stationary-spread illustration. The nonlinear models later in the paper
+are separate specifications.
+
+The following local example helpers are stored with the installed package.
+Log rates enforce positivity, and a logit parameter enforces $0<a<1$.
+The shared name `log_b` keeps the same decay parameter in `alpha` and `beta`.
+
+```{r fosset-source, include=FALSE}
+knitr::read_chunk(system.file("examples", "fosset-spread.R", package = "emhawkes"))
+```
+
+```{r fosset-specification}
+```
+
+For the baseline callback, `N[n - 1, ]` describes the state before event `n`.
+The same callback is called with `n + 1` after the jump, so the narrowing rate
+changes immediately when the spread reaches or leaves one tick.
+
+```{r fosset-simulation}
+h_fosset <- fosset_spec()
+set.seed(20261018)
+path_fosset <- hsim(h_fosset, size = 4001, lambda_component0 = 0)
+spread_fosset <- 1 + path_fosset$N[, 1] - path_fosset$N[, 2]
+stopifnot(all(spread_fosset >= 1),
+  all(path_fosset$lambda[c(1, head(spread_fosset, -1)) == 1, 2] == 0),
+  all(path_fosset$rambda[spread_fosset == 1, 2] == 0))
+plot(path_fosset$arrival, spread_fosset, type = "s",
+  xlab = "Time", ylab = "Spread (ticks)")
+```
+
+Estimate all four model parameters from a different starting point. The example
+uses R's stats optimizer and the default numerical gradient. Automatic engine
+selection uses the supported C++ likelihood; simulation of this count-dependent
+baseline uses the R path. No analytic Jacobians are required.
+
+```{r fosset-fit}
+start_fosset <- fosset_spec(nu_plus = 0.7, nu_minus = 2.5, a = 0.25, b = 1.2)
+fit_fosset <- hfit(start_fosset,
+  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
+  lambda_component0 = 0, optimizer = "stats", method = "BFGS",
+  control = list(maxit = 500, reltol = 1e-10))
+cbind(true = c(nu_plus = 1, nu_minus = 3, a = 0.4, b = 2),
+  estimated = fosset_parameters(coef(fit_fosset)))
+fit_diagnostics(fit_fosset)$status
+fit_diagnostics(fit_fosset)$computation$engine
+```
+
+The estimated coefficients are on the log/logit scale. Parameter recovery varies
+between realizations; inspect convergence and uncertainty rather than expecting
+exact recovery from a single path.
+
+There is an independent check for the narrowing rate. If $T_{\rm open}$ is the
+time spent with $S\ge2$, its log-likelihood contribution is
+$N_-(T)\log\nu_- - \nu_- T_{\rm open}$. Its maximum is
+$\widehat\nu_- = N_-(T)/T_{\rm open}$.
+The observation window ends at the last supplied event.
+
+```{r fosset-check}
+open_time_fosset <- sum(path_fosset$inter_arrival[-1] *
+  (head(spread_fosset, -1) >= 2))
+c(fitted = fosset_parameters(coef(fit_fosset))["nu_minus"],
+  independent = sum(path_fosset$type == 2) / open_time_fosset)
+restored_fosset <- fitted_hspec(fit_fosset)
+replay_fosset <- do.call(logLik, c(list(object = restored_fosset,
+  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
+  infer = TRUE), fit_initial_state(fit_fosset)))
+stopifnot(isTRUE(all.equal(as.numeric(logLik(fit_fosset)),
+  unname(replay_fosset$loglikelihood), tolerance = 1e-8)))
+```
+
 ### Hawkes flocking model
 
 The function $g$ need not depend on the mark.
