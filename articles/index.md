@@ -9,7 +9,8 @@ Define, simulate, fit and check a basic Hawkes model.
 
 ### Examples
 
-Marked, state-dependent, multi-kernel and flexible residual models.
+Marked, state-dependent and multi-kernel models, with an FRPP migration
+note.
 
 - [Extended examples for the emhawkes
   package](https://ksublee.github.io/emhawkes/articles/extended_example.md):

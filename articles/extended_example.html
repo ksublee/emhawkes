@@ -447,7 +447,7 @@ argument.</p>
 <span><span class="co">#&gt;         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), </span></span>
 <span><span class="co">#&gt;         nrow = 2)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x558da8796f18&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x563762c8bde0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot alpha: </span></span>
 <span><span class="co">#&gt; function (param = c(eta = 5, nu = 3)) </span></span>
@@ -457,7 +457,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, </span></span>
 <span><span class="co">#&gt;         zeta_tl), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x558da9719a20&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5637631af620&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt; function (param = c(beta = 12, kappa = 0.12)) </span></span>
@@ -467,7 +467,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, </span></span>
 <span><span class="co">#&gt;         beta2), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x558daa353170&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x563763d58788&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot type_col_map: </span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -920,7 +920,7 @@ extracting an entire column at every event.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, </span></span>
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x558dab49a2c8&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5637650df5e8&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1210,7 +1210,7 @@ sum of the components in each row remains nonnegative.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], </span></span>
 <span><span class="co">#&gt;         param["alpha_s1"]), nrow = 4, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x558daba41db0&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x563762e29fd0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1366,327 +1366,32 @@ differentiation remains the default.</p>
 <div class="section level2">
 <h2 id="point-processes-with-flexible-residuals">Point processes with flexible residuals<a class="anchor" aria-label="anchor" href="#point-processes-with-flexible-residuals"></a>
 </h2>
-<div class="section level3">
-<h3 id="one-dimensional-model">One-dimensional model<a class="anchor" aria-label="anchor" href="#one-dimensional-model"></a>
-</h3>
-<p>The following example defines a point process with a custom residual
-distribution. For details, see <a href="https://link.springer.com/article/10.1007/s11009-025-10159-5" class="external-link">Self
-and mutually exciting point process embedding flexible residuals and
-intensity with discretely Markovian dynamics</a>. The residual density
-has a trapezoidal section and an exponential tail. The
-<code>dresidual</code>, <code>presidual</code>, and
-<code>qresidual</code> functions receive their distribution parameters
-through the <code>param</code> vector. The ordinary Hawkes model is the
-special case with an exponential residual distribution of rate 1. Use
-<code>set_residual</code> to wrap the distribution functions with
-log-density and tail-probability support.</p>
+<p>FRPP-specific functionality is planned to move to the separate <a href="https://ksublee.github.io/frpp/" class="external-link">frpp package</a>. Use its <a href="https://ksublee.github.io/frpp/articles/frpp-examples.html" class="external-link">FRPP
+examples</a> for <code>fspec()</code>, <code>fsim()</code> and
+<code>ffit()</code>. The full examples previously shown here, including
+the original emhawkes fitting code, are preserved in the <a href="https://ksublee.github.io/frpp/articles/emhawkes-compatibility.html" class="external-link">compatibility
+vignette</a>.</p>
+<p>Simple custom-residual models can still use
+<code><a href="../reference/set_residual.html">set_residual()</a></code>, <code><a href="../reference/hsim.html">hsim()</a></code> and
+<code><a href="../reference/logLik.html">logLik()</a></code> in emhawkes. These functions remain available
+during the transition; this documentation change does not remove or
+deprecate them. For example:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mu1_d</span> <span class="op">&lt;-</span> <span class="fl">0.5</span>; <span class="va">alpha1_d</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">beta1_d</span> <span class="op">&lt;-</span> <span class="fl">1.2</span>; <span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">0.7</span>; <span class="va">ell</span> <span class="op">&lt;-</span> <span class="fl">1.6</span></span>
-<span><span class="va">hspec1_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_residual.html">set_residual</a></span><span class="op">(</span></span>
-<span>  <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu1_d</span>, alpha <span class="op">=</span> <span class="va">alpha1_d</span>, beta <span class="op">=</span> <span class="va">beta1_d</span><span class="op">)</span>,</span>
-<span>  param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="va">a</span>, ell <span class="op">=</span> <span class="va">ell</span><span class="op">)</span>,</span>
-<span>  dresidual <span class="op">=</span> <span class="va">dtzexp</span>, presidual <span class="op">=</span> <span class="va">ptzexp</span>,</span>
-<span>  qresidual <span class="op">=</span> <span class="va">qtzexp</span>, rresidual <span class="op">=</span> <span class="va">rtzexp</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dh1_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec1_d</span>, size <span class="op">=</span> <span class="fl">3000</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Initial intensity components: auto -&gt; zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">[</span><span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span> <span class="op">&lt;</span> <span class="fl">3</span><span class="op">]</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inter-Arrival Times"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Inter-Arrival Time"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Frequency"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-28-1.png" class="r-plt" alt="" width="576"></p>
-<p>Use <code>logLik</code> to evaluate the observed inter-arrival times
-under <code>hspec1_d</code>. Setting <code>infer = TRUE</code> also
-returns the intensity and residual processes in
-<code>infer_res_dh1</code>.</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Infer the residual process using the log-likelihood method</span></span>
-<span><span class="co"># 'infer_res_dh1' contains the inferred process data based on the inter-arrival times</span></span>
-<span><span class="va">infer_res_dh1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec1_d</span>, inter_arrival <span class="op">=</span> <span class="va">dh1_real</span><span class="op">$</span><span class="va">inter_arrival</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Plot a histogram of the inferred residual process</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">infer_res_dh1</span><span class="op">$</span><span class="va">res_process1</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  probability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inferred Residual Process"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Residual Value"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Density"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">0.1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="fu"><a href="../reference/tzexp.html">dtzexp</a></span><span class="op">(</span><span class="va">x</span>, a <span class="op">=</span> <span class="va">a</span>, ell <span class="op">=</span> <span class="va">ell</span><span class="op">)</span>,</span>
-<span>  col <span class="op">=</span> <span class="st">'red'</span>,</span>
-<span>  lwd <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add legend for clarity</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="st">"Theoretical PDF"</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-29-1.png" class="r-plt" alt="" width="576"></p>
-</div>
-<div class="section level3">
-<h3 id="two-dimensional-model">Two-dimensional model<a class="anchor" aria-label="anchor" href="#two-dimensional-model"></a>
-</h3>
-<p>The same approach extends to multiple dimensions, using parameter
-matrices as in a multivariate Hawkes model.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mu2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">alpha2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.8</span>, <span class="fl">0.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">beta2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">0.7</span>; <span class="va">ell</span> <span class="op">&lt;-</span> <span class="fl">1.6</span></span>
-<span></span>
-<span><span class="va">hspec2_du</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_residual.html">set_residual</a></span><span class="op">(</span></span>
-<span>  <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu2_d</span>, alpha <span class="op">=</span> <span class="va">alpha2_d</span>, beta <span class="op">=</span> <span class="va">beta2_d</span><span class="op">)</span>,</span>
-<span>  param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="va">a</span>, ell <span class="op">=</span> <span class="va">ell</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="va">h_residual</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_residual.html">set_residual</a></span><span class="op">(</span></span>
+<span>  <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="fl">0.5</span>, alpha <span class="op">=</span> <span class="fl">1</span>, beta <span class="op">=</span> <span class="fl">1.2</span><span class="op">)</span>,</span>
+<span>  param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0.7</span>, ell <span class="op">=</span> <span class="fl">1.6</span><span class="op">)</span>,</span>
 <span>  dresidual <span class="op">=</span> <span class="va">dtzexp</span>, presidual <span class="op">=</span> <span class="va">ptzexp</span>,</span>
 <span>  qresidual <span class="op">=</span> <span class="va">qtzexp</span>, rresidual <span class="op">=</span> <span class="va">rtzexp</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">hspec2_du</span><span class="op">)</span></span>
-<span><span class="co">#&gt; An object of class "hspec" of 2-dimensional Hawkes process</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot mu: </span></span>
-<span><span class="co">#&gt;      [,1]</span></span>
-<span><span class="co">#&gt; [1,]  0.3</span></span>
-<span><span class="co">#&gt; [2,]  0.3</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot alpha: </span></span>
-<span><span class="co">#&gt;      [,1] [,2]</span></span>
-<span><span class="co">#&gt; [1,]  0.5  0.8</span></span>
-<span><span class="co">#&gt; [2,]  0.8  0.5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot beta: </span></span>
-<span><span class="co">#&gt;      [,1] [,2]</span></span>
-<span><span class="co">#&gt; [1,]  1.5  1.5</span></span>
-<span><span class="co">#&gt; [2,]  1.5  1.5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot rresidual: </span></span>
-<span><span class="co">#&gt; function (size, param = c(a = 0.7, ell = 1.6)) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     do.call(rresidual, c(list(size), distribution_parameters(rresidual, </span></span>
-<span><span class="co">#&gt;         param)))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x558da7b2fd98&gt;</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot dresidual: </span></span>
-<span><span class="co">#&gt; function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, </span></span>
-<span><span class="co">#&gt;         param))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x558da7b2fd98&gt;</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot presidual: </span></span>
-<span><span class="co">#&gt; function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
-<span><span class="co">#&gt;     log.p = FALSE) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, </span></span>
-<span><span class="co">#&gt;         params = distribution_parameters(presidual, param))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x558da7b2fd98&gt;</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Slot qresidual: </span></span>
-<span><span class="co">#&gt; function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
-<span><span class="co">#&gt;     log.p = FALSE) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     residual_quantile(qresidual, p, lower.tail = lower.tail, </span></span>
-<span><span class="co">#&gt;         log.p = log.p, params = distribution_parameters(qresidual, </span></span>
-<span><span class="co">#&gt;             param))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x558da7b2fd98&gt;</span></span></code></pre></div>
-<p>The following histogram shows inter-arrival times from a model with
-<code>tzexp</code> residuals.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
-<span><span class="va">duh2_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2_du</span>, size <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Initial intensity components: auto -&gt; zero (no supported unconditional mean formula for this model). Supplying lambda_component0 explicitly is recommended for this model.</span></span>
-<span><span class="co"># Plot a histogram of the inter-arrival times less than 5</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span><span class="op">[</span><span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span> <span class="op">&lt;</span> <span class="fl">5</span><span class="op">]</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inter-Arrival Times"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Inter-Arrival Time"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Frequency"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-31-1.png" class="r-plt" alt="" width="576"></p>
-<p>Use <code>logLik</code> with <code>infer = TRUE</code> to recover the
-intensity and residual processes.</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">infer_res_dh2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2_du</span>, </span>
-<span>                        inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>
-<span>                        type <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Under a correctly specified model, the inferred residuals follow the
-specified residual distribution.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Plot a histogram of the inferred residual process</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">infer_res_dh2</span><span class="op">$</span><span class="va">res_process2</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  probability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inferred Residual Process"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Residual Value"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Density"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Generate a sequence of x values for plotting the theoretical distribution</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">0.1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add a line to the histogram representing the theoretical density function</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="fu"><a href="../reference/tzexp.html">dtzexp</a></span><span class="op">(</span><span class="va">x</span>, a <span class="op">=</span> <span class="va">a</span>, ell <span class="op">=</span> <span class="va">ell</span><span class="op">)</span>,</span>
-<span>  col <span class="op">=</span> <span class="st">'red'</span>,</span>
-<span>  lwd <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add legend for clarity</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="st">"Theoretical PDF"</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-33-1.png" class="r-plt" alt="" width="576"></p>
-<p>The transformed residuals in <code>eres_process1</code> follow an
-exponential distribution with rate 1 under a correctly specified
-model.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">infer_res_dh2</span><span class="op">$</span><span class="va">eres_process1</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  probability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inferred eResidual Process"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Residual Value"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Density"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Generate a sequence of x values for plotting the theoretical distribution</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">0.1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add a line to the histogram representing the theoretical density function</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">dexp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
-<span>  col <span class="op">=</span> <span class="st">'red'</span>,</span>
-<span>  lwd <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add legend for clarity</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="st">"Theoretical PDF"</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-34-1.png" class="r-plt" alt="" width="576"></p>
-<p>Use <code>hfit</code> for maximum likelihood estimation. The
-distribution requires <code>0 &lt; a &lt;= 3</code>,
-<code>ell &gt; 0</code>, and a nonnegative density. The last condition
-is nonlinear, so the custom objective below checks each candidate with
-<code>dtzexp</code> and returns <code>-Inf</code> when the distribution
-is invalid.</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">residual_loglik</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">object</span>, <span class="va">inter_arrival</span>, <span class="va">type</span>, <span class="va">param</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">valid</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>    <span class="fu"><a href="../reference/tzexp.html">dtzexp</a></span><span class="op">(</span><span class="fl">1</span>, a <span class="op">=</span> <span class="va">param</span><span class="op">[</span><span class="st">"a"</span><span class="op">]</span>, ell <span class="op">=</span> <span class="va">param</span><span class="op">[</span><span class="st">"ell"</span><span class="op">]</span><span class="op">)</span></span>
-<span>    <span class="cn">TRUE</span></span>
-<span>  <span class="op">}</span>, error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">valid</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">object</span>, inter_arrival <span class="op">=</span> <span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">type</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">constraints</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  ineqA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ineqB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">6</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">mle_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">hspec2_du</span>, </span>
-<span>               inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>
-<span>               type <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">type</span>,</span>
-<span>               mylogLik <span class="op">=</span> <span class="va">residual_loglik</span>,</span>
-<span>               constraints <span class="op">=</span> <span class="va">constraints</span><span class="op">)</span></span>
-<span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
-<span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span></span>
-<span><span class="co">#&gt; --------------------------------------------</span></span>
-<span><span class="co">#&gt; Maximum Likelihood estimation</span></span>
-<span><span class="co">#&gt; BFGS maximization, 55 iterations</span></span>
-<span><span class="co">#&gt; Return code 0: successful convergence </span></span>
-<span><span class="co">#&gt; Log-Likelihood: -12411.11 </span></span>
-<span><span class="co">#&gt; 6  free parameters</span></span>
-<span><span class="co">#&gt; Estimates:</span></span>
-<span><span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span><span class="co">#&gt; mu1       0.30362    0.01044   29.07  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.1  0.54127    0.04150   13.04  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha1.2  0.85251    0.05482   15.55  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; beta1.1   1.59760    0.10875   14.69  &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; a         0.72382        NaN     NaN     NaN    </span></span>
-<span><span class="co">#&gt; ell       1.64785        NaN     NaN     NaN    </span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Warning: constrained likelihood estimation. Inference is probably wrong</span></span>
-<span><span class="co">#&gt; Constrained optimization based on constrOptim </span></span>
-<span><span class="co">#&gt; 1  outer iterations, barrier value -0.0002567612 </span></span>
-<span><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
-<p>Hawkes curvature stabilization does not change this custom FRPP
-objective. The moving transition point of <code>tzexp</code> can make
-numerical Hessians step dependent. A successful optimizer return code
-does not validate the reported Wald standard errors. See the <a href="https://github.com/ksublee/emhawkes/blob/main/tools/fit-diagnostics.md" class="external-link">fit
-diagnostic report</a> for the one-sided derivative and profile
-checks.</p>
-<p>These constraints keep the six parameters nonnegative and enforce
-<code>a &lt;= 3</code>, the upper limit of the trapezoid-exponential
-distribution. The parameter order is <code>mu1</code>,
-<code>alpha1.1</code>, <code>alpha1.2</code>, <code>beta1.1</code>,
-<code>a</code>, and <code>ell</code>.</p>
-<p>Reconstruction also updates the residual density, distribution,
-quantile, and generator functions with the shared estimates of
-<code>a</code> and <code>ell</code>. The custom objective and
-optimization constraints remain part of the fitting step;
-<code><a href="../reference/logLik.html">logLik()</a></code> evaluates the restored model’s
-residual-distribution likelihood.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">estimated_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fitted_hspec.html">fitted_hspec</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span></span>
-<span><span class="va">initial_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_initial_state.html">fit_initial_state</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals</a></span><span class="op">(</span><span class="va">estimated_dh</span><span class="op">@</span><span class="va">rresidual</span><span class="op">)</span><span class="op">$</span><span class="va">param</span></span>
-<span><span class="co">#&gt;         a       ell </span></span>
-<span><span class="co">#&gt; 0.7238195 1.6478538</span></span>
-<span><span class="va">inferred_dh</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">logLik</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">estimated_dh</span>,</span>
-<span>  inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, type <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">initial_dh</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>fitted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">mle_dh</span><span class="op">)</span><span class="op">)</span>, restored <span class="op">=</span> <span class="va">inferred_dh</span><span class="op">$</span><span class="va">loglikelihood</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    fitted  restored </span></span>
-<span><span class="co">#&gt; -12411.11 -12411.11</span></span></code></pre></div>
-<p>The following example uses a uniform residual distribution on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, 2]</annotation></semantics></math>.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="co">#set.seed(117)</span></span>
-<span><span class="va">mu2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">alpha2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">beta2_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>, <span class="fl">1.2</span>, <span class="fl">1.2</span>, <span class="fl">1.2</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">hspec2_du</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"hspec"</span>, mu<span class="op">=</span><span class="va">mu2_d</span>, alpha<span class="op">=</span><span class="va">alpha2_d</span>, beta<span class="op">=</span><span class="va">beta2_d</span>,</span>
-<span>                 rresidual <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">size</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span>n<span class="op">=</span><span class="va">size</span>, <span class="fl">0</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>                 dresidual <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="va">log</span> <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span>                   <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">dunif</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0</span>, <span class="fl">2</span>, log <span class="op">=</span> <span class="va">log</span><span class="op">)</span>,</span>
-<span>                 presidual <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">q</span>, <span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="va">lower.tail</span> <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">log.p</span> <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span>                   <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">punif</a></span><span class="op">(</span><span class="va">q</span>, <span class="fl">0</span>, <span class="fl">2</span>, lower.tail <span class="op">=</span> <span class="va">lower.tail</span>, log.p <span class="op">=</span> <span class="va">log.p</span><span class="op">)</span>,</span>
-<span>                 qresidual <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">p</span>, <span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="va">lower.tail</span> <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">log.p</span> <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span>                   <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">qunif</a></span><span class="op">(</span><span class="va">p</span>, <span class="fl">0</span>, <span class="fl">2</span>, lower.tail <span class="op">=</span> <span class="va">lower.tail</span>, log.p <span class="op">=</span> <span class="va">log.p</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">duh2_real</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">hspec2_du</span>, size <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span></code></pre></div>
-<p>Plot a histogram of the inferred residuals:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">infer_res_duh2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">hspec2_du</span>, </span>
-<span>                         inter_arrival <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">inter_arrival</span>, </span>
-<span>                         type <span class="op">=</span> <span class="va">duh2_real</span><span class="op">$</span><span class="va">type</span>, infer <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
-<span>  <span class="va">infer_res_duh2</span><span class="op">$</span><span class="va">res_process1</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  probability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  main <span class="op">=</span> <span class="st">"Histogram of Inferred Residual Process"</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="st">"Residual Value"</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="st">"Density"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="extended_example_files/figure-html/unnamed-chunk-37-1.png" class="r-plt" alt="" width="576"></p>
-</div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1107</span><span class="op">)</span></span>
+<span><span class="va">path_residual</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h_residual</span>, size <span class="op">=</span> <span class="fl">100</span>, lambda_component0 <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">h_residual</span>, inter_arrival <span class="op">=</span> <span class="va">path_residual</span><span class="op">$</span><span class="va">inter_arrival</span>,</span>
+<span>       lambda_component0 <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="co">#&gt; loglikelihood </span></span>
+<span><span class="co">#&gt;      63.13951</span></span></code></pre></div>
+<p>Hawkes goodness-of-fit residual diagnostics remain part of emhawkes;
+see <a href="https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#residual-process">Fitting
+and inference</a>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

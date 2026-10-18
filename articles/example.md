@@ -611,7 +611,12 @@ estimates or cure convergence and identification problems.
   diagnostics and standard errors.
 - [Extended
   examples](https://ksublee.github.io/emhawkes/articles/extended_example.html):
-  marked, state-dependent, multi-kernel and flexible residual models.
+  marked, state-dependent and multi-kernel models, with an FRPP
+  migration note.
+- [FRPP
+  examples](https://ksublee.github.io/frpp/articles/frpp-examples.html):
+  custom residual laws in the separate frpp package; simple cases remain
+  supported in emhawkes.
 - [Computation](https://ksublee.github.io/emhawkes/articles/computation.html):
   likelihood engines, analytic gradients, Jacobians and performance.
 - [Reference](https://ksublee.github.io/emhawkes/reference/index.html):

@@ -539,6 +539,9 @@ legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2)
 ![](fitting-and-inference_files/figure-html/unnamed-chunk-10-1.png)
 
 Residual checks assess model adequacy; they do not replace convergence
-or curvature checks. See the [flexible residual
-examples](https://ksublee.github.io/emhawkes/articles/extended_example.html#point-processes-with-flexible-residuals)
-for models with a non-exponential residual law.
+or curvature checks. See the [frpp
+examples](https://ksublee.github.io/frpp/articles/frpp-examples.html)
+for models with a non-exponential residual law. FRPP-specific
+functionality is planned to move to that package; simple custom-residual
+models remain supported in emhawkes. The Hawkes residual diagnostics
+above remain in emhawkes.
