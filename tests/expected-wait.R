@@ -52,7 +52,18 @@ for (mu in c(1e-12, 1e-6, 1, 1e4, 1e6, 1e12)) {
   close(expected_tau(no_cdf, 0, mu = mu, max_upper = upper, tol = 1e-9) * mu,
         .5 * pgamma(10, shape = 2))
 }
-gamma_density <- set_residual(h, c(shape = 2, rate = 3), dresidual = dgamma)
-for (mu in c(1e-8, 1, 1e8)) close(
-  expected_tau(gamma_density, 0, mu = mu, tol = 1e-9) * mu, 2 / 3)
+# Shapes below one have infinite density at zero. Log-time quadrature also
+# visits times that round to zero; their first-moment contribution is zero.
+for (shape in c(.1, .5, 1, 2)) {
+  gamma_density <- set_residual(h, c(shape = shape, rate = 3), dresidual = dgamma)
+  for (mu in c(1e-300, 1e-100, 1e-12, 1, 1e12, 1e100, 1e300)) {
+    close(expected_tau(gamma_density, 0, mu = mu, tol = 1e-9) * mu,
+          shape / 3, tolerance = 1e-9)
+    close(expected_tau(gamma_density, 0, mu = mu, max_upper = 1 / mu,
+                       tol = 1e-9) * mu,
+          shape / 3 * pgamma(3, shape = shape + 1), tolerance = 1e-9)
+  }
+}
+singular <- set_residual(h, c(shape = .1, rate = 3), dresidual = dgamma)
+fails(expected_tau(singular, 0, mu = 1e-300, max_upper = 1e-100), "density underflow")
 close(expected_tau(h, 0, mu = 1e4, max_upper = 1, tol = 1e-9) * 1e4, 1)

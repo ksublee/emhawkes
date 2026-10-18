@@ -25,7 +25,9 @@ sessions, without attaching maxLik or loading it for stats-only users. Existing
 maxLik classes and saved-fit structures are retained.
 
 Use log-time density integration for waiting-time moments, including finite
-truncation limits. Correct short legacy residual paths, diagnose unavailable
+truncation limits and singular residual densities at zero. Check Gamma first
+moments against closed forms for shapes below and above one at several scales.
+Correct short legacy residual paths, diagnose unavailable
 stationary mean-intensity systems in hvol, and stabilize subnormal-decay
 arrivals and the small-a trapezoid-exponential limit. RNG draw order is retained.
 

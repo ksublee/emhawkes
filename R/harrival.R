@@ -330,6 +330,7 @@ setMethod("expected_tau", signature(object = "hspec"),
               -log(max(mu, rambda_component)) -
                 log1p(min(mu, rambda_component) / max(mu, rambda_component)))))
             breaks <- c(breaks[breaks < upper], upper)
+            density_underflow <- FALSE
             density_integrand <- function(log_time) {
               scaled_time <- exp(log(beta) + log_time)
               log_weight <- log(-expm1(-scaled_time)) - log(beta)
@@ -345,11 +346,31 @@ setMethod("expected_tau", signature(object = "hspec"),
               log_intensity[finite] <- largest[finite] +
                 log1p(exp(pmin(log(mu), log_component[finite]) - largest[finite]))
               value <- exp(2 * log_time + log_density + log_intensity)
-              value[!finite] <- 0
+              # Avoid 0*f(0) when time or cumulative hazard rounds to zero.
+              # Bound any omitted positive-time contribution below.
+              underflow <- hazard == 0 & is.infinite(log_density) & log_density > 0 &
+                exp(log_time) > 0
+              if (any(underflow)) density_underflow <<- TRUE
+              value[!finite | exp(log_time) == 0 | underflow] <- 0
               value
             }
             pieces <- vapply(seq_len(length(breaks) - 1L), function(i)
               stats::integrate(density_integrand, breaks[i], breaks[i + 1L],
                 rel.tol = tol, abs.tol = 0, subdivisions = subdivisions)$value, numeric(1))
-            sum(pieces)
+            result <- sum(pieces)
+            if (density_underflow) {
+              # The omitted first moment is at most the last time whose
+              # cumulative hazard can round to zero (its probability is <= 1).
+              log_min <- log(.Machine$double.xmin) + log(.Machine$double.eps)
+              log_bound <- log(max_upper)
+              if (mu > 0) log_bound <- min(log_bound, log_min - log(mu))
+              if (rambda_component > 0) {
+                candidate <- log(2) + log_min - log(rambda_component)
+                # 1-exp(-x) >= x/2 for 0 <= x <= 1.
+                if (log(beta) + candidate <= 0) log_bound <- min(log_bound, candidate)
+              }
+              if (log_bound > log(tol) + log(result)) stop(
+                "Waiting-time density underflow prevents the requested accuracy; rescale time units.")
+            }
+            result
           })

@@ -11,7 +11,9 @@
   and preserve the stats optimizer's independence from maxLik.
 * Integrate density-based waiting-time moments in log time, including finite
   truncation limits, to avoid missing narrow densities or accepting large
-  relative errors through the integrator's default absolute tolerance.
+  relative errors through the integrator's default absolute tolerance. Handle
+  singular residual densities at times or cumulative hazards that round to zero
+  during quadrature; diagnose underflow when its error bound exceeds tolerance.
 * Return empty legacy residual vectors for types with fewer than two events.
   Report unavailable stationary mean-intensity systems in `hvol()` explicitly.
 * Stabilize the trapezoid-exponential coefficients and log-tail probabilities
