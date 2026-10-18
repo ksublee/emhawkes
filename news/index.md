@@ -1,6 +1,20 @@
 # Changelog
 
+## emhawkes 1.0.1
+
+- Correct the stats-only subprocess test when maxLik is installed in a
+  standard or site library. Always check stats fitting and saved-result
+  restoration without loading maxLik; check the missing-provider error
+  only when maxLik is genuinely unavailable. Simulation and estimation
+  calculations are unchanged.
+- Add default R CMD check jobs with `_R_CHECK_SUGGESTS_ONLY_=false` and
+  maxLik exposed through a site library, alongside the existing
+  `--as-cran` jobs. Retain a separate hard-dependencies-only CI job that
+  requires maxLik’s absence.
+
 ## emhawkes 1.0.0
+
+CRAN release: 2026-10-17
 
 ### Initialization and estimation
 
