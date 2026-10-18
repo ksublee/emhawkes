@@ -28,7 +28,7 @@ articles:
   contents:
   - example
 - title: Examples
-  desc: Marked, state-dependent, multi-kernel and flexible residual models.
+  desc: Marked, state-dependent and multi-kernel models, with an FRPP migration note.
   contents:
   - articles/extended_example
 - title: Guides

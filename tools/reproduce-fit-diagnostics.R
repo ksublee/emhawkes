@@ -7,17 +7,30 @@ cases <- list(
   multi_kernel = list(heading = "### Multi-kernel model", fit = "fit_mk"),
   synchronized = list(heading = "### Synchronized intensity model", fit = "fit_sy"),
   bid_ask = list(heading = "### Bid-ask price model", fit = "mle_ba"),
-  frpp = list(heading = "### Two-dimensional model", fit = "mle_dh"))
+  frpp = list(heading = "## Two-dimensional model", fit = "mle_dh"))
 selected <- if (length(args) >= 2L) strsplit(args[2L], ",", fixed = TRUE)[[1L]] else names(cases)
 if (!length(selected) || any(!selected %in% names(cases))) stop("Unknown diagnostic case.")
 final_hessian <- if (length(args) == 3L) match.arg(args[3L], c("maxLik", "stable")) else "maxLik"
 source("tools/diagnose-fit.R")
-lines <- readLines("vignettes_ext/extended_example.Rmd", warn = FALSE)
-headings <- grep("^#{2,3} ", lines)
-chunks <- grep("^```\\{r", lines)
 dir.create(args[1L], recursive = TRUE, showWarnings = FALSE)
 for (name in selected) {
   configuration <- cases[[name]]
+  if (name == "frpp") {
+    example_source <- Sys.getenv("FRPP_VIGNETTE_SOURCE")
+    if (!nzchar(example_source)) {
+      example_source <- "../frpp/vignettes/emhawkes-compatibility.Rmd"
+      if (!file.exists(example_source)) example_source <-
+        system.file("doc", "emhawkes-compatibility.Rmd", package = "frpp")
+    }
+    if (!nzchar(example_source) || !file.exists(example_source)) stop(
+      "Install frpp with its vignettes, or set FRPP_VIGNETTE_SOURCE to its emhawkes-compatibility.Rmd file.")
+    lines <- readLines(example_source, warn = FALSE)
+  } else {
+    lines <- readLines("vignettes_ext/extended_example.Rmd", warn = FALSE)
+  }
+  headings <- grep("^#{2,3} ", lines)
+  chunks <- grep("^```", lines)
+  chunks <- chunks[grepl("{r", lines[chunks], fixed = TRUE)]
   first <- match(configuration$heading, lines)
   if (is.na(first)) stop("Example heading is unavailable: ", configuration$heading)
   following <- headings[headings > first]

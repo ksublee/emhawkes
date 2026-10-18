@@ -1,3 +1,9 @@
+# emhawkes (development version)
+
+* Move detailed FRPP examples to the frpp package documentation. Retain a
+  short compatibility example and describe the planned functionality migration;
+  existing residual-law functions and Hawkes residual diagnostics are unchanged.
+
 # emhawkes 1.0.1
 
 * Correct the stats-only subprocess test when maxLik is installed in a standard
