@@ -406,7 +406,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x563762c8bde0>
+#> <bytecode: 0x5557b4f60d18>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -416,7 +416,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x5637631af620>
+#> <bytecode: 0x5557b54189d8>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -426,7 +426,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x563763d58788>
+#> <bytecode: 0x5557b5bf9a80>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -831,6 +831,161 @@ c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
 #> 0.6589701 0.6589701
 ```
 
+### Fosset’s state-dependent spread model
+
+Fosset, Bouchaud and Benzaquen (2020), [Endogenous Liquidity
+Crises](https://doi.org/10.1088/1742-5468/ab7c64), Section 4.1,
+equations (8a)–(8b), model spread widening and narrowing as two event
+types. Let $`N_+`$ and $`N_-`$ count these events and let the spread, in
+ticks, be
+
+``` math
+S(t) = S_0 + N_+(t) - N_-(t).
+```
+
+Their linear model has predictable intensities
+
+``` math
+\lambda_+(t) = \nu_+ + a\int_{[0,t)} b e^{-b(t-s)}\,dN_+(s),
+\qquad
+\lambda_-(t) = \nu_-\,\mathbf{1}_{\{S(t-)\ge 2\}}.
+```
+
+Only widening events excite future widening. Narrowing is disabled at a
+one-tick spread. We use $`\nu_+,\nu_-`$ for the paper’s
+$`\lambda_0^+,\lambda_0^-`$ and $`a,b`$ for its $`\alpha,\beta`$. The
+package’s `alpha[1, 1]` is therefore $`ab`$; $`a`$ is the integrated
+excitation, not the jump size. The other `alpha` entries are fixed
+zeros. Both event types have unit marks.
+
+The example uses positive rates, $`0<a<1`$, and an explicit zero initial
+excitation. This restricts the example to a Hawkes-stable widening
+process. A stationary spread additionally requires
+$`\nu_+/(1-a)<\nu_-`$. The values below are chosen for a
+stationary-spread illustration. The nonlinear models later in the paper
+are separate specifications.
+
+The following local example helpers are stored with the installed
+package. Log rates enforce positivity, and a logit parameter enforces
+$`0<a<1`$. The shared name `log_b` keeps the same decay parameter in
+`alpha` and `beta`.
+
+``` r
+
+# Example helpers for Fosset, Bouchaud and Benzaquen (2020), Section 4.1.
+# These local example functions are not exported package functions.
+
+## ---- fosset-specification
+fosset_spec <- function(nu_plus = 1, nu_minus = 3, a = 0.4, b = 2,
+                        spread0 = 1) {
+  values <- c(nu_plus, nu_minus, a, b, spread0)
+  stopifnot(length(values) == 5L, all(is.finite(values)),
+    nu_plus > 0, nu_minus > 0, a > 0, a < 1, b > 0,
+    spread0 >= 1, spread0 == floor(spread0))
+  # Type 1 widens the spread; type 2 narrows it. Read the previous row.
+  mu <- function(param = c(log_nu_plus = log(nu_plus),
+                           log_nu_minus = log(nu_minus)), n, N) {
+    previous <- max(1L, n - 1L)
+    spread <- spread0 + N[previous, 1] - N[previous, 2]
+    matrix(c(exp(param[1]), exp(param[2]) * (spread >= 2)), 2, 1)
+  }
+  # The paper normalizes its kernel as a * b * exp(-b * t).
+  # Functional components keep the other matrix entries fixed at zero.
+  alpha <- function(param = c(logit_a = stats::qlogis(a), log_b = log(b))) {
+    matrix(c(stats::plogis(param[1]) * exp(param[2]), 0, 0, 0), 2, 2)
+  }
+  beta <- function(param = c(log_b = log(b))) matrix(exp(param[1]), 2, 2)
+  methods::new("hspec", mu = mu, alpha = alpha, beta = beta)
+}
+
+fosset_parameters <- function(theta) {
+  c(nu_plus = unname(exp(theta["log_nu_plus"])),
+    nu_minus = unname(exp(theta["log_nu_minus"])),
+    a = unname(stats::plogis(theta["logit_a"])),
+    b = unname(exp(theta["log_b"])))
+}
+```
+
+For the baseline callback, `N[n - 1, ]` describes the state before event
+`n`. The same callback is called with `n + 1` after the jump, so the
+narrowing rate changes immediately when the spread reaches or leaves one
+tick.
+
+``` r
+
+h_fosset <- fosset_spec()
+set.seed(20261018)
+path_fosset <- hsim(h_fosset, size = 4001, lambda_component0 = 0)
+spread_fosset <- 1 + path_fosset$N[, 1] - path_fosset$N[, 2]
+stopifnot(all(spread_fosset >= 1),
+  all(path_fosset$lambda[c(1, head(spread_fosset, -1)) == 1, 2] == 0),
+  all(path_fosset$rambda[spread_fosset == 1, 2] == 0))
+plot(path_fosset$arrival, spread_fosset, type = "s",
+  xlab = "Time", ylab = "Spread (ticks)")
+```
+
+![](extended_example_files/figure-html/fosset-simulation-1.png)
+
+Estimate all four model parameters from a different starting point. The
+example uses R’s stats optimizer and the default numerical gradient.
+Automatic engine selection uses the supported C++ likelihood; simulation
+of this count-dependent baseline uses the R path. No analytic Jacobians
+are required.
+
+``` r
+
+start_fosset <- fosset_spec(nu_plus = 0.7, nu_minus = 2.5, a = 0.25, b = 1.2)
+fit_fosset <- hfit(start_fosset,
+  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
+  lambda_component0 = 0, optimizer = "stats", method = "BFGS",
+  control = list(maxit = 500, reltol = 1e-10))
+cbind(true = c(nu_plus = 1, nu_minus = 3, a = 0.4, b = 2),
+  estimated = fosset_parameters(coef(fit_fosset)))
+#>          true estimated
+#> nu_plus   1.0 0.9811201
+#> nu_minus  3.0 3.0865001
+#> a         0.4 0.4240015
+#> b         2.0 1.7920735
+fit_diagnostics(fit_fosset)$status
+#> [1] "ok"
+fit_diagnostics(fit_fosset)$computation$engine
+#> $requested
+#> [1] "auto"
+#> 
+#> $used
+#> [1] "cpp"
+#> 
+#> $fallback_reason
+#> NULL
+```
+
+The estimated coefficients are on the log/logit scale. Parameter
+recovery varies between realizations; inspect convergence and
+uncertainty rather than expecting exact recovery from a single path.
+
+There is an independent check for the narrowing rate. If
+$`T_{\mathrm{open}}`$ is the time spent with $`S\ge2`$, its
+log-likelihood contribution is
+$`N_-(T)\log\nu_- - \nu_- T_{\mathrm{open}}`$. Its maximum is
+$`\widehat{\nu}_- = N_-(T)/T_{\mathrm{open}}`$. The observation window
+ends at the last supplied event.
+
+``` r
+
+open_time_fosset <- sum(path_fosset$inter_arrival[-1] *
+  (head(spread_fosset, -1) >= 2))
+c(fitted = fosset_parameters(coef(fit_fosset))["nu_minus"],
+  independent = sum(path_fosset$type == 2) / open_time_fosset)
+#> fitted.nu_minus     independent 
+#>          3.0865          3.0865
+restored_fosset <- fitted_hspec(fit_fosset)
+replay_fosset <- do.call(logLik, c(list(object = restored_fosset,
+  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
+  infer = TRUE), fit_initial_state(fit_fosset)))
+stopifnot(isTRUE(all.equal(as.numeric(logLik(fit_fosset)),
+  unname(replay_fosset$loglikelihood), tolerance = 1e-8)))
+```
+
 ### Hawkes flocking model
 
 The function $`g`$ need not depend on the mark. In the Hawkes flocking
@@ -925,7 +1080,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x5637650df5e8>
+#> <bytecode: 0x5557b6bed600>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1239,7 +1394,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x563762e29fd0>
+#> <bytecode: 0x5557b9850be8>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
