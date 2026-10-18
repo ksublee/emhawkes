@@ -425,6 +425,9 @@ for a stationary-spread illustration. The nonlinear models later in the paper
 are separate specifications.
 
 The following local example helpers are stored with the installed package.
+The three functions define baseline rates (`mu`), excitation jumps (`alpha`),
+and decay rates (`beta`). Rows identify affected event types, and columns
+identify triggering event types.
 Log rates enforce positivity, and a logit parameter enforces $0<a<1$.
 The shared name `log_b` keeps the same decay parameter in `alpha` and `beta`.
 
