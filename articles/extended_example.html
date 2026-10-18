@@ -447,7 +447,7 @@ argument.</p>
 <span><span class="co">#&gt;         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), </span></span>
 <span><span class="co">#&gt;         nrow = 2)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5557b4f60d18&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x556c160229e8&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot alpha: </span></span>
 <span><span class="co">#&gt; function (param = c(eta = 5, nu = 3)) </span></span>
@@ -457,7 +457,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, </span></span>
 <span><span class="co">#&gt;         zeta_tl), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5557b54189d8&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x556c164a70a8&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt; function (param = c(beta = 12, kappa = 0.12)) </span></span>
@@ -467,7 +467,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, </span></span>
 <span><span class="co">#&gt;         beta2), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5557b5bf9a80&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x556c16c9ce90&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot type_col_map: </span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -876,42 +876,89 @@ requires
 The values below are chosen for a stationary-spread illustration. The
 nonlinear models later in the paper are separate specifications.</p>
 <p>The following local example helpers are stored with the installed
-package. Log rates enforce positivity, and a logit parameter enforces
+package. The three functions define baseline rates (<code>mu</code>),
+excitation jumps (<code>alpha</code>), and decay rates
+(<code>beta</code>). Rows identify affected event types, and columns
+identify triggering event types. Log rates enforce positivity, and a
+logit parameter enforces
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>a</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0&lt;a&lt;1</annotation></semantics></math>.
 The shared name <code>log_b</code> keeps the same decay parameter in
 <code>alpha</code> and <code>beta</code>.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Example helpers for Fosset, Bouchaud and Benzaquen (2020), Section 4.1.</span></span>
-<span><span class="co"># These local example functions are not exported package functions.</span></span>
+<code class="sourceCode R"><span><span class="co"># Fosset, Bouchaud and Benzaquen (2020), Section 4.1, equations (8a)--(8b).</span></span>
+<span><span class="co"># Local example helpers; these are not exported package functions.</span></span>
+<span><span class="co"># Event type 1 widens the spread; event type 2 narrows it.</span></span>
 <span></span>
-<span><span class="co">## ---- fosset-specification</span></span>
 <span><span class="va">fosset_spec</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">nu_plus</span> <span class="op">=</span> <span class="fl">1</span>, <span class="va">nu_minus</span> <span class="op">=</span> <span class="fl">3</span>, <span class="va">a</span> <span class="op">=</span> <span class="fl">0.4</span>, <span class="va">b</span> <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                        <span class="va">spread0</span> <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">nu_plus</span>, <span class="va">nu_minus</span>, <span class="va">a</span>, <span class="va">b</span>, <span class="va">spread0</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">values</span><span class="op">)</span> <span class="op">==</span> <span class="fl">5L</span>, <span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">values</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    <span class="va">nu_plus</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">nu_minus</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">a</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">a</span> <span class="op">&lt;</span> <span class="fl">1</span>, <span class="va">b</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
-<span>    <span class="va">spread0</span> <span class="op">&gt;=</span> <span class="fl">1</span>, <span class="va">spread0</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">spread0</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="co"># Type 1 widens the spread; type 2 narrows it. Read the previous row.</span></span>
-<span>  <span class="va">mu</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>log_nu_plus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">nu_plus</span><span class="op">)</span>,</span>
-<span>                           log_nu_minus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">nu_minus</span><span class="op">)</span><span class="op">)</span>, <span class="va">n</span>, <span class="va">N</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">previous</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="va">n</span> <span class="op">-</span> <span class="fl">1L</span><span class="op">)</span></span>
-<span>    <span class="va">spread</span> <span class="op">&lt;-</span> <span class="va">spread0</span> <span class="op">+</span> <span class="va">N</span><span class="op">[</span><span class="va">previous</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="va">N</span><span class="op">[</span><span class="va">previous</span>, <span class="fl">2</span><span class="op">]</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="va">spread</span> <span class="op">&gt;=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">values</span><span class="op">)</span> <span class="op">==</span> <span class="fl">5L</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">values</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">nu_plus</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
+<span>    <span class="va">nu_minus</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
+<span>    <span class="va">a</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">a</span> <span class="op">&lt;</span> <span class="fl">1</span>,</span>
+<span>    <span class="va">b</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
+<span>    <span class="va">spread0</span> <span class="op">&gt;=</span> <span class="fl">1</span>, <span class="va">spread0</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">spread0</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span>  <span class="co"># 1. Baseline rates: narrowing is allowed only when the spread is open.</span></span>
+<span>  <span class="va">baseline</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span></span>
+<span>    <span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>log_nu_plus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">nu_plus</span><span class="op">)</span>, log_nu_minus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">nu_minus</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">n</span>, <span class="va">N</span></span>
+<span>  <span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">widening_rate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[[</span><span class="st">"log_nu_plus"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span>    <span class="va">narrowing_rate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[[</span><span class="st">"log_nu_minus"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="co"># N stores cumulative counts. Row n - 1 is the state before event n.</span></span>
+<span>    <span class="va">previous_event</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="va">n</span> <span class="op">-</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span>    <span class="va">widening_count</span> <span class="op">&lt;-</span> <span class="va">N</span><span class="op">[</span><span class="va">previous_event</span>, <span class="fl">1</span><span class="op">]</span></span>
+<span>    <span class="va">narrowing_count</span> <span class="op">&lt;-</span> <span class="va">N</span><span class="op">[</span><span class="va">previous_event</span>, <span class="fl">2</span><span class="op">]</span></span>
+<span>    <span class="va">spread_before_event</span> <span class="op">&lt;-</span> <span class="va">spread0</span> <span class="op">+</span> <span class="va">widening_count</span> <span class="op">-</span> <span class="va">narrowing_count</span></span>
+<span>    <span class="va">narrowing_enabled</span> <span class="op">&lt;-</span> <span class="va">spread_before_event</span> <span class="op">&gt;=</span> <span class="fl">2</span></span>
+<span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">widening_rate</span>, <span class="va">narrowing_rate</span> <span class="op">*</span> <span class="va">narrowing_enabled</span><span class="op">)</span>,</span>
+<span>      nrow <span class="op">=</span> <span class="fl">2</span>, ncol <span class="op">=</span> <span class="fl">1</span></span>
+<span>    <span class="op">)</span></span>
 <span>  <span class="op">}</span></span>
-<span>  <span class="co"># The paper normalizes its kernel as a * b * exp(-b * t).</span></span>
-<span>  <span class="co"># Functional components keep the other matrix entries fixed at zero.</span></span>
-<span>  <span class="va">alpha</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>logit_a <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">qlogis</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span>, log_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, <span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="co"># 2. Excitation jumps: only widening excites future widening.</span></span>
+<span>  <span class="va">excitation</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span></span>
+<span>    <span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>logit_a <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">qlogis</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span>, log_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">branching_ratio</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">param</span><span class="op">[[</span><span class="st">"logit_a"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span>    <span class="va">decay_rate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[[</span><span class="st">"log_b"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="co"># Rows are affected event types; columns are triggering event types.</span></span>
+<span>    <span class="co"># The paper's kernel is a * b * exp(-b * t), so the jump is a * b.</span></span>
+<span>    <span class="va">jumps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0</span>, nrow <span class="op">=</span> <span class="fl">2</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>    <span class="va">jumps</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">branching_ratio</span> <span class="op">*</span> <span class="va">decay_rate</span></span>
+<span>    <span class="va">jumps</span></span>
 <span>  <span class="op">}</span></span>
-<span>  <span class="va">beta</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>log_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>, <span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span>  <span class="fu">methods</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/methods/new.html" class="external-link">new</a></span><span class="op">(</span><span class="st">"hspec"</span>, mu <span class="op">=</span> <span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">alpha</span>, beta <span class="op">=</span> <span class="va">beta</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="co"># 3. Decay rates: log_b is shared with the excitation function above.</span></span>
+<span>  <span class="va">decay</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">param</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>log_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">decay_rate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">param</span><span class="op">[[</span><span class="st">"log_b"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">decay_rate</span>, nrow <span class="op">=</span> <span class="fl">2</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span></span>
+<span>  <span class="fu">methods</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/methods/new.html" class="external-link">new</a></span><span class="op">(</span></span>
+<span>    <span class="st">"hspec"</span>,</span>
+<span>    mu <span class="op">=</span> <span class="va">baseline</span>,</span>
+<span>    alpha <span class="op">=</span> <span class="va">excitation</span>,</span>
+<span>    beta <span class="op">=</span> <span class="va">decay</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
+<span><span class="co"># Convert fitted log/logit coefficients back to the paper's parameters.</span></span>
 <span><span class="va">fosset_parameters</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>nu_plus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[</span><span class="st">"log_nu_plus"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    nu_minus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[</span><span class="st">"log_nu_minus"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    a <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[</span><span class="st">"logit_a"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[</span><span class="st">"log_b"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    nu_plus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[[</span><span class="st">"log_nu_plus"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    nu_minus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[[</span><span class="st">"log_nu_minus"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    a <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[[</span><span class="st">"logit_a"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">theta</span><span class="op">[[</span><span class="st">"log_b"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>For the baseline callback, <code>N[n - 1, ]</code> describes the
 state before event <code>n</code>. The same callback is called with
@@ -1070,7 +1117,7 @@ extracting an entire column at every event.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, </span></span>
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5557b6bed600&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x556c1934ba20&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1360,7 +1407,7 @@ sum of the components in each row remains nonnegative.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], </span></span>
 <span><span class="co">#&gt;         param["alpha_s1"]), nrow = 4, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x5557b9850be8&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x556c1b205df0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
