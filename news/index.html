@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">emhawkes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides"><li><a class="dropdown-item" href="../articles/fitting-and-inference.html">Fitting and inference</a></li>
     <li><a class="dropdown-item" href="../articles/computation.html">Computation</a></li>
+    <li><a class="dropdown-item" href="../articles/shared-kernel.html">Shared exponential kernel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
@@ -40,8 +41,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="emhawkes-development-version">emhawkes (development version)<a class="anchor" aria-label="anchor" href="#emhawkes-development-version"></a></h2>
-<ul><li>Move detailed FRPP examples to the frpp package documentation. Retain a short compatibility example and describe the planned functionality migration; existing residual-law functions and Hawkes residual diagnostics are unchanged.</li>
+<h2 class="pkg-version" data-toc-text="1.0.1.9000" id="emhawkes-1019000">emhawkes 1.0.1.9000<a class="anchor" aria-label="anchor" href="#emhawkes-1019000"></a></h2>
+<ul><li><p>Move detailed FRPP examples to the frpp package documentation. Retain a short compatibility example and describe the planned functionality migration; existing residual-law functions and Hawkes residual diagnostics are unchanged.</p></li>
+<li><p>Add experimental numeric <code><a href="../reference/exp_kernel_spec.html">exp_kernel_spec()</a></code>, <code><a href="../reference/exp_kernel_spec.html">as_exp_kernel()</a></code> and <code><a href="../reference/exp_kernel_replay.html">exp_kernel_replay()</a></code> interfaces for shared state calculations. Replay returns kernel-only interval integrals and pre-event sums, with optional component histories. Numeric marks, mapped kernels and signed states are supported; row-wise equal decay rates are required. Existing event loops are unchanged.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1" id="emhawkes-101">emhawkes 1.0.1<a class="anchor" aria-label="anchor" href="#emhawkes-101"></a></h2>

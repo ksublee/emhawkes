@@ -28,3 +28,9 @@ Estimation, interpretation and calculation options.
 - [Computation](https://ksublee.github.io/emhawkes/articles/computation.md):
 
   Likelihood engines, analytic gradients, Jacobians and performance.
+
+- [Shared exponential kernel
+  calculations](https://ksublee.github.io/emhawkes/articles/shared-kernel.md):
+
+  Replay numeric exponential states through a public,
+  baseline-independent API.

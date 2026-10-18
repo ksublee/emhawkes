@@ -2,6 +2,11 @@
 
 ## All functions
 
+- [`exp_kernel_replay()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_replay.md)
+  : Replay an Observed Path Through a Numeric Exponential Kernel
+- [`exp_kernel_spec()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_spec.md)
+  [`as_exp_kernel()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_spec.md)
+  : Numeric Exponential Kernel Specifications
 - [`expected_tau()`](https://ksublee.github.io/emhawkes/reference/expected_tau.md)
   : Expected Inter-Arrival Time
 - [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)
