@@ -62,8 +62,10 @@ hawkes_impact_plan <- function(object, observation, parameter_map, jacobian,
   # Keep observed-only impacts on their existing precomputation path.
   state_args <- intersect(names(formals(component$value)), latent)
   if (!derivatives && length(state_args)) {
-    return(list(history = c(lambda = "lambda" %in% state_args,
-                           lambda_component = "lambda_component" %in% state_args),
+    history_args <- if ("..." %in% names(formals(component$value)))
+      c(state_args, "lambda", "lambda_component") else state_args
+    return(list(history = c(lambda = "lambda" %in% history_args,
+                           lambda_component = "lambda_component" %in% history_args),
       callback = function(param, values) {
         context <- context_at(param, values)
         fun <- restore_parameters(parameter_map, param)$impact

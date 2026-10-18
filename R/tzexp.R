@@ -76,6 +76,8 @@ dtzexp <- function(x, a, ell, log = FALSE) {
   result[inner] <- log(pars$c * (1 - fraction) + pars$height * fraction)
   tail <- which(!is.na(x) & x >= a)
   result[tail] <- log(pars$height) - ell * (x[tail] - a)
+  if (abs(1 - pars$p) < sqrt(.Machine$double.eps))
+    result[tail] <- pars$log_p + log(ell) - ell * (x[tail] - a)
   if (log) result else exp(result)
 }
 
@@ -88,8 +90,10 @@ ptzexp <- function(q, a, ell, lower.tail = TRUE, log.p = FALSE) {
   inner <- which(!is.na(q) & q > 0 & q < a)
   density <- pars$c * (1 - q[inner] / a) + pars$height * q[inner] / a
   log_survival[inner] <- log(pmin(pars$p + (a - q[inner]) * (density + pars$height) / 2, 1))
+  if (abs(1 - pars$p) < sqrt(.Machine$double.eps))
+    log_survival[inner] <- log1p(-q[inner] * (pars$c + density) / 2)
   tail <- which(!is.na(q) & q >= a)
-  log_survival[tail] <- log(pars$p) - ell * (q[tail] - a)
+  log_survival[tail] <- pars$log_p - ell * (q[tail] - a)
   # Compute the lower tail directly near zero to preserve small probabilities.
   result <- if (lower.tail) log_complement(log_survival) else log_survival
   if (lower.tail && length(inner)) {
@@ -120,10 +124,10 @@ qtzexp <- function(p, a, ell, lower.tail = TRUE, log.p = FALSE) {
   result <- rep(NA_real_, length(p))
   result[!is.na(log_lower) & log_lower == -Inf] <- 0
   result[!is.na(log_survival) & log_survival == -Inf] <- if (pars$p > 0) Inf else a
-  tail <- which(!is.na(log_survival) & is.finite(log_survival) & log_survival < log(pars$p))
-  result[tail] <- a + (log(pars$p) - log_survival[tail]) / ell
+  tail <- which(!is.na(log_survival) & is.finite(log_survival) & log_survival < pars$log_p)
+  result[tail] <- a + (pars$log_p - log_survival[tail]) / ell
   inner <- which(!is.na(log_lower) & is.finite(log_lower) & log_lower < 0 &
-                   log_survival >= log(pars$p))
+                   log_survival >= pars$log_p)
   if (pars$c == 0) {
     result[inner] <- exp((log(2 * a / pars$height) + log_lower[inner]) / 2)
   } else {
@@ -161,9 +165,18 @@ tzexp_parameters <- function(a, ell) {
     p <- height / ell
   }
   c_ <- 2 * (1 - p) / a - height
+  if (scaled <= 1 && abs(1 - p) < sqrt(.Machine$double.eps)) {
+    # Expand the numerator before dividing: 1-p loses all its digits when
+    # a is tiny and ell is near one, although the density coefficient is finite.
+    c_ <- (2 * (1 - ell) / a + ell * (2 - ell) + 2 * scaled * ell / 3) /
+      (scaled^2 / 6 + 2 * scaled / 3 + 1)
+  }
   if (!is.finite(c_) || p < 0 || p > 1 || c_ < -16 * .Machine$double.eps * max(1, height)) {
     stop("a and ell must define a nonnegative density (0 <= p <= 1 and c >= 0).")
   }
-  list(p = p, c = max(c_, 0), height = height)
+  c_ <- max(c_, 0)
+  log_p <- if (abs(1 - p) < sqrt(.Machine$double.eps))
+    log1p(-a * (c_ + height) / 2) else log(p)
+  list(p = p, log_p = log_p, c = c_, height = height)
 }
 

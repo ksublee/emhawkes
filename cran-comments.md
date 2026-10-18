@@ -13,20 +13,43 @@ Temporary files are removed on subprocess failures as well as on success.
 
 CI now includes default checks with _R_CHECK_SUGGESTS_ONLY_=false and maxLik in
 a site library, alongside --as-cran checks. A separate hard-dependencies-only
-job requires genuine absence. Package calculation code is unchanged.
+job requires genuine absence. Fresh-session tests also verify the actual
+package path and version rather than assuming which library was selected.
+
+Additional pre-release audits found and corrected inconsistent history/count
+context for callbacks with `...`, including sequential C++ likelihoods and
+numerical fits. Scalar and inference likelihoods now agree. Add a stats S3
+bridge for hspec and lazy maxLik method registration so saved fits support
+direct coefficient, likelihood, covariance, summary and print calls in fresh
+sessions, without attaching maxLik or loading it for stats-only users. Existing
+maxLik classes and saved-fit structures are retained.
+
+Use log-time density integration for waiting-time moments, including finite
+truncation limits. Correct short legacy residual paths, diagnose unavailable
+stationary mean-intensity systems in hvol, and stabilize subnormal-decay
+arrivals and the small-a trapezoid-exponential limit. RNG draw order is retained.
 
 Local checks on Windows 11 / R 4.5.1:
 
 - Default R CMD check with _R_CHECK_SUGGESTS_ONLY_=false and maxLik visible
-  through R_LIBS_SITE: Status: OK, including all 43 tests, rebuilt vignette
+  through R_LIBS_SITE: Status: OK, including all 45 tests, rebuilt vignette
   and PDF manual.
 - R CMD check --as-cran --run-donttest: 0 errors, 0 warnings, 1 NOTE, including
-  all 43 tests, rebuilt vignette and PDF/HTML manuals. The only NOTE reports
+  all 45 tests, rebuilt vignette and PDF/HTML manuals. The only NOTE reports
   one day since the previous CRAN update. This maintenance release responds
   directly to CRAN's request to correct the check failure before 2026-11-07.
 - The stats subprocess test passed both with maxLik in a site library and
   with it genuinely absent. Its strict absence guard correctly rejected the
   deliberately visible installation.
+- All outputs, final RNG states and subsequent normal draws exactly matched
+  the pre-correction 1.0.1 build in 186 ordinary simulation cases. Independent
+  intensity reconstruction error was zero in 324 engine/path comparisons.
+- All 36 library/loading configurations and nine fresh-session regression
+  environments passed, including spaces, Unicode paths with a UTF-8 locale,
+  optional-library placements and namespace-only use. Saved files from before
+  these corrections passed ten provider/first-method restoration cases.
+- The full check caught a sequential C++ callback-history mismatch during
+  development; it was corrected and the complete checks rerun successfully.
 
 ## Resubmission of emhawkes 1.0.0
 

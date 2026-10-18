@@ -84,6 +84,10 @@ supplied initial counts. Event order is preserved, including zero intervals.
 Component functions receive the arguments they declare; functions with \code{...}
 receive the available event context. Intensity histories are \code{NULL} before
 initialization. Baseline functions use \code{n - 1} to access the preceding event.
+Functions with \code{...} receive automatically constructed count paths and
+intensity histories in both likelihood-only and inference calls. Declare only
+the needed arguments to avoid retaining unused histories. \code{stats::logLik()}
+also dispatches to this method for an \code{hspec} object.
 If initial intensity components are omitted, they are determined from the
 supplied model. For a fitted model, use \code{\link[=fitted_hspec]{fitted_hspec()}} with the arguments
 returned by \code{\link[=fit_initial_state]{fit_initial_state()}} to preserve the fit's initialization setting.

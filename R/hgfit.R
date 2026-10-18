@@ -430,9 +430,9 @@ residual_process <- function(component, inter_arrival, type, rambda_component, m
                                         N = N, Nc = Nc,
                                         lambda_component0 = lambda_component0, N0 = N0)
 
-  row_idx <- which(type == component)
-  res_process <- rep(0, (length(row_idx)-1))
-  for( i in 1:length(res_process)){
+  row_idx <- which(type == component & seq_along(type) > 1L)
+  res_process <- numeric(max(0L, length(row_idx) - 1L))
+  for (i in seq_along(res_process)) {
 
     res_process[i] <- sum(integrated_rambda[(row_idx[i] + 1):row_idx[i+1], component])
   }

@@ -26,10 +26,23 @@ rarrival <- function(...){
 
     rowSums_rambda_component_n_miuns_1 <- rowSums(current_component)
 
-    scaled_log_u <- beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
+    log_u <- log(stats::runif(dimens))
+    product <- beta[, 1] * log_u
+    scaled_log_u <- product / rowSums_rambda_component_n_miuns_1
     excited_arrival <- rep(Inf, dimens)
     finite_arrival <- rowSums_rambda_component_n_miuns_1 > 0 & scaled_log_u > -1
     excited_arrival[finite_arrival] <- -log1p(scaled_log_u[finite_arrival]) / beta[finite_arrival, 1]
+    tiny <- which(rowSums_rambda_component_n_miuns_1 > 0 &
+      (abs(product) < .Machine$double.xmin | abs(scaled_log_u) < .Machine$double.xmin))
+    if (length(tiny)) {
+      first_order <- -log_u[tiny] / rowSums_rambda_component_n_miuns_1[tiny]
+      q <- beta[tiny, 1] * first_order
+      correction <- rep(1, length(q))
+      interior <- is.finite(q) & q > 0 & q < 1
+      correction[interior] <- -log1p(-q[interior]) / q[interior]
+      correction[!is.finite(q) | q >= 1] <- Inf
+      excited_arrival[tiny] <- first_order * correction
+    }
     candidate_arrival <- cbind(candidate_arrival, excited_arrival)
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
@@ -308,17 +321,35 @@ setMethod("expected_tau", signature(object = "hspec"),
               return(sum(pieces))
             }
 
-            # Define integrand
-            integrand <- function(s) {
-              phi_val <- mu * s + integrate_exp_kernel(rambda_component, beta, s)
-              dens_val <- if (is.null(object@dresidual)) stats::dexp(phi_val) else
-                residual_density(object@dresidual, phi_val)
-              s * dens_val * psi(s, rambda_component, mu, beta)
+            # Integrate t*f(t) in log time. Raw-time quadrature can miss a
+            # narrow density near zero, and its default absolute tolerance can
+            # accept an answer with arbitrarily large relative error.
+            if (mu == 0 && rambda_component == 0) return(0)
+            upper <- log(max_upper)
+            breaks <- sort(unique(c(-Inf, -log(mu), -log(beta),
+              -log(max(mu, rambda_component)) -
+                log1p(min(mu, rambda_component) / max(mu, rambda_component)))))
+            breaks <- c(breaks[breaks < upper], upper)
+            density_integrand <- function(log_time) {
+              scaled_time <- exp(log(beta) + log_time)
+              log_weight <- log(-expm1(-scaled_time)) - log(beta)
+              log_weight[scaled_time == 0] <- log_time[scaled_time == 0]
+              hazard <- exp(log(mu) + log_time) +
+                exp(log(rambda_component) + log_weight)
+              log_density <- if (is.null(object@dresidual)) stats::dexp(hazard, log = TRUE) else
+                residual_density(object@dresidual, hazard, log = TRUE)
+              log_component <- log(rambda_component) - scaled_time
+              largest <- pmax(log(mu), log_component)
+              log_intensity <- rep(-Inf, length(log_time))
+              finite <- is.finite(largest)
+              log_intensity[finite] <- largest[finite] +
+                log1p(exp(pmin(log(mu), log_component[finite]) - largest[finite]))
+              value <- exp(2 * log_time + log_density + log_intensity)
+              value[!finite] <- 0
+              value
             }
-
-            # Numerical integration
-            result <- stats::integrate(integrand, lower = 0, upper = max_upper,
-                                rel.tol = tol, subdivisions = subdivisions)
-
-            return(result$value)
+            pieces <- vapply(seq_len(length(breaks) - 1L), function(i)
+              stats::integrate(density_integrand, breaks[i], breaks[i + 1L],
+                rel.tol = tol, abs.tol = 0, subdivisions = subdivisions)$value, numeric(1))
+            sum(pieces)
           })

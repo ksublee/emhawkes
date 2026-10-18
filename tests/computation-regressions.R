@@ -57,7 +57,15 @@ for (types in list(c(0, 1, 1), c(0, 1, 2), 0)) {
   out <- logLik(h, dt, type = types, lambda_component0 = matrix(.1, 2, 2), infer = TRUE)
   close(out$loglikelihood, logLik(h, dt, type = types, lambda_component0 = matrix(.1, 2, 2)))
   stopifnot(length(out$res_process2) == 0)
+  legacy <- suppressWarnings(residual_process(2, dt, types, out$rambda_component,
+    h@mu, h@beta))
+  stopifnot(identical(legacy, numeric(0)))
 }
+
+# The initial row is not an event, even with a nonzero initial type.
+out <- logLik(h, c(0, .2, .3), type = c(2, 2, 2), lambda_component0 = .1, infer = TRUE)
+close(suppressWarnings(residual_process(2, c(0, .2, .3), c(2, 2, 2),
+  out$rambda_component, h@mu, h@beta)), out$res_process2)
 
 # A zero-baseline process can have no further events. No infinite row is added.
 extinct <- new("hspec", mu = 0, alpha = matrix(0, 1, 2),

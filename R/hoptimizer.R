@@ -21,6 +21,32 @@ fit_message <- function(fit) {
   if (inherits(fit, "emhawkes_stats_fit")) fit$message else maxLik::returnMessage(fit)
 }
 
+# Saved legacy fits retain maxLik's classes. Install lazy bridges only when
+# the provider has not registered its methods; loading it replaces the bridges.
+# Merely loading emhawkes or using its stats optimizer never loads maxLik.
+maxlik_saved_method <- function(generic) {
+  if (!requireNamespace("maxLik", quietly = TRUE))
+    stop("Reading this maxLik fit requires the optional maxLik package. New fits can use optimizer = 'stats'.", call. = FALSE)
+  utils::getS3method(generic, "maxLik", envir = asNamespace("maxLik"))
+}
+maxlik_saved_coef <- function(object, ...) maxlik_saved_method("coef")(object, ...)
+maxlik_saved_logLik <- function(object, ...) maxlik_saved_method("logLik")(object, ...)
+maxlik_saved_vcov <- function(object, ...) maxlik_saved_method("vcov")(object, ...)
+maxlik_saved_summary <- function(object, ...) maxlik_saved_method("summary")(object, ...)
+maxlik_saved_print <- function(x, ...) maxlik_saved_method("print")(x, ...)
+
+register_maxlik_saved_methods <- function() {
+  if (isNamespaceLoaded("maxLik")) return(invisible(NULL))
+  bridges <- list(coef = maxlik_saved_coef, logLik = maxlik_saved_logLik,
+    vcov = maxlik_saved_vcov, summary = maxlik_saved_summary, print = maxlik_saved_print)
+  for (generic in names(bridges)) {
+    namespace <- asNamespace(if (generic %in% c("summary", "print")) "base" else "stats")
+    if (is.null(utils::getS3method(generic, "maxLik", optional = TRUE, envir = namespace)))
+      registerS3method(generic, "maxLik", bridges[[generic]], envir = namespace)
+  }
+  invisible(NULL)
+}
+
 stats_fit_active <- function(start, fixed) {
   active <- rep(TRUE, length(start))
   if (is.null(fixed)) return(active)

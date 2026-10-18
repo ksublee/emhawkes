@@ -41,3 +41,18 @@ fails(expected_tau(h, 0, type = 2), "type")
 unequal <- new("hspec", mu = c(.2, .3), alpha = matrix(.01, 2, 2),
   beta = matrix(c(1, 2, 3, 2), 2))
 fails(expected_tau(unequal, .1), "equal decay")
+
+# Independent exponential/Gamma first moments check integration when the time
+# scale is far from one. A finite limit returns E[T * I(T <= upper)].
+for (mu in c(1e-12, 1e-6, 1, 1e4, 1e6, 1e12)) {
+  upper <- 5 / mu
+  close(expected_tau(h, 0, mu = mu, max_upper = upper, tol = 1e-9) * mu,
+        pgamma(5, shape = 2))
+  close(expected_tau(no_cdf, 0, mu = mu, tol = 1e-9) * mu, .5)
+  close(expected_tau(no_cdf, 0, mu = mu, max_upper = upper, tol = 1e-9) * mu,
+        .5 * pgamma(10, shape = 2))
+}
+gamma_density <- set_residual(h, c(shape = 2, rate = 3), dresidual = dgamma)
+for (mu in c(1e-8, 1, 1e8)) close(
+  expected_tau(gamma_density, 0, mu = mu, tol = 1e-9) * mu, 2 / 3)
+close(expected_tau(h, 0, mu = 1e4, max_upper = 1, tol = 1e-9) * 1e4, 1)

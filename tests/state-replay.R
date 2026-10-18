@@ -104,8 +104,8 @@ reference <- evaluate("r", named_numeric, long_dt, TRUE, initial,
 close(evaluate("cpp", named_numeric, long_dt, TRUE, initial,
   type = long_types, mark = long_marks, N0 = c(2, 3), Nc0 = c(4, 5)), reference)
 stopifnot(identical(model_before, serialize(named_numeric, NULL)))
-# Lazy captures through dots receive full histories in inference and NULL
-# histories without inference, matching R when only current state is declared.
+# Lazy captures through dots receive the same full histories with and without
+# inference, including when the only named latent argument is current state.
 saved <- list()
 lazy <- new("hspec", mu = .3, alpha = .1, beta = 1.2,
   impact = function(n, lambda_component_n, ...) {

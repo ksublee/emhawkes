@@ -45,7 +45,13 @@ bind_fitted_generator <- function(fun, coefficients) {
 #' other generator parameters keep their original defaults.
 #'
 #' With `optimizer = "maxLik"`, the fit keeps its `maxLik` classes and methods;
-#' reading these fits requires maxLik. The `"stats"` optimizer returns an
+#' reading these fits requires maxLik.
+#' `emhawkes` registers lazy bridges for maxLik's coefficient, likelihood,
+#' covariance, summary and print methods. Their first use loads the installed
+#' maxLik namespace without requiring `library(maxLik)`, including for older
+#' saved fits. Using the stats optimizer does not load maxLik.
+#'
+#' The `"stats"` optimizer returns an
 #' `emhawkes_stats_fit` with its own coefficient, likelihood, covariance and
 #' summary methods, requiring no maxLik API. Its `emhawkes` attribute stores
 #' a versioned list with `specification`, `parameter_map`, `initial_state`,

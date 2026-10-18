@@ -108,11 +108,8 @@ Rcpp::List hawkes_simulate_callbacks_cpp(Rcpp::NumericVector mu, Rcpp::NumericMa
                 }
                 for (int i = 0; i < d; ++i) {
                     const double sum = row_sum(state, i, d, k);
-                    const double scaled = beta(i, 0) * std::log(uniforms[i]) / sum;
-                    if (sum > 0.0 && scaled > -1.0) {
-                        const double excited = -std::log1p(scaled) / beta(i, 0);
-                        if (excited < wait) { wait = excited; event = i; }
-                    }
+                    const double excited = excitation_wait(beta(i, 0), std::log(uniforms[i]), sum);
+                    if (excited < wait) { wait = excited; event = i; }
                 }
             }
             if (!R_FINITE(wait)) {

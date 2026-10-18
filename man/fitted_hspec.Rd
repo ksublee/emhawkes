@@ -25,7 +25,13 @@ parameters in these generators are updated when they match coefficient names;
 other generator parameters keep their original defaults.
 
 With \code{optimizer = "maxLik"}, the fit keeps its \code{maxLik} classes and methods;
-reading these fits requires maxLik. The \code{"stats"} optimizer returns an
+reading these fits requires maxLik.
+\code{emhawkes} registers lazy bridges for maxLik's coefficient, likelihood,
+covariance, summary and print methods. Their first use loads the installed
+maxLik namespace without requiring \code{library(maxLik)}, including for older
+saved fits. Using the stats optimizer does not load maxLik.
+
+The \code{"stats"} optimizer returns an
 \code{emhawkes_stats_fit} with its own coefficient, likelihood, covariance and
 summary methods, requiring no maxLik API. Its \code{emhawkes} attribute stores
 a versioned list with \code{specification}, \code{parameter_map}, \code{initial_state},

@@ -56,6 +56,21 @@ double row_sum(const std::vector<double>& state, int row, int d, int k) {
 
 typedef std::vector<std::vector<std::vector<int> > > RateGroups;
 
+// Preserve the usual expression exactly; only subnormal intermediate values
+// use the continuous small-decay limit instead of quantizing waiting times.
+double excitation_wait(double beta, double log_u, double total) {
+    const double product = beta * log_u;
+    const double scaled = product / total;
+    if (total <= 0.0) return R_PosInf;
+    if (std::abs(product) < DBL_MIN || std::abs(scaled) < DBL_MIN) {
+        const double first_order = -log_u / total;
+        const double q = beta * first_order;
+        if (!R_FINITE(q) || q >= 1.0) return R_PosInf;
+        return first_order * (q > 0.0 ? -std::log1p(-q) / q : 1.0);
+    }
+    return scaled > -1.0 ? -std::log1p(scaled) / beta : R_PosInf;
+}
+
 bool valid_state(const std::vector<double>& state, int d, int k,
     const Rcpp::NumericMatrix& beta, const RateGroups& groups) {
     for (int i = 0; i < d; ++i) {

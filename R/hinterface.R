@@ -112,7 +112,9 @@ prepare_component_call <- function(plan) {
 required_count_paths <- function(object, extra = NULL) {
   callbacks <- c(list(object@mu, object@impact, object@dmark), list(extra))
   unique(unlist(lapply(callbacks, function(fun) {
-    if (is.function(fun)) intersect(names(formals(fun)), c("N", "Nc")) else character(0)
+    if (!is.function(fun)) return(character(0))
+    args <- names(formals(fun))
+    if ("..." %in% args) c("N", "Nc") else intersect(args, c("N", "Nc"))
   }), use.names = FALSE))
 }
 

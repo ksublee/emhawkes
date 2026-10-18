@@ -20,14 +20,24 @@ check_rds_session <- function() {
   stopifnot(fit$code == 0)
   saveRDS(fit, fit_path)
   # Use the library containing the package under test, including R CMD check.
-  saveRDS(.libPaths(), libraries_path)
+  saveRDS(list(paths = .libPaths(), package = find.package("emhawkes"),
+    version = as.character(utils::packageVersion("emhawkes"))), libraries_path)
   writeLines(c(
     "args <- commandArgs(TRUE)",
-    ".libPaths(readRDS(args[1]))",
+    "libraries <- readRDS(args[1])",
+    ".libPaths(libraries$paths)",
     "stopifnot(!('package:methods' %in% search()))",
     "library(emhawkes)",
+    "stopifnot(identical(normalizePath(find.package('emhawkes')),",
+    "                    normalizePath(libraries$package)))",
+    "stopifnot(as.character(utils::packageVersion('emhawkes')) == libraries$version)",
     "stopifnot(!('package:methods' %in% search()))",
     "fit <- readRDS(args[2])",
+    "stopifnot(!'maxLik' %in% loadedNamespaces())",
+    "switch(args[3], coef = stats::coef(fit), logLik = stats::logLik(fit),",
+    "  vcov = stats::vcov(fit), summary = summary(fit), print = capture.output(print(fit)))",
+    "stopifnot('maxLik' %in% loadedNamespaces(), !('package:maxLik' %in% search()))",
+    "coefficients <- stats::coef(fit)",
     "options(emhawkes.engine = 'r')",
     "calculation <- fit_diagnostics(fit)$computation",
     "stopifnot(calculation$recorded, identical(calculation$engine$used, 'cpp'),",
@@ -60,14 +70,16 @@ check_rds_session <- function() {
 
   executable <- if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript"
   rscript <- file.path(R.home("bin"), executable)
-  output <- suppressWarnings(system2(rscript,
-    args = c("--vanilla", "--default-packages=datasets,utils,grDevices,graphics,stats",
-             shQuote(script_path), shQuote(libraries_path),
-             shQuote(fit_path)), stdout = TRUE, stderr = TRUE))
-  status <- attr(output, "status")
-  if (!is.null(status) && status != 0L) {
-    stop(paste(c("Fresh-session fit restoration failed:", output), collapse = "\n"),
-         call. = FALSE)
+  for (first in c("coef", "logLik", "vcov", "summary", "print")) {
+    output <- suppressWarnings(system2(rscript,
+      args = c("--vanilla", "--default-packages=datasets,utils,grDevices,graphics,stats",
+               shQuote(script_path), shQuote(libraries_path),
+               shQuote(fit_path), first), stdout = TRUE, stderr = TRUE))
+    status <- attr(output, "status")
+    if (!is.null(status) && status != 0L) {
+      stop(paste(c(paste("Fresh-session fit restoration failed with first method", first), output), collapse = "\n"),
+           call. = FALSE)
+    }
   }
 }
 

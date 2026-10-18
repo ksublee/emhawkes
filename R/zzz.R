@@ -8,6 +8,6 @@ utils::globalVariables(c(
 ))
 
 .onLoad <- function(libname, pkgname) {
-  # Code to run when the package is loaded can be added here
+  register_maxlik_saved_methods()
   invisible()
 }

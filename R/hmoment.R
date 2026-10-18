@@ -205,6 +205,18 @@ setMethod(
     Alpha <- h@alpha
     Beta <- diag(diag(h@beta))
     Eta <- if (is.null(h@eta)) matrix(0, 2, 2) else h@eta
+    check_stationary_mean <- function(mark_mean) {
+      drift <- Alpha - Eta + Eta * mark_mean - Beta
+      scale <- max(abs(c(Alpha, Eta, Beta)))
+      if (any(!is.finite(drift)) ||
+          max(Re(eigen(drift / scale, only.values = TRUE)$values)) >= 0)
+        stop("hvol requires a stationary mean-intensity system; the effective kernel and mark means do not satisfy this condition.", call. = FALSE)
+    }
+    finite_volatility <- function(variance) {
+      if (any(!is.finite(variance)) || any(variance < 0))
+        stop("hvol could not obtain a finite nonnegative stationary variance; check the model and mark moments.", call. = FALSE)
+      sqrt(variance)
+    }
 
     up_move_idx <- type == 1
     down_move_idx <- type == 2
@@ -251,6 +263,7 @@ setMethod(
       Z_nl <- Z
 
 
+      check_stationary_mean(Z)
       E_lambda <- solve(Beta - Alpha + Eta - Eta * Z) %*% Beta %*% Mu
 
       # To find E_ll : E_lambda_lambda
@@ -296,7 +309,7 @@ setMethod(
 
       variance <- matrix(c(1, -1), nrow=1) %*% (P2 * horizon + P3 * horizon) %*% matrix(c(1, -1))
 
-      (std <- sqrt(variance))
+      finite_volatility(variance)
 
     } else {
 
@@ -314,6 +327,7 @@ setMethod(
       Z_sq_ind <-  matrix(c(Z_sq_ind_1, Z_sq_ind_2,
                             Z_sq_ind_1, Z_sq_ind_2), nrow=2, byrow=TRUE)
 
+      check_stationary_mean(Z_ind)
       E_lambda_ind <- solve(Beta - Alpha + Eta - Eta * Z_ind) %*% Beta %*% Mu
 
       G_ind <- (Alpha - Eta + Eta * Z_ind) %*% diag(c(E_lambda_ind)) %*% t(Alpha - Eta) +
@@ -354,7 +368,7 @@ setMethod(
 
       variance_ind <- matrix(c(1, -1), nrow=1) %*% (P2_ind * horizon + P3_ind * horizon) %*% matrix(c(1, -1))
 
-      (std_ind <- sqrt(variance_ind))
+      finite_volatility(variance_ind)
 
     }
 

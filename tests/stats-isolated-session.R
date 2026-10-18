@@ -22,6 +22,9 @@ isolated_stats_session <- function() {
     "maxlik_available <- length(find.package('maxLik', quiet = TRUE)) > 0L",
     "if (identical(args[3], 'true')) stopifnot(!maxlik_available)",
     "library(emhawkes)",
+    "stopifnot(identical(normalizePath(find.package('emhawkes')),",
+    "                    normalizePath(file.path(args[1], 'emhawkes'))))",
+    "stopifnot(as.character(utils::packageVersion('emhawkes')) == args[4])",
     "stopifnot(!('package:methods' %in% search()))",
     "stopifnot(!'maxLik' %in% loadedNamespaces())",
     "h <- methods::new('hspec', mu = .5, alpha = 0, beta = 1)",
@@ -43,6 +46,9 @@ isolated_stats_session <- function() {
     "if (!maxlik_available) {",
     "  error <- tryCatch(hfit(h, dt), error = identity)",
     "  stopifnot(inherits(error,'error'), grepl(\"optimizer = 'stats'\", conditionMessage(error), fixed=TRUE))",
+    "  legacy <- structure(list(estimate = c(a = 1)), class = c('maxLik', 'maxim'))",
+    "  error <- tryCatch(stats::coef(legacy), error = identity)",
+    "  stopifnot(inherits(error, 'error'), grepl('optional maxLik package', conditionMessage(error), fixed = TRUE))",
     "}",
     "stopifnot(!'maxLik' %in% loadedNamespaces())",
     "cat('Stats fit and saved-result round trip: OK; maxLik visible:', maxlik_available, '\\n')"
@@ -52,7 +58,8 @@ isolated_stats_session <- function() {
   output <- suppressWarnings(system2(executable, c("--vanilla",
     "--default-packages=datasets,utils,grDevices,graphics,stats",
     shQuote(script), shQuote(isolated),
-    shQuote(file.path(root, "fit.rds")), if (require_missing) "true" else "false"),
+    shQuote(file.path(root, "fit.rds")), if (require_missing) "true" else "false",
+    as.character(utils::packageVersion("emhawkes"))),
     stdout = TRUE, stderr = TRUE))
   cat(output, sep = "\n")
   if (!is.null(attr(output, "status")))

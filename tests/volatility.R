@@ -60,4 +60,14 @@ residual <- set_residual(poisson, c(rate = 1), dresidual = dexp, presidual = pex
 fails(check(residual), "residual distribution")
 univariate <- new("hspec", mu = .2, alpha = .1, beta = 1)
 fails(check(univariate), "bivariate")
+for (a in c(1, 1.1, 2)) for (dep in c(FALSE, TRUE)) {
+  unstable <- poisson
+  unstable@alpha <- diag(a, 2)
+  fails(check(unstable, dependence = dep), "stationary mean-intensity")
+}
+marked_unstable <- poisson
+marked_unstable@alpha <- matrix(.1, 2, 2)
+marked_unstable@eta <- matrix(.3, 2, 2)
+fails(hvol(marked_unstable, inter_arrival = dt, type = types,
+           mark = c(0, 3, 3, 3, 3), lambda_component0 = 0), "stationary mean-intensity")
 options(old)

@@ -20,3 +20,11 @@ close(qtzexp(ptzexp(1000, .5, 1, lower.tail = FALSE, log.p = TRUE),
 tiny <- qtzexp(-1000, 1, sqrt(6), log.p = TRUE)
 stopifnot(tiny > 0, is.finite(tiny))
 close(ptzexp(tiny, 1, sqrt(6), log.p = TRUE), -1000)
+
+# The ell=1, a->0 limit is unit exponential. Rescale the tiny lower-tail
+# probabilities so an erroneous zero cannot pass an absolute-error check.
+for (a in c(1e-12, 1e-16, 1e-100, 1e-300)) {
+  close(ptzexp(qtzexp(c(.1, .5, .9), a, 1), a, 1), c(.1, .5, .9))
+  close(ptzexp(a / 2, a, 1) / a, .5)
+  close(qtzexp(ptzexp(a / 2, a, 1, log.p = TRUE), a, 1, log.p = TRUE) / a, .5)
+}

@@ -52,6 +52,10 @@ NULL
 #' Component functions receive the arguments they declare; functions with `...`
 #' receive the available event context. Intensity histories are `NULL` before
 #' initialization. Baseline functions use `n - 1` to access the preceding event.
+#' Functions with `...` receive automatically constructed count paths and
+#' intensity histories in both likelihood-only and inference calls. Declare only
+#' the needed arguments to avoid retaining unused histories. `stats::logLik()`
+#' also dispatches to this method for an `hspec` object.
 #' If initial intensity components are omitted, they are determined from the
 #' supplied model. For a fitted model, use [fitted_hspec()] with the arguments
 #' returned by [fit_initial_state()] to preserve the fit's initialization setting.
@@ -184,6 +188,8 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
     if(!is.null(object@impact)) impct_args <- methods::formalArgs(object@impact)
     mark_args <- if (is.function(object@dmark)) methods::formalArgs(object@dmark) else character(0)
     history_args <- c(impct_args, mu_args, mark_args)
+    if ("..." %in% history_args)
+      history_args <- c(history_args, "lambda", "lambda_component")
     impact_has_dots <- "..." %in% impct_args
 
 
@@ -574,6 +580,12 @@ loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer 
     }
 
 }
+
+# Bridge the ordinary stats generic to the existing S4 method, including when
+# emhawkes is used through its namespace without being attached.
+#' @export
+#' @method logLik hspec
+logLik.hspec <- function(object, ...) logLik(object, ...)
 
 # Helpers: Initialization for lambda matrices
 initialize_lambda_matrix <- function(prefix, size, dimens, beta_cols, lambda0) {

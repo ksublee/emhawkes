@@ -185,6 +185,7 @@ loglik_hspec_cpp <- function(object, observation, lambda_component0, infer,
       list(lambda = NULL, lambda_component = NULL, lambda_component_n = NULL),
       values[c("mu", "alpha", "beta")])[plan] else NULL
     history <- if (infer) plan else if (is.null(object@impact)) character(0) else names(formals(object@impact))
+    if ("..." %in% history) history <- c(history, "lambda", "lambda_component")
     impacts <- if (!is.null(object@impact) && !sequential)
       standalone_observed_impacts(object, observation, values) else NULL
     record_fit_engine(execution, "cpp")
