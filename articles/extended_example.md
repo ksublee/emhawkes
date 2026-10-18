@@ -268,6 +268,13 @@ res_mk
 fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
                lambda_component0 = lambda_component0_mk,
                final_hessian = "stable")
+#> Registered S3 methods overwritten by 'maxLik':
+#>   method         from    
+#>   coef.maxLik    emhawkes
+#>   logLik.maxLik  emhawkes
+#>   print.maxLik   emhawkes
+#>   summary.maxLik emhawkes
+#>   vcov.maxLik    emhawkes
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.
 summary(fit_mk)
@@ -399,7 +406,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x56111270ee40>
+#> <bytecode: 0x5586d4f070c0>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -409,7 +416,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x561112c91ac8>
+#> <bytecode: 0x5586d5e99550>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -419,7 +426,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x56111342a240>
+#> <bytecode: 0x5586d6abfa58>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -918,7 +925,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x56110e840720>
+#> <bytecode: 0x5586d7f89af0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1232,7 +1239,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x561115cc2528>
+#> <bytecode: 0x5586d3c791f0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1522,7 +1529,7 @@ print(hspec2_du)
 #>     do.call(rresidual, c(list(size), distribution_parameters(rresidual, 
 #>         param)))
 #> }
-#> <environment: 0x56110f00d5e8>
+#> <environment: 0x5586d7675308>
 #> 
 #> Slot dresidual: 
 #> function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) 
@@ -1530,7 +1537,7 @@ print(hspec2_du)
 #>     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, 
 #>         param))
 #> }
-#> <environment: 0x56110f00d5e8>
+#> <environment: 0x5586d7675308>
 #> 
 #> Slot presidual: 
 #> function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1539,7 +1546,7 @@ print(hspec2_du)
 #>     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, 
 #>         params = distribution_parameters(presidual, param))
 #> }
-#> <environment: 0x56110f00d5e8>
+#> <environment: 0x5586d7675308>
 #> 
 #> Slot qresidual: 
 #> function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, 
@@ -1549,7 +1556,7 @@ print(hspec2_du)
 #>         log.p = log.p, params = distribution_parameters(qresidual, 
 #>             param))
 #> }
-#> <environment: 0x56110f00d5e8>
+#> <environment: 0x5586d7675308>
 ```
 
 The following histogram shows inter-arrival times from a model with

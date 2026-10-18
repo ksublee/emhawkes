@@ -321,6 +321,13 @@ supplied for both simulation and estimation.</p>
 <code class="sourceCode R"><span><span class="va">fit_mk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">res_mk</span><span class="op">$</span><span class="va">type</span>,</span>
 <span>               lambda_component0 <span class="op">=</span> <span class="va">lambda_component0_mk</span>,</span>
 <span>               final_hessian <span class="op">=</span> <span class="st">"stable"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Registered S3 methods overwritten by 'maxLik':</span></span>
+<span><span class="co">#&gt;   method         from    </span></span>
+<span><span class="co">#&gt;   coef.maxLik    emhawkes</span></span>
+<span><span class="co">#&gt;   logLik.maxLik  emhawkes</span></span>
+<span><span class="co">#&gt;   print.maxLik   emhawkes</span></span>
+<span><span class="co">#&gt;   summary.maxLik emhawkes</span></span>
+<span><span class="co">#&gt;   vcov.maxLik    emhawkes</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_mk</span><span class="op">)</span></span>
@@ -440,7 +447,7 @@ argument.</p>
 <span><span class="co">#&gt;         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), </span></span>
 <span><span class="co">#&gt;         nrow = 2)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x56111270ee40&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5586d4f070c0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot alpha: </span></span>
 <span><span class="co">#&gt; function (param = c(eta = 5, nu = 3)) </span></span>
@@ -450,7 +457,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, </span></span>
 <span><span class="co">#&gt;         zeta_tl), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x561112c91ac8&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5586d5e99550&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt; function (param = c(beta = 12, kappa = 0.12)) </span></span>
@@ -460,7 +467,7 @@ argument.</p>
 <span><span class="co">#&gt;     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, </span></span>
 <span><span class="co">#&gt;         beta2), nrow = 2, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x56111342a240&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5586d6abfa58&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot type_col_map: </span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -913,7 +920,7 @@ extracting an entire column at every event.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, </span></span>
 <span><span class="co">#&gt;         byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x56110e840720&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5586d7f89af0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1203,7 +1210,7 @@ sum of the components in each row remains nonnegative.</p>
 <span><span class="co">#&gt;         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], </span></span>
 <span><span class="co">#&gt;         param["alpha_s1"]), nrow = 4, byrow = TRUE)</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;bytecode: 0x561115cc2528&gt;</span></span>
+<span><span class="co">#&gt; &lt;bytecode: 0x5586d3c791f0&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot beta: </span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3] [,4]</span></span>
@@ -1465,7 +1472,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     do.call(rresidual, c(list(size), distribution_parameters(rresidual, </span></span>
 <span><span class="co">#&gt;         param)))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56110f00d5e8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5586d7675308&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot dresidual: </span></span>
 <span><span class="co">#&gt; function (x, param = c(a = 0.7, ell = 1.6), log = FALSE) </span></span>
@@ -1473,7 +1480,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_density(dresidual, x, log = log, params = distribution_parameters(dresidual, </span></span>
 <span><span class="co">#&gt;         param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56110f00d5e8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5586d7675308&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot presidual: </span></span>
 <span><span class="co">#&gt; function (q, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -1482,7 +1489,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;     residual_cdf(presidual, q, lower.tail = lower.tail, log.p = log.p, </span></span>
 <span><span class="co">#&gt;         params = distribution_parameters(presidual, param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56110f00d5e8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5586d7675308&gt;</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot qresidual: </span></span>
 <span><span class="co">#&gt; function (p, param = c(a = 0.7, ell = 1.6), lower.tail = TRUE, </span></span>
@@ -1492,7 +1499,7 @@ matrices as in a multivariate Hawkes model.</p>
 <span><span class="co">#&gt;         log.p = log.p, params = distribution_parameters(qresidual, </span></span>
 <span><span class="co">#&gt;             param))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56110f00d5e8&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x5586d7675308&gt;</span></span></code></pre></div>
 <p>The following histogram shows inter-arrival times from a model with
 <code>tzexp</code> residuals.</p>
 <div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">

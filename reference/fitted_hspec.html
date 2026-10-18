@@ -73,7 +73,12 @@ The original kernel mapping, <code>rmark</code>, and <code>rresidual</code> are 
 parameters in these generators are updated when they match coefficient names;
 other generator parameters keep their original defaults.</p>
 <p>With <code>optimizer = "maxLik"</code>, the fit keeps its <code>maxLik</code> classes and methods;
-reading these fits requires maxLik. The <code>"stats"</code> optimizer returns an
+reading these fits requires maxLik.
+<code>emhawkes</code> registers lazy bridges for maxLik's coefficient, likelihood,
+covariance, summary and print methods. Their first use loads the installed
+maxLik namespace without requiring <code><a href="https://github.com/arne-henningsen/maxLik" class="external-link">library(maxLik)</a></code>, including for older
+saved fits. Using the stats optimizer does not load maxLik.</p>
+<p>The <code>"stats"</code> optimizer returns an
 <code>emhawkes_stats_fit</code> with its own coefficient, likelihood, covariance and
 summary methods, requiring no maxLik API. Its <code>emhawkes</code> attribute stores
 a versioned list with <code>specification</code>, <code>parameter_map</code>, <code>initial_state</code>,

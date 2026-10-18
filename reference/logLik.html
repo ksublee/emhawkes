@@ -146,6 +146,10 @@ supplied initial counts. Event order is preserved, including zero intervals.
 Component functions receive the arguments they declare; functions with <code>...</code>
 receive the available event context. Intensity histories are <code>NULL</code> before
 initialization. Baseline functions use <code>n - 1</code> to access the preceding event.
+Functions with <code>...</code> receive automatically constructed count paths and
+intensity histories in both likelihood-only and inference calls. Declare only
+the needed arguments to avoid retaining unused histories. <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">stats::logLik()</a></code>
+also dispatches to this method for an <code>hspec</code> object.
 If initial intensity components are omitted, they are determined from the
 supplied model. For a fitted model, use <code><a href="fitted_hspec.html">fitted_hspec()</a></code> with the arguments
 returned by <code><a href="fit_initial_state.html">fit_initial_state()</a></code> to preserve the fit's initialization setting.</p>

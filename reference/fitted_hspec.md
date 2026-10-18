@@ -33,12 +33,20 @@ are updated when they match coefficient names; other generator
 parameters keep their original defaults.
 
 With `optimizer = "maxLik"`, the fit keeps its `maxLik` classes and
-methods; reading these fits requires maxLik. The `"stats"` optimizer
-returns an `emhawkes_stats_fit` with its own coefficient, likelihood,
-covariance and summary methods, requiring no maxLik API. Its `emhawkes`
-attribute stores a versioned list with `specification`, `parameter_map`,
-`initial_state`, `reduced`, and `custom_loglik`. New fits also retain
-`constraints` and final `diagnostics`, available through
+methods; reading these fits requires maxLik. `emhawkes` registers lazy
+bridges for maxLik's coefficient, likelihood, covariance, summary and
+print methods. Their first use loads the installed maxLik namespace
+without requiring
+[`library(maxLik)`](https://github.com/arne-henningsen/maxLik),
+including for older saved fits. Using the stats optimizer does not load
+maxLik.
+
+The `"stats"` optimizer returns an `emhawkes_stats_fit` with its own
+coefficient, likelihood, covariance and summary methods, requiring no
+maxLik API. Its `emhawkes` attribute stores a versioned list with
+`specification`, `parameter_map`, `initial_state`, `reduced`, and
+`custom_loglik`. New fits also retain `constraints` and final
+`diagnostics`, available through
 [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md).
 New calculation records are in `fit_diagnostics(fit)$computation`. Fits
 without the original model metadata cannot be reconstructed by this

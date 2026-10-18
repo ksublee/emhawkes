@@ -25,6 +25,13 @@ set.seed(1107)
 path <- hsim(h, size = 1000)
 #> Initial intensity components: auto -> mean (unconditional component means).
 fit <- hfit(h, path$inter_arrival, path$type)
+#> Registered S3 methods overwritten by 'maxLik':
+#>   method         from    
+#>   coef.maxLik    emhawkes
+#>   logLik.maxLik  emhawkes
+#>   print.maxLik   emhawkes
+#>   summary.maxLik emhawkes
+#>   vcov.maxLik    emhawkes
 #> Initial intensity components: auto -> mean (unconditional component means).
 #> hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).
 #> Use reduced = FALSE to estimate matrix entries separately.

@@ -92,6 +92,13 @@ and inference</a>.</p>
 <span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hsim.html">hsim</a></span><span class="op">(</span><span class="va">h</span>, size <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hfit.html">hfit</a></span><span class="op">(</span><span class="va">h</span>, <span class="va">path</span><span class="op">$</span><span class="va">inter_arrival</span>, <span class="va">path</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Registered S3 methods overwritten by 'maxLik':</span></span>
+<span><span class="co">#&gt;   method         from    </span></span>
+<span><span class="co">#&gt;   coef.maxLik    emhawkes</span></span>
+<span><span class="co">#&gt;   logLik.maxLik  emhawkes</span></span>
+<span><span class="co">#&gt;   print.maxLik   emhawkes</span></span>
+<span><span class="co">#&gt;   summary.maxLik emhawkes</span></span>
+<span><span class="co">#&gt;   vcov.maxLik    emhawkes</span></span>
 <span><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
 <span><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>

@@ -5,8 +5,28 @@
 - Correct the stats-only subprocess test when maxLik is installed in a
   standard or site library. Always check stats fitting and saved-result
   restoration without loading maxLik; check the missing-provider error
-  only when maxLik is genuinely unavailable. Simulation and estimation
-  calculations are unchanged.
+  only when maxLik is genuinely unavailable. Verify the package path
+  used by fresh-session tests.
+- Give callbacks with `...` consistent count paths and intensity
+  histories with and without inference output, correcting likelihoods
+  that depended on `infer`.
+- Support [`stats::logLik()`](https://rdrr.io/r/stats/logLik.html) on
+  `hspec` objects. Lazily load maxLik’s methods when saved maxLik fits
+  are first printed, summarized or queried; keep their classes and
+  preserve the stats optimizer’s independence from maxLik.
+- Integrate density-based waiting-time moments in log time, including
+  finite truncation limits, to avoid missing narrow densities or
+  accepting large relative errors through the integrator’s default
+  absolute tolerance.
+- Return empty legacy residual vectors for types with fewer than two
+  events. Report unavailable stationary mean-intensity systems in
+  [`hvol()`](https://ksublee.github.io/emhawkes/reference/hvol.md)
+  explicitly.
+- Stabilize the trapezoid-exponential coefficients and log-tail
+  probabilities near its small-`a`, `ell = 1` limit.
+- Avoid quantized or zero arrival times from subnormal decay
+  intermediates in the R and C++ equal-decay simulators. Keep the RNG
+  draw order unchanged.
 - Add default R CMD check jobs with `_R_CHECK_SUGGESTS_ONLY_=false` and
   maxLik exposed through a site library, alongside the existing
   `--as-cran` jobs. Retain a separate hard-dependencies-only CI job that

@@ -119,7 +119,12 @@ and any supplied initial counts. Event order is preserved, including
 zero intervals. Component functions receive the arguments they declare;
 functions with `...` receive the available event context. Intensity
 histories are `NULL` before initialization. Baseline functions use
-`n - 1` to access the preceding event. If initial intensity components
+`n - 1` to access the preceding event. Functions with `...` receive
+automatically constructed count paths and intensity histories in both
+likelihood-only and inference calls. Declare only the needed arguments
+to avoid retaining unused histories.
+[`stats::logLik()`](https://rdrr.io/r/stats/logLik.html) also dispatches
+to this method for an `hspec` object. If initial intensity components
 are omitted, they are determined from the supplied model. For a fitted
 model, use
 [`fitted_hspec()`](https://ksublee.github.io/emhawkes/reference/fitted_hspec.md)
