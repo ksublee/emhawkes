@@ -84,6 +84,7 @@ Extended vignette는 설치된 이 파일을 읽어 함수 정의부터 시뮬�
 R 4.6.0, Windows에서 `R CMD build`와 `R CMD check --no-manual --as-cran`을 통과했다(`Status: OK`).
 테스트 파일 46개, 예제 및 패키지 비네트 재생성을 포함했다. CRAN incoming 원격 조회는 제외했다.
 전체 extended vignette도 별도로 실행해 HTML과 그림을 생성하고 새 절의 출력과 그림을 확인했다.
+사이트 빌더에서도 extended article을 실행했다. 예제 코드는 knitr의 `code` 옵션으로 읽어 사이트 전처리와 호환되도록 했다.
 
 ## 재현
 

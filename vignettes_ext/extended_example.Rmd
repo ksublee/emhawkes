@@ -429,10 +429,11 @@ Log rates enforce positivity, and a logit parameter enforces $0<a<1$.
 The shared name `log_b` keeps the same decay parameter in `alpha` and `beta`.
 
 ```{r fosset-source, include=FALSE}
-knitr::read_chunk(system.file("examples", "fosset-spread.R", package = "emhawkes"))
+fosset_example_code <- readLines(
+  system.file("examples", "fosset-spread.R", package = "emhawkes"), warn = FALSE)
 ```
 
-```{r fosset-specification}
+```{r fosset-specification, code=fosset_example_code}
 ```
 
 For the baseline callback, `N[n - 1, ]` describes the state before event `n`.
@@ -472,10 +473,10 @@ The estimated coefficients are on the log/logit scale. Parameter recovery varies
 between realizations; inspect convergence and uncertainty rather than expecting
 exact recovery from a single path.
 
-There is an independent check for the narrowing rate. If $T_{\rm open}$ is the
+There is an independent check for the narrowing rate. If $T_{\mathrm{open}}$ is the
 time spent with $S\ge2$, its log-likelihood contribution is
-$N_-(T)\log\nu_- - \nu_- T_{\rm open}$. Its maximum is
-$\widehat\nu_- = N_-(T)/T_{\rm open}$.
+$N_-(T)\log\nu_- - \nu_- T_{\mathrm{open}}$. Its maximum is
+$\widehat{\nu}_- = N_-(T)/T_{\mathrm{open}}$.
 The observation window ends at the last supplied event.
 
 ```{r fosset-check}
