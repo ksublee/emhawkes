@@ -2,6 +2,11 @@
 
 ## emhawkes 1.0.1.9000
 
+- Add a model-independent
+  [`parameter_plan()`](https://ksublee.github.io/emhawkes/reference/parameter_plan.md)
+  registration/restoration contract. Keep the existing hspec parameter
+  map, sharing rules and saved-fit format.
+
 - Add
   [`exp_kernel_plan()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_plan.md)
   to validate fixed numeric kernel parameters and baseline once for

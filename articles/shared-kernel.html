@@ -270,6 +270,40 @@ receives explicit targets and contains no model-specific residual law.
 Legacy Hawkes and FRPP event loops are unchanged. This is an R reference
 interface, not a speed improvement claim.</p>
 </div>
+<div class="section level2">
+<h2 id="parameter-registration-and-restoration">Parameter registration and restoration<a class="anchor" aria-label="anchor" href="#parameter-registration-and-restoration"></a>
+</h2>
+<p><code><a href="../reference/parameter_plan.html">parameter_plan()</a></code> supplies model-independent parameter
+coordinates. Supply a named component list and mark explicit
+parameter-vector components with <code>named</code>. Equal values within
+a numeric matrix share a parameter under <code>reduced = TRUE</code>;
+explicit named vectors retain distinct parameters even when their values
+match. Names shared across components identify one coordinate.
+Conflicting starts warn and use the first value, following the existing
+hfit rule.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">parameters</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/parameter_plan.html">parameter_plan</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mu <span class="op">=</span> <span class="va">h</span><span class="op">@</span><span class="va">mu</span>, alpha <span class="op">=</span> <span class="va">h</span><span class="op">@</span><span class="va">alpha</span>, beta <span class="op">=</span> <span class="va">h</span><span class="op">@</span><span class="va">beta</span>,</span>
+<span>  residual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="fl">2</span>, rate <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span>, named <span class="op">=</span> <span class="st">"residual"</span><span class="op">)</span></span>
+<span><span class="va">parameters</span><span class="op">$</span><span class="va">start</span></span>
+<span><span class="co">#&gt;      mu1      mu2 alpha1.1 alpha1.2 alpha1.3 alpha1.4 alpha2.2  beta1.1 </span></span>
+<span><span class="co">#&gt;     0.30     0.40     0.04     0.02     0.01     0.03     0.05     1.20 </span></span>
+<span><span class="co">#&gt;  beta2.1    shape     rate </span></span>
+<span><span class="co">#&gt;     1.70     2.00     2.00</span></span>
+<span><span class="va">values</span> <span class="op">&lt;-</span> <span class="va">parameters</span><span class="op">$</span><span class="fu">restore</span><span class="op">(</span><span class="va">parameters</span><span class="op">$</span><span class="va">start</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">values</span><span class="op">$</span><span class="va">alpha</span>, <span class="va">h</span><span class="op">@</span><span class="va">alpha</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">values</span><span class="op">$</span><span class="va">residual</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="fl">2</span>, rate <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The locked plan stores definitions and coordinates, not fitted model
+state. Restoration returns components for the caller to assemble. It
+accepts the full vector in starting order, or exactly its names in any
+order. Nonfinite proposals are preserved for the objective to reject.
+Fixed/free selection, bounds and constraints use these coordinates and
+remain optimizer responsibilities.</p>
+<p>Function components retain their original environments and binding
+behavior. Their <code>param</code> defaults are evaluated during
+registration; function bodies are not called. User default expressions
+can have side effects. Existing hfit maps and saved-fit metadata retain
+their original representation.</p>
+</div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>

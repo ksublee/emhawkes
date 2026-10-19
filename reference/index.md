@@ -38,6 +38,8 @@
   : Infer Intensity Paths (Deprecated)
 - [`logLik(`*`<hspec>`*`)`](https://ksublee.github.io/emhawkes/reference/logLik.md)
   : Compute the Log-Likelihood Function
+- [`parameter_plan()`](https://ksublee.github.io/emhawkes/reference/parameter_plan.md)
+  : Register and Restore Model Parameters
 - [`residual_process()`](https://ksublee.github.io/emhawkes/reference/residual_process.md)
   : Compute a Residual Process (Deprecated)
 - [`set_residual()`](https://ksublee.github.io/emhawkes/reference/set_residual.md)

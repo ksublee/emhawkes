@@ -201,3 +201,41 @@ paths, output histories and RNG handling. The event-wise API receives
 explicit targets and contains no model-specific residual law. Legacy
 Hawkes and FRPP event loops are unchanged. This is an R reference
 interface, not a speed improvement claim.
+
+## Parameter registration and restoration
+
+[`parameter_plan()`](https://ksublee.github.io/emhawkes/reference/parameter_plan.md)
+supplies model-independent parameter coordinates. Supply a named
+component list and mark explicit parameter-vector components with
+`named`. Equal values within a numeric matrix share a parameter under
+`reduced = TRUE`; explicit named vectors retain distinct parameters even
+when their values match. Names shared across components identify one
+coordinate. Conflicting starts warn and use the first value, following
+the existing hfit rule.
+
+``` r
+
+parameters <- parameter_plan(list(mu = h@mu, alpha = h@alpha, beta = h@beta,
+  residual = c(shape = 2, rate = 2)), named = "residual")
+parameters$start
+#>      mu1      mu2 alpha1.1 alpha1.2 alpha1.3 alpha1.4 alpha2.2  beta1.1 
+#>     0.30     0.40     0.04     0.02     0.01     0.03     0.05     1.20 
+#>  beta2.1    shape     rate 
+#>     1.70     2.00     2.00
+values <- parameters$restore(parameters$start)
+stopifnot(identical(values$alpha, h@alpha),
+  identical(values$residual, c(shape = 2, rate = 2)))
+```
+
+The locked plan stores definitions and coordinates, not fitted model
+state. Restoration returns components for the caller to assemble. It
+accepts the full vector in starting order, or exactly its names in any
+order. Nonfinite proposals are preserved for the objective to reject.
+Fixed/free selection, bounds and constraints use these coordinates and
+remain optimizer responsibilities.
+
+Function components retain their original environments and binding
+behavior. Their `param` defaults are evaluated during registration;
+function bodies are not called. User default expressions can have side
+effects. Existing hfit maps and saved-fit metadata retain their original
+representation.
