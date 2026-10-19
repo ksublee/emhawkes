@@ -2,6 +2,15 @@
 
 ## emhawkes 1.0.1.9000
 
+- Add deterministic
+  [`exp_kernel_step()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+  and
+  [`exp_kernel_wait()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+  interfaces for event-wise state updates and inversion of supplied
+  residual targets. They support external FRPP simulation without
+  replaying growing path prefixes; existing Hawkes and legacy FRPP event
+  loops remain unchanged.
+
 - Move detailed FRPP examples to the frpp package documentation. Retain
   a short compatibility example and describe the planned functionality
   migration; existing residual-law functions and Hawkes residual
@@ -19,6 +28,8 @@
   loops are unchanged.
 
 ## emhawkes 1.0.1
+
+CRAN release: 2026-10-18
 
 - Correct the stats-only subprocess test when maxLik is installed in a
   standard or site library. Always check stats fitting and saved-result

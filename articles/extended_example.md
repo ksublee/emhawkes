@@ -406,7 +406,7 @@ h_sy
 #>         theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), 
 #>         nrow = 2)
 #> }
-#> <bytecode: 0x564d94828828>
+#> <bytecode: 0x5624fd842850>
 #> 
 #> Slot alpha: 
 #> function (param = c(eta = 5, nu = 3)) 
@@ -416,7 +416,7 @@ h_sy
 #>     matrix(c(zeta, zeta_tl, zeta, -zeta_tl, zeta, -zeta_tl, zeta, 
 #>         zeta_tl), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x564d9550b5b0>
+#> <bytecode: 0x5624fe43b4a8>
 #> 
 #> Slot beta: 
 #> function (param = c(beta = 12, kappa = 0.12)) 
@@ -426,7 +426,7 @@ h_sy
 #>     matrix(c(beta1, beta2, beta1, beta2, beta1, beta2, beta1, 
 #>         beta2), nrow = 2, byrow = TRUE)
 #> }
-#> <bytecode: 0x564d96427e70>
+#> <bytecode: 0x5624fea5c058>
 #> 
 #> Slot type_col_map: 
 #> [[1]]
@@ -1125,7 +1125,7 @@ hspec_fl
 #>         0, 0, param["alpha34"], param["alpha33"]), nrow = 4, 
 #>         byrow = TRUE)
 #> }
-#> <bytecode: 0x564d96db3e58>
+#> <bytecode: 0x5624f9f5d618>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]
@@ -1439,7 +1439,7 @@ h_ba
 #>         0, 0, param["alpha_w1"], 0, param["alpha_s2"], param["alpha_m"], 
 #>         param["alpha_s1"]), nrow = 4, byrow = TRUE)
 #> }
-#> <bytecode: 0x564d90deea58>
+#> <bytecode: 0x5624fb7cfff0>
 #> 
 #> Slot beta: 
 #>      [,1] [,2] [,3] [,4]

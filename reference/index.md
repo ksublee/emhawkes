@@ -7,6 +7,9 @@
 - [`exp_kernel_spec()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_spec.md)
   [`as_exp_kernel()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_spec.md)
   : Numeric Exponential Kernel Specifications
+- [`exp_kernel_step()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+  [`exp_kernel_wait()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+  : Event-Wise Numeric Exponential Kernel Calculations
 - [`expected_tau()`](https://ksublee.github.io/emhawkes/reference/expected_tau.md)
   : Expected Inter-Arrival Time
 - [`fit_diagnostics()`](https://ksublee.github.io/emhawkes/reference/fit_diagnostics.md)

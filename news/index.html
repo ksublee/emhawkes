@@ -42,11 +42,12 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1.9000" id="emhawkes-1019000">emhawkes 1.0.1.9000<a class="anchor" aria-label="anchor" href="#emhawkes-1019000"></a></h2>
-<ul><li><p>Move detailed FRPP examples to the frpp package documentation. Retain a short compatibility example and describe the planned functionality migration; existing residual-law functions and Hawkes residual diagnostics are unchanged.</p></li>
+<ul><li><p>Add deterministic <code><a href="../reference/exp_kernel_step.html">exp_kernel_step()</a></code> and <code><a href="../reference/exp_kernel_step.html">exp_kernel_wait()</a></code> interfaces for event-wise state updates and inversion of supplied residual targets. They support external FRPP simulation without replaying growing path prefixes; existing Hawkes and legacy FRPP event loops remain unchanged.</p></li>
+<li><p>Move detailed FRPP examples to the frpp package documentation. Retain a short compatibility example and describe the planned functionality migration; existing residual-law functions and Hawkes residual diagnostics are unchanged.</p></li>
 <li><p>Add experimental numeric <code><a href="../reference/exp_kernel_spec.html">exp_kernel_spec()</a></code>, <code><a href="../reference/exp_kernel_spec.html">as_exp_kernel()</a></code> and <code><a href="../reference/exp_kernel_replay.html">exp_kernel_replay()</a></code> interfaces for shared state calculations. Replay returns kernel-only interval integrals and pre-event sums, with optional component histories. Numeric marks, mapped kernels and signed states are supported; row-wise equal decay rates are required. Existing event loops are unchanged.</p></li>
 </ul></div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.1" id="emhawkes-101">emhawkes 1.0.1<a class="anchor" aria-label="anchor" href="#emhawkes-101"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.1" id="emhawkes-101">emhawkes 1.0.1<a class="anchor" aria-label="anchor" href="#emhawkes-101"></a></h2><p class="text-muted">CRAN release: 2026-10-18</p>
 <ul><li>Correct the stats-only subprocess test when maxLik is installed in a standard or site library. Always check stats fitting and saved-result restoration without loading maxLik; check the missing-provider error only when maxLik is genuinely unavailable. Verify the package path used by fresh-session tests.</li>
 <li>Give callbacks with <code>...</code> consistent count paths and intensity histories with and without inference output, correcting likelihoods that depended on <code>infer</code>.</li>
 <li>Support <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">stats::logLik()</a></code> on <code>hspec</code> objects. Lazily load maxLik’s methods when saved maxLik fits are first printed, summarized or queried; keep their classes and preserve the stats optimizer’s independence from maxLik.</li>

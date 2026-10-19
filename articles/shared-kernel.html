@@ -215,8 +215,46 @@ not supplied by this API.</p>
 <p>Use the exported functions rather than <code>emhawkes:::</code>. The
 implementation is an R reference path, independent of the likelihood
 engine option. Internal advance/update helpers and C++ implementation
-details are not part of this public contract. Callback support and
-independent FRPP event generation remain later work.</p>
+details are not part of this public contract. Event-wise calculations
+below support independent FRPP event generation; callback kernels remain
+outside this numeric interface.</p>
+</div>
+<div class="section level2">
+<h2 id="event-wise-calculations">Event-wise calculations<a class="anchor" aria-label="anchor" href="#event-wise-calculations"></a>
+</h2>
+<p><code><a href="../reference/exp_kernel_step.html">exp_kernel_wait()</a></code> inverts supplied integrated-driver
+targets using a numeric baseline and current kernel components. It draws
+no residuals and selects no event. <code><a href="../reference/exp_kernel_step.html">exp_kernel_step()</a></code>
+advances the components and optionally applies one mapped event; it also
+returns component integrals unless <code>integrate = FALSE</code>.
+Neither function replays a growing path prefix.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">component</span> <span class="op">&lt;-</span> <span class="va">initial</span></span>
+<span><span class="va">candidates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/exp_kernel_step.html">exp_kernel_wait</a></span><span class="op">(</span><span class="va">kernel</span>, <span class="va">component</span>, <span class="va">mu</span>, residual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.7</span>, <span class="fl">.9</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">event</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.min</a></span><span class="op">(</span><span class="va">candidates</span><span class="op">)</span></span>
+<span><span class="va">next_state</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/exp_kernel_step.html">exp_kernel_step</a></span><span class="op">(</span><span class="va">kernel</span>, <span class="va">component</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">candidates</span><span class="op">)</span>, type <span class="op">=</span> <span class="va">event</span><span class="op">)</span></span>
+<span><span class="va">next_state</span><span class="op">$</span><span class="va">before</span></span>
+<span><span class="co">#&gt;             [,1]        [,2]        [,3]        [,4]</span></span>
+<span><span class="co">#&gt; [1,] 0.005503118 0.005503118 0.005503118 0.005503118</span></span>
+<span><span class="co">#&gt; [2,] 0.002194278 0.002194278 0.002194278 0.002194278</span></span>
+<span><span class="va">next_state</span><span class="op">$</span><span class="va">after</span></span>
+<span><span class="co">#&gt;            [,1]        [,2]       [,3]        [,4]</span></span>
+<span><span class="co">#&gt; [1,] 0.04550312 0.005503118 0.01550312 0.005503118</span></span>
+<span><span class="co">#&gt; [2,] 0.03219428 0.002194278 0.02219428 0.002194278</span></span>
+<span><span class="va">next_state</span><span class="op">$</span><span class="va">integral</span></span>
+<span><span class="co">#&gt;            [,1]       [,2]       [,3]       [,4]</span></span>
+<span><span class="co">#&gt; [1,] 0.03708074 0.03708074 0.03708074 0.03708074</span></span>
+<span><span class="co">#&gt; [2,] 0.02812101 0.02812101 0.02812101 0.02812101</span></span></code></pre></div>
+<p>A zero interval still updates the selected event.
+<code>type = NULL</code> performs only decay and integration. Signed
+components are retained. Waiting-time inversion requires admissible
+decreasing row sums; a finite total driver integral can produce an
+infinite waiting time when its baseline is zero.</p>
+<p>FRPP owns its residual-generation order, earliest-event selection,
+count paths, output histories and RNG handling. The event-wise API
+receives explicit targets and contains no model-specific residual law.
+Legacy Hawkes and FRPP event loops are unchanged. This is an R reference
+interface, not a speed improvement claim.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

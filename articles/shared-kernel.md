@@ -138,5 +138,47 @@ not supplied by this API.
 Use the exported functions rather than `emhawkes:::`. The implementation
 is an R reference path, independent of the likelihood engine option.
 Internal advance/update helpers and C++ implementation details are not
-part of this public contract. Callback support and independent FRPP
-event generation remain later work.
+part of this public contract. Event-wise calculations below support
+independent FRPP event generation; callback kernels remain outside this
+numeric interface.
+
+## Event-wise calculations
+
+[`exp_kernel_wait()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+inverts supplied integrated-driver targets using a numeric baseline and
+current kernel components. It draws no residuals and selects no event.
+[`exp_kernel_step()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
+advances the components and optionally applies one mapped event; it also
+returns component integrals unless `integrate = FALSE`. Neither function
+replays a growing path prefix.
+
+``` r
+
+component <- initial
+candidates <- exp_kernel_wait(kernel, component, mu, residual = c(.7, .9))
+event <- which.min(candidates)
+next_state <- exp_kernel_step(kernel, component, min(candidates), type = event)
+next_state$before
+#>             [,1]        [,2]        [,3]        [,4]
+#> [1,] 0.005503118 0.005503118 0.005503118 0.005503118
+#> [2,] 0.002194278 0.002194278 0.002194278 0.002194278
+next_state$after
+#>            [,1]        [,2]       [,3]        [,4]
+#> [1,] 0.04550312 0.005503118 0.01550312 0.005503118
+#> [2,] 0.03219428 0.002194278 0.02219428 0.002194278
+next_state$integral
+#>            [,1]       [,2]       [,3]       [,4]
+#> [1,] 0.03708074 0.03708074 0.03708074 0.03708074
+#> [2,] 0.02812101 0.02812101 0.02812101 0.02812101
+```
+
+A zero interval still updates the selected event. `type = NULL` performs
+only decay and integration. Signed components are retained. Waiting-time
+inversion requires admissible decreasing row sums; a finite total driver
+integral can produce an infinite waiting time when its baseline is zero.
+
+FRPP owns its residual-generation order, earliest-event selection, count
+paths, output histories and RNG handling. The event-wise API receives
+explicit targets and contains no model-specific residual law. Legacy
+Hawkes and FRPP event loops are unchanged. This is an R reference
+interface, not a speed improvement claim.
