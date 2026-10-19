@@ -8,9 +8,17 @@ build_parameter_map <- function(object, reduced = TRUE) {
   }
   prefixes <- c(mu = "mu", alpha = "alpha", beta = "beta", eta = "eta",
                 impact = "", dmark = "", dresidual = "", presidual = "", qresidual = "")
+  values <- lapply(names(prefixes), function(name) methods::slot(object, name))
+  names(values) <- names(prefixes)
+  build_component_parameter_map(values, prefixes, reduced)
+}
+
+# Model-independent registration; the hspec adapter keeps the saved map format.
+build_component_parameter_map <- function(values, prefixes, reduced, named = character()) {
   components <- lapply(names(prefixes), function(name) {
-    value <- methods::slot(object, name)
+    value <- values[[name]]
     if (is.null(value)) return(list(kind = "null"))
+    if (name %in% named) return(list(kind = "parameters", param = value))
     if (is.function(value)) {
       has_param <- "param" %in% names(formals(value))
       param <- if (has_param) tryCatch(
@@ -53,11 +61,97 @@ restore_parameters <- function(map, param) {
   lapply(map$components, function(x) {
     if (x$kind == "null") return(NULL)
     if (x$kind == "matrix") return(matrix(param[x$index], nrow = x$dim[1], ncol = x$dim[2]))
+    if (x$kind == "parameters") {
+      value <- param[x$index]
+      names(value) <- names(x$param)
+      return(value)
+    }
     if (!x$has_param) return(x$value)
     bound <- param[x$index]
     names(bound) <- names(x$param)
     bind_component(x$value, param = bound)
   })
+}
+
+#' Register and Restore Model Parameters
+#'
+#' @param components A named list of numeric matrices/scalars, functions or NULL.
+#' @param prefixes Matrix name prefixes, a named character vector matching components.
+#' @param named Names of components supplied as explicit named parameter vectors.
+#'   Their names are retained and equal values do not imply sharing.
+#' @param reduced Share equal starting values within each matrix?
+#' @return A locked environment with `start`, the full starting vector, and
+#'   `restore(param)`, returning a named list of matrices, functions and vectors.
+#' @details Components are visited in list order. Matrix names and sharing match
+#'   hfit. Function parameters come from their named numeric `param` defaults,
+#'   evaluated in the original environment; function bodies are not called.
+#'   Names shared across components identify one parameter. Conflicting starts
+#'   warn and use the first value. Functions retain their original environments
+#'   and binding semantics. No model object, optimizer, initial-state policy or
+#'   random generator is supplied by this API.
+#'
+#'   Restore accepts the full vector in starting order, or exactly its names in
+#'   any order. Nonfinite proposals are retained for the calling objective to
+#'   handle. Fixed/free selectors and constraints use this full coordinate order
+#'   and are handled by the optimizer layer. Create a new plan when definitions
+#'   change. Captured external function environments remain references.
+#' @examples
+#' plan <- parameter_plan(list(mu = matrix(c(.2, .2), 2),
+#'   residual = c(shape = 2, rate = 2)), named = "residual")
+#' plan$start
+#' plan$restore(plan$start)
+#' @export
+parameter_plan <- function(components, prefixes = names(components),
+                            named = character(), reduced = TRUE) {
+  valid_names <- function(x) is.character(x) && !anyNA(x) &&
+    all(nzchar(x)) && !anyDuplicated(x)
+  if (!is.list(components) || is.object(components) ||
+      !length(components) || !valid_names(names(components)))
+    stop("components must be a nonempty list with unique, nonempty names.", call. = FALSE)
+  if (!is.logical(reduced) || length(reduced) != 1L || is.na(reduced))
+    stop("reduced must be TRUE or FALSE.", call. = FALSE)
+  if (!is.character(prefixes) || length(prefixes) != length(components) ||
+      anyNA(prefixes))
+    stop("prefixes must contain one character prefix per component.", call. = FALSE)
+  if (is.null(names(prefixes))) names(prefixes) <- names(components)
+  if (!valid_names(names(prefixes)) || !setequal(names(prefixes), names(components)))
+    stop("prefixes must match the component names.", call. = FALSE)
+  prefixes <- prefixes[names(components)]
+  if (!valid_names(named) || !all(named %in% names(components)))
+    stop("named must identify distinct parameter-vector components.", call. = FALSE)
+  for (name in names(components)) {
+    value <- components[[name]]
+    if (is.null(value)) next
+    if (name %in% named) {
+      if (!is.numeric(value) || is.complex(value) || is.object(value) ||
+          !is.null(dim(value)) || any(!is.finite(value)) ||
+          (length(value) && !valid_names(names(value))))
+        stop(name, " must be a finite numeric vector with unique parameter names.", call. = FALSE)
+    } else if (!is.function(value)) {
+      if (!is.numeric(value) || is.complex(value) || is.object(value) ||
+          !length(value) || any(!is.finite(value)) ||
+          (!is.null(dim(value)) && length(dim(value)) != 2L) ||
+          (is.null(dim(value)) && length(value) != 1L))
+        stop(name, " must be a finite numeric matrix, scalar, function or NULL.", call. = FALSE)
+      if (is.null(dim(value))) components[[name]] <- matrix(value, 1L, 1L)
+    }
+  }
+  map <- build_component_parameter_map(components, prefixes, reduced, named)
+  if (is.complex(map$start)) stop("Initial parameters must be real numeric values.", call. = FALSE)
+  plan <- new.env(parent = emptyenv())
+  plan$start <- if (is.null(map$start)) numeric() else map$start
+  plan$restore <- function(param) {
+    expected <- names(map$start)
+    if (!is.numeric(param) || is.complex(param) || is.object(param) ||
+        !is.null(dim(param)) || length(param) != length(map$start) ||
+        (!is.null(names(param)) &&
+          (!valid_names(names(param)) || !setequal(names(param), expected))))
+      stop("param must contain the full parameter vector in starting order or with exactly its names.", call. = FALSE)
+    restore_parameters(map, param)
+  }
+  class(plan) <- "parameter_plan"
+  lockEnvironment(plan, bindings = TRUE)
+  plan
 }
 
 message_parameter_sharing <- function(map) {

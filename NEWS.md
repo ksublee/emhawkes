@@ -1,5 +1,8 @@
 # emhawkes 1.0.1.9000
 
+* Add a model-independent `parameter_plan()` registration/restoration contract.
+  Keep the existing hspec parameter map, sharing rules and saved-fit format.
+
 * Add `exp_kernel_plan()` to validate fixed numeric kernel parameters and
   baseline once for repeated deterministic step/wait calculations. Changing
   components and arguments are still checked; plans retain no event state or RNG.
