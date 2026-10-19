@@ -2,6 +2,12 @@
 
 ## emhawkes 1.0.1.9000
 
+- Add
+  [`exp_kernel_plan()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_plan.md)
+  to validate fixed numeric kernel parameters and baseline once for
+  repeated deterministic step/wait calculations. Changing components and
+  arguments are still checked; plans retain no event state or RNG.
+
 - Add deterministic
   [`exp_kernel_step()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_step.md)
   and

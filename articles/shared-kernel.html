@@ -250,6 +250,20 @@ Neither function replays a growing path prefix.</p>
 components are retained. Waiting-time inversion requires admissible
 decreasing row sums; a finite total driver integral can produce an
 infinite waiting time when its baseline is zero.</p>
+<p>For repeated calculations with fixed parameters, prepare a reusable
+plan:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/exp_kernel_plan.html">exp_kernel_plan</a></span><span class="op">(</span><span class="va">kernel</span>, <span class="va">mu</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">candidates</span>, <span class="va">plan</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="va">component</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.7</span>, <span class="fl">.9</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">next_state</span>, <span class="va">plan</span><span class="op">$</span><span class="fu">step</span><span class="op">(</span><span class="va">component</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">candidates</span><span class="op">)</span>, <span class="va">event</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The plan captures a validated kernel and baseline once. Its
+<code>wait()</code> and <code><a href="https://rdrr.io/r/stats/step.html" class="external-link">step()</a></code> functions still check the
+changing components and arguments. Components remain explicit inputs:
+the plan stores no event state, history or RNG. It is reusable across
+independent paths; create a new plan when parameters change. Editing the
+original specification does not change an existing plan. The plan’s
+function bindings are locked. Older event-wise functions remain
+available with their existing checked input contracts.</p>
 <p>FRPP owns its residual-generation order, earliest-event selection,
 count paths, output histories and RNG handling. The event-wise API
 receives explicit targets and contains no model-specific residual law.

@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`exp_kernel_plan()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_plan.md)
+  : Prepare Reusable Numeric Exponential Kernel Calculations
 - [`exp_kernel_replay()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_replay.md)
   : Replay an Observed Path Through a Numeric Exponential Kernel
 - [`exp_kernel_spec()`](https://ksublee.github.io/emhawkes/reference/exp_kernel_spec.md)
