@@ -195,3 +195,79 @@ exp_kernel_replay <- function(kernel, inter_arrival, type = NULL, mark = NULL,
   }
   result
 }
+
+# Validate current state without attaching it to the immutable specification.
+exp_kernel_component <- function(kernel, component) {
+  count <- kernel$dimens * kernel$kernel_cols
+  if (!is.numeric(component) || is.object(component) || !length(component) ||
+      any(!is.finite(component)) ||
+      !(length(component) %in% c(1L, count)) ||
+      (length(component) != 1L && !is.null(dim(component)) &&
+       !identical(dim(component), dim(kernel$beta))))
+    stop("component must be a finite numeric scalar or match the kernel matrix dimensions.", call. = FALSE)
+  matrix(component, kernel$dimens, kernel$kernel_cols)
+}
+
+#' Advance and Optionally Update a Numeric Exponential Kernel
+#' @param kernel An exp_kernel_spec or convertible numeric hspec.
+#' @param component Current components, excluding baseline; scalar or kernel shape.
+#' @param dt A finite nonnegative interval.
+#' @param type Optional event type, selecting a row and its mapped update columns.
+#' @param mark A finite scalar event mark, default one.
+#' @param integrate Return component-wise interval integrals?
+#' @return A list with before and after component matrices, and optionally integral.
+#' @export
+exp_kernel_step <- function(kernel, component, dt, type = NULL, mark = 1,
+                            integrate = TRUE) {
+  kernel <- as_exp_kernel(kernel)
+  component <- exp_kernel_component(kernel, component)
+  scalar <- function(x) is.numeric(x) && !is.object(x) &&
+    is.null(dim(x)) && length(x) == 1L && is.finite(x)
+  if (!scalar(dt) || dt < 0) stop("dt must be a finite nonnegative scalar.", call. = FALSE)
+  if (!is.null(type) && (!scalar(type) || type != floor(type) ||
+      type < 1 || type > kernel$dimens))
+    stop("type must identify one event type, or be NULL for no event update.", call. = FALSE)
+  if (!scalar(mark)) stop("mark must be a finite numeric scalar.", call. = FALSE)
+  if (!is.logical(integrate) || length(integrate) != 1L || is.na(integrate))
+    stop("integrate must be TRUE or FALSE.", call. = FALSE)
+  before <- component * exp(-kernel$beta[, 1L] * dt)
+  after <- if (is.null(type)) before else exp_kernel_update(kernel, before, type, mark)
+  answer <- list(before = before, after = after)
+  if (integrate) answer$integral <- integrate_exp_kernel(component, kernel$beta[, 1L], dt)
+  answer
+}
+
+#' Invert Integrated Numeric Exponential Drivers
+#' @param kernel An exp_kernel_spec or convertible numeric hspec.
+#' @param component Current kernel components, excluding baseline.
+#' @param mu Finite nonnegative baseline, scalar or one value per event type.
+#' @param residual Nonnegative targets, one per event type; positive infinity allowed.
+#' @return Candidate waiting times, in event-type row order. No random draws occur.
+#' @export
+exp_kernel_wait <- function(kernel, component, mu, residual) {
+  kernel <- as_exp_kernel(kernel)
+  component <- exp_kernel_component(kernel, component)
+  d <- kernel$dimens
+  if (!is.numeric(mu) || is.object(mu) || !(length(mu) %in% c(1L, d)) ||
+      any(!is.finite(mu)) || any(mu < 0))
+    stop("mu must be finite and nonnegative, with one value or one per event type.", call. = FALSE)
+  mu <- rep_len(as.numeric(mu), d)
+  if (!is.numeric(residual) || is.object(residual) || !is.null(dim(residual)) ||
+      length(residual) != d || anyNA(residual) || any(residual < 0))
+    stop("residual must contain one nonnegative target per event type; Inf is allowed.", call. = FALSE)
+  # Signed components are admissible when their row sum is nonnegative.
+  # Preserve the existing simulator's roundoff condition for cancellation.
+  for (i in seq_len(d)) {
+    weight <- component[i, ]
+    if (all(weight >= 0)) next
+    scale <- sum(abs(weight)); total <- sum(weight)
+    if (!is.finite(scale) || !is.finite(total) ||
+        total < -32 * .Machine$double.eps * max(1, scale))
+      stop("Waiting-time inversion requires nonnegative, decreasing row sums of kernel components.", call. = FALSE)
+  }
+  # Sum first, exactly as the legacy equal-rate FRPP arrival calculation does.
+  # Summing component-wise integrals instead can change root rounding and paths.
+  total <- rowSums(component)
+  vapply(seq_len(d), function(i)
+    invert_exp_hazard(residual[i], total[i], mu[i], kernel$beta[i, 1L]), numeric(1))
+}

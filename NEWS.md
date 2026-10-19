@@ -1,5 +1,11 @@
 # emhawkes 1.0.1.9000
 
+* Add deterministic `exp_kernel_step()` and `exp_kernel_wait()` interfaces for
+  event-wise state updates and inversion of supplied residual targets. They
+  support external FRPP simulation without replaying growing path prefixes;
+  existing Hawkes and legacy FRPP event loops remain unchanged.
+
+
 * Move detailed FRPP examples to the frpp package documentation. Retain a
   short compatibility example and describe the planned functionality migration;
   existing residual-law functions and Hawkes residual diagnostics are unchanged.
