@@ -220,6 +220,12 @@ exp_kernel_component <- function(kernel, component) {
 exp_kernel_step <- function(kernel, component, dt, type = NULL, mark = 1,
                             integrate = TRUE) {
   kernel <- as_exp_kernel(kernel)
+  exp_kernel_step_checked(kernel, component, dt, type, mark, integrate,
+                          kernel$beta[, 1L])
+}
+
+exp_kernel_step_checked <- function(kernel, component, dt, type, mark, integrate,
+                                    rates) {
   component <- exp_kernel_component(kernel, component)
   scalar <- function(x) is.numeric(x) && !is.object(x) &&
     is.null(dim(x)) && length(x) == 1L && is.finite(x)
@@ -230,10 +236,10 @@ exp_kernel_step <- function(kernel, component, dt, type = NULL, mark = 1,
   if (!scalar(mark)) stop("mark must be a finite numeric scalar.", call. = FALSE)
   if (!is.logical(integrate) || length(integrate) != 1L || is.na(integrate))
     stop("integrate must be TRUE or FALSE.", call. = FALSE)
-  before <- component * exp(-kernel$beta[, 1L] * dt)
+  before <- component * exp(-rates * dt)
   after <- if (is.null(type)) before else exp_kernel_update(kernel, before, type, mark)
   answer <- list(before = before, after = after)
-  if (integrate) answer$integral <- integrate_exp_kernel(component, kernel$beta[, 1L], dt)
+  if (integrate) answer$integral <- integrate_exp_kernel(component, rates, dt)
   answer
 }
 
@@ -247,11 +253,20 @@ exp_kernel_step <- function(kernel, component, dt, type = NULL, mark = 1,
 exp_kernel_wait <- function(kernel, component, mu, residual) {
   kernel <- as_exp_kernel(kernel)
   component <- exp_kernel_component(kernel, component)
+  mu <- exp_kernel_baseline(kernel, mu)
+  exp_kernel_wait_checked(kernel, component, mu, residual, kernel$beta[, 1L])
+}
+
+exp_kernel_baseline <- function(kernel, mu) {
   d <- kernel$dimens
   if (!is.numeric(mu) || is.object(mu) || !(length(mu) %in% c(1L, d)) ||
       any(!is.finite(mu)) || any(mu < 0))
     stop("mu must be finite and nonnegative, with one value or one per event type.", call. = FALSE)
-  mu <- rep_len(as.numeric(mu), d)
+  rep_len(as.numeric(mu), d)
+}
+
+exp_kernel_wait_checked <- function(kernel, component, mu, residual, rates) {
+  d <- kernel$dimens
   if (!is.numeric(residual) || is.object(residual) || !is.null(dim(residual)) ||
       length(residual) != d || anyNA(residual) || any(residual < 0))
     stop("residual must contain one nonnegative target per event type; Inf is allowed.", call. = FALSE)
@@ -269,5 +284,43 @@ exp_kernel_wait <- function(kernel, component, mu, residual) {
   # Summing component-wise integrals instead can change root rounding and paths.
   total <- rowSums(component)
   vapply(seq_len(d), function(i)
-    invert_exp_hazard(residual[i], total[i], mu[i], kernel$beta[i, 1L]), numeric(1))
+    invert_exp_hazard(residual[i], total[i], mu[i], rates[i]), numeric(1))
+}
+
+#' Prepare Reusable Numeric Exponential Kernel Calculations
+#'
+#' @param kernel An exp_kernel_spec or convertible numeric hspec.
+#' @param mu Finite nonnegative baseline, scalar or one value per event type.
+#' @return A locked environment with two functions: `step(component, dt,
+#'   type = NULL, mark = 1, integrate = TRUE)` and `wait(component, residual)`.
+#'   Their results match [exp_kernel_step()] and [exp_kernel_wait()].
+#' @details The plan validates and captures its own kernel and baseline once.
+#'   Later edits to the original inputs do not change it. Every call still checks
+#'   the current component and changing arguments. Components are passed explicitly;
+#'   no current state, histories or random generator are stored or advanced.
+#'   Create a new plan when kernel parameters or baseline change. This experimental
+#'   numeric interface requires equal beta values within each row and does not
+#'   change the likelihood engine option or the existing event loops.
+#' @examples
+#' kernel <- exp_kernel_spec(.2, 1)
+#' plan <- exp_kernel_plan(kernel, mu = .3)
+#' component <- matrix(.1)
+#' dt <- plan$wait(component, residual = .7)
+#' next_state <- plan$step(component, dt, type = 1)
+#' next_state$after
+#' @export
+exp_kernel_plan <- function(kernel, mu) {
+  kernel <- as_exp_kernel(kernel)
+  mu <- exp_kernel_baseline(kernel, mu)
+  rates <- kernel$beta[, 1L]
+  plan <- new.env(parent = emptyenv())
+  plan$step <- function(component, dt, type = NULL, mark = 1, integrate = TRUE)
+    exp_kernel_step_checked(kernel, component, dt, type, mark, integrate, rates)
+  plan$wait <- function(component, residual) {
+    component <- exp_kernel_component(kernel, component)
+    exp_kernel_wait_checked(kernel, component, mu, residual, rates)
+  }
+  class(plan) <- "exp_kernel_plan"
+  lockEnvironment(plan, bindings = TRUE)
+  plan
 }

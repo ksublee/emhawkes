@@ -1,5 +1,9 @@
 # emhawkes 1.0.1.9000
 
+* Add `exp_kernel_plan()` to validate fixed numeric kernel parameters and
+  baseline once for repeated deterministic step/wait calculations. Changing
+  components and arguments are still checked; plans retain no event state or RNG.
+
 * Add deterministic `exp_kernel_step()` and `exp_kernel_wait()` interfaces for
   event-wise state updates and inversion of supplied residual targets. They
   support external FRPP simulation without replaying growing path prefixes;

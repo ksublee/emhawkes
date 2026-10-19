@@ -131,6 +131,22 @@ decay and integration. Signed components are retained. Waiting-time inversion
 requires admissible decreasing row sums; a finite total driver integral can
 produce an infinite waiting time when its baseline is zero.
 
+For repeated calculations with fixed parameters, prepare a reusable plan:
+
+```{r prepared-plan}
+plan <- exp_kernel_plan(kernel, mu)
+stopifnot(identical(candidates, plan$wait(component, c(.7, .9))))
+stopifnot(identical(next_state, plan$step(component, min(candidates), event)))
+```
+
+The plan captures a validated kernel and baseline once. Its `wait()` and `step()`
+functions still check the changing components and arguments. Components remain
+explicit inputs: the plan stores no event state, history or RNG. It is reusable
+across independent paths; create a new plan when parameters change. Editing the
+original specification does not change an existing plan. The plan's function
+bindings are locked. Older event-wise functions remain available with their
+existing checked input contracts.
+
 FRPP owns its residual-generation order, earliest-event selection, count paths,
 output histories and RNG handling. The event-wise API receives explicit targets
 and contains no model-specific residual law. Legacy Hawkes and FRPP event loops
