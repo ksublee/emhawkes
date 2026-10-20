@@ -1,0 +1,316 @@
+---
+title: "State-dependent impact models"
+description: "Hawkes flocking and bid-ask price models with state-dependent excitation and component resets."
+author: "Kyungsub Lee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+These examples use `impact` to make excitation depend on observed event counts
+or the current intensity components. Start with the
+[state-dependent baseline examples](state-dependent-baseline.html) for simpler
+state feedback. Each model below defines its own specification and simulated data.
+
+See the [examples overview](extended_example.html) for other model topics.
+
+```{r}
+library(emhawkes)
+```
+
+## Hawkes flocking model
+
+Here, $g$ denotes the additional excitation supplied by `impact`.
+It depends on the observed state and need not depend on the mark.
+In the Hawkes flocking model, the kernel components are
+$$
+\alpha = \begin{bmatrix}\alpha_{11} & \alpha_{12} & 0 & 0 \\\alpha_{12}& \alpha_{11} & 0 & 0 \\0 & 0 & \alpha_{33} & \alpha_{34} \\0 & 0 & \alpha_{34} & \alpha_{33} \end{bmatrix},
+$$
+$$
+g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_{\{C_1(t) < C_2(t)\}} \\
+0 & 0 & \alpha_{1n} 1_{\{C_1(t) > C_2(t)\}} & \alpha_{1w}1_{\{C_1(t) > C_2(t)\}} \\
+\alpha_{2w} 1_{\{C_2(t) < C_1(t)\}} & \alpha_{2n}1_{\{C_2(t) < C_1(t)\}} & 0 & 0 \\
+\alpha_{2n} 1_{\{C_2(t) > C_1(t)\}} & \alpha_{2w}1_{\{C_2(t) > C_1(t)\}} & 0 & 0 \end{bmatrix},
+$$
+
+where
+
+$$
+C_1(t) = N_1(t) - N_2(t), \quad C_2(t) = N_3(t) - N_4(t).
+$$
+For details, see [Systemic risk in market microstructure of crude oil and gasoline futures prices: A Hawkes flocking model approach](https://onlinelibrary.wiley.com/doi/full/10.1002/fut.22048).
+
+The `alpha` slot can contain a function that returns a matrix.
+In the following example, the function returns a $4\times4$ matrix with some entries fixed at zero.
+Only the parameters in `param` are estimated.
+For simulation, a fixed matrix and a function returning the same matrix give the same model.
+
+```{r, warning=FALSE}
+mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
+
+
+alpha <- function(param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, alpha34 = 0.4)){
+  matrix(c(param["alpha11"], param["alpha12"], 0, 0,
+           param["alpha12"], param["alpha11"], 0, 0,
+           0, 0, param["alpha33"], param["alpha34"],
+           0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
+}
+
+
+beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = TRUE)
+
+```
+
+The `impact` function below implements the model definition.
+Its `N` argument contains the counting process values, and `n` identifies the current event index.
+Include both arguments because the function uses them, along with `...` to accept other arguments supplied by the package.
+Use `N[n, "N1"]` to read one count directly, rather than extracting an entire column at every event.
+
+```{r}
+impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
+                   N=N, n=n, ...){
+
+  Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
+                  0, 0, param['alpha1n'], param['alpha1w'],
+                  param['alpha2w'], param['alpha2n'], 0, 0,
+                  param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
+
+  ind <- N[n,"N1"] - N[n,"N2"] > N[n,"N3"] - N[n,"N4"]
+
+  km <- matrix(c(!ind, !ind, !ind, !ind,
+                 ind, ind, ind, ind,
+                 ind, ind, ind, ind,
+                 !ind, !ind, !ind, !ind), nrow = 4, byrow = TRUE)
+
+  km * Psi
+}
+
+hspec_fl <- new("hspec",
+                mu = mu, alpha = alpha, beta = beta, impact = impact)
+hspec_fl
+```
+
+```{r}
+set.seed(1107)
+hr_fl <- hsim(hspec_fl, size=2000)
+summary(hr_fl)
+```
+
+```{r, warning=FALSE}
+fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
+summary(fit_fl)
+```
+
+This impact depends on observed event counts, so automatic selection uses the
+C++ likelihood with numerical differentiation. No Jacobian is needed; R still
+evaluates the impact.
+
+```{r flocking-engine}
+fit_diagnostics(fit_fl)$computation$engine
+```
+
+The same observed impact also supports automatic C++ intensity and residual replay.
+No Jacobian is needed; retain the fit's initial-state arguments.
+
+```{r flocking-replay}
+replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
+  inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
+  fit_initial_state(fit_fl)))
+c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
+```
+
+## Bid-ask price model
+
+This model describes bid and ask prices using a system of counting processes and their conditional intensities:
+
+$$
+N_t = \begin{bmatrix}
+N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
+\end{bmatrix},
+\quad
+\lambda_t =
+\begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \\ \lambda_3(t) \\ \lambda_4(t)
+\end{bmatrix}
+$$
+
+In the unmarked case, the changes in ask and bid prices are $N_1(t) - N_2(t)$ and $N_3(t) - N_4(t)$, respectively.
+The marked example below uses `Nc` to accumulate price changes.
+The midprice $p(t)$ is the average of the ask and bid prices, including their initial levels.
+
+The base intensity process is
+
+$$\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} $$
+
+where $L(t) \in \{0, 1, 2, \ldots\}$ measures the bid-ask spread above its minimum level, so $L(t)=0$ corresponds to the minimum spread.
+For details, see [Modeling bid and ask price dynamics with an extended Hawkes process and its empirical applications for high-frequency stock market data](https://academic.oup.com/jfec/article/21/4/1099/6513935?login=true).
+
+In the `mu` function below, `n` identifies the current event index, and `Nc` is used to calculate the spread level and midprice.
+
+```{r}
+# presumed initial bid and ask prices
+initial_ask_price <- 1250 #cents
+initial_bid_price <- 1150 #cents
+
+initial_level <- round((initial_ask_price - initial_bid_price) - 1)
+initial_mid_price <- (initial_bid_price + initial_ask_price) / 2
+
+mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
+
+  if(n == 1){
+
+    level <- initial_level
+    mid <- initial_mid_price
+
+  } else {
+
+    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+    ask <- initial_ask_price + (Nc[n-1,1] - Nc[n-1,2])
+    bid <- initial_bid_price + (Nc[n-1,3] - Nc[n-1,4])
+    mid <- (ask + bid) / 2
+
+  }
+
+  if(level <= 0){
+    matrix(c(param["mu1"], 0,
+             0, param["mu1"]), nrow = 4)
+  } else {
+    matrix(c(param["mu1"], param["zeta1"] * level / mid,
+             param["zeta1"]*level / mid, param["mu1"]), nrow = 4)
+
+  }
+
+}
+```
+
+In addition, the kernel is represented by
+
+$$h(t, u) =
+\begin{bmatrix} \alpha_{s1} & \alpha_{m} & \alpha_{s2} & 0 \\   \alpha_{w1} & \alpha_{n1}(u) & \alpha_{n1}(u) & \alpha_{w2} \\  \alpha_{w2} & \alpha_{n2}(u) & \alpha_{n2}(u) & \alpha_{w1} \\  0 & \alpha_{s2} & \alpha_{m} & \alpha_{s1} \\   \end{bmatrix},
+$$
+
+where
+
+$$
+\alpha_{n1}(u) = - \sum_{j=1}^4 \lambda_{2j}(u) + \xi \ell(u), \quad \alpha_{n2}(u) = - \sum_{j=1}^4 \lambda_{3j}(u) + \xi \ell(u),
+$$
+
+Here, $\xi \geq 0$ is a constant, and $\lambda_{ij}$ is a component of $\lambda_i$, defined by
+
+$$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
+
+The following code places the constant part of $h$ in `alpha` and the state-dependent part in `impact`.
+The `lambda_component_n` argument supplies the current pre-jump matrix of $\lambda_{ij}$ values.
+This avoids allocating a full intensity history when only the current state is needed.
+Individual components can be negative after a reset.
+The equal decay rates used here allow simulation as long as the sum of the components in each row remains nonnegative.
+
+```{r, warning=FALSE}
+
+alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
+                            alpha_w1=11, alpha_w2=7)){
+  matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 0,
+           param["alpha_w1"], 0, 0, param["alpha_w2"],
+           param["alpha_w2"], 0, 0, param["alpha_w1"],
+           0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
+}
+
+impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
+  if(n == 1){
+    level <-  initial_level
+    # mid <- initial_mid_price
+  } else {
+    level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
+    ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])
+    bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])
+    mid <- (ask + bid)/2
+  }
+
+  lambda_component_matrix <- lambda_component_n
+
+  l2 <- sum(lambda_component_matrix[2,]) # sum of second row
+  l3 <- sum(lambda_component_matrix[3,]) # sum of third row
+
+  im <- matrix(c(0, 0, 0, 0,
+                 0, -l2 + param["xi"]*level/mid, -l2 + param["xi"]*level/mid, 0,
+                 0, -l3 + param["xi"]*level/mid, -l3 + param["xi"]*level/mid, 0,
+                 0, 0, 0, 0), nrow = 4, byrow = TRUE)
+
+}
+
+beta <- matrix(rep(50, 16), nrow = 4, byrow=TRUE)
+
+rmark <- function(n=n, Nc=Nc, type, ...){
+  if(n == 1){
+    level <-  initial_level
+  } else {
+    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
+  }
+  if (type[n] == 2 | type[n] == 3){
+    min(level,  rgeom(1, p=0.65) + 1)
+  } else {
+    rgeom(1, p=0.65) + 1
+  }
+}
+
+
+h_ba <- new("hspec", mu = mu, alpha = alpha, beta = beta, impact=impact, rmark = rmark)
+h_ba
+```
+
+```{r}
+set.seed(1107)
+hr_ba <- hsim(h_ba, size=1000, lambda_component0 = matrix(rep(1, 16), 4))
+summary(hr_ba)
+```
+
+The following likelihood calculation and fit do not estimate the mark distribution because no `dmark` function is supplied.
+
+```{r}
+logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+       mark = hr_ba$mark, Nc = hr_ba$Nc,
+       lambda_component0 = matrix(rep(1, 16), 4))
+```
+
+```{r, warning=FALSE}
+mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
+               mark = hr_ba$mark,
+               lambda_component0 = matrix(rep(1, 16), 4),
+               final_hessian = "stable")
+summary(mle_ba)
+```
+
+Automatic selection uses the C++ likelihood for this observed baseline and
+sequential impact with numerical differentiation. The impact reads the current
+state before its jump. No Jacobian is required. Inspect the saved engine record
+to confirm which calculation was used and whether automatic selection fell back to R.
+
+This example needs only the current component matrix, so it uses
+`lambda_component_n`. Requesting `lambda_component` also stores the full history.
+If a callback retains histories beyond its call, preserving those snapshots can
+copy the history repeatedly. Cumulative allocation can then grow quadratically
+with event count. This cost is
+repeated for each likelihood evaluation during numerical optimization. Peak live
+memory can be much smaller because old copies are reclaimed.
+
+```{r bid-ask-engine}
+fit_diagnostics(mle_ba)$computation$engine
+```
+
+Replay the fitted model with the same initialization and observations. Automatic
+selection also uses C++ for its likelihood, intensity paths, and residuals.
+
+```{r bid-ask-replay}
+replayed_ba <- do.call(logLik, c(list(object = fitted_hspec(mle_ba),
+  inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, mark = hr_ba$mark,
+  infer = TRUE), fit_initial_state(mle_ba)))
+stopifnot(isTRUE(all.equal(unname(replayed_ba$loglikelihood),
+  as.numeric(mle_ba$maximum), tolerance = 1e-8)))
+```
+
+For the optional analytic fit, see the
+[Bid-ask Jacobians and analytic gradient](https://ksublee.github.io/emhawkes/articles/computation.html#bid-ask-analytic-gradient).
+That section continues from this example and gives the complete derivatives and fit.
+Numerical differentiation remains the default.

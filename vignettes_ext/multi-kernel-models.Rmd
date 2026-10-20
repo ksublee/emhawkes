@@ -1,0 +1,243 @@
+---
+title: "Multi-kernel models and shared parameters"
+description: "Multiple exponential kernels, event-to-column mappings and shared model parameters."
+author: "Kyungsub Lee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+These examples combine several exponential kernels and share parameters across
+component functions. Each model defines its own specification and simulated data.
+
+See the [examples overview](extended_example.html) for other model topics.
+
+```{r}
+library(emhawkes)
+```
+
+## Multi-kernel model
+
+A multi-kernel Hawkes model requires `type_col_map` in its `hspec` object.
+This list maps each event type to the corresponding columns of the kernel parameter matrices.
+Consider a bivariate multi-kernel model:
+
+$$
+\lambda_t = \mu + \int_{-\infty}^{t} h(t-u) d N(u)
+$$
+
+where
+
+$$
+h = \sum_{k=1}^{K} h_k, \quad
+h_k (t) = \alpha_k \circ \begin{bmatrix}
+e^{-\beta_{k11} t} & e^{-\beta_{k12} t} \\
+e^{-\beta_{k21} t} & e^{-\beta_{k22} t}
+\end{bmatrix}
+$$
+
+Here, $k$ indexes the kernels, $\alpha_k$ is the excitation matrix for kernel $k$, and $\circ$ denotes elementwise multiplication.
+
+For a bivariate Hawkes model with two kernels, the intensity processes are
+
+$$
+ \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \end{bmatrix} =
+\begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix} + \int_{-\infty}^{t} \begin{bmatrix}
+\alpha_{111} e^{-\beta_{111}(t-s)} & \alpha_{112} e^{-\beta_{112}(t-s)} \\
+\alpha_{121}e^{-\beta_{121}(t-s)} & \alpha_{122}e^{-\beta_{122}(t-s)}
+\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}
++ \int_{-\infty}^{t} \begin{bmatrix}
+\alpha_{211} e^{-\beta_{211}(t-s)} & \alpha_{212} e^{-\beta_{212}(t-s)} \\
+\alpha_{221}e^{-\beta_{221}(t-s)} & \alpha_{222}e^{-\beta_{222}(t-s)}
+\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}.
+$$
+
+The parameter matrices are
+
+$$
+ \alpha = \begin{bmatrix} \alpha_{111} & \alpha_{112} & \alpha_{211} & \alpha_{212} \\ \alpha_{121} & \alpha_{122} & \alpha_{221} & \alpha_{222}
+\end{bmatrix}, \quad
+ \beta = \begin{bmatrix} \beta_{111} & \beta_{112} & \beta_{211} & \beta_{212} \\ \beta_{121} & \beta_{122} & \beta_{221} & \beta_{222}
+\end{bmatrix} \quad
+$$
+
+The mapping must specify which columns correspond to each counting process $N_i$.
+
+```{r}
+mu <- matrix(c(0.02, 0.02), nrow=2)
+
+beta_1 <- matrix(rep(10, 4), nrow=2)
+beta_2 <- matrix(rep(1, 4), nrow=2)
+beta  <- cbind(beta_1, beta_2)
+
+alpha_1 <- matrix(c(3, 2,
+                    2, 3), nrow=2, byrow=TRUE)
+alpha_2 <- matrix(c(0.3, 0.2,
+                    0.2, 0.3), nrow=2, byrow=TRUE)
+alpha <- cbind(alpha_1, alpha_2)
+
+print(alpha)
+```
+
+The first and third columns of $\alpha$ correspond to $N_1$, and the second and fourth columns correspond to $N_2$.
+Thus, define `type_col_map` as follows:
+
+```{r}
+type_col_map <- list(c(1,3),  # columns for dN1
+                     c(2,4))  # columns for dN2
+type_col_map
+```
+
+The entry `type_col_map[[i]]` lists the columns associated with event type `i`.
+Rows of the intensity matrix identify event types.
+After a type `i` event, `type_col_map[[i]]` selects the kernel columns to update.
+Use this mapping to extract the corresponding parameters:
+
+```{r}
+cat("Part of alpha associated with N1: \n")
+alpha[, type_col_map[[1]]]  # associated with N1
+cat("Part of alpha associated with N2: \n")
+alpha[, type_col_map[[2]]]  # associated with N2
+
+cat("Part of beta associated with N1: \n")
+beta[, type_col_map[[1]]]  # associated with N1
+cat("Part of beta associated with N2: \n")
+beta[, type_col_map[[2]]]  # associated with N2
+```
+
+```{r}
+h <- new("hspec", mu = mu, alpha = alpha, beta=beta, type_col_map = type_col_map)
+h
+```
+
+For this multi-kernel model, `lambda_component0` must be supplied for both simulation and estimation.
+
+```{r}
+set.seed(620)
+lambda_component0_mk <- matrix(seq(1, 1.7, 0.1), nrow = 2)
+res_mk <- hsim(h, size = 3000, lambda_component0 = lambda_component0_mk)
+res_mk
+```
+
+```{r, warning=FALSE}
+fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
+               lambda_component0 = lambda_component0_mk,
+               final_hessian = "stable")
+summary(fit_mk)
+```
+
+This example explicitly requests the checked final Hessian. The original estimate is
+retained, but its score calls for tighter optimization and multiple starting
+values. Kernel starting order and the fixed initial state can affect the selected
+local solution.
+
+```{r multi-kernel-curvature}
+fit_diagnostics(fit_mk)[c("status", "newton_decrement", "warnings")]
+```
+
+Reconstruction retains `type_col_map` and the supplied initial intensity matrix.
+Each kernel uses its own decay rate in the likelihood and residual integrals.
+The inferred likelihood agrees with the fitted likelihood even though decay
+rates differ within each row.
+
+```{r multi-kernel-reconstruction, message=FALSE}
+estimated_mk <- fitted_hspec(fit_mk)
+initial_mk <- fit_initial_state(fit_mk)
+estimated_mk@type_col_map
+initial_mk$lambda_component0
+inferred_mk <- do.call(logLik, c(list(object = estimated_mk,
+  inter_arrival = res_mk$inter_arrival, type = res_mk$type, infer = TRUE), initial_mk))
+c(fitted = as.numeric(logLik(fit_mk)), restored = inferred_mk$loglikelihood)
+all.equal(as.numeric(logLik(fit_mk)), inferred_mk$loglikelihood)
+```
+
+## Synchronized intensity model
+
+This is a two-kernel model with the following reparameterization.
+
+$$
+ \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
+\theta/(1 - \kappa)/2 - \tilde\theta/(1 + \kappa)/2 \end{bmatrix}, \quad \theta = (\theta^- + \theta^+)/2,\quad \tilde\theta=(\theta^- -\theta^+)/2
+$$
+
+$$
+\alpha = \begin{bmatrix} \zeta & \tilde\zeta & \zeta & -\tilde\zeta \\
+\zeta & -\tilde\zeta & \zeta & \tilde\zeta
+\end{bmatrix}, \quad \zeta = (\eta + \nu) / 2, \quad \tilde \zeta = (\eta - \nu)/ 2
+$$
+
+$$
+\beta = \begin{bmatrix} \beta_1 & \beta_2 & \beta_1 & \beta_2 \\
+\beta_1 & \beta_2 & \beta_1 & \beta_2 \end{bmatrix}, \quad \beta_1 = \beta(1 - \kappa), \quad \beta_2 = \beta(1 + \kappa)
+$$
+
+To implement this reparameterization, define `mu`, `alpha`, and `beta` as functions.
+Each function takes a named parameter vector, `param`, as its first argument.
+
+```{r}
+mu <- function(param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)){
+  theta    <- (param["theta_n"] + param["theta_p"])/2
+  theta_tl <- (param["theta_n"] - param["theta_p"])/2
+  matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
+           theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
+}
+
+alpha <- function(param = c(eta = 5, nu = 3)){
+  zeta    <- (param["eta"] + param["nu"])/2
+  zeta_tl <- (param["eta"] - param["nu"])/2
+  matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
+           zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
+}
+
+beta <- function(param = c(beta = 12, kappa = 0.12)){
+  beta1 <- param["beta"] * (1 - param["kappa"])
+  beta2 <- param["beta"] * (1 + param["kappa"])
+  matrix(c(beta1, beta2, beta1, beta2,
+           beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
+}
+
+type_col_map <- list(c(1,2), c(3,4))
+
+h_sy <- new("hspec", mu = mu, alpha = alpha, beta = beta, type_col_map = type_col_map)
+h_sy
+
+```
+
+```{r}
+set.seed(1107)
+# run simulation
+res_sy <- hsim(h_sy, size = 2000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
+summary(res_sy)
+```
+
+The parameters to estimate and their initial values are taken from the default `param` vectors.
+Parameters with the same name are shared across functions.
+For example, `kappa` appears in both `mu` and `beta`, but only one `kappa` is estimated.
+
+```{r, warning=FALSE}
+fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
+               type=res_sy$type,
+               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
+               final_hessian = "stable")
+summary(fit_sy)
+```
+
+The restored component functions use the estimated defaults.
+Both functions retain the same estimated `kappa`. Their parameter-only interface
+also allows automatic C++ likelihood and residual replay with the saved initial state.
+
+```{r shared-function-parameters}
+estimated_sy <- fitted_hspec(fit_sy)
+c(mu = eval(formals(estimated_sy@mu)$param)[["kappa"]],
+  beta = eval(formals(estimated_sy@beta)$param)[["kappa"]])
+```
+
+```{r shared-function-replay}
+replayed_sy <- do.call(logLik, c(list(object = estimated_sy,
+  inter_arrival = res_sy$inter_arrival, type = res_sy$type, infer = TRUE),
+  fit_initial_state(fit_sy)))
+c(fitted = as.numeric(logLik(fit_sy)), replayed = replayed_sy$loglikelihood)
+```

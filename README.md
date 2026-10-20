@@ -48,7 +48,7 @@ an initial state. These components exclude the baseline intensity.
 
 - [Get started](https://ksublee.github.io/emhawkes/articles/example.html): the basic workflow, input data and a first diagnostic.
 - [Fitting and inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html): parameter sharing, initial states, fitted models, residuals and standard errors.
-- [Extended examples](https://ksublee.github.io/emhawkes/articles/extended_example.html): marked, state-dependent and multi-kernel models, with an FRPP migration note.
+- [Examples overview](https://ksublee.github.io/emhawkes/articles/extended_example.html): separate articles on multi-kernel models, marks, state-dependent baselines (Fosset spread and Hawkes/M/infinity queue) and state-dependent impact (flocking and bid-ask prices), with an FRPP migration note.
 - [FRPP examples](https://ksublee.github.io/frpp/articles/frpp-examples.html): custom residual laws in the separate frpp package; simple cases remain supported in emhawkes.
 - [Computation](https://ksublee.github.io/emhawkes/articles/computation.html): R/C++ engines, gradients, Jacobians and performance.
 - [Reference](https://ksublee.github.io/emhawkes/reference/index.html) and [News](https://ksublee.github.io/emhawkes/news/index.html): function details and version changes.

@@ -11,7 +11,17 @@ navbar:
       href: articles/example.html
     examples:
       text: Examples
-      href: articles/extended_example.html
+      menu:
+      - text: Overview
+        href: articles/extended_example.html
+      - text: Multi-kernel models
+        href: articles/multi-kernel-models.html
+      - text: Marked models
+        href: articles/marked-models.html
+      - text: State-dependent baseline
+        href: articles/state-dependent-baseline.html
+      - text: State-dependent impact
+        href: articles/state-dependent-impact.html
     guides:
       text: Guides
       menu:
@@ -30,9 +40,13 @@ articles:
   contents:
   - example
 - title: Examples
-  desc: Marked, state-dependent and multi-kernel models, with an FRPP migration note.
+  desc: Examples organized by kernel structure, marks and state dependence.
   contents:
   - articles/extended_example
+  - articles/multi-kernel-models
+  - articles/marked-models
+  - articles/state-dependent-baseline
+  - articles/state-dependent-impact
 - title: Guides
   desc: Estimation, interpretation and calculation options.
   contents:

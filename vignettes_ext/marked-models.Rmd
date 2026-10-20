@@ -1,0 +1,150 @@
+---
+title: "Marked models"
+description: "Mark-dependent excitation, linear impact and estimation of mark distributions."
+author: "Kyungsub Lee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This article introduces mark-dependent excitation through `impact` and `eta`,
+then estimates a mark distribution using `dmark`.
+
+See the [examples overview](extended_example.html) for other model topics.
+
+```{r}
+library(emhawkes)
+```
+
+The package supports the following family of extended multivariate marked Hawkes models:
+
+$$
+ \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u, z)M(du \times dz)
+$$
+
+where the kernel $h$ is
+
+$$
+h(t, u, z) = (\alpha + g(t, z))\Gamma(t),
+$$
+
+The components are:
+
+-   $\alpha$ is a constant matrix.
+
+-   $g(t, z)$ describes additional effects on the intensities and may depend on the mark or the history of the underlying processes.
+
+-   $\Gamma(t)$ is a matrix of exponential decay terms, with $\Gamma_{ij}(t) = e^{-\beta_{ij}t}$.
+
+-   $M$ is a vector of random measures on the product of the time and mark spaces.
+
+## Linear impact model
+
+In the linear impact model,
+
+$$
+ g(t, z) = \eta (z-1).
+$$
+
+The `impact` function represents $g(t, z)$, the additional effect of a mark on future intensity.
+For details, see [Marked Hawkes process modeling of price dynamics and volatility estimation](https://www.sciencedirect.com/science/article/abs/pii/S0927539816300810).
+
+Its first argument, `param`, contains the model parameters.
+Additional arguments, such as `n` and `mark`, provide information about the model or realized path.
+Include `...` to accept other arguments supplied by the package.
+The `rmark` function generates marks during simulation.
+
+```{r, warning=FALSE}
+mu <- matrix(c(0.15, 0.15), nrow=2)
+alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=T)
+beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2)
+rmark <- function(param = c(p=0.65), ...){
+  rgeom(1, p=param[1]) + 1
+}
+
+impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
+  ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
+  ma * matrix( rep(param["eta1"], 4), nrow=2)
+}
+
+hi <- new("hspec", mu=mu, alpha=alpha, beta=beta,
+          rmark = rmark,
+          impact=impact)
+hi
+```
+
+```{r, warning=FALSE}
+set.seed(1107)
+res_impact <- hsim(hi, size=1000, lambda_component0 = matrix(rep(0.1,4), nrow=2))
+summary(res_impact)
+```
+
+```{r, warning=FALSE}
+fit <- hfit(hi,
+            inter_arrival = res_impact$inter_arrival,
+            type = res_impact$type,
+            mark = res_impact$mark,
+            lambda_component0 = matrix(rep(0.1,4), nrow=2))
+
+summary(fit)
+```
+
+For linear mark effects, specify the `eta` slot directly.
+The resulting intensity process is
+
+$$
+ \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(du \times dz).
+$$
+
+```{r}
+
+rmark <- function(param = c(p=0.65), ...){
+  rgeom(1, p=param[1]) + 1
+}
+
+h <-  new("hspec", mu=0.15, alpha=0.7, beta=1.6, eta=0.3,
+          rmark = rmark)
+h
+```
+
+```{r}
+set.seed(1107)
+res <- hsim(h, size = 1000)
+summary(res)
+```
+
+```{r, warning=FALSE}
+fit <- hfit(h,
+            inter_arrival = res$inter_arrival,
+            type = res$type,
+            mark = res$mark)
+summary(fit)
+```
+
+To estimate the parameters of the mark distribution as well, supply its density or probability mass function in the `dmark` slot.
+
+```{r, warning=FALSE}
+h_md <- h
+
+h_md@dmark <- function(param = c(p = 0.1), n=n, mark=mark, ...){
+   dgeom(mark[n] - 1, prob = param["p"])
+}
+
+mle_md <- hfit(h_md,
+               inter_arrival = res$inter_arrival, type = res$type, mark = res$mark)
+summary(mle_md)
+```
+
+The density and generator use the same parameter name, `p`.
+Reconstruction updates `rmark` with the value estimated through `dmark`, so new
+simulations use the fitted mark distribution. Generator parameters that do not
+match estimated coefficient names keep their original defaults.
+
+```{r fitted-mark-generator}
+estimated_md <- fitted_hspec(mle_md)
+c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
+  generator = eval(formals(estimated_md@rmark)$param)[["p"]])
+```

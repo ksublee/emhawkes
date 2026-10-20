@@ -1,792 +1,94 @@
 ---
-title: "Extended examples for the emhawkes package"
+title: "Extended examples"
+description: "Choose examples by kernel structure, marks, state-dependent baselines or state-dependent impact."
 author: "Kyungsub Lee"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
+These examples extend the basic univariate and bivariate workflow in
+[Get started](example.html). Choose a topic below. Each article loads emhawkes
+and defines its own model specifications and simulated data; the articles can
+be run independently.
 
-These examples cover models beyond the basic univariate and bivariate workflow.
-Read [Get started](https://ksublee.github.io/emhawkes/articles/example.html) first.
-Each model section defines its own specification and simulated data.
+| Topic | Examples | Main features |
+|:------|:---------|:--------------|
+| [Multi-kernel models](multi-kernel-models.html) | Multi-kernel and synchronized intensity | Multiple decay scales, `type_col_map`, shared parameters |
+| [Marked models](marked-models.html) | Linear impact | `impact`, `eta`, `rmark`, `dmark` |
+| [State-dependent baseline](state-dependent-baseline.html) | Fosset spread and Hawkes/M/infinity queue | State from event counts, function-valued `mu` |
+| [State-dependent impact](state-dependent-impact.html) | Hawkes flocking and bid-ask prices | State-dependent excitation, `lambda_component_n` |
+
+The baseline examples are a useful starting point for state-dependent models.
+The impact examples then introduce event-dependent shocks and adjustments to
+accumulated intensity components.
+
+## Multi-kernel models {#more-complex-models}
+
+### Multi-kernel model
+
+[Define and fit a model with multiple exponential kernels](multi-kernel-models.html#multi-kernel-model).
+Use `type_col_map` to associate kernel columns with event types.
+
+### Synchronized intensity model
+
+[Share parameters across component functions](multi-kernel-models.html#synchronized-intensity-model).
+This two-kernel model uses named parameters shared by `mu` and `beta`.
+
+## Marked models {#extended-models}
+
+### Linear impact model
+
+[Add mark-dependent excitation and estimate the mark distribution](marked-models.html#linear-impact-model).
+The examples cover a general `impact` function and the linear `eta` interface.
+
+## State-dependent baseline
+
+### Fosset's state-dependent spread model {#fosset-spread-model}
+
+[Simulate and fit spread widening and narrowing](state-dependent-baseline.html#fosset-spread-model).
+The narrowing baseline becomes zero at the minimum spread.
+
+### A Hawkes/M/infinity queue: website visits and departures {#hawkes-infinite-server}
+
+[Model visitor arrivals and departures](state-dependent-baseline.html#hawkes-infinite-server).
+Hawkes arrivals increase the population, and each visitor has an exponential departure time.
+
+## State-dependent impact
+
+### Hawkes flocking model
+
+[Make excitation depend on relative counting-process levels](state-dependent-impact.html#hawkes-flocking-model).
+The `impact` function reads the observed event counts.
+
+### Bid-ask price model
+
+[Combine state-dependent baseline and component adjustments](state-dependent-impact.html#bid-ask-price-model).
+The model uses marked price changes and the current `lambda_component_n` matrix.
+
+## Related guides
 
 <span id="basic-hawkes-model"></span>
 <span id="univariate-hawkes-process"></span>
 <span id="bivariate-hawkes-model"></span>
+
+- [Get started](example.html): basic univariate and bivariate models.
+
 <span id="parameter-settings"></span>
 <span id="observed-data-and-initial-state"></span>
+
+- [Fitting and inference](fitting-and-inference.html#parameter-settings): parameter sharing, observations and initial states.
+
 <span id="calculation-engines"></span>
+
+- [Computation](computation.html#calculation-engines): R/C++ engines and optional analytic derivatives.
+
 <span id="residual-process"></span>
 
-For background and shared conventions, see:
-
-- [Univariate](https://ksublee.github.io/emhawkes/articles/example.html#univariate-hawkes-process) and [bivariate](https://ksublee.github.io/emhawkes/articles/example.html#bivariate-hawkes-model) basics: Get started.
-- [Parameter settings](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#parameter-settings) and [observed data and initial state](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#observed-data-and-initial-state): Fitting and inference.
-- [Calculation engines](https://ksublee.github.io/emhawkes/articles/computation.html#calculation-engines): Computation.
-- [Residual diagnostics](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html#residual-process): Fitting and inference.
-
-```{r}
-library(emhawkes)
-```
-
-## More complex models
-
-### Multi-kernel model
-
-A multi-kernel Hawkes model requires `type_col_map` in its `hspec` object.
-This list maps each event type to the corresponding columns of the kernel parameter matrices.
-Consider a bivariate multi-kernel model:
-
-$$
-\lambda_t = \mu + \int_{-\infty}^{t} h(t-u) d N(u)
-$$
-
-where
-
-$$
-h = \sum_{k=1}^{K} h_k, \quad
-h_k (t) = \alpha_k \circ \begin{bmatrix}
-e^{-\beta_{k11} t} & e^{-\beta_{k12} t} \\
-e^{-\beta_{k21} t} & e^{-\beta_{k22} t}
-\end{bmatrix}
-$$
-
-Here, $k$ indexes the kernels, $\alpha_k$ is the excitation matrix for kernel $k$, and $\circ$ denotes elementwise multiplication.
-
-For a bivariate Hawkes model with two kernels, the intensity processes are
-
-$$
- \begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \end{bmatrix} = 
-\begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix} + \int_{-\infty}^{t} \begin{bmatrix}
-\alpha_{111} e^{-\beta_{111}(t-s)} & \alpha_{112} e^{-\beta_{112}(t-s)} \\
-\alpha_{121}e^{-\beta_{121}(t-s)} & \alpha_{122}e^{-\beta_{122}(t-s)}
-\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix} 
-+ \int_{-\infty}^{t} \begin{bmatrix}
-\alpha_{211} e^{-\beta_{211}(t-s)} & \alpha_{212} e^{-\beta_{212}(t-s)} \\
-\alpha_{221}e^{-\beta_{221}(t-s)} & \alpha_{222}e^{-\beta_{222}(t-s)}
-\end{bmatrix} \begin{bmatrix} d N_1(s) \\ dN_2(s) \end{bmatrix}.
-$$
-
-The parameter matrices are
-
-$$
- \alpha = \begin{bmatrix} \alpha_{111} & \alpha_{112} & \alpha_{211} & \alpha_{212} \\ \alpha_{121} & \alpha_{122} & \alpha_{221} & \alpha_{222}
-\end{bmatrix}, \quad
- \beta = \begin{bmatrix} \beta_{111} & \beta_{112} & \beta_{211} & \beta_{212} \\ \beta_{121} & \beta_{122} & \beta_{221} & \beta_{222}
-\end{bmatrix} \quad
-$$
-
-The mapping must specify which columns correspond to each counting process $N_i$.
-
-```{r}
-mu <- matrix(c(0.02, 0.02), nrow=2)
-      
-beta_1 <- matrix(rep(10, 4), nrow=2) 
-beta_2 <- matrix(rep(1, 4), nrow=2)
-beta  <- cbind(beta_1, beta_2)
-      
-alpha_1 <- matrix(c(3, 2,
-                    2, 3), nrow=2, byrow=TRUE)
-alpha_2 <- matrix(c(0.3, 0.2,
-                    0.2, 0.3), nrow=2, byrow=TRUE)
-alpha <- cbind(alpha_1, alpha_2)
-
-print(alpha)
-```
-
-The first and third columns of $\alpha$ correspond to $N_1$, and the second and fourth columns correspond to $N_2$.
-Thus, define `type_col_map` as follows:
-
-```{r}
-type_col_map <- list(c(1,3),  # columns for dN1
-                     c(2,4))  # columns for dN2
-type_col_map
-```
-
-The entry `type_col_map[[i]]` lists the columns associated with event type `i`.
-Rows of the intensity matrix identify event types.
-After a type `i` event, `type_col_map[[i]]` selects the kernel columns to update.
-Use this mapping to extract the corresponding parameters:
-
-```{r}
-cat("Part of alpha associated with N1: \n")
-alpha[, type_col_map[[1]]]  # associated with N1
-cat("Part of alpha associated with N2: \n")
-alpha[, type_col_map[[2]]]  # associated with N2
-
-cat("Part of beta associated with N1: \n")
-beta[, type_col_map[[1]]]  # associated with N1
-cat("Part of beta associated with N2: \n")
-beta[, type_col_map[[2]]]  # associated with N2
-```
-
-```{r}
-h <- new("hspec", mu = mu, alpha = alpha, beta=beta, type_col_map = type_col_map)
-h
-```
-
-For this multi-kernel model, `lambda_component0` must be supplied for both simulation and estimation.
-
-```{r}
-set.seed(620)
-lambda_component0_mk <- matrix(seq(1, 1.7, 0.1), nrow = 2)
-res_mk <- hsim(h, size = 3000, lambda_component0 = lambda_component0_mk)
-res_mk
-```
-
-```{r, warning=FALSE}
-fit_mk <- hfit(h, res_mk$inter_arrival, res_mk$type,
-               lambda_component0 = lambda_component0_mk,
-               final_hessian = "stable")
-summary(fit_mk)
-```
-
-This example explicitly requests the checked final Hessian. The original estimate is
-retained, but its score calls for tighter optimization and multiple starting
-values. Kernel starting order and the fixed initial state can affect the selected
-local solution.
-
-```{r multi-kernel-curvature}
-fit_diagnostics(fit_mk)[c("status", "newton_decrement", "warnings")]
-```
-
-Reconstruction retains `type_col_map` and the supplied initial intensity matrix.
-Each kernel uses its own decay rate in the likelihood and residual integrals.
-The inferred likelihood agrees with the fitted likelihood even though decay
-rates differ within each row.
-
-```{r multi-kernel-reconstruction, message=FALSE}
-estimated_mk <- fitted_hspec(fit_mk)
-initial_mk <- fit_initial_state(fit_mk)
-estimated_mk@type_col_map
-initial_mk$lambda_component0
-inferred_mk <- do.call(logLik, c(list(object = estimated_mk,
-  inter_arrival = res_mk$inter_arrival, type = res_mk$type, infer = TRUE), initial_mk))
-c(fitted = as.numeric(logLik(fit_mk)), restored = inferred_mk$loglikelihood)
-all.equal(as.numeric(logLik(fit_mk)), inferred_mk$loglikelihood)
-```
-
-### Synchronized intensity model
-
-This is a two-kernel model with the following reparameterization.
-
-$$
- \mu = \begin{bmatrix} \theta/(1 - \kappa)/2 + \tilde\theta/(1 + \kappa)/2 \\
-\theta/(1 - \kappa)/2 - \tilde\theta/(1 + \kappa)/2 \end{bmatrix}, \quad \theta = (\theta^- + \theta^+)/2,\quad \tilde\theta=(\theta^- -\theta^+)/2
-$$
-
-$$
-\alpha = \begin{bmatrix} \zeta & \tilde\zeta & \zeta & -\tilde\zeta \\
-\zeta & -\tilde\zeta & \zeta & \tilde\zeta
-\end{bmatrix}, \quad \zeta = (\eta + \nu) / 2, \quad \tilde \zeta = (\eta - \nu)/ 2 
-$$
-
-$$
-\beta = \begin{bmatrix} \beta_1 & \beta_2 & \beta_1 & \beta_2 \\
-\beta_1 & \beta_2 & \beta_1 & \beta_2 \end{bmatrix}, \quad \beta_1 = \beta(1 - \kappa), \quad \beta_2 = \beta(1 + \kappa)
-$$
-
-To implement this reparameterization, define `mu`, `alpha`, and `beta` as functions.
-Each function takes a named parameter vector, `param`, as its first argument.
-
-```{r}
-mu <- function(param = c(theta_p = 0.15, theta_n = 0.21, kappa = 0.12)){
-  theta    <- (param["theta_n"] + param["theta_p"])/2
-  theta_tl <- (param["theta_n"] - param["theta_p"])/2
-  matrix(c(theta/2/(1 - param["kappa"]) + theta_tl/2/(1 + param["kappa"]),
-           theta/2/(1 - param["kappa"]) - theta_tl/2/(1 + param["kappa"])), nrow=2)
-}
-
-alpha <- function(param = c(eta = 5, nu = 3)){
-  zeta    <- (param["eta"] + param["nu"])/2
-  zeta_tl <- (param["eta"] - param["nu"])/2
-  matrix(c(zeta, zeta_tl, zeta, -zeta_tl,
-           zeta, -zeta_tl, zeta, zeta_tl), nrow=2, byrow=TRUE)
-}
-
-beta <- function(param = c(beta = 12, kappa = 0.12)){
-  beta1 <- param["beta"] * (1 - param["kappa"])
-  beta2 <- param["beta"] * (1 + param["kappa"])
-  matrix(c(beta1, beta2, beta1, beta2,
-           beta1, beta2, beta1, beta2), nrow = 2, byrow = TRUE)
-}
-
-type_col_map <- list(c(1,2), c(3,4))
-
-h_sy <- new("hspec", mu = mu, alpha = alpha, beta = beta, type_col_map = type_col_map)
-h_sy
-
-```
-
-```{r}
-set.seed(1107)
-# run simulation
-res_sy <- hsim(h_sy, size = 2000, lambda_component0 = matrix(rep(1, 2 * 4), nrow=2))
-summary(res_sy)
-```
-
-The parameters to estimate and their initial values are taken from the default `param` vectors.
-Parameters with the same name are shared across functions.
-For example, `kappa` appears in both `mu` and `beta`, but only one `kappa` is estimated.
-
-```{r, warning=FALSE}
-fit_sy <- hfit(h_sy, inter_arrival=res_sy$inter_arrival,
-               type=res_sy$type,
-               lambda_component0 = matrix(rep(1, 2 * 4), nrow=2),
-               final_hessian = "stable")
-summary(fit_sy)
-```
-
-The restored component functions use the estimated defaults.
-Both functions retain the same estimated `kappa`. Their parameter-only interface
-also allows automatic C++ likelihood and residual replay with the saved initial state.
-
-```{r shared-function-parameters}
-estimated_sy <- fitted_hspec(fit_sy)
-c(mu = eval(formals(estimated_sy@mu)$param)[["kappa"]],
-  beta = eval(formals(estimated_sy@beta)$param)[["kappa"]])
-```
-
-```{r shared-function-replay}
-replayed_sy <- do.call(logLik, c(list(object = estimated_sy,
-  inter_arrival = res_sy$inter_arrival, type = res_sy$type, infer = TRUE),
-  fit_initial_state(fit_sy)))
-c(fitted = as.numeric(logLik(fit_sy)), replayed = replayed_sy$loglikelihood)
-```
-
-## Extended models
-
-The package supports the following family of extended multivariate marked Hawkes models:
-
-$$
- \lambda(t) = \mu + \int_{(-\infty,t)\times E} h(t, u, z)M(du \times dz)
-$$
-
-where the kernel $h$ is
-
-$$
-h(t, u, z) = (\alpha + g(t, z))\Gamma(t),
-$$
-
-The components are:
-
--   $\alpha$ is a constant matrix.
-
--   $g(t, z)$ describes additional effects on the intensities and may depend on the mark or the history of the underlying processes.
-
--   $\Gamma(t)$ is a matrix of exponential decay terms, with $\Gamma_{ij}(t) = e^{-\beta_{ij}t}$.
-
--   $M$ is a vector of random measures on the product of the time and mark spaces.
-
-### Linear impact model
-
-In the linear impact model,
-
-$$
- g(t, z) = \eta (z-1).
-$$
-
-The `impact` function represents $g(t, z)$, the additional effect of a mark on future intensity.
-For details, see [Marked Hawkes process modeling of price dynamics and volatility estimation](https://www.sciencedirect.com/science/article/abs/pii/S0927539816300810).
-
-Its first argument, `param`, contains the model parameters.
-Additional arguments, such as `n` and `mark`, provide information about the model or realized path.
-Include `...` to accept other arguments supplied by the package.
-The `rmark` function generates marks during simulation.
-
-```{r, warning=FALSE}
-mu <- matrix(c(0.15, 0.15), nrow=2)
-alpha <- matrix(c(0.75, 0.6, 0.6, 0.75), nrow=2, byrow=T)
-beta <- matrix(c(2.6, 2.6, 2.6, 2.6), nrow=2)
-rmark <- function(param = c(p=0.65), ...){
-  rgeom(1, p=param[1]) + 1
-}
-
-impact <- function(param = c(eta1=0.2), alpha, n, mark, ...){
-  ma <- matrix(rep(mark[n]-1, 4), nrow = 2)
-  ma * matrix( rep(param["eta1"], 4), nrow=2)
-}
-
-hi <- new("hspec", mu=mu, alpha=alpha, beta=beta,
-          rmark = rmark,
-          impact=impact)
-hi
-```
-
-```{r, warning=FALSE}
-set.seed(1107)
-res_impact <- hsim(hi, size=1000, lambda_component0 = matrix(rep(0.1,4), nrow=2))
-summary(res_impact)
-```
-
-```{r, warning=FALSE}
-fit <- hfit(hi, 
-            inter_arrival = res_impact$inter_arrival,
-            type = res_impact$type,
-            mark = res_impact$mark,
-            lambda_component0 = matrix(rep(0.1,4), nrow=2))
-
-summary(fit)
-```
-
-For linear mark effects, specify the `eta` slot directly.
-The resulting intensity process is
-
-$$
- \lambda(t) = \mu + \int_{(-\infty, t)\times E} (\alpha + \eta (z-1)) e^{-\beta(t-u)}  M(du \times dz).
-$$
-
-```{r}
-
-rmark <- function(param = c(p=0.65), ...){
-  rgeom(1, p=param[1]) + 1
-}
-
-h <-  new("hspec", mu=0.15, alpha=0.7, beta=1.6, eta=0.3,
-          rmark = rmark)
-h
-```
-
-```{r}
-set.seed(1107)
-res <- hsim(h, size = 1000)
-summary(res)
-```
-
-```{r, warning=FALSE}
-fit <- hfit(h, 
-            inter_arrival = res$inter_arrival,
-            type = res$type,
-            mark = res$mark)
-summary(fit)
-```
-
-To estimate the parameters of the mark distribution as well, supply its density or probability mass function in the `dmark` slot.
-
-```{r, warning=FALSE}
-h_md <- h
-
-h_md@dmark <- function(param = c(p = 0.1), n=n, mark=mark, ...){
-   dgeom(mark[n] - 1, prob = param["p"])
-}
-
-mle_md <- hfit(h_md, 
-               inter_arrival = res$inter_arrival, type = res$type, mark = res$mark)
-summary(mle_md)
-```
-
-The density and generator use the same parameter name, `p`.
-Reconstruction updates `rmark` with the value estimated through `dmark`, so new
-simulations use the fitted mark distribution. Generator parameters that do not
-match estimated coefficient names keep their original defaults.
-
-```{r fitted-mark-generator}
-estimated_md <- fitted_hspec(mle_md)
-c(density = eval(formals(estimated_md@dmark)$param)[["p"]],
-  generator = eval(formals(estimated_md@rmark)$param)[["p"]])
-```
-
-### Fosset's state-dependent spread model {#fosset-spread-model}
-
-Fosset, Bouchaud and Benzaquen (2020),
-[Endogenous Liquidity Crises](https://doi.org/10.1088/1742-5468/ab7c64),
-Section 4.1, equations (8a)--(8b), model spread widening and narrowing as two
-event types. Let $N_+$ and $N_-$ count these events and let the spread, in ticks, be
-
-$$
-S(t) = S_0 + N_+(t) - N_-(t).
-$$
-
-Their linear model has predictable intensities
-
-$$
-\lambda_+(t) = \nu_+ + a\int_{[0,t)} b e^{-b(t-s)}\,dN_+(s),
-\qquad
-\lambda_-(t) = \nu_-\,\mathbf{1}_{\{S(t-)\ge 2\}}.
-$$
-
-Only widening events excite future widening. Narrowing is disabled at a one-tick
-spread. We use $\nu_+,\nu_-$ for the paper's $\lambda_0^+,\lambda_0^-$ and
-$a,b$ for its $\alpha,\beta$. The package's `alpha[1, 1]` is therefore $ab$;
-$a$ is the integrated excitation, not the jump size. The other `alpha` entries
-are fixed zeros. Both event types have unit marks.
-
-The example uses positive rates, $0<a<1$, and an explicit zero initial excitation.
-This restricts the example to a Hawkes-stable widening process. A stationary
-spread additionally requires $\nu_+/(1-a)<\nu_-$. The values below are chosen
-for a stationary-spread illustration. The nonlinear models later in the paper
-are separate specifications.
-
-The following local example helpers are stored with the installed package.
-The three functions define baseline rates (`mu`), excitation jumps (`alpha`),
-and decay rates (`beta`). Rows identify affected event types, and columns
-identify triggering event types.
-Log rates enforce positivity, and a logit parameter enforces $0<a<1$.
-The shared name `log_b` keeps the same decay parameter in `alpha` and `beta`.
-
-```{r fosset-source, include=FALSE}
-fosset_example_code <- readLines(
-  system.file("examples", "fosset-spread.R", package = "emhawkes"), warn = FALSE)
-```
-
-```{r fosset-specification, code=fosset_example_code}
-```
-
-For the baseline callback, `N[n - 1, ]` describes the state before event `n`.
-The same callback is called with `n + 1` after the jump, so the narrowing rate
-changes immediately when the spread reaches or leaves one tick.
-
-```{r fosset-simulation}
-h_fosset <- fosset_spec()
-set.seed(20261018)
-path_fosset <- hsim(h_fosset, size = 4001, lambda_component0 = 0)
-spread_fosset <- 1 + path_fosset$N[, 1] - path_fosset$N[, 2]
-stopifnot(all(spread_fosset >= 1),
-  all(path_fosset$lambda[c(1, head(spread_fosset, -1)) == 1, 2] == 0),
-  all(path_fosset$rambda[spread_fosset == 1, 2] == 0))
-plot(path_fosset$arrival, spread_fosset, type = "s",
-  xlab = "Time", ylab = "Spread (ticks)")
-```
-
-Estimate all four model parameters from a different starting point. The example
-uses R's stats optimizer and the default numerical gradient. Automatic engine
-selection uses the supported C++ likelihood; simulation of this count-dependent
-baseline uses the R path. No analytic Jacobians are required.
-
-```{r fosset-fit}
-start_fosset <- fosset_spec(nu_plus = 0.7, nu_minus = 2.5, a = 0.25, b = 1.2)
-fit_fosset <- hfit(start_fosset,
-  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
-  lambda_component0 = 0, optimizer = "stats", method = "BFGS",
-  control = list(maxit = 500, reltol = 1e-10))
-cbind(true = c(nu_plus = 1, nu_minus = 3, a = 0.4, b = 2),
-  estimated = fosset_parameters(coef(fit_fosset)))
-fit_diagnostics(fit_fosset)$status
-fit_diagnostics(fit_fosset)$computation$engine
-```
-
-The estimated coefficients are on the log/logit scale. Parameter recovery varies
-between realizations; inspect convergence and uncertainty rather than expecting
-exact recovery from a single path.
-
-There is an independent check for the narrowing rate. If $T_{\mathrm{open}}$ is the
-time spent with $S\ge2$, its log-likelihood contribution is
-$N_-(T)\log\nu_- - \nu_- T_{\mathrm{open}}$. Its maximum is
-$\widehat{\nu}_- = N_-(T)/T_{\mathrm{open}}$.
-The observation window ends at the last supplied event.
-
-```{r fosset-check}
-open_time_fosset <- sum(path_fosset$inter_arrival[-1] *
-  (head(spread_fosset, -1) >= 2))
-c(fitted = fosset_parameters(coef(fit_fosset))["nu_minus"],
-  independent = sum(path_fosset$type == 2) / open_time_fosset)
-restored_fosset <- fitted_hspec(fit_fosset)
-replay_fosset <- do.call(logLik, c(list(object = restored_fosset,
-  inter_arrival = path_fosset$inter_arrival, type = path_fosset$type,
-  infer = TRUE), fit_initial_state(fit_fosset)))
-stopifnot(isTRUE(all.equal(as.numeric(logLik(fit_fosset)),
-  unname(replay_fosset$loglikelihood), tolerance = 1e-8)))
-```
-
-### Hawkes flocking model
-
-The function $g$ need not depend on the mark.
-In the Hawkes flocking model, the kernel components are
-$$
-\alpha = \begin{bmatrix}\alpha_{11} & \alpha_{12} & 0 & 0 \\\alpha_{12}& \alpha_{11} & 0 & 0 \\0 & 0 & \alpha_{33} & \alpha_{34} \\0 & 0 & \alpha_{34} & \alpha_{33} \end{bmatrix},
-$$ 
-$$ 
-g = \begin{bmatrix} 0 & 0 & \alpha_{1w} 1_{\{C_1(t) < C_2(t)\}} & \alpha_{1n} 1_{\{C_1(t) < C_2(t)\}} \\ 
-0 & 0 & \alpha_{1n} 1_{\{C_1(t) > C_2(t)\}} & \alpha_{1w}1_{\{C_1(t) > C_2(t)\}} \\
-\alpha_{2w} 1_{\{C_2(t) < C_1(t)\}} & \alpha_{2n}1_{\{C_2(t) < C_1(t)\}} & 0 & 0 \\
-\alpha_{2n} 1_{\{C_2(t) > C_1(t)\}} & \alpha_{2w}1_{\{C_2(t) > C_1(t)\}} & 0 & 0 \end{bmatrix},
-$$
-
-where
-
-$$
-C_1(t) = N_1(t) - N_2(t), \quad C_2(t) = N_3(t) - N_4(t).
-$$
-For details, see [Systemic risk in market microstructure of crude oil and gasoline futures prices: A Hawkes flocking model approach](https://onlinelibrary.wiley.com/doi/full/10.1002/fut.22048).
-
-The `alpha` slot can contain a function that returns a matrix.
-In the following example, the function returns a $4\times4$ matrix with some entries fixed at zero.
-Only the parameters in `param` are estimated.
-For simulation, a fixed matrix and a function returning the same matrix give the same model.
-
-```{r, warning=FALSE}
-mu <- matrix(c(0.02, 0.02, 0.04, 0.04), nrow = 4)
-
-
-alpha <- function(param = c(alpha11 = 0.2, alpha12 = 0.3, alpha33 = 0.3, alpha34 = 0.4)){
-  matrix(c(param["alpha11"], param["alpha12"], 0, 0,
-           param["alpha12"], param["alpha11"], 0, 0,
-           0, 0, param["alpha33"], param["alpha34"],
-           0, 0, param["alpha34"], param["alpha33"]), nrow = 4, byrow = TRUE)
-}
-
-
-beta <- matrix(c(rep(0.7, 8), rep(1.1, 8)), nrow = 4, byrow = TRUE)
-
-```
-
-The `impact` function below implements the model definition.
-Its `N` argument contains the counting process values, and `n` identifies the current event index.
-Include both arguments because the function uses them, along with `...` to accept other arguments supplied by the package.
-Use `N[n, "N1"]` to read one count directly, rather than extracting an entire column at every event.
-
-```{r}
-impact <- function(param = c(alpha1n=0.25, alpha1w=0.1, alpha2n=0.1, alpha2w=0.2),
-                   N=N, n=n, ...){
-  
-  Psi <- matrix(c(0, 0, param['alpha1w'], param['alpha1n'],
-                  0, 0, param['alpha1n'], param['alpha1w'],
-                  param['alpha2w'], param['alpha2n'], 0, 0,
-                  param['alpha2n'], param['alpha2w'], 0, 0), nrow=4, byrow=TRUE)
-  
-  ind <- N[n,"N1"] - N[n,"N2"] > N[n,"N3"] - N[n,"N4"]
-  
-  km <- matrix(c(!ind, !ind, !ind, !ind,
-                 ind, ind, ind, ind,
-                 ind, ind, ind, ind,
-                 !ind, !ind, !ind, !ind), nrow = 4, byrow = TRUE)
-  
-  km * Psi
-}
-
-hspec_fl <- new("hspec",
-                mu = mu, alpha = alpha, beta = beta, impact = impact)
-hspec_fl
-```
-
-```{r}
-set.seed(1107)
-hr_fl <- hsim(hspec_fl, size=2000)
-summary(hr_fl)
-```
-
-```{r, warning=FALSE}
-fit_fl <- hfit(hspec_fl, hr_fl$inter_arrival, hr_fl$type)
-summary(fit_fl)
-```
-
-This impact depends on observed event counts, so automatic selection uses the
-C++ likelihood with numerical differentiation. No Jacobian is needed; R still
-evaluates the impact.
-
-```{r flocking-engine}
-fit_diagnostics(fit_fl)$computation$engine
-```
-
-The same observed impact also supports automatic C++ intensity and residual replay.
-No Jacobian is needed; retain the fit's initial-state arguments.
-
-```{r flocking-replay}
-replayed_fl <- do.call(logLik, c(list(object = fitted_hspec(fit_fl),
-  inter_arrival = hr_fl$inter_arrival, type = hr_fl$type, infer = TRUE),
-  fit_initial_state(fit_fl)))
-c(fitted = as.numeric(logLik(fit_fl)), replayed = replayed_fl$loglikelihood)
-```
-
-### Bid-ask price model
-
-This model describes bid and ask prices using a system of counting processes and their conditional intensities:
-
-$$ 
-N_t = \begin{bmatrix}
-N_1(t) \\ N_2(t) \\ N_3(t) \\ N_4(t)
-\end{bmatrix},
-\quad
-\lambda_t =
-\begin{bmatrix} \lambda_1(t) \\ \lambda_2(t) \\ \lambda_3(t) \\ \lambda_4(t)
-\end{bmatrix}
-$$
-
-In the unmarked case, the changes in ask and bid prices are $N_1(t) - N_2(t)$ and $N_3(t) - N_4(t)$, respectively.
-The marked example below uses `Nc` to accumulate price changes.
-The midprice $p(t)$ is the average of the ask and bid prices, including their initial levels.
-
-The base intensity process is
-
-$$\mu = \begin{bmatrix} \mu_1 \\ \zeta \ell(t-) \\ \zeta \ell(t-) \\ \mu_1 \end{bmatrix}, \quad \ell(t) = \frac{L(t)}{p(t)} $$
-
-where $L(t) \in \{0, 1, 2, \ldots\}$ measures the bid-ask spread above its minimum level, so $L(t)=0$ corresponds to the minimum spread.
-For details, see [Modeling bid and ask price dynamics with an extended Hawkes process and its empirical applications for high-frequency stock market data](https://academic.oup.com/jfec/article/21/4/1099/6513935?login=true).
-
-In the `mu` function below, `n` identifies the current event index, and `Nc` is used to calculate the spread level and midprice.
-
-```{r}
-# presumed initial bid and ask prices
-initial_ask_price <- 1250 #cents
-initial_bid_price <- 1150 #cents
-
-initial_level <- round((initial_ask_price - initial_bid_price) - 1)
-initial_mid_price <- (initial_bid_price + initial_ask_price) / 2
-
-mu <- function(param = c(mu1 = 0.08, zeta1 = 0.10), n=n, Nc=Nc, ...){
-
-  if(n == 1){
-    
-    level <- initial_level
-    mid <- initial_mid_price
-    
-  } else {
-    
-    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
-    ask <- initial_ask_price + (Nc[n-1,1] - Nc[n-1,2]) 
-    bid <- initial_bid_price + (Nc[n-1,3] - Nc[n-1,4]) 
-    mid <- (ask + bid) / 2
-    
-  }
-  
-  if(level <= 0){
-    matrix(c(param["mu1"], 0,
-             0, param["mu1"]), nrow = 4)
-  } else {
-    matrix(c(param["mu1"], param["zeta1"] * level / mid,
-             param["zeta1"]*level / mid, param["mu1"]), nrow = 4)
-
-  }
-
-}
-```
-
-In addition, the kernel is represented by
-
-$$h(t, u) = 
-\begin{bmatrix} \alpha_{s1} & \alpha_{m} & \alpha_{s2} & 0 \\   \alpha_{w1} & \alpha_{n1}(u) & \alpha_{n1}(u) & \alpha_{w2} \\  \alpha_{w2} & \alpha_{n2}(u) & \alpha_{n2}(u) & \alpha_{w1} \\  0 & \alpha_{s2} & \alpha_{m} & \alpha_{s1} \\   \end{bmatrix},
-$$
-
-where
-
-$$
-\alpha_{n1}(u) = - \sum_{j=1}^4 \lambda_{2j}(u) + \xi \ell(u), \quad \alpha_{n2}(u) = - \sum_{j=1}^4 \lambda_{3j}(u) + \xi \ell(u),
-$$
-
-Here, $\xi \geq 0$ is a constant, and $\lambda_{ij}$ is a component of $\lambda_i$, defined by
-
-$$\lambda_{ij}(t) = \int_{-\infty}^t h_{ij}(t, u) d N_j(u).$$
-
-The following code places the constant part of $h$ in `alpha` and the state-dependent part in `impact`.
-The `lambda_component_n` argument supplies the current pre-jump matrix of $\lambda_{ij}$ values.
-This avoids allocating a full intensity history when only the current state is needed.
-Individual components can be negative after a reset.
-The equal decay rates used here allow simulation as long as the sum of the components in each row remains nonnegative.
-
-```{r, warning=FALSE}
-
-alpha <- function(param = c(alpha_s1=4, alpha_m=26, alpha_s2=5,
-                            alpha_w1=11, alpha_w2=7)){
-  matrix(c(param["alpha_s1"], param["alpha_m"], param["alpha_s2"], 0,
-           param["alpha_w1"], 0, 0, param["alpha_w2"],
-           param["alpha_w2"], 0, 0, param["alpha_w1"],
-           0, param["alpha_s2"], param["alpha_m"], param["alpha_s1"]), nrow = 4, byrow = TRUE)
-}
-
-impact <- function(param = c(xi = 2.7), n=n, Nc=Nc, lambda_component_n = lambda_component_n, ... ){
-  if(n == 1){
-    level <-  initial_level
-    # mid <- initial_mid_price
-  } else {
-    level <- Nc[n,1] - Nc[n,2] - (Nc[n,3] - Nc[n,4]) + initial_level
-    ask <- initial_ask_price + (Nc[n,1] - Nc[n,2])
-    bid <- initial_bid_price + (Nc[n,3] - Nc[n,4])
-    mid <- (ask + bid)/2
-  }
-  
-  lambda_component_matrix <- lambda_component_n
-
-  l2 <- sum(lambda_component_matrix[2,]) # sum of second row
-  l3 <- sum(lambda_component_matrix[3,]) # sum of third row
-
-  im <- matrix(c(0, 0, 0, 0,
-                 0, -l2 + param["xi"]*level/mid, -l2 + param["xi"]*level/mid, 0,
-                 0, -l3 + param["xi"]*level/mid, -l3 + param["xi"]*level/mid, 0,
-                 0, 0, 0, 0), nrow = 4, byrow = TRUE)
-
-}
-
-beta <- matrix(rep(50, 16), nrow = 4, byrow=TRUE)
-
-rmark <- function(n=n, Nc=Nc, type, ...){
-  if(n == 1){
-    level <-  initial_level
-  } else {
-    level <- Nc[n-1,1] - Nc[n-1,2] - (Nc[n-1,3] - Nc[n-1,4]) + initial_level
-  }
-  if (type[n] == 2 | type[n] == 3){
-    min(level,  rgeom(1, p=0.65) + 1)
-  } else {
-    rgeom(1, p=0.65) + 1
-  }
-}
-
-
-h_ba <- new("hspec", mu = mu, alpha = alpha, beta = beta, impact=impact, rmark = rmark)
-h_ba
-```
-
-```{r}
-set.seed(1107)
-hr_ba <- hsim(h_ba, size=1000, lambda_component0 = matrix(rep(1, 16), 4))
-summary(hr_ba)
-```
-
-The following likelihood calculation and fit do not estimate the mark distribution because no `dmark` function is supplied.
-
-```{r}
-logLik(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
-       mark = hr_ba$mark, Nc = hr_ba$Nc,
-       lambda_component0 = matrix(rep(1, 16), 4))
-```
-
-```{r, warning=FALSE}
-mle_ba <- hfit(h_ba, inter_arrival = hr_ba$inter_arrival, type = hr_ba$type,
-               mark = hr_ba$mark,
-               lambda_component0 = matrix(rep(1, 16), 4),
-               final_hessian = "stable")
-summary(mle_ba)
-```
-
-Automatic selection uses the C++ likelihood for this observed baseline and
-sequential impact with numerical differentiation. The impact reads the current
-state before its jump. No Jacobian is required. Inspect the saved engine record
-to confirm which calculation was used and whether automatic selection fell back to R.
-
-This example needs only the current component matrix, so it uses
-`lambda_component_n`. Requesting `lambda_component` also stores the full history.
-If a callback retains histories beyond its call, preserving those snapshots can
-copy the history repeatedly. Cumulative allocation can then grow quadratically
-with event count. This cost is
-repeated for each likelihood evaluation during numerical optimization. Peak live
-memory can be much smaller because old copies are reclaimed.
-
-```{r bid-ask-engine}
-fit_diagnostics(mle_ba)$computation$engine
-```
-
-Replay the fitted model with the same initialization and observations. Automatic
-selection also uses C++ for its likelihood, intensity paths, and residuals.
-
-```{r bid-ask-replay}
-replayed_ba <- do.call(logLik, c(list(object = fitted_hspec(mle_ba),
-  inter_arrival = hr_ba$inter_arrival, type = hr_ba$type, mark = hr_ba$mark,
-  infer = TRUE), fit_initial_state(mle_ba)))
-stopifnot(isTRUE(all.equal(unname(replayed_ba$loglikelihood),
-  as.numeric(mle_ba$maximum), tolerance = 1e-8)))
-```
-
-For the optional analytic fit, see the
-[Bid-ask Jacobians and analytic gradient](https://ksublee.github.io/emhawkes/articles/computation.html#bid-ask-analytic-gradient).
-That section continues from this example and gives the complete derivatives and fit.
-Numerical differentiation remains the default.
+- [Residual diagnostics](fitting-and-inference.html#residual-process): checking a fitted Hawkes model.
 
 ## Point processes with flexible residuals
 
@@ -802,6 +104,7 @@ Simple custom-residual models can still use `set_residual()`, `hsim()` and
 this documentation change does not remove or deprecate them. For example:
 
 ```{r simple-flexible-residual, message=FALSE}
+library(emhawkes)
 h_residual <- set_residual(
   new("hspec", mu = 0.5, alpha = 1, beta = 1.2),
   param = c(a = 0.7, ell = 1.6),
