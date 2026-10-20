@@ -2,8 +2,8 @@
 
 This guide explains estimation and interpretation after the [Get
 started](https://ksublee.github.io/emhawkes/articles/example.html)
-workflow. See [Extended
-examples](https://ksublee.github.io/emhawkes/articles/extended_example.html)
+workflow. See [Examples
+overview](https://ksublee.github.io/emhawkes/articles/extended_example.html)
 for model specifications and
 [Computation](https://ksublee.github.io/emhawkes/articles/computation.html)
 for engines, gradients and Jacobians.

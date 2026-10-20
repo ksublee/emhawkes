@@ -32,7 +32,16 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/example.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="articles/extended_example.html">Examples</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-examples">
+<li><a class="dropdown-item" href="articles/extended_example.html">Overview</a></li>
+    <li><a class="dropdown-item" href="articles/multi-kernel-models.html">Multi-kernel models</a></li>
+    <li><a class="dropdown-item" href="articles/marked-models.html">Marked models</a></li>
+    <li><a class="dropdown-item" href="articles/state-dependent-baseline.html">State-dependent baseline</a></li>
+    <li><a class="dropdown-item" href="articles/state-dependent-impact.html">State-dependent impact</a></li>
+  </ul>
+</li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
@@ -96,7 +105,7 @@
 <li>
 <a href="https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html">Fitting and inference</a>: parameter sharing, initial states, fitted models, residuals and standard errors.</li>
 <li>
-<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended examples</a>: marked, state-dependent and multi-kernel models, with an FRPP migration note.</li>
+<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Examples overview</a>: separate articles on multi-kernel models, marks, state-dependent baselines (Fosset spread and Hawkes/M/infinity queue) and state-dependent impact (flocking and bid-ask prices), with an FRPP migration note.</li>
 <li>
 <a href="https://ksublee.github.io/frpp/articles/frpp-examples.html" class="external-link">FRPP examples</a>: custom residual laws in the separate frpp package; simple cases remain supported in emhawkes.</li>
 <li>

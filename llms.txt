@@ -61,9 +61,11 @@ baseline intensity.
   inference](https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html):
   parameter sharing, initial states, fitted models, residuals and
   standard errors.
-- [Extended
-  examples](https://ksublee.github.io/emhawkes/articles/extended_example.html):
-  marked, state-dependent and multi-kernel models, with an FRPP
+- [Examples
+  overview](https://ksublee.github.io/emhawkes/articles/extended_example.html):
+  separate articles on multi-kernel models, marks, state-dependent
+  baselines (Fosset spread and Hawkes/M/infinity queue) and
+  state-dependent impact (flocking and bid-ask prices), with an FRPP
   migration note.
 - [FRPP
   examples](https://ksublee.github.io/frpp/articles/frpp-examples.html):
@@ -143,11 +145,37 @@ Define, simulate, fit and check a basic Hawkes model.
 
 ### Examples
 
-Marked, state-dependent and multi-kernel models, with an FRPP migration
-note.
+Examples organized by kernel structure, marks and state dependence.
 
-- [Extended examples for the emhawkes
-  package](https://ksublee.github.io/emhawkes/articles/extended_example.md):
+- [Extended
+  examples](https://ksublee.github.io/emhawkes/articles/extended_example.md):
+
+  Choose examples by kernel structure, marks, state-dependent baselines
+  or state-dependent impact.
+
+- [Multi-kernel models and shared
+  parameters](https://ksublee.github.io/emhawkes/articles/multi-kernel-models.md):
+
+  Multiple exponential kernels, event-to-column mappings and shared
+  model parameters.
+
+- [Marked
+  models](https://ksublee.github.io/emhawkes/articles/marked-models.md):
+
+  Mark-dependent excitation, linear impact and estimation of mark
+  distributions.
+
+- [State-dependent baseline
+  models](https://ksublee.github.io/emhawkes/articles/state-dependent-baseline.md):
+
+  A spread model and a Hawkes/M/infinity queue with count-dependent
+  baseline intensities.
+
+- [State-dependent impact
+  models](https://ksublee.github.io/emhawkes/articles/state-dependent-impact.md):
+
+  Hawkes flocking and bid-ask price models with state-dependent
+  excitation and component resets.
 
 ### Guides
 

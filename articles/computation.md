@@ -375,7 +375,7 @@ study](https://github.com/ksublee/emhawkes/blob/main/tools/baseline-projection-r
 ## Bid-ask analytic gradient
 
 First run the [Bid-ask price
-model](https://ksublee.github.io/emhawkes/articles/extended_example.html#bid-ask-price-model).
+model](https://ksublee.github.io/emhawkes/articles/state-dependent-impact.html#bid-ask-price-model).
 The code below continues in that R session, using `h_ba`, `hr_ba`,
 `mle_ba`, `initial_ask_price`, `initial_bid_price`, `initial_level`, and
 `initial_mid_price`.

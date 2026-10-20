@@ -16,7 +16,14 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/example.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/extended_example.html">Examples</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-examples"><li><a class="dropdown-item" href="../articles/extended_example.html">Overview</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-kernel-models.html">Multi-kernel models</a></li>
+    <li><a class="dropdown-item" href="../articles/marked-models.html">Marked models</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-baseline.html">State-dependent baseline</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-impact.html">State-dependent impact</a></li>
+  </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides"><li><a class="dropdown-item" href="../articles/fitting-and-inference.html">Fitting and inference</a></li>
@@ -48,10 +55,18 @@
       </dd></dl></div>
     <div class="section ">
       <h3>Examples</h3>
-      <div class="section-desc"><p>Marked, state-dependent and multi-kernel models, with an FRPP migration note.</p></div>
+      <div class="section-desc"><p>Examples organized by kernel structure, marks and state dependence.</p></div>
 
-      <dl><dt><a href="extended_example.html">Extended examples for the emhawkes package</a></dt>
-        <dd>
+      <dl><dt><a href="extended_example.html">Extended examples</a></dt>
+        <dd><p>Choose examples by kernel structure, marks, state-dependent baselines or state-dependent impact.</p>
+        </dd><dt><a href="multi-kernel-models.html">Multi-kernel models and shared parameters</a></dt>
+        <dd><p>Multiple exponential kernels, event-to-column mappings and shared model parameters.</p>
+        </dd><dt><a href="marked-models.html">Marked models</a></dt>
+        <dd><p>Mark-dependent excitation, linear impact and estimation of mark distributions.</p>
+        </dd><dt><a href="state-dependent-baseline.html">State-dependent baseline models</a></dt>
+        <dd><p>A spread model and a Hawkes/M/infinity queue with count-dependent baseline intensities.</p>
+        </dd><dt><a href="state-dependent-impact.html">State-dependent impact models</a></dt>
+        <dd><p>Hawkes flocking and bid-ask price models with state-dependent excitation and component resets.</p>
       </dd></dl></div>
     <div class="section ">
       <h3>Guides</h3>

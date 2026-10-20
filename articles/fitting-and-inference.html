@@ -32,7 +32,16 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/example.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/extended_example.html">Examples</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-examples">
+<li><a class="dropdown-item" href="../articles/extended_example.html">Overview</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-kernel-models.html">Multi-kernel models</a></li>
+    <li><a class="dropdown-item" href="../articles/marked-models.html">Marked models</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-baseline.html">State-dependent baseline</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-impact.html">State-dependent impact</a></li>
+  </ul>
+</li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
@@ -66,7 +75,7 @@
                         <h4 data-toc-skip class="author">Kyungsub
 Lee</h4>
             
-            <h4 data-toc-skip class="date">2026-10-19</h4>
+            <h4 data-toc-skip class="date">2026-10-20</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ksublee/emhawkes/blob/main/vignettes_ext/fitting-and-inference.Rmd" class="external-link"><code>vignettes/articles/fitting-and-inference.Rmd</code></a></small>
       <div class="d-none name"><code>fitting-and-inference.Rmd</code></div>
@@ -75,8 +84,8 @@ Lee</h4>
     
     
 <p>This guide explains estimation and interpretation after the <a href="https://ksublee.github.io/emhawkes/articles/example.html">Get
-started</a> workflow. See <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
-examples</a> for model specifications and <a href="https://ksublee.github.io/emhawkes/articles/computation.html">Computation</a>
+started</a> workflow. See <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Examples
+overview</a> for model specifications and <a href="https://ksublee.github.io/emhawkes/articles/computation.html">Computation</a>
 for engines, gradients and Jacobians.</p>
 <div class="section level2">
 <h2 id="working-example">Working example<a class="anchor" aria-label="anchor" href="#working-example"></a>

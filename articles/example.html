@@ -30,7 +30,16 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="active nav-item"><a class="nav-link" href="../articles/example.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/extended_example.html">Examples</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-examples">
+<li><a class="dropdown-item" href="../articles/extended_example.html">Overview</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-kernel-models.html">Multi-kernel models</a></li>
+    <li><a class="dropdown-item" href="../articles/marked-models.html">Marked models</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-baseline.html">State-dependent baseline</a></li>
+    <li><a class="dropdown-item" href="../articles/state-dependent-impact.html">State-dependent impact</a></li>
+  </ul>
+</li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
@@ -64,7 +73,7 @@
                         <h4 data-toc-skip class="author">Kyungsub
 Lee</h4>
             
-            <h4 data-toc-skip class="date">2026-10-19</h4>
+            <h4 data-toc-skip class="date">2026-10-20</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ksublee/emhawkes/blob/main/vignettes/example.Rmd" class="external-link"><code>vignettes/example.Rmd</code></a></small>
       <div class="d-none name"><code>example.Rmd</code></div>
@@ -74,8 +83,8 @@ Lee</h4>
     
 <p>This vignette introduces model specification, simulation, estimation
 and a first residual check. It is included in the R package and also
-published on the website. For more models, see <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
-examples</a>.</p>
+published on the website. For more models, see <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Examples
+overview</a>.</p>
 <div class="section level2">
 <h2 id="basic-hawkes-model">Basic Hawkes model<a class="anchor" aria-label="anchor" href="#basic-hawkes-model"></a>
 </h2>
@@ -589,9 +598,10 @@ identification problems.</p>
 and inference</a>: parameter settings, initial states, fitted models,
 residual diagnostics and standard errors.</li>
 <li>
-<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
-examples</a>: marked, state-dependent and multi-kernel models, with an
-FRPP migration note.</li>
+<a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Examples
+overview</a>: separate articles on multi-kernel models, marks,
+state-dependent baselines and state-dependent impact, with an FRPP
+migration note.</li>
 <li>
 <a href="https://ksublee.github.io/frpp/articles/frpp-examples.html" class="external-link">FRPP
 examples</a>: custom residual laws in the separate frpp package; simple
