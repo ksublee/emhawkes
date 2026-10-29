@@ -16,7 +16,7 @@ jobs:
     env:
       R_SVN_REVISION: '90766'
       R_PREFIX: /home/runner/.cache/emhawkes/R-noLD-r90766
-      R_LIBS_USER: ${{ runner.temp }}/R-library-noLD
+      R_LIBS_USER: /home/runner/R-library-noLD
       _R_CHECK_SUGGESTS_ONLY_: 'false'
     steps:
       - uses: actions/checkout@v4
