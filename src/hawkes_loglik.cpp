@@ -4,13 +4,14 @@
 #include <string>
 #include <vector>
 #include "exp_kernel.h"
+#include "r_precision.h"
 #include "state_sensitivity.h"
 
 // Numeric Hawkes kernel with optional precomputed observed-state impacts.
 // Optional observed baselines and sequential impacts support numerical replay.
 // Recursive storage is private; this kernel never draws random numbers.
-// [[Rcpp::export(rng = false)]]
-Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
+template <typename Sum>
+Rcpp::List hawkes_loglik_cpp_impl(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha,
     Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta,
     Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false,
@@ -125,8 +126,8 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         ge.assign(components, 0.0L); gc.assign(components, 0.0L);
         gm.assign(dimensions, 0.0L);
     }
-    std::vector<long double> row_integrals(dimensions), row_totals(dimensions);
-    std::vector<long double> residual_integrals(dimensions, 0.0L);
+    std::vector<Sum> row_integrals(dimensions), row_totals(dimensions);
+    std::vector<Sum> residual_integrals(dimensions, 0.0L);
     std::vector<bool> observed(dimensions, false);
     std::vector<std::vector<double> > residuals(dimensions);
     Rcpp::NumericMatrix lambda, lambda_component, rambda, rambda_component;
@@ -136,7 +137,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         lambda_component = Rcpp::NumericMatrix(size, components);
         rambda_component = Rcpp::NumericMatrix(size, components);
         for (int i = 0; i < dimensions; ++i) {
-            long double total = 0.0L;
+            Sum total = 0.0L;
             for (int j = 0; j < kernels; ++j) {
                 const double value = state[i + dimensions * j];
                 total += value;
@@ -152,7 +153,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             if (!infer) lambda = Rcpp::NumericMatrix(size, dimensions);
             Rcpp::CharacterVector names(dimensions);
             for (int i = 0; i < dimensions; ++i) {
-                long double total = 0.0L;
+                Sum total = 0.0L;
                 for (int j = 0; j < kernels; ++j) total += state[i + dimensions * j];
                 lambda(0, i) = mu[i] + static_cast<double>(total);
                 names[i] = "lambda" + std::to_string(i + 1);
@@ -213,12 +214,13 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             lambda_component = Rcpp::clone(lambda_component);
         std::fill(row_integrals.begin(), row_integrals.end(), 0.0L);
         std::fill(row_totals.begin(), row_totals.end(), 0.0L);
-        long double total_integral = 0.0L, baseline_integral = 0.0L;
+        Sum total_integral = 0.0L, baseline_integral = 0.0L;
         for (int j = 0; j < kernels; ++j) {
             for (int i = 0; i < dimensions; ++i) {
                 const int index = i + dimensions * j;
                 const double scaled_time = beta[index] * dt[n];
-                const double integral = emhawkes::integrated_component(state[index], beta[index], dt[n], scaled_time);
+                const double integral = emhawkes::rounded_value<Sum>(
+                    emhawkes::integrated_component(state[index], beta[index], dt[n], scaled_time));
                 row_integrals[i] += integral;
                 total_integral += integral;
                 const double decay = std::exp(-scaled_time);
@@ -263,7 +265,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         }
         for (int i = 0; i < dimensions; ++i) {
             const double mu_at_event = has_baseline ? baseline_values(i, n) : mu[i];
-            const double baseline = mu_at_event * dt[n];
+            const double baseline = emhawkes::rounded_product<Sum>(mu_at_event, dt[n]);
             if (local_gradient) gm[i] -= dt[n];
             baseline_integral += baseline;
             if (infer) {
@@ -321,7 +323,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
             for (int i = 0; i < dimensions; ++i) {
                 const int index = i + dimensions * selected[j];
                 state[index] += alpha[index];
-                if (has_eta) state[index] += mark_effect[index] * (mark[n] - 1.0);
+                if (has_eta) state[index] += emhawkes::rounded_product<Sum>(mark_effect[index], mark[n] - 1.0);
                 if (has_impact) state[index] += event_impact(index, n);
                 if (has_callback) state[index] += callback_impact[index];
                 if (local_gradient) {
@@ -332,7 +334,7 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
         }
         if (infer) {
             for (int i = 0; i < dimensions; ++i) {
-                long double total = 0.0L;
+                Sum total = 0.0L;
                 for (int j = 0; j < kernels; ++j) {
                     const double value = state[i + dimensions * j];
                     total += value;
@@ -400,4 +402,21 @@ Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
     result["rambda_component"] = rambda_component;
     result["residuals"] = residual_output;
     return result;
+}
+
+// Select precision once, outside the event recursion.
+// [[Rcpp::export(rng = false)]]
+Rcpp::List hawkes_loglik_cpp(Rcpp::NumericVector dt, Rcpp::IntegerVector type,
+    Rcpp::NumericVector mark, Rcpp::NumericVector mu, Rcpp::NumericMatrix alpha,
+    Rcpp::NumericMatrix beta, Rcpp::Nullable<Rcpp::NumericMatrix> eta,
+    Rcpp::NumericMatrix initial, Rcpp::List mapping, bool infer, bool gradient = false,
+    Rcpp::Nullable<Rcpp::NumericMatrix> impact = R_NilValue,
+    Rcpp::Nullable<Rcpp::Function> impact_callback = R_NilValue,
+    bool keep_lambda = false, bool keep_components = false,
+    Rcpp::Nullable<Rcpp::NumericMatrix> baseline = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> impact_arguments = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> sensitivity = R_NilValue, bool strict_callback = false) {
+    if (emhawkes::use_r_long_double())
+        return hawkes_loglik_cpp_impl<long double>(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact, impact_callback, keep_lambda, keep_components, baseline, impact_arguments, sensitivity, strict_callback);
+    return hawkes_loglik_cpp_impl<double>(dt, type, mark, mu, alpha, beta, eta, initial, mapping, infer, gradient, impact, impact_callback, keep_lambda, keep_components, baseline, impact_arguments, sensitivity, strict_callback);
 }

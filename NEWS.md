@@ -1,3 +1,12 @@
+# emhawkes 1.0.2
+
+* Match native simulation and likelihood accumulation to the precision used by
+  the running R build, including R configured with --disable-long-double.
+  Preserve event/RNG order and callback state consistency without changing
+  existing numerical test thresholds. Retain extended precision for derivative
+  calculations that do not reproduce an R accumulation.
+* Add a no-long-double CI check alongside the standard platform checks.
+
 # emhawkes 1.0.1
 
 * Correct the stats-only subprocess test when maxLik is installed in a standard

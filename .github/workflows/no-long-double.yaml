@@ -1,0 +1,75 @@
+name: R without long double
+
+on:
+  push:
+    branches: [main, 'codex/cran-*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-long-double:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      R_SVN_REVISION: '90766'
+      R_PREFIX: /home/runner/.cache/emhawkes/R-noLD-r90766
+      R_LIBS_USER: ${{ runner.temp }}/R-library-noLD
+      _R_CHECK_SUGGESTS_ONLY_: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - name: Install R build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential gfortran subversion \
+            ca-certificates curl pkg-config libpcre2-dev libreadline-dev liblzma-dev \
+            libbz2-dev zlib1g-dev libcurl4-openssl-dev libzstd-dev libicu-dev \
+            libpng-dev libjpeg-dev libcairo2-dev libuv1-dev
+      - uses: actions/cache@v4
+        id: r-cache
+        with:
+          path: ${{ env.R_PREFIX }}
+          key: R-noLD-ubuntu24.04-r${{ env.R_SVN_REVISION }}-v1
+      - name: Build R with long double disabled
+        if: steps.r-cache.outputs.cache-hit != 'true'
+        run: |
+          svn checkout --non-interactive -r "$R_SVN_REVISION" \
+            https://svn.r-project.org/R/trunk "$RUNNER_TEMP/R-source"
+          mkdir -p "$RUNNER_TEMP/R-build"
+          cd "$RUNNER_TEMP/R-build"
+          "$RUNNER_TEMP/R-source/configure" --prefix="$R_PREFIX" \
+            --disable-long-double --with-x=no --with-readline=no \
+            --without-recommended-packages --enable-R-shlib
+          make -j2
+          make install
+      - name: Select and verify noLD R
+        run: |
+          echo "$R_PREFIX/bin" >> "$GITHUB_PATH"
+          mkdir -p "$R_LIBS_USER"
+          "$R_PREFIX/bin/Rscript" --vanilla -e \
+            'stopifnot(!capabilities("long.double")); print(R.version); print(capabilities())'
+      - name: Install package and check dependencies
+        shell: Rscript {0}
+        run: |
+          options(repos = c(CRAN = "https://cloud.r-project.org"), timeout = 300)
+          install.packages(c("Rcpp", "maxLik", "miscTools", "knitr", "rmarkdown", "codetools"), Ncpus = 2)
+          stopifnot(!capabilities("long.double"), all(vapply(c("Rcpp", "maxLik", "knitr", "rmarkdown", "codetools"), requireNamespace, logical(1), quietly = TRUE)))
+          print(sessionInfo())
+      - name: Build package and check all tests and vignettes
+        run: |
+          mkdir noLD-check
+          cd noLD-check
+          R CMD build ..
+          R CMD check --no-manual --run-donttest --no-stop-on-test-error emhawkes_*.tar.gz
+      - name: Upload noLD diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-no-long-double
+          path: |
+            noLD-check
+            ${{ runner.temp }}/R-build/config.log
+          if-no-files-found: warn

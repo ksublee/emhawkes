@@ -2,7 +2,7 @@ name: Native safety
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/cran-*']
   pull_request:
   workflow_dispatch:
 
