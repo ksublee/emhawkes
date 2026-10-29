@@ -35,11 +35,20 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
-          use-public-rspm: true
+          use-public-rspm: ${{ matrix.config.r != '4.0.0' }}
+          cran: ${{ matrix.config.r == '4.0.0' && 'https://packagemanager.posit.co/cran/2024-08-01' || '' }}
       - name: Verify minimum R version
         if: matrix.config.r == '4.0.0'
-        run: stopifnot(getRversion() == numeric_version("4.0.0"))
         shell: Rscript {0}
+        run: |
+          stopifnot(getRversion() == numeric_version("4.0.0"))
+          # Current check-tool dependencies no longer all support R 4.0.
+          # Pin only this minimum-version job; current-R jobs remain current.
+          repository <- "https://packagemanager.posit.co/cran/2024-08-01"
+          cat("\n", paste0("options(repos = c(CRAN = ", deparse(repository), "))"), "\n",
+              file = path.expand("~/.Rprofile"), append = TRUE, sep = "")
+          cat("RSPM=", repository, "\nRENV_CONFIG_REPOS_OVERRIDE=", repository, "\n",
+              file = Sys.getenv("GITHUB_ENV"), append = TRUE, sep = "")
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
