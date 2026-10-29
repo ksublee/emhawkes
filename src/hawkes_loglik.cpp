@@ -323,7 +323,12 @@ Rcpp::List hawkes_loglik_cpp_impl(Rcpp::NumericVector dt, Rcpp::IntegerVector ty
             for (int i = 0; i < dimensions; ++i) {
                 const int index = i + dimensions * selected[j];
                 state[index] += alpha[index];
-                if (has_eta) state[index] += emhawkes::rounded_product<Sum>(mark_effect[index], mark[n] - 1.0);
+                if (has_eta) {
+                    // Both factors and this addition are doubles in every R
+                    // build. Match the simulator's materialized marked jump.
+                    const volatile double increment = mark_effect[index] * (mark[n] - 1.0);
+                    state[index] += increment;
+                }
                 if (has_impact) state[index] += event_impact(index, n);
                 if (has_callback) state[index] += callback_impact[index];
                 if (local_gradient) {

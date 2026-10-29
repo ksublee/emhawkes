@@ -12,15 +12,18 @@ The same R revision, compiler, package and dependency versions passed all
 Native recursions now match the accumulator used by the running R build for
 R-equivalent sums, row sums and cumulative sums. Precision is selected once
 outside the event loops. Product rounding is preserved where R materializes
-vectors before summing. Independent high-precision derivative calculations
-remain unchanged.
+vectors before summing. Marked likelihood jumps also preserve a separate double multiplication and
+addition on all builds, correcting a fused multiply-add discrepancy exposed by
+the new regression on Linux compilers. Independent high-precision derivative
+calculations remain unchanged.
 
 The eight failing tests and an additional precision/initial-only RNG regression
 test pass without relaxing existing numerical thresholds. Ordinary-build
 before/after comparisons preserve 36 complete simulation paths and RNG states,
 72 inference records, and two fitted coefficient/gradient/Hessian records exactly.
-Public interfaces, native registration signatures and saved-object layouts are
-unchanged.
+Both ordinary and noLD builds also pass all 46 tests with native fused
+multiply-add optimization enabled. Public interfaces, native registration
+signatures and saved-object layouts are unchanged.
 
 Local R CMD check, including all 46 test files and vignette rebuilds:
 

@@ -5,6 +5,9 @@
   Preserve event/RNG order and callback state consistency without changing
   existing numerical test thresholds. Retain extended precision for derivative
   calculations that do not reproduce an R accumulation.
+* Materialize marked likelihood jumps before addition on every R build,
+  matching simulation rounding when fused multiply-add optimization is enabled.
+  Add an optimized-arithmetic regression to native-safety CI.
 * Add a no-long-double CI check alongside the standard platform checks.
 
 # emhawkes 1.0.1

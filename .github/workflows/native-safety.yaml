@@ -25,6 +25,11 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"hard"'
+      - name: Check optimized marked arithmetic
+        run: |
+          printf 'CXXFLAGS=-O2 -march=native -ffp-contract=fast\nCXX11FLAGS=-O2 -march=native -ffp-contract=fast\nCXX14FLAGS=-O2 -march=native -ffp-contract=fast\nCXX17FLAGS=-O2 -march=native -ffp-contract=fast\nCXX20FLAGS=-O2 -march=native -ffp-contract=fast\n' > "$R_MAKEVARS_USER"
+          R CMD INSTALL --preclean .
+          Rscript --vanilla tests/native-precision.R
       - name: Install Valgrind and a debug build
         run: |
           sudo apt-get update

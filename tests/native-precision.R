@@ -42,7 +42,11 @@ for (model in models) for (seed in c(1, 62)) {
   replay <- logLik(model, native$inter_arrival, native$type, native$mark,
     infer = TRUE, lambda_component0 = .0075, N0 = 1:2, Nc0 = 3:4)
   options(old)
-  for (field in c("lambda", "rambda", "lambda_component", "rambda_component"))
-    stopifnot(identical(native[[field]], replay[[field]]))
+  for (field in c("lambda", "rambda", "lambda_component", "rambda_component")) {
+    if (!identical(native[[field]], replay[[field]]))
+      stop("Native precision mismatch: ", field, ", seed=", seed,
+        ", marked=", !is.null(model@eta), ": ",
+        paste(all.equal(native[[field]], replay[[field]], tolerance = 0), collapse = "; "))
+  }
 }
 cat("R accumulation precision, initial-only RNG, mapped paths and callback histories passed.\n")

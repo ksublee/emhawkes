@@ -58,6 +58,11 @@ jobs:
           install.packages(c("Rcpp", "maxLik", "miscTools", "knitr", "rmarkdown", "codetools"), Ncpus = 2)
           stopifnot(!capabilities("long.double"), all(vapply(c("Rcpp", "maxLik", "knitr", "rmarkdown", "codetools"), requireNamespace, logical(1), quietly = TRUE)))
           print(sessionInfo())
+      - name: Check optimized noLD arithmetic
+        run: |
+          printf 'CXXFLAGS=-O2 -march=native -ffp-contract=fast\nCXX11FLAGS=-O2 -march=native -ffp-contract=fast\nCXX14FLAGS=-O2 -march=native -ffp-contract=fast\nCXX17FLAGS=-O2 -march=native -ffp-contract=fast\nCXX20FLAGS=-O2 -march=native -ffp-contract=fast\n' > "$RUNNER_TEMP/noLD.Makevars"
+          R_MAKEVARS_USER="$RUNNER_TEMP/noLD.Makevars" R CMD INSTALL --preclean .
+          Rscript --vanilla tests/native-precision.R
       - name: Build package and check all tests and vignettes
         run: |
           mkdir noLD-check

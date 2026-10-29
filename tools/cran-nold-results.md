@@ -17,6 +17,8 @@ eight failing test names match its log exactly.
 | 1.0.1 | noLD | 37 | 8 |
 | 1.0.2 maintenance patch | ordinary | 46 | 0 |
 | 1.0.2 maintenance patch | noLD | 46 | 0 |
+| 1.0.2 maintenance patch | ordinary, optimized FMA | 46 | 0 |
+| 1.0.2 maintenance patch | noLD, optimized FMA | 46 | 0 |
 
 ## Repair
 
@@ -27,6 +29,13 @@ Double-precision products are materialized before accumulation to preserve R's
 rounding and prevent fused multiply-add contraction. Derivative intermediates
 that are not reproducing an R sum retain their existing extended precision.
 The exported R/native function signatures and registration files are unchanged.
+
+The new strict marked reconstruction test also exposed a discrepancy
+with fused multiply-add optimization. A GCC 13.3 build with -march=x86-64-v3
+and -ffp-contract=fast reproduced the Linux CI failure at marked seed 62:
+maximum intensity difference 5.55e-17 and component difference 6.94e-18.
+Materializing the double marked increment before addition fixes this on all R
+builds, matching the simulator. Native-safety and noLD CI now exercise this optimized path.
 
 ## Regression evidence
 
